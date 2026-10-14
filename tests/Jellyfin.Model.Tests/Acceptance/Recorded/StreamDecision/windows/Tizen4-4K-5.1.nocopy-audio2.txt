@@ -1,0 +1,250 @@
+== mkv-av1-aac-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=VideoCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=119835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&MaxWidth=3840&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb23f61539a51220b6a23&av1-level=-99&av1-videobitdepth=8&av1-profile=main&av1-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=VideoCodecNotSupported
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mkv-av1-vorbis-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,mp3,ac3,eac3 reasons=VideoCodecNotSupported, AudioCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&VideoCodec=h264,hevc&AudioCodec=aac,mp3,ac3,eac3&AudioStreamIndex=1&VideoBitrate=119616000&AudioBitrate=384000&MaxFramerate=23.976&MaxWidth=3840&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb23f61539a51220b6a23&av1-level=-99&av1-videobitdepth=8&av1-profile=main&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=VideoCodecNotSupported,AudioCodecNotSupported
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mkv-dvhe.05-eac3-28000k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=eac3 reasons=VideoRangeTypeNotSupported
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=e313fd4bfdfcab326b1fea833cffd779&VideoCodec=h264,hevc&AudioCodec=eac3&AudioStreamIndex=1&VideoBitrate=119360000&AudioBitrate=640000&AudioSampleRate=48000&MaxFramerate=60&MaxWidth=3840&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=3c932ee1cd94e3fecebcc3fac15053e9&SubtitleMethod=Encode&hevc-level=153&hevc-videobitdepth=10&hevc-profile=main10&hevc-audiochannels=6&eac3-profile=dolbydigitalplus+dolbyatmos&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=VideoRangeTypeNotSupported
+== mkv-dvhe.08-eac3-15200k
+method=DirectPlay container=mkv protocol=http
+video=hevc audio=eac3 reasons=0
+audioIndex=1 subtitleIndex= subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mkv?DeviceId=acceptance-device&MediaSourceId=ac2a9824755fbeffd891b8ff2634901a&Static=true&VideoCodec=hevc&AudioCodec=eac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=8ac40cacc99e4748bc9218045b38d184
+== mkv-h264-ac3-srt-2600k
+method=DirectPlay container=mkv protocol=http
+video=h264 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mkv?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mkv-h264-hi10p-aac-5000k-brokenfps
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=VideoProfileNotSupported
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a6e78000340509437325708e41b9e3bb&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=119808000&AudioBitrate=192000&AudioSampleRate=48000&MaxFramerate=23.976025&MaxWidth=3840&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=60c03cb8a315fb6538439d3bb7e6944b&SubtitleMethod=Encode&h264-level=51&h264-videobitdepth=10&h264-profile=high,main,baseline,constrainedbaseline&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=VideoProfileNotSupported
+== mkv-vp9-aac-srt-2600k
+method=DirectPlay container=mkv protocol=http
+video=vp9 audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mkv?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&Static=true&VideoCodec=vp9&AudioCodec=aac&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb23f61539a51220b6a23
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mkv-vp9-ac3-srt-2600k
+method=DirectPlay container=mkv protocol=http
+video=vp9 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mkv?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&Static=true&VideoCodec=vp9&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb23f61539a51220b6a23
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mkv-vp9-vorbis-srt-2600k
+method=DirectPlay container=webm protocol=http
+video=vp9 audio=vorbis reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.webm?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&Static=true&VideoCodec=vp9&AudioCodec=vorbis&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb23f61539a51220b6a23
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mkv-vp9-vorbis-vtt-2600k
+method=DirectPlay container=webm protocol=http
+video=vp9 audio=vorbis reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.webm?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&Static=true&VideoCodec=vp9&AudioCodec=vorbis&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb23f61539a51220b6a23
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mp4-dvh1.05-eac3-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=eac3 reasons=VideoRangeTypeNotSupported
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a5365160a83cb0c518cc1c9ead31dbc7&VideoCodec=h264,hevc&AudioCodec=eac3&AudioStreamIndex=1&VideoBitrate=119360000&AudioBitrate=640000&AudioSampleRate=48000&MaxFramerate=59.94006&MaxWidth=3840&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a1aa7e722b9af5125b7387d0f58d463e&SubtitleMethod=Encode&hevc-level=153&hevc-videobitdepth=10&hevc-profile=main10&hevc-audiochannels=6&eac3-profile=dolbydigitalplus+dolbyatmos&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=VideoRangeTypeNotSupported
+== mp4-dvhe.08-eac3-15200k
+method=DirectPlay container=mp4 protocol=http
+video=hevc audio=eac3 reasons=0
+audioIndex=1 subtitleIndex= subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mp4?DeviceId=acceptance-device&MediaSourceId=ac2a9824755fbeffd891b8ff2634901a&Static=true&VideoCodec=hevc&AudioCodec=eac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=8ac40cacc99e4748bc9218045b38d184
+== mp4-h264-aac-srt-2600k
+method=DirectPlay container=mp4 protocol=http
+video=h264 audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mp4?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=aac&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mp4-h264-aac-vtt-2600k
+method=DirectPlay container=mp4 protocol=http
+video=h264 audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mp4?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=aac&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mp4-h264-ac3-aac-aac-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=SecondaryAudioNotSupported
+audioIndex=2 subtitleIndex=4 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=2&VideoBitrate=119835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SecondaryAudioNotSupported
+subtitle 4 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/4/0/Stream.vtt?ApiKey=TOKEN
+== mp4-h264-ac3-aac-mp3-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=SecondaryAudioNotSupported
+audioIndex=2 subtitleIndex=4 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=2&VideoBitrate=119835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SecondaryAudioNotSupported
+subtitle 4 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/4/0/Stream.vtt?ApiKey=TOKEN
+== mp4-h264-ac3-aac-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=SecondaryAudioNotSupported
+audioIndex=2 subtitleIndex=3 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=2&VideoBitrate=119835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SecondaryAudioNotSupported
+subtitle 3 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/3/0/Stream.vtt?ApiKey=TOKEN
+== mp4-h264-ac3-aacDef-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=SecondaryAudioNotSupported
+audioIndex=2 subtitleIndex=3 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=2&VideoBitrate=119835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SecondaryAudioNotSupported
+subtitle 3 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/3/0/Stream.vtt?ApiKey=TOKEN
+== mp4-h264-ac3-aacExt-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=AudioIsExternal
+audioIndex=2 subtitleIndex=3 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=2&VideoBitrate=119835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=AudioIsExternal
+subtitle 3 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/3/0/Stream.vtt?ApiKey=TOKEN
+== mp4-h264-ac3-srt-2600k
+method=DirectPlay container=mp4 protocol=http
+video=h264 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mp4?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mp4-h264-dts-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,mp3,ac3,eac3 reasons=AudioCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac,mp3,ac3,eac3&AudioStreamIndex=1&VideoBitrate=119360000&AudioBitrate=640000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&h264-level=41&h264-videobitdepth=8&h264-profile=high&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=AudioCodecNotSupported
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mp4-h264-hi10p-aac-5000k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=VideoProfileNotSupported
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a6e78000340509437325708e41b9e3bb&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=119742642&AudioBitrate=257358&AudioSampleRate=48000&MaxFramerate=24.007952&MaxWidth=3840&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=8ad487e37ce9578122bbd8c42be2a392&SubtitleMethod=Encode&h264-level=51&h264-videobitdepth=10&h264-profile=high,main,baseline,constrainedbaseline&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=VideoProfileNotSupported
+== mp4-hevc-aac-4000k-r180
+method=DirectPlay container=mp4 protocol=http
+video=hevc audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mp4?DeviceId=acceptance-device&MediaSourceId=b7a9e2d4c815f36b0d9241a7e58c3f42&Static=true&VideoCodec=hevc&AudioCodec=aac&AudioStreamIndex=1&SubtitleStreamIndex=2&ApiKey=TOKEN&Tag=d8e2a1b5c4f907e8a1d2b3c4e5f6a7b8&SubtitleMethod=Encode
+== mp4-hevc-aac-srt-15200k
+method=DirectPlay container=mp4 protocol=http
+video=hevc audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mp4?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&Static=true&VideoCodec=hevc&AudioCodec=aac&AudioStreamIndex=1&ApiKey=TOKEN&Tag=a2fb84b618ba2467fe377543f879e9bf
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mp4-hevc-ac3-aac-srt-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=SecondaryAudioNotSupported
+audioIndex=2 subtitleIndex=3 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=2&VideoBitrate=119835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&hevc-level=150&hevc-videobitdepth=8&hevc-profile=main10&hevc-audiochannels=2&aac-profile=lc&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=SecondaryAudioNotSupported
+subtitle 3 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/3/0/Stream.vtt?ApiKey=TOKEN
+== mp4-hevc-ac3-aacDef-srt-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=SecondaryAudioNotSupported
+audioIndex=2 subtitleIndex=3 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=2&VideoBitrate=119835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&hevc-level=150&hevc-videobitdepth=8&hevc-profile=main10&hevc-audiochannels=2&aac-profile=lc&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=SecondaryAudioNotSupported
+subtitle 3 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/3/0/Stream.vtt?ApiKey=TOKEN
+== mp4-hevc-ac3-aacExt-srt-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=AudioIsExternal
+audioIndex=2 subtitleIndex=3 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=2&VideoBitrate=119835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&hevc-level=150&hevc-videobitdepth=8&hevc-profile=main10&hevc-audiochannels=2&aac-profile=lc&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=AudioIsExternal
+subtitle 3 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/3/0/Stream.vtt?ApiKey=TOKEN
+== mp4-hevc-ac3-srt-15200k
+method=DirectPlay container=mp4 protocol=http
+video=hevc audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mp4?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&Static=true&VideoCodec=hevc&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=a2fb84b618ba2467fe377543f879e9bf
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== mp4-hevc-truehd-srt-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,mp3,ac3,eac3 reasons=AudioCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac,mp3,ac3,eac3&AudioStreamIndex=1&VideoBitrate=119360000&AudioBitrate=640000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&hevc-level=150&hevc-videobitdepth=8&hevc-profile=main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=AudioCodecNotSupported
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+== no-streams
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,mp3,ac3,eac3 reasons=VideoCodecNotSupported
+audioIndex= subtitleIndex= subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac,mp3,ac3,eac3&VideoBitrate=119808000&AudioBitrate=192000&MaxWidth=3840&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=VideoCodecNotSupported
+== numstreams-32
+method=DirectPlay container=mp4 protocol=http
+video=h264 audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mp4?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=aac&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+subtitle 3 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/3/0/Stream.vtt?ApiKey=TOKEN
+subtitle 4 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/4/0/Stream.vtt?ApiKey=TOKEN
+subtitle 5 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/5/0/Stream.vtt?ApiKey=TOKEN
+subtitle 6 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/6/0/Stream.vtt?ApiKey=TOKEN
+subtitle 7 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/7/0/Stream.vtt?ApiKey=TOKEN
+subtitle 8 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/8/0/Stream.vtt?ApiKey=TOKEN
+subtitle 9 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/9/0/Stream.vtt?ApiKey=TOKEN
+subtitle 10 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/10/0/Stream.vtt?ApiKey=TOKEN
+subtitle 11 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/11/0/Stream.vtt?ApiKey=TOKEN
+subtitle 12 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/12/0/Stream.vtt?ApiKey=TOKEN
+subtitle 13 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/13/0/Stream.vtt?ApiKey=TOKEN
+subtitle 14 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/14/0/Stream.vtt?ApiKey=TOKEN
+subtitle 15 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/15/0/Stream.vtt?ApiKey=TOKEN
+subtitle 16 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/16/0/Stream.vtt?ApiKey=TOKEN
+subtitle 17 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/17/0/Stream.vtt?ApiKey=TOKEN
+subtitle 18 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/18/0/Stream.vtt?ApiKey=TOKEN
+subtitle 19 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/19/0/Stream.vtt?ApiKey=TOKEN
+subtitle 20 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/20/0/Stream.vtt?ApiKey=TOKEN
+subtitle 21 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/21/0/Stream.vtt?ApiKey=TOKEN
+subtitle 22 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/22/0/Stream.vtt?ApiKey=TOKEN
+subtitle 23 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/23/0/Stream.vtt?ApiKey=TOKEN
+subtitle 24 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/24/0/Stream.vtt?ApiKey=TOKEN
+subtitle 25 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/25/0/Stream.vtt?ApiKey=TOKEN
+subtitle 26 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/26/0/Stream.vtt?ApiKey=TOKEN
+subtitle 27 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/27/0/Stream.vtt?ApiKey=TOKEN
+subtitle 28 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/28/0/Stream.vtt?ApiKey=TOKEN
+subtitle 29 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/29/0/Stream.vtt?ApiKey=TOKEN
+subtitle 30 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/30/0/Stream.vtt?ApiKey=TOKEN
+subtitle 31 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/31/0/Stream.vtt?ApiKey=TOKEN
+== numstreams-33
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=StreamCountExceedsLimit
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=1&VideoBitrate=119835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=StreamCountExceedsLimit
+subtitle 2 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.vtt?ApiKey=TOKEN
+subtitle 3 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/3/0/Stream.vtt?ApiKey=TOKEN
+subtitle 4 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/4/0/Stream.vtt?ApiKey=TOKEN
+subtitle 5 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/5/0/Stream.vtt?ApiKey=TOKEN
+subtitle 6 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/6/0/Stream.vtt?ApiKey=TOKEN
+subtitle 7 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/7/0/Stream.vtt?ApiKey=TOKEN
+subtitle 8 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/8/0/Stream.vtt?ApiKey=TOKEN
+subtitle 9 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/9/0/Stream.vtt?ApiKey=TOKEN
+subtitle 10 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/10/0/Stream.vtt?ApiKey=TOKEN
+subtitle 11 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/11/0/Stream.vtt?ApiKey=TOKEN
+subtitle 12 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/12/0/Stream.vtt?ApiKey=TOKEN
+subtitle 13 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/13/0/Stream.vtt?ApiKey=TOKEN
+subtitle 14 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/14/0/Stream.vtt?ApiKey=TOKEN
+subtitle 15 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/15/0/Stream.vtt?ApiKey=TOKEN
+subtitle 16 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/16/0/Stream.vtt?ApiKey=TOKEN
+subtitle 17 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/17/0/Stream.vtt?ApiKey=TOKEN
+subtitle 18 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/18/0/Stream.vtt?ApiKey=TOKEN
+subtitle 19 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/19/0/Stream.vtt?ApiKey=TOKEN
+subtitle 20 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/20/0/Stream.vtt?ApiKey=TOKEN
+subtitle 21 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/21/0/Stream.vtt?ApiKey=TOKEN
+subtitle 22 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/22/0/Stream.vtt?ApiKey=TOKEN
+subtitle 23 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/23/0/Stream.vtt?ApiKey=TOKEN
+subtitle 24 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/24/0/Stream.vtt?ApiKey=TOKEN
+subtitle 25 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/25/0/Stream.vtt?ApiKey=TOKEN
+subtitle 26 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/26/0/Stream.vtt?ApiKey=TOKEN
+subtitle 27 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/27/0/Stream.vtt?ApiKey=TOKEN
+subtitle 28 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/28/0/Stream.vtt?ApiKey=TOKEN
+subtitle 29 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/29/0/Stream.vtt?ApiKey=TOKEN
+subtitle 30 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/30/0/Stream.vtt?ApiKey=TOKEN
+subtitle 31 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/31/0/Stream.vtt?ApiKey=TOKEN
+subtitle 32 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/32/0/Stream.vtt?ApiKey=TOKEN
+== raw
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=SecondaryAudioNotSupported
+audioIndex=2 subtitleIndex=1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=2&SubtitleStreamIndex=1&VideoBitrate=119835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,DOVIWithSDR,HDR10,DOVIWithHDR10,HLG,DOVIWithHLG&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SecondaryAudioNotSupported
+subtitle 3 mov_text Encode 
+subtitle 4 vtt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/4/0/Stream.vtt?ApiKey=TOKEN
