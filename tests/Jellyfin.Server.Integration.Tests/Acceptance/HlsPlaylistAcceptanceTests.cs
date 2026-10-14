@@ -21,7 +21,8 @@ namespace Jellyfin.Server.Integration.Tests.Acceptance;
 /// items with known streams are created directly in the in-memory server (no media files or
 /// ffprobe are needed for a playlist), and the master and variant playlists are requested the
 /// way a client does. Responses are compared with recordings of the current code; the access
-/// token, which differs per run, is masked. Set JELLYFIN_ACCEPTANCE_RECORD=1 to (re)record.
+/// token, which differs per run, is masked, and carriage returns are written out as "\r".
+/// Set JELLYFIN_ACCEPTANCE_RECORD=1 to (re)record.
 /// </remarks>
 public sealed class HlsPlaylistAcceptanceTests : IClassFixture<JellyfinApplicationFactory>
 {
@@ -59,7 +60,10 @@ public sealed class HlsPlaylistAcceptanceTests : IClassFixture<JellyfinApplicati
         var response = await client.GetAsync(url, TestContext.Current.CancellationToken);
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
-        var actual = $"{(int)response.StatusCode} {response.StatusCode}\n{MaskToken(body, _accessToken)}";
+        // Carriage returns are written out as "\r": the playlist's line endings follow the OS,
+        // and git would otherwise normalise them away in the recordings.
+        var playlist = MaskToken(body, _accessToken).Replace("\r", "\\r", StringComparison.Ordinal);
+        var actual = $"{(int)response.StatusCode} {response.StatusCode}\n{playlist}";
         RecordedOutput.Verify("HlsPlaylist", caseId, actual.TrimEnd());
     }
 

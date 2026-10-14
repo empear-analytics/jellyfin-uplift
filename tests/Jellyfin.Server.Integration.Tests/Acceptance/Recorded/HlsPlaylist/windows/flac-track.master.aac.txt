@@ -1,4 +1,4 @@
 200 OK
-#EXTM3U
-#EXT-X-STREAM-INF:BANDWIDTH=256000,AVERAGE-BANDWIDTH=256000,CODECS="mp4a.40.2"
-main.m3u8?MediaSourceId=fc1c46f3d852d9004ca9f5fce001275a&PlaySessionId=acceptance&AudioCodec=aac&SegmentContainer=ts
+#EXTM3U\r
+#EXT-X-STREAM-INF:BANDWIDTH=256000,AVERAGE-BANDWIDTH=256000,CODECS="mp4a.40.2"\r
+main.m3u8?MediaSourceId=fc1c46f3d852d9004ca9f5fce001275a&PlaySessionId=acceptance&AudioCodec=aac&SegmentContainer=ts\r

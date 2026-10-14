@@ -1,4 +1,4 @@
 200 OK
-#EXTM3U
-#EXT-X-STREAM-INF:BANDWIDTH=96000,AVERAGE-BANDWIDTH=96000,CODECS="Opus"
-main.m3u8?MediaSourceId=fc1c46f3d852d9004ca9f5fce001275a&PlaySessionId=acceptance&AudioCodec=opus&SegmentContainer=mp4&MaxAudioChannels=2&AudioBitRate=96000
+#EXTM3U\r
+#EXT-X-STREAM-INF:BANDWIDTH=96000,AVERAGE-BANDWIDTH=96000,CODECS="Opus"\r
+main.m3u8?MediaSourceId=fc1c46f3d852d9004ca9f5fce001275a&PlaySessionId=acceptance&AudioCodec=opus&SegmentContainer=mp4&MaxAudioChannels=2&AudioBitRate=96000\r
