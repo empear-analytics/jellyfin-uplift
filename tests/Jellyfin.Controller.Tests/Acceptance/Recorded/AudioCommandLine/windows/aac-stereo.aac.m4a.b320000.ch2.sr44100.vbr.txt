@@ -1,0 +1,1 @@
+-i file:"/media/audio" -threads 0 -vn -ab 320000 -ac 2 -acodec aac -ar 44100 -movflags empty_moov+delay_moov -id3v2_version 3 -write_id3v1 1 -y "/transcodes/output.m4a"
