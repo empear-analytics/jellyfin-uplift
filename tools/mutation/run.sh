@@ -6,11 +6,15 @@
 #
 # One config per source project, each limited to the scope's files there and to
 # the test projects that cover them (taken from the coverlet run). The
-# integration tests are left out: they start the whole server and would make
-# every mutant cost about a minute. MediaStreamSelector is covered only by them,
-# so its mutants will show as "no coverage" here.
+# integration tests are not listed, but Jellyfin.Server.Implementations.Tests
+# references Jellyfin.Server.Integration.Tests, so they run in every part that
+# uses it (encoding, library, api). That is what reaches MediaStreamSelector.
 #
 # Reports go outside the repo, to ../mutation/<part>/<timestamp>/.
+# Each part runs with its own TMP/TEMP under ../mutation/tmp/, deleted when the
+# part ends. Jellyfin's tests leave directories behind in the temp folder on
+# every run (plugin-manager*, ...), and a mutation run repeats them thousands
+# of times: on 2026-10-14 that put 3.7 GB of leftovers in %TEMP% and filled C:.
 # Stryker is a local tool: run `dotnet tool restore` once. Every config sets
 # test-runner mtp: xUnit v3 test projects run as their own executables, and under
 # the default VSTest runner mutants are never switched on, so every mutant
@@ -24,10 +28,15 @@ out_root="$(cd "$here/../../.." && pwd)/mutation"
 parts=(probing encoding dlna library api)
 
 run_part() {
-    local part="$1" stamp
+    local part="$1" stamp tmp rc=0
     stamp="$(date +%Y%m%d-%H%M%S)"
+    tmp="$out_root/tmp/$part-$stamp"
+    mkdir -p "$tmp"
     echo "== $part ($(date +%T))"
-    (cd "$here" && dotnet stryker -f "$part.json" -O "$out_root/$part/$stamp" --skip-version-check)
+    (cd "$here" && TMP="$tmp" TEMP="$tmp" TMPDIR="$tmp" \
+        dotnet stryker -f "$part.json" -O "$out_root/$part/$stamp" --skip-version-check) || rc=$?
+    rm -rf "$tmp"
+    return "$rc"
 }
 
 case "${1:-}" in
