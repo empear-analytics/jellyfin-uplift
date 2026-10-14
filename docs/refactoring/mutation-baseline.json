@@ -1,0 +1,481 @@
+{
+ "probing": {
+  "report": "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\probing\\20261014-151224\\reports\\mutation-report.json",
+  "profiles": {
+   "stryker": {
+    "total": {
+     "Survived": 442,
+     "Killed": 404,
+     "NoCoverage": 154,
+     "Timeout": 4
+    },
+    "files": {
+     "MediaBrowser.MediaEncoding/Probing/FFProbeHelpers.cs": {
+      "Survived": 7,
+      "Killed": 6
+     },
+     "MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.cs": {
+      "Survived": 435,
+      "Killed": 398,
+      "NoCoverage": 154,
+      "Timeout": 4
+     }
+    }
+   },
+   "mull": {
+    "total": {
+     "Survived": 78,
+     "Killed": 84,
+     "NoCoverage": 32,
+     "Timeout": 4
+    },
+    "files": {
+     "MediaBrowser.MediaEncoding/Probing/FFProbeHelpers.cs": {
+      "Survived": 2,
+      "Killed": 3
+     },
+     "MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.cs": {
+      "Survived": 76,
+      "Killed": 81,
+      "NoCoverage": 32,
+      "Timeout": 4
+     }
+    }
+   }
+  }
+ },
+ "encoding": {
+  "report": "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\encoding\\20261014-151352\\reports\\mutation-report.json",
+  "profiles": {
+   "stryker": {
+    "total": {
+     "Survived": 407,
+     "Killed": 387,
+     "NoCoverage": 5049
+    },
+    "files": {
+     "MediaBrowser.Controller/MediaEncoding/BaseEncodingJobOptions.cs": {
+      "Survived": 8,
+      "Killed": 1,
+      "NoCoverage": 1
+     },
+     "MediaBrowser.Controller/MediaEncoding/DownMixAlgorithmsHelper.cs": {
+      "Survived": 13,
+      "Killed": 22,
+      "NoCoverage": 11
+     },
+     "MediaBrowser.Controller/MediaEncoding/EncodingHelper.cs": {
+      "Killed": 342,
+      "Survived": 329,
+      "NoCoverage": 4636
+     },
+     "MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs": {
+      "Killed": 10,
+      "NoCoverage": 161,
+      "Survived": 50
+     },
+     "MediaBrowser.Controller/MediaEncoding/JobLogger.cs": {
+      "NoCoverage": 65
+     },
+     "MediaBrowser.Controller/MediaEncoding/TranscodingJob.cs": {
+      "Survived": 7,
+      "Killed": 12,
+      "NoCoverage": 29
+     },
+     "MediaBrowser.Controller/MediaEncoding/TranscodingSegmentCleaner.cs": {
+      "NoCoverage": 56
+     },
+     "MediaBrowser.Controller/MediaEncoding/TranscodingThrottler.cs": {
+      "NoCoverage": 90
+     }
+    }
+   },
+   "mull": {
+    "total": {
+     "NoCoverage": 924,
+     "Killed": 73,
+     "Survived": 54
+    },
+    "files": {
+     "MediaBrowser.Controller/MediaEncoding/DownMixAlgorithmsHelper.cs": {
+      "NoCoverage": 1
+     },
+     "MediaBrowser.Controller/MediaEncoding/EncodingHelper.cs": {
+      "NoCoverage": 813,
+      "Killed": 67,
+      "Survived": 47
+     },
+     "MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs": {
+      "NoCoverage": 10,
+      "Survived": 1
+     },
+     "MediaBrowser.Controller/MediaEncoding/JobLogger.cs": {
+      "NoCoverage": 18
+     },
+     "MediaBrowser.Controller/MediaEncoding/TranscodingJob.cs": {
+      "Killed": 6,
+      "Survived": 6,
+      "NoCoverage": 16
+     },
+     "MediaBrowser.Controller/MediaEncoding/TranscodingSegmentCleaner.cs": {
+      "NoCoverage": 30
+     },
+     "MediaBrowser.Controller/MediaEncoding/TranscodingThrottler.cs": {
+      "NoCoverage": 36
+     }
+    }
+   }
+  }
+ },
+ "dlna": {
+  "report": "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\dlna\\20261014-153023\\reports\\mutation-report.json",
+  "profiles": {
+   "stryker": {
+    "total": {
+     "Killed": 506,
+     "Survived": 592,
+     "NoCoverage": 688
+    },
+    "files": {
+     "MediaBrowser.Model/Dlna/CodecProfile.cs": {
+      "Killed": 9,
+      "Survived": 6
+     },
+     "MediaBrowser.Model/Dlna/ConditionProcessor.cs": {
+      "NoCoverage": 42,
+      "Killed": 25,
+      "Survived": 6
+     },
+     "MediaBrowser.Model/Dlna/ContainerProfile.cs": {
+      "Survived": 3,
+      "NoCoverage": 1
+     },
+     "MediaBrowser.Model/Dlna/DirectPlayProfile.cs": {
+      "Killed": 7,
+      "Survived": 1
+     },
+     "MediaBrowser.Model/Dlna/MediaOptions.cs": {
+      "Killed": 3,
+      "Survived": 2,
+      "NoCoverage": 5
+     },
+     "MediaBrowser.Model/Dlna/ProfileCondition.cs": {
+      "Survived": 1,
+      "NoCoverage": 2
+     },
+     "MediaBrowser.Model/Dlna/ResolutionConfiguration.cs": {
+      "NoCoverage": 1
+     },
+     "MediaBrowser.Model/Dlna/ResolutionNormalizer.cs": {
+      "NoCoverage": 31
+     },
+     "MediaBrowser.Model/Dlna/StreamBuilder.cs": {
+      "Survived": 447,
+      "Killed": 333,
+      "NoCoverage": 394
+     },
+     "MediaBrowser.Model/Dlna/StreamInfo.cs": {
+      "Killed": 127,
+      "Survived": 119,
+      "NoCoverage": 207
+     },
+     "MediaBrowser.Model/Dlna/SubtitleProfile.cs": {
+      "Survived": 3,
+      "Killed": 1,
+      "NoCoverage": 4
+     },
+     "MediaBrowser.Model/Dlna/TranscodingProfile.cs": {
+      "Killed": 1,
+      "NoCoverage": 1,
+      "Survived": 4
+     }
+    }
+   },
+   "mull": {
+    "total": {
+     "Killed": 127,
+     "Survived": 165,
+     "NoCoverage": 159
+    },
+    "files": {
+     "MediaBrowser.Model/Dlna/ConditionProcessor.cs": {
+      "Killed": 9,
+      "Survived": 2,
+      "NoCoverage": 6
+     },
+     "MediaBrowser.Model/Dlna/DirectPlayProfile.cs": {
+      "Killed": 2,
+      "Survived": 1
+     },
+     "MediaBrowser.Model/Dlna/MediaOptions.cs": {
+      "Killed": 1,
+      "Survived": 1
+     },
+     "MediaBrowser.Model/Dlna/ResolutionNormalizer.cs": {
+      "NoCoverage": 13
+     },
+     "MediaBrowser.Model/Dlna/StreamBuilder.cs": {
+      "NoCoverage": 95,
+      "Survived": 116,
+      "Killed": 82
+     },
+     "MediaBrowser.Model/Dlna/StreamInfo.cs": {
+      "Survived": 45,
+      "NoCoverage": 44,
+      "Killed": 33
+     },
+     "MediaBrowser.Model/Dlna/TranscodingProfile.cs": {
+      "NoCoverage": 1
+     }
+    }
+   }
+  }
+ },
+ "library": {
+  "report": "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\library\\20261014-153316\\reports\\mutation-report.json",
+  "profiles": {
+   "stryker": {
+    "total": {
+     "Killed": 898,
+     "Survived": 185,
+     "NoCoverage": 1559,
+     "Timeout": 5
+    },
+    "files": {
+     "Emby.Server.Implementations/Library/CoreResolutionIgnoreRule.cs": {
+      "Killed": 16,
+      "Survived": 1
+     },
+     "Emby.Server.Implementations/Library/DotIgnoreIgnoreRule.cs": {
+      "Survived": 21,
+      "Killed": 51,
+      "NoCoverage": 4
+     },
+     "Emby.Server.Implementations/Library/ExternalDataManager.cs": {
+      "Killed": 1,
+      "NoCoverage": 15
+     },
+     "Emby.Server.Implementations/Library/IgnorePatterns.cs": {
+      "Killed": 71,
+      "Survived": 11
+     },
+     "Emby.Server.Implementations/Library/KeyframeManager.cs": {
+      "Killed": 1,
+      "NoCoverage": 5
+     },
+     "Emby.Server.Implementations/Library/LibraryManager.cs": {
+      "Killed": 459,
+      "NoCoverage": 791,
+      "Survived": 50,
+      "Timeout": 1
+     },
+     "Emby.Server.Implementations/Library/LiveStreamHelper.cs": {
+      "NoCoverage": 83
+     },
+     "Emby.Server.Implementations/Library/MediaSourceManager.cs": {
+      "Killed": 93,
+      "NoCoverage": 312,
+      "Survived": 36
+     },
+     "Emby.Server.Implementations/Library/MediaStreamSelector.cs": {
+      "Killed": 42,
+      "Survived": 35,
+      "NoCoverage": 20
+     },
+     "Emby.Server.Implementations/Library/MusicManager.cs": {
+      "Killed": 1,
+      "NoCoverage": 17
+     },
+     "Emby.Server.Implementations/Library/PathExtensions.cs": {
+      "Killed": 88,
+      "Survived": 13,
+      "Timeout": 4,
+      "NoCoverage": 2
+     },
+     "Emby.Server.Implementations/Library/PathManager.cs": {
+      "Killed": 1,
+      "NoCoverage": 38
+     },
+     "Emby.Server.Implementations/Library/ResolverHelper.cs": {
+      "NoCoverage": 15,
+      "Killed": 35,
+      "Survived": 1
+     },
+     "Emby.Server.Implementations/Library/SplashscreenPostScanTask.cs": {
+      "Killed": 8,
+      "NoCoverage": 12
+     },
+     "Emby.Server.Implementations/Library/UserDataManager.cs": {
+      "Killed": 30,
+      "Survived": 17,
+      "NoCoverage": 101
+     },
+     "Emby.Server.Implementations/Library/UserViewManager.cs": {
+      "Killed": 1,
+      "NoCoverage": 144
+     }
+    }
+   },
+   "mull": {
+    "total": {
+     "Killed": 309,
+     "Survived": 70,
+     "NoCoverage": 543,
+     "Timeout": 3
+    },
+    "files": {
+     "Emby.Server.Implementations/Library/CoreResolutionIgnoreRule.cs": {
+      "Killed": 2
+     },
+     "Emby.Server.Implementations/Library/DotIgnoreIgnoreRule.cs": {
+      "Survived": 11,
+      "Killed": 14
+     },
+     "Emby.Server.Implementations/Library/ExternalDataManager.cs": {
+      "NoCoverage": 7
+     },
+     "Emby.Server.Implementations/Library/IgnorePatterns.cs": {
+      "Killed": 3
+     },
+     "Emby.Server.Implementations/Library/KeyframeManager.cs": {
+      "NoCoverage": 2
+     },
+     "Emby.Server.Implementations/Library/LibraryManager.cs": {
+      "Killed": 189,
+      "NoCoverage": 290,
+      "Survived": 24,
+      "Timeout": 1
+     },
+     "Emby.Server.Implementations/Library/LiveStreamHelper.cs": {
+      "NoCoverage": 31
+     },
+     "Emby.Server.Implementations/Library/MediaSourceManager.cs": {
+      "NoCoverage": 95,
+      "Survived": 14,
+      "Killed": 21
+     },
+     "Emby.Server.Implementations/Library/MediaStreamSelector.cs": {
+      "Killed": 21,
+      "Survived": 5
+     },
+     "Emby.Server.Implementations/Library/PathExtensions.cs": {
+      "Killed": 34,
+      "Timeout": 2,
+      "Survived": 7
+     },
+     "Emby.Server.Implementations/Library/PathManager.cs": {
+      "NoCoverage": 13
+     },
+     "Emby.Server.Implementations/Library/ResolverHelper.cs": {
+      "NoCoverage": 8,
+      "Killed": 9
+     },
+     "Emby.Server.Implementations/Library/SplashscreenPostScanTask.cs": {
+      "Killed": 2
+     },
+     "Emby.Server.Implementations/Library/UserDataManager.cs": {
+      "Survived": 9,
+      "Killed": 14,
+      "NoCoverage": 44
+     },
+     "Emby.Server.Implementations/Library/UserViewManager.cs": {
+      "NoCoverage": 53
+     }
+    }
+   }
+  }
+ },
+ "api": {
+  "report": "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\api\\20261014-161023\\reports\\mutation-report.json",
+  "profiles": {
+   "stryker": {
+    "total": {
+     "NoCoverage": 1568,
+     "Killed": 80,
+     "Timeout": 4,
+     "Survived": 44
+    },
+    "files": {
+     "Jellyfin.Api/Controllers/DynamicHlsController.cs": {
+      "NoCoverage": 445,
+      "Killed": 19,
+      "Timeout": 2,
+      "Survived": 1
+     },
+     "Jellyfin.Api/Helpers/AudioHelper.cs": {
+      "NoCoverage": 26
+     },
+     "Jellyfin.Api/Helpers/DynamicHlsHelper.cs": {
+      "NoCoverage": 482
+     },
+     "Jellyfin.Api/Helpers/FileStreamResponseHelpers.cs": {
+      "NoCoverage": 31,
+      "Survived": 2
+     },
+     "Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs": {
+      "NoCoverage": 186
+     },
+     "Jellyfin.Api/Helpers/HlsHelpers.cs": {
+      "NoCoverage": 32
+     },
+     "Jellyfin.Api/Helpers/MediaInfoHelper.cs": {
+      "Killed": 42,
+      "Survived": 39,
+      "NoCoverage": 102
+     },
+     "Jellyfin.Api/Helpers/RequestHelpers.cs": {
+      "Survived": 2,
+      "Killed": 19,
+      "NoCoverage": 14,
+      "Timeout": 2
+     },
+     "Jellyfin.Api/Helpers/StreamingHelpers.cs": {
+      "NoCoverage": 250
+     }
+    }
+   },
+   "mull": {
+    "total": {
+     "NoCoverage": 312,
+     "Killed": 26,
+     "Timeout": 2,
+     "Survived": 9
+    },
+    "files": {
+     "Jellyfin.Api/Controllers/DynamicHlsController.cs": {
+      "NoCoverage": 65,
+      "Killed": 10,
+      "Timeout": 2
+     },
+     "Jellyfin.Api/Helpers/AudioHelper.cs": {
+      "NoCoverage": 6
+     },
+     "Jellyfin.Api/Helpers/DynamicHlsHelper.cs": {
+      "NoCoverage": 109
+     },
+     "Jellyfin.Api/Helpers/FileStreamResponseHelpers.cs": {
+      "NoCoverage": 5
+     },
+     "Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs": {
+      "NoCoverage": 53
+     },
+     "Jellyfin.Api/Helpers/HlsHelpers.cs": {
+      "NoCoverage": 8
+     },
+     "Jellyfin.Api/Helpers/MediaInfoHelper.cs": {
+      "Killed": 10,
+      "Survived": 9,
+      "NoCoverage": 24
+     },
+     "Jellyfin.Api/Helpers/RequestHelpers.cs": {
+      "Killed": 6,
+      "NoCoverage": 1
+     },
+     "Jellyfin.Api/Helpers/StreamingHelpers.cs": {
+      "NoCoverage": 41
+     }
+    }
+   }
+  }
+ }
+}
