@@ -1,0 +1,250 @@
+== mkv-av1-aac-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=VideoCodecNotSupported, SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb23f61539a51220b6a23&SubtitleMethod=Encode&av1-level=-99&av1-videobitdepth=8&av1-profile=main&av1-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=VideoCodecNotSupported,SubtitleCodecNotSupported
+subtitle 2 srt Encode 
+== mkv-av1-vorbis-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=VideoCodecNotSupported, AudioCodecNotSupported, SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2616000&AudioBitrate=384000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb23f61539a51220b6a23&SubtitleMethod=Encode&av1-level=-99&av1-videobitdepth=8&av1-profile=main&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=VideoCodecNotSupported,AudioCodecNotSupported,SubtitleCodecNotSupported
+subtitle 2 srt Encode 
+== mkv-dvhe.05-eac3-28000k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=e313fd4bfdfcab326b1fea833cffd779&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&VideoBitrate=2552000&AudioBitrate=448000&MaxFramerate=60&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=3c932ee1cd94e3fecebcc3fac15053e9&SubtitleMethod=Encode&hevc-level=153&hevc-videobitdepth=10&hevc-profile=main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=ContainerBitrateExceedsLimit
+== mkv-dvhe.08-eac3-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex= subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=ac2a9824755fbeffd891b8ff2634901a&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&VideoBitrate=2552000&AudioBitrate=448000&MaxFramerate=59.94006&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=8ac40cacc99e4748bc9218045b38d184&hevc-level=153&hevc-videobitdepth=10&hevc-profile=main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=ContainerBitrateExceedsLimit
+== mkv-h264-ac3-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=ac3 reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=ac3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2616000&AudioBitrate=384000&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=6&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 2 srt Encode 
+== mkv-h264-hi10p-aac-5000k-brokenfps
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a6e78000340509437325708e41b9e3bb&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&VideoBitrate=2808000&AudioBitrate=192000&MaxFramerate=23.976025&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=60c03cb8a315fb6538439d3bb7e6944b&SubtitleMethod=Encode&h264-level=51&h264-videobitdepth=10&h264-profile=high,main,baseline,constrainedbaseline&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=ContainerBitrateExceedsLimit
+== mkv-vp9-aac-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=VideoCodecNotSupported, SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb23f61539a51220b6a23&SubtitleMethod=Encode&vp9-level=-99&vp9-videobitdepth=8&vp9-profile=profile0&vp9-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=VideoCodecNotSupported,SubtitleCodecNotSupported
+subtitle 2 srt Encode 
+== mkv-vp9-ac3-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=ac3 reasons=VideoCodecNotSupported, SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&VideoCodec=h264,hevc&AudioCodec=ac3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2616000&AudioBitrate=384000&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb23f61539a51220b6a23&SubtitleMethod=Encode&vp9-level=-99&vp9-videobitdepth=8&vp9-profile=profile0&vp9-audiochannels=6&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=VideoCodecNotSupported,SubtitleCodecNotSupported
+subtitle 2 srt Encode 
+== mkv-vp9-vorbis-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=VideoCodecNotSupported, AudioCodecNotSupported, SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2616000&AudioBitrate=384000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb23f61539a51220b6a23&SubtitleMethod=Encode&vp9-level=-99&vp9-videobitdepth=8&vp9-profile=profile0&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=VideoCodecNotSupported,AudioCodecNotSupported,SubtitleCodecNotSupported
+subtitle 2 srt Encode 
+== mkv-vp9-vorbis-vtt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=VideoCodecNotSupported, AudioCodecNotSupported, SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2616000&AudioBitrate=384000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb23f61539a51220b6a23&SubtitleMethod=Encode&vp9-level=-99&vp9-videobitdepth=8&vp9-profile=profile0&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=VideoCodecNotSupported,AudioCodecNotSupported,SubtitleCodecNotSupported
+subtitle 2 webvtt Encode 
+== mp4-dvh1.05-eac3-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a5365160a83cb0c518cc1c9ead31dbc7&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&VideoBitrate=2552000&AudioBitrate=448000&MaxFramerate=59.94006&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a1aa7e722b9af5125b7387d0f58d463e&SubtitleMethod=Encode&hevc-level=153&hevc-videobitdepth=10&hevc-profile=main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=ContainerBitrateExceedsLimit
+== mp4-dvhe.08-eac3-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex= subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=ac2a9824755fbeffd891b8ff2634901a&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&VideoBitrate=2552000&AudioBitrate=448000&MaxFramerate=59.94006&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=8ac40cacc99e4748bc9218045b38d184&hevc-level=153&hevc-videobitdepth=10&hevc-profile=main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=ContainerBitrateExceedsLimit
+== mp4-h264-aac-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 2 srt Encode 
+== mp4-h264-aac-vtt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 2 webvtt Encode 
+== mp4-h264-ac3-aac-aac-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=ac3 reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=4 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=ac3&AudioStreamIndex=1&SubtitleStreamIndex=4&VideoBitrate=2616000&AudioBitrate=384000&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=6&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 4 srt Encode 
+== mp4-h264-ac3-aac-mp3-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=ac3 reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=4 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=ac3&AudioStreamIndex=1&SubtitleStreamIndex=4&VideoBitrate=2616000&AudioBitrate=384000&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=6&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 4 srt Encode 
+== mp4-h264-ac3-aac-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=ac3 reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=3 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=ac3&AudioStreamIndex=1&SubtitleStreamIndex=3&VideoBitrate=2616000&AudioBitrate=384000&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=6&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 3 srt Encode 
+== mp4-h264-ac3-aacDef-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=ac3 reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=3 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=ac3&AudioStreamIndex=1&SubtitleStreamIndex=3&VideoBitrate=2616000&AudioBitrate=384000&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=6&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 3 srt Encode 
+== mp4-h264-ac3-aacExt-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=ac3 reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=3 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=ac3&AudioStreamIndex=1&SubtitleStreamIndex=3&VideoBitrate=2616000&AudioBitrate=384000&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=6&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 3 srt Encode 
+== mp4-h264-ac3-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=ac3 reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=ac3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2616000&AudioBitrate=384000&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=6&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 2 srt Encode 
+== mp4-h264-dts-srt-2600k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=AudioCodecNotSupported, SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2552000&AudioBitrate=448000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=AudioCodecNotSupported,SubtitleCodecNotSupported
+subtitle 2 srt Encode 
+== mp4-h264-hi10p-aac-5000k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a6e78000340509437325708e41b9e3bb&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&VideoBitrate=2742642&AudioBitrate=257358&MaxFramerate=24.007952&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=8ad487e37ce9578122bbd8c42be2a392&SubtitleMethod=Encode&h264-level=51&h264-videobitdepth=10&h264-profile=high,main,baseline,constrainedbaseline&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=ContainerBitrateExceedsLimit
+== mp4-hevc-aac-4000k-r180
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=b7a9e2d4c815f36b0d9241a7e58c3f42&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2874573&AudioBitrate=125427&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=d8e2a1b5c4f907e8a1d2b3c4e5f6a7b8&SubtitleMethod=Encode&hevc-level=50&hevc-videobitdepth=8&hevc-profile=main&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=ContainerBitrateExceedsLimit
+== mp4-hevc-aac-srt-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2835259&AudioBitrate=164741&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&hevc-level=150&hevc-videobitdepth=8&hevc-profile=main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=ContainerBitrateExceedsLimit
+subtitle 2 srt Encode 
+== mp4-hevc-ac3-aac-srt-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=3 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&SubtitleStreamIndex=3&VideoBitrate=2616000&AudioBitrate=384000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&hevc-level=150&hevc-videobitdepth=8&hevc-profile=main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=ContainerBitrateExceedsLimit
+subtitle 3 srt Encode 
+== mp4-hevc-ac3-aacDef-srt-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=2 subtitleIndex=3 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=2&SubtitleStreamIndex=3&VideoBitrate=2835259&AudioBitrate=164741&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&hevc-level=150&hevc-videobitdepth=8&hevc-profile=main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=ContainerBitrateExceedsLimit
+subtitle 3 srt Encode 
+== mp4-hevc-ac3-aacExt-srt-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=3 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&SubtitleStreamIndex=3&VideoBitrate=2616000&AudioBitrate=384000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&hevc-level=150&hevc-videobitdepth=8&hevc-profile=main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=ContainerBitrateExceedsLimit
+subtitle 3 srt Encode 
+== mp4-hevc-ac3-srt-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2616000&AudioBitrate=384000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&hevc-level=150&hevc-videobitdepth=8&hevc-profile=main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=ContainerBitrateExceedsLimit
+subtitle 2 srt Encode 
+== mp4-hevc-truehd-srt-15200k
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=AudioCodecNotSupported, ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2552000&AudioBitrate=448000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&hevc-level=150&hevc-videobitdepth=8&hevc-profile=main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=AudioCodecNotSupported,ContainerBitrateExceedsLimit
+subtitle 2 srt Encode 
+== no-streams
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac,ac3,eac3 reasons=ContainerBitrateExceedsLimit
+audioIndex= subtitleIndex= subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&VideoCodec=h264,hevc&AudioCodec=aac,ac3,eac3&VideoBitrate=2808000&AudioBitrate=192000&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=a2fb84b618ba2467fe377543f879e9bf&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-profile=high,main,baseline,constrainedbaseline&h264-rangetype=SDR&h264-level=52&TranscodeReasons=ContainerBitrateExceedsLimit
+== numstreams-32
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 2 srt Encode 
+subtitle 3 srt Encode 
+subtitle 4 srt Encode 
+subtitle 5 srt Encode 
+subtitle 6 srt Encode 
+subtitle 7 srt Encode 
+subtitle 8 srt Encode 
+subtitle 9 srt Encode 
+subtitle 10 srt Encode 
+subtitle 11 srt Encode 
+subtitle 12 srt Encode 
+subtitle 13 srt Encode 
+subtitle 14 srt Encode 
+subtitle 15 srt Encode 
+subtitle 16 srt Encode 
+subtitle 17 srt Encode 
+subtitle 18 srt Encode 
+subtitle 19 srt Encode 
+subtitle 20 srt Encode 
+subtitle 21 srt Encode 
+subtitle 22 srt Encode 
+subtitle 23 srt Encode 
+subtitle 24 srt Encode 
+subtitle 25 srt Encode 
+subtitle 26 srt Encode 
+subtitle 27 srt Encode 
+subtitle 28 srt Encode 
+subtitle 29 srt Encode 
+subtitle 30 srt Encode 
+subtitle 31 srt Encode 
+== numstreams-33
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=aac reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=aac&AudioStreamIndex=1&SubtitleStreamIndex=2&VideoBitrate=2835259&AudioBitrate=164741&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=2&aac-profile=lc&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 2 srt Encode 
+subtitle 3 srt Encode 
+subtitle 4 srt Encode 
+subtitle 5 srt Encode 
+subtitle 6 srt Encode 
+subtitle 7 srt Encode 
+subtitle 8 srt Encode 
+subtitle 9 srt Encode 
+subtitle 10 srt Encode 
+subtitle 11 srt Encode 
+subtitle 12 srt Encode 
+subtitle 13 srt Encode 
+subtitle 14 srt Encode 
+subtitle 15 srt Encode 
+subtitle 16 srt Encode 
+subtitle 17 srt Encode 
+subtitle 18 srt Encode 
+subtitle 19 srt Encode 
+subtitle 20 srt Encode 
+subtitle 21 srt Encode 
+subtitle 22 srt Encode 
+subtitle 23 srt Encode 
+subtitle 24 srt Encode 
+subtitle 25 srt Encode 
+subtitle 26 srt Encode 
+subtitle 27 srt Encode 
+subtitle 28 srt Encode 
+subtitle 29 srt Encode 
+subtitle 30 srt Encode 
+subtitle 31 srt Encode 
+subtitle 32 srt Encode 
+== raw
+method=Transcode container=ts protocol=hls
+video=h264,hevc audio=ac3 reasons=SubtitleCodecNotSupported
+audioIndex=1 subtitleIndex=3 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/master.m3u8?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&VideoCodec=h264,hevc&AudioCodec=ac3&AudioStreamIndex=1&SubtitleStreamIndex=3&VideoBitrate=2616000&AudioBitrate=384000&AudioSampleRate=48000&MaxFramerate=23.976&SegmentContainer=ts&MinSegments=1&ApiKey=TOKEN&TranscodingMaxAudioChannels=6&RequireAvc=false&EnableAudioVbrEncoding=true&Tag=579a34c6d5dfb21d81539a51220b6a23&SubtitleMethod=Encode&h264-level=41&h264-videobitdepth=8&h264-profile=high&h264-audiochannels=6&hevc-profile=main,main10&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&hevc-level=183&h264-rangetype=SDR&TranscodeReasons=SubtitleCodecNotSupported
+subtitle 3 mov_text Encode 
+subtitle 4 srt Encode

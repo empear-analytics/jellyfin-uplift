@@ -1,0 +1,250 @@
+== mkv-av1-aac-srt-2600k
+method=DirectPlay container=mkv protocol=http
+video=av1 audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mkv?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&Static=true&VideoCodec=av1&AudioCodec=aac&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb23f61539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mkv-av1-vorbis-srt-2600k
+method=DirectPlay container=mkv protocol=http
+video=av1 audio=vorbis reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mkv?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&Static=true&VideoCodec=av1&AudioCodec=vorbis&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb23f61539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mkv-dvhe.05-eac3-28000k
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=e313fd4bfdfcab326b1fea833cffd779&AudioStreamIndex=1&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=3c932ee1cd94e3fecebcc3fac15053e9&SubtitleMethod=Encode&TranscodeReasons=ContainerBitrateExceedsLimit
+== mkv-dvhe.08-eac3-15200k
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex= subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=ac2a9824755fbeffd891b8ff2634901a&AudioStreamIndex=1&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=8ac40cacc99e4748bc9218045b38d184&TranscodeReasons=ContainerBitrateExceedsLimit
+== mkv-h264-ac3-srt-2600k
+method=DirectPlay container=mkv protocol=http
+video=h264 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mkv?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mkv-h264-hi10p-aac-5000k-brokenfps
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=a6e78000340509437325708e41b9e3bb&AudioStreamIndex=1&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=60c03cb8a315fb6538439d3bb7e6944b&SubtitleMethod=Encode&TranscodeReasons=ContainerBitrateExceedsLimit
+== mkv-vp9-aac-srt-2600k
+method=DirectPlay container=mkv protocol=http
+video=vp9 audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mkv?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&Static=true&VideoCodec=vp9&AudioCodec=aac&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb23f61539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mkv-vp9-ac3-srt-2600k
+method=DirectPlay container=mkv protocol=http
+video=vp9 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mkv?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&Static=true&VideoCodec=vp9&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb23f61539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mkv-vp9-vorbis-srt-2600k
+method=DirectPlay container=mkv protocol=http
+video=vp9 audio=vorbis reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mkv?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&Static=true&VideoCodec=vp9&AudioCodec=vorbis&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb23f61539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mkv-vp9-vorbis-vtt-2600k
+method=DirectPlay container=mkv protocol=http
+video=vp9 audio=vorbis reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mkv?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af66748bf5&Static=true&VideoCodec=vp9&AudioCodec=vorbis&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb23f61539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af66748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mp4-dvh1.05-eac3-15200k
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=a5365160a83cb0c518cc1c9ead31dbc7&AudioStreamIndex=1&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=a1aa7e722b9af5125b7387d0f58d463e&SubtitleMethod=Encode&TranscodeReasons=ContainerBitrateExceedsLimit
+== mp4-dvhe.08-eac3-15200k
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex= subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=ac2a9824755fbeffd891b8ff2634901a&AudioStreamIndex=1&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=8ac40cacc99e4748bc9218045b38d184&TranscodeReasons=ContainerBitrateExceedsLimit
+== mp4-h264-aac-srt-2600k
+method=DirectPlay container=mov protocol=http
+video=h264 audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=aac&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mp4-h264-aac-vtt-2600k
+method=DirectPlay container=mov protocol=http
+video=h264 audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=aac&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mp4-h264-ac3-aac-aac-srt-2600k
+method=DirectPlay container=mov protocol=http
+video=h264 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=4 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 4 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/4/0/Stream.srt?ApiKey=TOKEN
+== mp4-h264-ac3-aac-mp3-srt-2600k
+method=DirectPlay container=mov protocol=http
+video=h264 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=4 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 4 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/4/0/Stream.srt?ApiKey=TOKEN
+== mp4-h264-ac3-aac-srt-2600k
+method=DirectPlay container=mov protocol=http
+video=h264 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=3 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 3 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/3/0/Stream.srt?ApiKey=TOKEN
+== mp4-h264-ac3-aacDef-srt-2600k
+method=DirectPlay container=mov protocol=http
+video=h264 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=3 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 3 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/3/0/Stream.srt?ApiKey=TOKEN
+== mp4-h264-ac3-aacExt-srt-2600k
+method=DirectPlay container=mov protocol=http
+video=h264 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=3 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 3 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/3/0/Stream.srt?ApiKey=TOKEN
+== mp4-h264-ac3-srt-2600k
+method=DirectPlay container=mov protocol=http
+video=h264 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mp4-h264-dts-srt-2600k
+method=DirectPlay container=mov protocol=http
+video=h264 audio=dts reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=dts&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mp4-h264-hi10p-aac-5000k
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=-1 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=a6e78000340509437325708e41b9e3bb&AudioStreamIndex=1&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=8ad487e37ce9578122bbd8c42be2a392&SubtitleMethod=Encode&TranscodeReasons=ContainerBitrateExceedsLimit
+== mp4-hevc-aac-4000k-r180
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=b7a9e2d4c815f36b0d9241a7e58c3f42&AudioStreamIndex=1&SubtitleStreamIndex=2&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=d8e2a1b5c4f907e8a1d2b3c4e5f6a7b8&SubtitleMethod=Encode&TranscodeReasons=ContainerBitrateExceedsLimit
+== mp4-hevc-aac-srt-15200k
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&AudioStreamIndex=1&SubtitleStreamIndex=2&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&TranscodeReasons=ContainerBitrateExceedsLimit
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mp4-hevc-ac3-aac-srt-15200k
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=3 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&AudioStreamIndex=1&SubtitleStreamIndex=3&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&TranscodeReasons=ContainerBitrateExceedsLimit
+subtitle 3 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/3/0/Stream.srt?ApiKey=TOKEN
+== mp4-hevc-ac3-aacDef-srt-15200k
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=2 subtitleIndex=3 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&AudioStreamIndex=2&SubtitleStreamIndex=3&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&TranscodeReasons=ContainerBitrateExceedsLimit
+subtitle 3 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/3/0/Stream.srt?ApiKey=TOKEN
+== mp4-hevc-ac3-aacExt-srt-15200k
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=3 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&AudioStreamIndex=1&SubtitleStreamIndex=3&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&TranscodeReasons=ContainerBitrateExceedsLimit
+subtitle 3 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/3/0/Stream.srt?ApiKey=TOKEN
+== mp4-hevc-ac3-srt-15200k
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&AudioStreamIndex=1&SubtitleStreamIndex=2&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&TranscodeReasons=ContainerBitrateExceedsLimit
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== mp4-hevc-truehd-srt-15200k
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex=1 subtitleIndex=2 subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&AudioStreamIndex=1&SubtitleStreamIndex=2&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=a2fb84b618ba2467fe377543f879e9bf&SubtitleMethod=Encode&TranscodeReasons=ContainerBitrateExceedsLimit
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/f6eab7118618ab26e61e495a1853481a/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+== no-streams
+method=Transcode container= protocol=http
+video= audio= reasons=ContainerBitrateExceedsLimit
+audioIndex= subtitleIndex= subtitleMethod=Encode
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream?DeviceId=acceptance-device&MediaSourceId=f6eab7118618ab26e61e495a1853481a&ApiKey=TOKEN&RequireAvc=false&EnableAudioVbrEncoding=false&Tag=a2fb84b618ba2467fe377543f879e9bf&TranscodeReasons=ContainerBitrateExceedsLimit
+== numstreams-32
+method=DirectPlay container=mov protocol=http
+video=h264 audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=aac&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+subtitle 3 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/3/0/Stream.srt?ApiKey=TOKEN
+subtitle 4 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/4/0/Stream.srt?ApiKey=TOKEN
+subtitle 5 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/5/0/Stream.srt?ApiKey=TOKEN
+subtitle 6 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/6/0/Stream.srt?ApiKey=TOKEN
+subtitle 7 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/7/0/Stream.srt?ApiKey=TOKEN
+subtitle 8 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/8/0/Stream.srt?ApiKey=TOKEN
+subtitle 9 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/9/0/Stream.srt?ApiKey=TOKEN
+subtitle 10 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/10/0/Stream.srt?ApiKey=TOKEN
+subtitle 11 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/11/0/Stream.srt?ApiKey=TOKEN
+subtitle 12 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/12/0/Stream.srt?ApiKey=TOKEN
+subtitle 13 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/13/0/Stream.srt?ApiKey=TOKEN
+subtitle 14 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/14/0/Stream.srt?ApiKey=TOKEN
+subtitle 15 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/15/0/Stream.srt?ApiKey=TOKEN
+subtitle 16 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/16/0/Stream.srt?ApiKey=TOKEN
+subtitle 17 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/17/0/Stream.srt?ApiKey=TOKEN
+subtitle 18 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/18/0/Stream.srt?ApiKey=TOKEN
+subtitle 19 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/19/0/Stream.srt?ApiKey=TOKEN
+subtitle 20 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/20/0/Stream.srt?ApiKey=TOKEN
+subtitle 21 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/21/0/Stream.srt?ApiKey=TOKEN
+subtitle 22 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/22/0/Stream.srt?ApiKey=TOKEN
+subtitle 23 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/23/0/Stream.srt?ApiKey=TOKEN
+subtitle 24 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/24/0/Stream.srt?ApiKey=TOKEN
+subtitle 25 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/25/0/Stream.srt?ApiKey=TOKEN
+subtitle 26 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/26/0/Stream.srt?ApiKey=TOKEN
+subtitle 27 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/27/0/Stream.srt?ApiKey=TOKEN
+subtitle 28 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/28/0/Stream.srt?ApiKey=TOKEN
+subtitle 29 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/29/0/Stream.srt?ApiKey=TOKEN
+subtitle 30 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/30/0/Stream.srt?ApiKey=TOKEN
+subtitle 31 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/31/0/Stream.srt?ApiKey=TOKEN
+== numstreams-33
+method=DirectPlay container=mov protocol=http
+video=h264 audio=aac reasons=0
+audioIndex=1 subtitleIndex=2 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=aac&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 2 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/2/0/Stream.srt?ApiKey=TOKEN
+subtitle 3 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/3/0/Stream.srt?ApiKey=TOKEN
+subtitle 4 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/4/0/Stream.srt?ApiKey=TOKEN
+subtitle 5 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/5/0/Stream.srt?ApiKey=TOKEN
+subtitle 6 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/6/0/Stream.srt?ApiKey=TOKEN
+subtitle 7 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/7/0/Stream.srt?ApiKey=TOKEN
+subtitle 8 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/8/0/Stream.srt?ApiKey=TOKEN
+subtitle 9 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/9/0/Stream.srt?ApiKey=TOKEN
+subtitle 10 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/10/0/Stream.srt?ApiKey=TOKEN
+subtitle 11 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/11/0/Stream.srt?ApiKey=TOKEN
+subtitle 12 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/12/0/Stream.srt?ApiKey=TOKEN
+subtitle 13 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/13/0/Stream.srt?ApiKey=TOKEN
+subtitle 14 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/14/0/Stream.srt?ApiKey=TOKEN
+subtitle 15 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/15/0/Stream.srt?ApiKey=TOKEN
+subtitle 16 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/16/0/Stream.srt?ApiKey=TOKEN
+subtitle 17 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/17/0/Stream.srt?ApiKey=TOKEN
+subtitle 18 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/18/0/Stream.srt?ApiKey=TOKEN
+subtitle 19 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/19/0/Stream.srt?ApiKey=TOKEN
+subtitle 20 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/20/0/Stream.srt?ApiKey=TOKEN
+subtitle 21 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/21/0/Stream.srt?ApiKey=TOKEN
+subtitle 22 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/22/0/Stream.srt?ApiKey=TOKEN
+subtitle 23 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/23/0/Stream.srt?ApiKey=TOKEN
+subtitle 24 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/24/0/Stream.srt?ApiKey=TOKEN
+subtitle 25 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/25/0/Stream.srt?ApiKey=TOKEN
+subtitle 26 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/26/0/Stream.srt?ApiKey=TOKEN
+subtitle 27 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/27/0/Stream.srt?ApiKey=TOKEN
+subtitle 28 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/28/0/Stream.srt?ApiKey=TOKEN
+subtitle 29 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/29/0/Stream.srt?ApiKey=TOKEN
+subtitle 30 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/30/0/Stream.srt?ApiKey=TOKEN
+subtitle 31 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/31/0/Stream.srt?ApiKey=TOKEN
+subtitle 32 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/32/0/Stream.srt?ApiKey=TOKEN
+== raw
+method=DirectPlay container=mov protocol=http
+video=h264 audio=ac3 reasons=0
+audioIndex=1 subtitleIndex=3 subtitleMethod=External
+url=media:/videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/stream.mov?DeviceId=acceptance-device&MediaSourceId=a766d122b58e45d9492d17af77748bf5&Static=true&VideoCodec=h264&AudioCodec=ac3&AudioStreamIndex=1&ApiKey=TOKEN&Tag=579a34c6d5dfb21d81539a51220b6a23
+subtitle 3 srt Embed 
+subtitle 4 srt External media:/Videos/11d229b7-2d48-4b95-9f9b-49f6ab75e613/a766d122b58e45d9492d17af77748bf5/Subtitles/4/0/Stream.srt?ApiKey=TOKEN
