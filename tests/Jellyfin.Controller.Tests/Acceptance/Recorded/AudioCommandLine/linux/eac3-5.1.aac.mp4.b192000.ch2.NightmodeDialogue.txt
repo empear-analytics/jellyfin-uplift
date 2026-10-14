@@ -1,0 +1,1 @@
+-i file:"/media/audio" -threads 0 -vn -ab 192000 -ac 2 -acodec aac -af "pan=stereo|c0=c2+0.30*c0+0.30*c4|c1=c2+0.30*c1+0.30*c5,volume=2" -movflags empty_moov+delay_moov -id3v2_version 3 -write_id3v1 1 -y "/transcodes/output.mp4"

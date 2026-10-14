@@ -1,0 +1,4 @@
+200 OK
+#EXTM3U
+#EXT-X-STREAM-INF:BANDWIDTH=256000,AVERAGE-BANDWIDTH=256000,VIDEO-RANGE=SDR,CODECS="avc1.424029,mp4a.40.2",RESOLUTION=416x234,FRAME-RATE=23.976
+main.m3u8?MediaSourceId=cbf6304432fb18bbd283cb80770ea2d9&PlaySessionId=acceptance&VideoCodec=hevc,h264&AudioCodec=aac&SegmentContainer=mp4&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true
