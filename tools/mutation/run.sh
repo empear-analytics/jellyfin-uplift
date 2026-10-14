@@ -11,7 +11,12 @@
 # so its mutants will show as "no coverage" here.
 #
 # Reports go outside the repo, to ../mutation/<part>/<timestamp>/.
-# Stryker is a local tool: run `dotnet tool restore` once.
+# Stryker is a local tool: run `dotnet tool restore` once. Every config sets
+# test-runner mtp: xUnit v3 test projects run as their own executables, and under
+# the default VSTest runner mutants are never switched on, so every mutant
+# "survives" and the score is 0% with no error. target-framework is set because
+# the test csproj files inherit it from tests/Directory.Build.props, which
+# Stryker cannot see, and it then falls back to an MSBuild without .NET 10.
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"

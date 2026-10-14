@@ -4,6 +4,8 @@
     "project": "MediaBrowser.Controller.csproj",
     "test-projects": ["../../tests/Jellyfin.Controller.Tests/Jellyfin.Controller.Tests.csproj", "../../tests/Jellyfin.Server.Implementations.Tests/Jellyfin.Server.Implementations.Tests.csproj"],
     "mutate": ["**/MediaEncoding/*.cs"],
+    "target-framework": "net10.0",
+    "test-runner": "mtp",
     "coverage-analysis": "perTest",
     "mutation-level": "Standard",
     "reporters": ["json", "html", "progress"],
