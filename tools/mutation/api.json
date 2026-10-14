@@ -1,0 +1,12 @@
+{
+  "stryker-config": {
+    "solution": "../../Jellyfin.sln",
+    "project": "Jellyfin.Api.csproj",
+    "test-projects": ["../../tests/Jellyfin.Api.Tests/Jellyfin.Api.Tests.csproj", "../../tests/Jellyfin.Server.Implementations.Tests/Jellyfin.Server.Implementations.Tests.csproj"],
+    "mutate": ["**/Helpers/*.cs", "**/Controllers/DynamicHlsController.cs"],
+    "coverage-analysis": "perTest",
+    "mutation-level": "Standard",
+    "reporters": ["json", "html", "progress"],
+    "thresholds": { "high": 90, "low": 75, "break": 0 }
+  }
+}

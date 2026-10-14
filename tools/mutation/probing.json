@@ -1,0 +1,12 @@
+{
+  "stryker-config": {
+    "solution": "../../Jellyfin.sln",
+    "project": "MediaBrowser.MediaEncoding.csproj",
+    "test-projects": ["../../tests/Jellyfin.MediaEncoding.Tests/Jellyfin.MediaEncoding.Tests.csproj"],
+    "mutate": ["**/Probing/*.cs"],
+    "coverage-analysis": "perTest",
+    "mutation-level": "Standard",
+    "reporters": ["json", "html", "progress"],
+    "thresholds": { "high": 90, "low": 75, "break": 0 }
+  }
+}
