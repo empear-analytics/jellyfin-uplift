@@ -1,0 +1,16 @@
+{
+  "name": "accessibility-audio-tracks",
+  "description": "Code to be refactored to Code Health 10.00 for the feature experiment: the footprint of accessibility-aware audio tracks (audio description and commentary), from ffprobe through track selection and the playback decision to ffmpeg and HLS.",
+  "decided": "2026-10-14",
+  "folders": [
+    "MediaBrowser.MediaEncoding/Probing",
+    "MediaBrowser.Controller/MediaEncoding",
+    "MediaBrowser.Model/Dlna",
+    "Emby.Server.Implementations/Library",
+    "Jellyfin.Api/Helpers"
+  ],
+  "folders_note": "Direct files only; subfolders are not in scope.",
+  "files": [
+    "Jellyfin.Api/Controllers/DynamicHlsController.cs"
+  ]
+}
