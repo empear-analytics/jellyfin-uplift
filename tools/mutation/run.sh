@@ -8,7 +8,14 @@
 # the test projects that cover them (taken from the coverlet run). The
 # integration tests are not listed, but Jellyfin.Server.Implementations.Tests
 # references Jellyfin.Server.Integration.Tests, so they run in every part that
-# uses it (encoding, library, api). That is what reaches MediaStreamSelector.
+# uses it (library, api). That is what reaches MediaStreamSelector and the HLS
+# code. They start a whole server per test run, so a part that uses them takes
+# hours rather than minutes; encoding and dlna leave them out. This affects only
+# what the measurement credits: the refactoring loop always runs every test.
+#
+# Stryker logs every mutant's result to <output>/logs/ (-L -V debug), so progress
+# can be followed: grep -c "Test run for" on that log, against the
+# "mutants will be tested" figure near its top.
 #
 # Reports go outside the repo, to ../mutation/<part>/<timestamp>/.
 # Each part runs with its own TMP/TEMP under ../mutation/tmp/, deleted when the
@@ -34,8 +41,10 @@ run_part() {
     mkdir -p "$tmp"
     echo "== $part ($(date +%T))"
     (cd "$here" && TMP="$tmp" TEMP="$tmp" TMPDIR="$tmp" \
-        dotnet stryker -f "$part.json" -O "$out_root/$part/$stamp" --skip-version-check) || rc=$?
-    rm -rf "$tmp"
+        dotnet stryker -f "$part.json" -O "$out_root/$part/$stamp" --skip-version-check -L -V debug) || rc=$?
+    # Some tests leave read-only files behind; clear the flag so the folder can go.
+    chmod -R u+w "$tmp" 2>/dev/null || true
+    rm -rf "$tmp" || echo "warning: could not remove $tmp" >&2
     return "$rc"
 }
 
