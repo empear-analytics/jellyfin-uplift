@@ -3,7 +3,7 @@
   "MediaSources": [
     {
       "Protocol": "File",
-      "Id": "aeca47157b1454e178ae0b3d18211607",
+      "Id": "4c13971b15ee02c10e28710da4594c84",
       "Path": "\u003Cmedia\u003E/flac-file.flac",
       "Type": "Default",
       "Container": "flac",
@@ -65,7 +65,7 @@
   "MediaSources": [
     {
       "Protocol": "File",
-      "Id": "aeca47157b1454e178ae0b3d18211607",
+      "Id": "4c13971b15ee02c10e28710da4594c84",
       "Path": "\u003Cmedia\u003E/flac-file.flac",
       "Type": "Default",
       "Container": "flac",
@@ -127,7 +127,7 @@
   "MediaSources": [
     {
       "Protocol": "File",
-      "Id": "aeca47157b1454e178ae0b3d18211607",
+      "Id": "4c13971b15ee02c10e28710da4594c84",
       "Path": "\u003Cmedia\u003E/flac-file.flac",
       "Type": "Default",
       "Container": "flac",
@@ -178,7 +178,7 @@
       "Formats": [],
       "Bitrate": 900000,
       "RequiredHttpHeaders": {},
-      "TranscodingUrl": "/audio/aeca4715-7b14-54e1-78ae-0b3d18211607/stream.mp4?DeviceId=69420\u0026MediaSourceId=aeca47157b1454e178ae0b3d18211607\u0026PlaySessionId=\u003Csession\u003E\u0026ApiKey=\u003Ctoken\u003E\u0026RequireAvc=false\u0026EnableAudioVbrEncoding=false\u0026Tag=c96858e769f7fe0421ebfdf29c39f9e4\u0026TranscodeReasons=ContainerNotSupported",
+      "TranscodingUrl": "/audio/4c13971b-15ee-02c1-0e28-710da4594c84/stream.mp4?DeviceId=69420\u0026MediaSourceId=4c13971b15ee02c10e28710da4594c84\u0026PlaySessionId=\u003Csession\u003E\u0026ApiKey=\u003Ctoken\u003E\u0026RequireAvc=false\u0026EnableAudioVbrEncoding=false\u0026Tag=c96858e769f7fe0421ebfdf29c39f9e4\u0026TranscodeReasons=ContainerNotSupported",
       "TranscodingSubProtocol": "http",
       "TranscodingContainer": "mp4",
       "HasSegments": false
@@ -191,7 +191,7 @@
   "MediaSources": [
     {
       "Protocol": "File",
-      "Id": "aeca47157b1454e178ae0b3d18211607",
+      "Id": "4c13971b15ee02c10e28710da4594c84",
       "Path": "\u003Cmedia\u003E/flac-file.flac",
       "Type": "Default",
       "Container": "flac",
@@ -253,7 +253,7 @@
   "MediaSources": [
     {
       "Protocol": "File",
-      "Id": "aeca47157b1454e178ae0b3d18211607",
+      "Id": "4c13971b15ee02c10e28710da4594c84",
       "Path": "\u003Cmedia\u003E/flac-file.flac",
       "Type": "Default",
       "Container": "flac",
@@ -315,7 +315,7 @@
   "MediaSources": [
     {
       "Protocol": "File",
-      "Id": "aeca47157b1454e178ae0b3d18211607",
+      "Id": "4c13971b15ee02c10e28710da4594c84",
       "Path": "\u003Cmedia\u003E/flac-file.flac",
       "Type": "Default",
       "Container": "flac",
@@ -366,7 +366,7 @@
       "Formats": [],
       "Bitrate": 900000,
       "RequiredHttpHeaders": {},
-      "TranscodingUrl": "/audio/aeca4715-7b14-54e1-78ae-0b3d18211607/stream.mp4?DeviceId=69420\u0026MediaSourceId=aeca47157b1454e178ae0b3d18211607\u0026PlaySessionId=\u003Csession\u003E\u0026ApiKey=\u003Ctoken\u003E\u0026RequireAvc=false\u0026EnableAudioVbrEncoding=false\u0026Tag=c96858e769f7fe0421ebfdf29c39f9e4\u0026TranscodeReasons=ContainerNotSupported",
+      "TranscodingUrl": "/audio/4c13971b-15ee-02c1-0e28-710da4594c84/stream.mp4?DeviceId=69420\u0026MediaSourceId=4c13971b15ee02c10e28710da4594c84\u0026PlaySessionId=\u003Csession\u003E\u0026ApiKey=\u003Ctoken\u003E\u0026RequireAvc=false\u0026EnableAudioVbrEncoding=false\u0026Tag=c96858e769f7fe0421ebfdf29c39f9e4\u0026TranscodeReasons=ContainerNotSupported",
       "TranscodingSubProtocol": "http",
       "TranscodingContainer": "mp4",
       "HasSegments": false
@@ -379,7 +379,7 @@
   "MediaSources": [
     {
       "Protocol": "File",
-      "Id": "aeca47157b1454e178ae0b3d18211607",
+      "Id": "4c13971b15ee02c10e28710da4594c84",
       "Path": "\u003Cmedia\u003E/flac-file.flac",
       "Type": "Default",
       "Container": "flac",
@@ -441,7 +441,7 @@
   "MediaSources": [
     {
       "Protocol": "File",
-      "Id": "aeca47157b1454e178ae0b3d18211607",
+      "Id": "4c13971b15ee02c10e28710da4594c84",
       "Path": "\u003Cmedia\u003E/flac-file.flac",
       "Type": "Default",
       "Container": "flac",
@@ -492,7 +492,7 @@
       "Formats": [],
       "Bitrate": 900000,
       "RequiredHttpHeaders": {},
-      "TranscodingUrl": "/audio/aeca4715-7b14-54e1-78ae-0b3d18211607/stream?DeviceId=69420\u0026MediaSourceId=aeca47157b1454e178ae0b3d18211607\u0026PlaySessionId=\u003Csession\u003E\u0026ApiKey=\u003Ctoken\u003E\u0026RequireAvc=false\u0026EnableAudioVbrEncoding=false\u0026Tag=c96858e769f7fe0421ebfdf29c39f9e4\u0026TranscodeReasons=ContainerBitrateExceedsLimit",
+      "TranscodingUrl": "/audio/4c13971b-15ee-02c1-0e28-710da4594c84/stream?DeviceId=69420\u0026MediaSourceId=4c13971b15ee02c10e28710da4594c84\u0026PlaySessionId=\u003Csession\u003E\u0026ApiKey=\u003Ctoken\u003E\u0026RequireAvc=false\u0026EnableAudioVbrEncoding=false\u0026Tag=c96858e769f7fe0421ebfdf29c39f9e4\u0026TranscodeReasons=ContainerBitrateExceedsLimit",
       "TranscodingSubProtocol": "http",
       "HasSegments": false
     }
@@ -504,7 +504,7 @@
   "MediaSources": [
     {
       "Protocol": "File",
-      "Id": "aeca47157b1454e178ae0b3d18211607",
+      "Id": "4c13971b15ee02c10e28710da4594c84",
       "Path": "\u003Cmedia\u003E/flac-file.flac",
       "Type": "Default",
       "Container": "flac",
@@ -555,7 +555,7 @@
       "Formats": [],
       "Bitrate": 900000,
       "RequiredHttpHeaders": {},
-      "TranscodingUrl": "/audio/aeca4715-7b14-54e1-78ae-0b3d18211607/stream?DeviceId=69420\u0026MediaSourceId=aeca47157b1454e178ae0b3d18211607\u0026PlaySessionId=\u003Csession\u003E\u0026ApiKey=\u003Ctoken\u003E\u0026RequireAvc=false\u0026EnableAudioVbrEncoding=false\u0026Tag=c96858e769f7fe0421ebfdf29c39f9e4\u0026TranscodeReasons=ContainerNotSupported,VideoCodecNotSupported,AudioCodecNotSupported",
+      "TranscodingUrl": "/audio/4c13971b-15ee-02c1-0e28-710da4594c84/stream?DeviceId=69420\u0026MediaSourceId=4c13971b15ee02c10e28710da4594c84\u0026PlaySessionId=\u003Csession\u003E\u0026ApiKey=\u003Ctoken\u003E\u0026RequireAvc=false\u0026EnableAudioVbrEncoding=false\u0026Tag=c96858e769f7fe0421ebfdf29c39f9e4\u0026TranscodeReasons=ContainerNotSupported,VideoCodecNotSupported,AudioCodecNotSupported",
       "TranscodingSubProtocol": "http",
       "HasSegments": false
     }
@@ -567,7 +567,7 @@
   "MediaSources": [
     {
       "Protocol": "File",
-      "Id": "aeca47157b1454e178ae0b3d18211607",
+      "Id": "4c13971b15ee02c10e28710da4594c84",
       "Path": "\u003Cmedia\u003E/flac-file.flac",
       "Type": "Default",
       "Container": "flac",
