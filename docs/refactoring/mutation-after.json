@@ -1,34 +1,34 @@
 {
  "probing": {
   "reports": [
-   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\probing\\20261014-185027\\reports\\mutation-report.json",
-   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\probing-linux\\20261014-231617\\reports\\mutation-report.json"
+   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\probing\\20261015-064204\\reports\\mutation-report.json",
+   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\probing-linux\\20261015-064410\\reports\\mutation-report.json"
   ],
   "profiles": {
    "stryker": {
     "total": {
-     "Survived": 442,
-     "Killed": 404,
-     "NoCoverage": 154,
+     "Survived": 213,
+     "Killed": 634,
+     "NoCoverage": 153,
      "Timeout": 4
     },
     "files": {
      "MediaBrowser.MediaEncoding/Probing/FFProbeHelpers.cs": {
-      "Survived": 7,
-      "Killed": 6
+      "Survived": 4,
+      "Killed": 9
      },
      "MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.cs": {
-      "Survived": 435,
-      "Killed": 398,
-      "NoCoverage": 154,
+      "Survived": 209,
+      "Killed": 625,
+      "NoCoverage": 153,
       "Timeout": 4
      }
     }
    },
    "mull": {
     "total": {
-     "Survived": 78,
-     "Killed": 84,
+     "Survived": 32,
+     "Killed": 130,
      "NoCoverage": 32,
      "Timeout": 4
     },
@@ -38,8 +38,8 @@
       "Killed": 3
      },
      "MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.cs": {
-      "Survived": 76,
-      "Killed": 81,
+      "Killed": 127,
+      "Survived": 30,
       "NoCoverage": 32,
       "Timeout": 4
      }
@@ -242,15 +242,15 @@
  "library": {
   "reports": [
    "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\library\\20261014-153316\\reports\\mutation-report.json",
-   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\library-linux\\20261014-223523\\reports\\mutation-report.json"
+   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\library-linux\\20261015-064637\\reports\\mutation-report.json"
   ],
   "profiles": {
    "stryker": {
     "total": {
-     "Killed": 986,
-     "Survived": 148,
+     "Killed": 1020,
+     "Survived": 139,
      "Timeout": 6,
-     "NoCoverage": 1507
+     "NoCoverage": 1482
     },
     "files": {
      "Emby.Server.Implementations/Library/CoreResolutionIgnoreRule.cs": {
@@ -275,23 +275,22 @@
       "NoCoverage": 5
      },
      "Emby.Server.Implementations/Library/LibraryManager.cs": {
-      "Killed": 476,
+      "Killed": 475,
       "NoCoverage": 786,
-      "Survived": 38,
+      "Survived": 39,
       "Timeout": 1
      },
      "Emby.Server.Implementations/Library/LiveStreamHelper.cs": {
       "NoCoverage": 83
      },
      "Emby.Server.Implementations/Library/MediaSourceManager.cs": {
-      "Killed": 137,
-      "NoCoverage": 268,
-      "Survived": 36
+      "Killed": 152,
+      "NoCoverage": 263,
+      "Survived": 26
      },
      "Emby.Server.Implementations/Library/MediaStreamSelector.cs": {
-      "Killed": 42,
-      "Survived": 35,
-      "NoCoverage": 20
+      "Killed": 62,
+      "Survived": 35
      },
      "Emby.Server.Implementations/Library/MusicManager.cs": {
       "Killed": 1,
@@ -329,10 +328,10 @@
    },
    "mull": {
     "total": {
-     "Killed": 332,
+     "Killed": 340,
      "Timeout": 4,
-     "Survived": 57,
-     "NoCoverage": 532
+     "Survived": 51,
+     "NoCoverage": 530
     },
     "files": {
      "Emby.Server.Implementations/Library/CoreResolutionIgnoreRule.cs": {
@@ -362,9 +361,9 @@
       "NoCoverage": 31
      },
      "Emby.Server.Implementations/Library/MediaSourceManager.cs": {
-      "Killed": 30,
-      "NoCoverage": 86,
-      "Survived": 14
+      "Killed": 38,
+      "NoCoverage": 84,
+      "Survived": 8
      },
      "Emby.Server.Implementations/Library/MediaStreamSelector.cs": {
       "Killed": 21,
