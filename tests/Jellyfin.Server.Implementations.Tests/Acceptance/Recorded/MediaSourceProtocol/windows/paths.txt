@@ -1,0 +1,13 @@
+/media/movie.mkv -> File File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+C:\media\movie.mkv -> File File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+file:///media/movie.mkv -> File File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+\\server\share\movie.mkv -> File File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+http://example.com/stream.m3u8 -> Http File:True Http:False Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+https://example.com/stream.ts -> Http File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+rtsp://camera/live -> Rtsp File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+rtmp://server/live -> Rtmp File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+rtp://239.0.0.1:1234 -> Rtp File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+udp://239.0.0.1:1234 -> Udp File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+ftp://example.com/movie.mkv -> Ftp File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+smb://server/share/movie.mkv -> Http File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
+ -> File File:True Http:True Rtmp:False Rtsp:False Udp:False Rtp:False Ftp:False
