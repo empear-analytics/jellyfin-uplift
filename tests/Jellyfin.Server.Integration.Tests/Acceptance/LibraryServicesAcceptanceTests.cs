@@ -316,7 +316,7 @@ public sealed class LibraryServicesAcceptanceTests : IClassFixture<AcceptanceApp
         T Add<T>(T item, Folder parent, string name, int order)
             where T : BaseItem
         {
-            item.Id = new Guid(MD5.HashData(Encoding.UTF8.GetBytes("acceptance-library/" + name)));
+            item.Id = new Guid(SHA256.HashData(Encoding.UTF8.GetBytes("acceptance-library/" + name)).AsSpan(0, 16));
             item.Name = name;
             item.SortName = name;
             item.Path = Path.Combine(parent.Path ?? root, name);

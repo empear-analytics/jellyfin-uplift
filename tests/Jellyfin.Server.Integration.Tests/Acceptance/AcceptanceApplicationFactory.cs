@@ -89,7 +89,7 @@ public sealed class AcceptanceApplicationFactory : JellyfinApplicationFactory
         {
             // A real file, so direct streaming works; its id is fixed because the path is not.
             path = Path.Combine(MediaFolder, testItem.Name + extension);
-            id = new Guid(MD5.HashData(Encoding.UTF8.GetBytes("acceptance/" + testItem.Name)));
+            id = new Guid(SHA256.HashData(Encoding.UTF8.GetBytes("acceptance/" + testItem.Name)).AsSpan(0, 16));
         }
         else
         {
@@ -153,6 +153,16 @@ public sealed class AcceptanceApplicationFactory : JellyfinApplicationFactory
         }
 
         return text;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _setupLock.Dispose();
+        }
+
+        base.Dispose(disposing);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
