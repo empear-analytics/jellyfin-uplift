@@ -1,0 +1,6 @@
+output 3840x2160 sampleRate=48000 audioBitDepth=
+target level=153 bitDepth=10 refs=4 fps=23.976 profile=Main 10 range=HDR10 tag=
+target anamorphic= interlaced=False avc= timestamp=None packet= videoStreams=1 audioStreams=1
+actual video=hevc audio=eac3 segmentedLive=False reasons=VideoCodecNotSupported, AudioChannelsNotSupported
+deinterlace h264=False forced=False mpeg2=False
+requested level= refs= bitDepth= audioBitDepth= channels=
