@@ -1,0 +1,29 @@
+== first 200 OK content-type=application/vnd.apple.mpegurl end-requests=1
+#EXTM3U
+#EXT-X-VERSION:7
+#EXT-X-TARGETDURATION:6
+#EXT-X-MEDIA-SEQUENCE:0
+#EXT-X-PLAYLIST-TYPE:EVENT
+#EXTINF:6.000000,
+hls/<file>/<file>0.ts
+#EXTINF:6.000000,
+hls/<file>/<file>1.ts
+#EXTINF:6.000000,
+hls/<file>/<file>2.ts
+#EXTINF:6.000000,
+hls/<file>/<file>3.ts
+
+== again 200 OK content-type=application/vnd.apple.mpegurl end-requests=0
+#EXTM3U
+#EXT-X-VERSION:7
+#EXT-X-TARGETDURATION:6
+#EXT-X-MEDIA-SEQUENCE:0
+#EXT-X-PLAYLIST-TYPE:EVENT
+#EXTINF:6.000000,
+hls/<file>/<file>0.ts
+#EXTINF:6.000000,
+hls/<file>/<file>1.ts
+#EXTINF:6.000000,
+hls/<file>/<file>2.ts
+#EXTINF:6.000000,
+hls/<file>/<file>3.ts

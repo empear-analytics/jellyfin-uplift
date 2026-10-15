@@ -1,0 +1,7 @@
+206 PartialContent
+accept-ranges: bytes
+content-range: bytes 0-9/35
+content-length: 10
+content-type: audio/flac
+body: fLaC remot
+upstream: GET partial-only.flac range=bytes=0-9
