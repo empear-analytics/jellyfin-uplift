@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -116,8 +117,21 @@ public class DlnaModelAcceptanceTests
 
         var output = "defaults:\n" + JsonSerializer.Serialize(defaults, options)
             + "\ncopy of defaults:\n" + JsonSerializer.Serialize(new TranscodingProfile(defaults), options)
-            + "\ncopy of populated:\n" + JsonSerializer.Serialize(new TranscodingProfile(populated), options);
+            + "\ncopy of populated:\n" + JsonSerializer.Serialize(new TranscodingProfile(populated), options)
+            + "\ncopy of null: " + CopyOfNull();
         RecordedOutput.Verify("DlnaModel", "transcoding-profile", output.ReplaceLineEndings("\n"));
+    }
+
+    private static string CopyOfNull()
+    {
+        try
+        {
+            return JsonSerializer.Serialize(new TranscodingProfile(null!));
+        }
+        catch (Exception ex)
+        {
+            return "threw " + ex.GetType().Name;
+        }
     }
 
     private static string Show(int? value) => value?.ToString(CultureInfo.InvariantCulture) ?? "-";
