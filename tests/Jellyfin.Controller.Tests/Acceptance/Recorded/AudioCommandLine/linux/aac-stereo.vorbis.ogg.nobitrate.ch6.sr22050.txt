@@ -1,0 +1,1 @@
+-i file:"/media/audio" -threads 0 -vn -ac 6 -acodec libvorbis -ar 22050 -id3v2_version 3 -write_id3v1 1 -y "/transcodes/output.ogg"

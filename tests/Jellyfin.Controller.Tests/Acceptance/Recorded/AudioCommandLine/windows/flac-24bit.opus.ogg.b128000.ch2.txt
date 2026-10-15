@@ -1,0 +1,1 @@
+-i file:"/media/audio" -threads 0 -vn -ab 128000 -ac 2 -acodec libopus -id3v2_version 3 -write_id3v1 1 -y "/transcodes/output.ogg"

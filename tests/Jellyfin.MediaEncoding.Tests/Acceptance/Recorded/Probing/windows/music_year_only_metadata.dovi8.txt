@@ -1,0 +1,205 @@
+{
+  "Chapters": [],
+  "Album": "City to City",
+  "Artists": [
+    "Gerry Rafferty"
+  ],
+  "AlbumArtists": [
+    "Gerry Rafferty"
+  ],
+  "Studios": [
+    "Liberty EMI Records UK"
+  ],
+  "Genres": [
+    "Electronic",
+    "Ambient",
+    "Pop",
+    "Jazz"
+  ],
+  "ShowName": "show",
+  "IndexNumber": 2,
+  "ParentIndexNumber": 1,
+  "ProductionYear": 1978,
+  "PremiereDate": "1978-01-01T00:00:00.0000000Z",
+  "People": [
+    {
+      "Name": "Gerry Rafferty",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Composer"
+    },
+    {
+      "Name": "Gerry Rafferty",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Lyricist"
+    },
+    {
+      "Name": "Hugh Burns",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Electric Guitar",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Nigel Jenkins",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Electric Guitar",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Tommy Eyre",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Keyboard And Moog",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Glen LeFleur",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Percussion",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Raphael Ravenscroft",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Saxophone",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Henry Spinetti (drums",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Drum Set)",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Gary Taylor",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Bass",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Gerry Rafferty",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Lead Vocals",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Graham Preskett",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Arranger"
+    },
+    {
+      "Name": "Declan O\u2019Doherty",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Mixer"
+    }
+  ],
+  "ProviderIds": {
+    "MusicBrainzAlbumArtist": "563201cb-721c-4cfb-acca-c1ba69e3d1fb",
+    "MusicBrainzArtist": "563201cb-721c-4cfb-acca-c1ba69e3d1fb",
+    "MusicBrainzAlbum": "30156786-e511-3106-ac95-66f0e880b24b",
+    "MusicBrainzReleaseGroup": "238c3fb4-5792-342b-b217-02f66298b424",
+    "MusicBrainzTrack": "407cf7f7-440d-3e76-8b89-8686198868ea"
+  },
+  "Protocol": "File",
+  "Path": "/media/music_year_only_metadata.mkv",
+  "Type": "Default",
+  "Container": "flac",
+  "Size": 37072649,
+  "Name": "Baker Street",
+  "IsRemote": false,
+  "RunTimeTicks": 3717600000,
+  "ReadAtNativeFramerate": false,
+  "IgnoreDts": false,
+  "IgnoreIndex": false,
+  "GenPtsInput": false,
+  "SupportsTranscoding": true,
+  "SupportsDirectStream": true,
+  "SupportsDirectPlay": true,
+  "IsInfiniteStream": false,
+  "UseMostCompatibleTranscodingProfile": false,
+  "RequiresOpening": false,
+  "RequiresClosing": false,
+  "RequiresLooping": false,
+  "SupportsProbing": true,
+  "MediaStreams": [
+    {
+      "Codec": "flac",
+      "TimeBase": "1/44100",
+      "VideoRange": "Unknown",
+      "VideoRangeType": "Unknown",
+      "AudioSpatialFormat": "None",
+      "LocalizedDefault": "loc:Default",
+      "LocalizedExternal": "loc:External",
+      "LocalizedOriginal": "loc:Original",
+      "DisplayTitle": "FLAC - Stereo",
+      "IsInterlaced": false,
+      "ChannelLayout": "stereo",
+      "BitRate": 797775,
+      "BitDepth": 16,
+      "Channels": 2,
+      "SampleRate": 44100,
+      "IsDefault": false,
+      "IsForced": false,
+      "IsHearingImpaired": false,
+      "IsOriginal": false,
+      "Type": "Audio",
+      "Index": 0,
+      "IsExternal": false,
+      "IsTextSubtitleStream": false,
+      "SupportsExternalStream": false
+    },
+    {
+      "Codec": "mjpeg",
+      "ColorRange": "pc",
+      "ColorSpace": "bt2020nc",
+      "ColorTransfer": "smpte2084",
+      "ColorPrimaries": "bt2020",
+      "DvVersionMajor": 1,
+      "DvVersionMinor": 0,
+      "DvProfile": 8,
+      "DvLevel": 6,
+      "RpuPresentFlag": 1,
+      "ElPresentFlag": 0,
+      "BlPresentFlag": 1,
+      "DvBlSignalCompatibilityId": 1,
+      "Comment": "Cover (front)",
+      "TimeBase": "1/90000",
+      "VideoRange": "Unknown",
+      "VideoRangeType": "Unknown",
+      "VideoDoViTitle": "Dolby Vision Profile 8.1 (HDR10)",
+      "AudioSpatialFormat": "None",
+      "IsInterlaced": false,
+      "BitDepth": 10,
+      "RefFrames": 1,
+      "IsDefault": false,
+      "IsForced": false,
+      "IsHearingImpaired": false,
+      "IsOriginal": false,
+      "Height": 498,
+      "Width": 500,
+      "RealFrameRate": 90000,
+      "ReferenceFrameRate": 90000,
+      "Profile": "Baseline",
+      "Type": "EmbeddedImage",
+      "AspectRatio": "250:249",
+      "Index": 1,
+      "IsExternal": false,
+      "IsTextSubtitleStream": false,
+      "SupportsExternalStream": false,
+      "PixelFormat": "yuv420p10le",
+      "Level": -99,
+      "IsAnamorphic": false
+    }
+  ],
+  "MediaAttachments": [
+    {
+      "Codec": "mjpeg",
+      "CodecTag": "[0][0][0][0]",
+      "Comment": "Cover (front)",
+      "Index": 1
+    }
+  ],
+  "Formats": [],
+  "Bitrate": 797775,
+  "RequiredHttpHeaders": {},
+  "TranscodingSubProtocol": "http",
+  "HasSegments": false
+}

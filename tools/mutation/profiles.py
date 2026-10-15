@@ -21,6 +21,12 @@ removed statement is a call whose result is discarded (`Foo(x);`,
 non-void result, such as the bool of Dictionary.TryAdd, so this slightly
 over-counts against Mull, which checks that the callee returns void.
 
+Platforms: some branches only run on one operating system, so a part can have
+reports from several (../mutation/<part>/ from Windows, <part>-linux/, <part>-macos/).
+The latest report of each is merged per mutant, matched by file, position,
+operator and replacement: a mutant killed on any platform counts as killed, one
+no platform covers counts as not covered, anything else as survived.
+
 Scores:
     score     killed / (killed + survived + no coverage)   Stryker's own figure
     covered   killed / (killed + survived)                 on mutants some test runs
@@ -84,27 +90,43 @@ def in_profile(profile: str, mutant: dict, source_lines: list[str]) -> bool:
             and is_void_call(original_text(source_lines, mutant["location"])))
 
 
+PLATFORMS = ("", "-linux", "-macos")
+PROJECT_PATH = re.compile(r"(?:^|/)((?:MediaBrowser|Emby|Jellyfin)\.[^/]+/.*|src/.*)$")
+RANK = {"NoCoverage": 1, "Survived": 2, "Timeout": 3, "Killed": 3}
+
+
 def latest_report(part: str) -> Path | None:
     runs = sorted((OUT_ROOT / part).glob("*/reports/mutation-report.json"))
     return runs[-1] if runs else None
 
 
-def tally(report: Path) -> dict:
-    """{profile: {file: Counter(status)}}"""
-    data = json.loads(report.read_text(encoding="utf-8"))
+def repo_relative(path: str) -> str:
+    path = path.replace("\\", "/")
+    match = PROJECT_PATH.search(path)
+    return match.group(1) if match else path
+
+
+def tally(reports: list[Path]) -> dict:
+    """{profile: {file: Counter(status)}}, merging the reports per mutant."""
+    best = {}
+    for report in reports:
+        data = json.loads(report.read_text(encoding="utf-8"))
+        for path, f in data["files"].items():
+            rel = repo_relative(path)
+            lines = f["source"].split("\n")
+            for m in f["mutants"]:
+                if m["status"] not in TESTED:
+                    continue
+                loc = m["location"]
+                key = (rel, loc["start"]["line"], loc["start"]["column"], loc["end"]["line"],
+                       loc["end"]["column"], m["mutatorName"], m.get("replacement"))
+                if key not in best or RANK[m["status"]] > RANK[best[key][0]["status"]]:
+                    best[key] = (m, lines)
     out = {p: collections.defaultdict(collections.Counter) for p in ("stryker", "mull")}
-    for path, f in data["files"].items():
-        lines = f["source"].split("\n")
-        try:
-            rel = Path(path).resolve().relative_to(REPO).as_posix()
-        except ValueError:
-            rel = path.replace("\\", "/")
-        for m in f["mutants"]:
-            if m["status"] not in TESTED:
-                continue
-            for profile in out:
-                if in_profile(profile, m, lines):
-                    out[profile][rel][m["status"]] += 1
+    for (rel, *_), (m, lines) in best.items():
+        for profile in out:
+            if in_profile(profile, m, lines):
+                out[profile][rel][m["status"]] += 1
     return out
 
 
@@ -129,12 +151,12 @@ def main() -> int:
     result, grand = {}, {p: collections.Counter() for p in ("stryker", "mull")}
     print("%-10s %-8s %6s %7s %8s" % ("part", "profile", "tested", "score%", "covered%"))
     for part in args.parts:
-        report = latest_report(part)
-        if report is None:
+        reports = [r for r in (latest_report(part + suffix) for suffix in PLATFORMS) if r]
+        if not reports:
             print("%-10s no report under %s" % (part, OUT_ROOT / part))
             continue
-        t = tally(report)
-        result[part] = {"report": str(report), "profiles": {}}
+        t = tally(reports)
+        result[part] = {"reports": [str(r) for r in reports], "profiles": {}}
         for profile, files in t.items():
             total = sum(files.values(), collections.Counter())
             grand[profile] += total

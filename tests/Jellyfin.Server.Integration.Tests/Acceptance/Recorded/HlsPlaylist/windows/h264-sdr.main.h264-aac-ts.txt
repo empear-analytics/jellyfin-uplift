@@ -1,0 +1,15 @@
+200 OK
+#EXTM3U\r
+#EXT-X-PLAYLIST-TYPE:VOD\r
+#EXT-X-VERSION:3\r
+#EXT-X-TARGETDURATION:6\r
+#EXT-X-MEDIA-SEQUENCE:0\r
+#EXTINF:6.000000, nodesc\r
+hls1/main/0.ts?MediaSourceId=1e9e7e37213e7068e387148044b67062&PlaySessionId=acceptance&VideoCodec=h264&AudioCodec=aac&SegmentContainer=ts&runtimeTicks=0&actualSegmentLengthTicks=60000000\r
+#EXTINF:6.000000, nodesc\r
+hls1/main/1.ts?MediaSourceId=1e9e7e37213e7068e387148044b67062&PlaySessionId=acceptance&VideoCodec=h264&AudioCodec=aac&SegmentContainer=ts&runtimeTicks=60000000&actualSegmentLengthTicks=60000000\r
+#EXTINF:6.000000, nodesc\r
+hls1/main/2.ts?MediaSourceId=1e9e7e37213e7068e387148044b67062&PlaySessionId=acceptance&VideoCodec=h264&AudioCodec=aac&SegmentContainer=ts&runtimeTicks=120000000&actualSegmentLengthTicks=60000000\r
+#EXTINF:2.000000, nodesc\r
+hls1/main/3.ts?MediaSourceId=1e9e7e37213e7068e387148044b67062&PlaySessionId=acceptance&VideoCodec=h264&AudioCodec=aac&SegmentContainer=ts&runtimeTicks=180000000&actualSegmentLengthTicks=20000000\r
+#EXT-X-ENDLIST\r
