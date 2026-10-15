@@ -1,0 +1,261 @@
+{
+  "Chapters": [],
+  "Album": "Eyes wide open",
+  "Artists": [
+    "TWICE"
+  ],
+  "AlbumArtists": [
+    "TWICE"
+  ],
+  "Studios": [
+    "JYP Entertainment"
+  ],
+  "Genres": [
+    "Electronic",
+    "Trance",
+    "Dance",
+    "Jazz"
+  ],
+  "ShowName": "show",
+  "IndexNumber": 3,
+  "ParentIndexNumber": 1,
+  "ProductionYear": 2020,
+  "PremiereDate": "2020-10-26T00:00:00.0000000Z",
+  "People": [
+    {
+      "Name": "Krysta Youngs",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Composer"
+    },
+    {
+      "Name": "Julia Ross",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Composer"
+    },
+    {
+      "Name": "Yiwoomin",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Composer"
+    },
+    {
+      "Name": "Ji-hyo Park",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Lyricist"
+    },
+    {
+      "Name": "Yiwoomin",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Electric Piano",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Yiwoomin",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Synthesizer",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Yiwoomin",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Bass",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Yiwoomin",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Guitar",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Tzu-yu Chou",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Vocals",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Momo Hirai",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Vocals",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Na-yeon Im",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Vocals",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Da-hyun Kim",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Vocals",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Sana Minatozaki",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Vocals",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Mina Myoui",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Vocals",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Ji-hyo Park",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Vocals",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Chae-young Son",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Vocals",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Jeong-yeon Yoo",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Vocals",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Perrie",
+      "Id": "00000000000000000000000000000000",
+      "Role": "Background Vocals",
+      "Type": "Actor"
+    },
+    {
+      "Name": "Krysta Youngs",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Arranger"
+    },
+    {
+      "Name": "Julia Ross",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Arranger"
+    },
+    {
+      "Name": "Yiwoomin",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Arranger"
+    },
+    {
+      "Name": "Bong Won Shin",
+      "Id": "00000000000000000000000000000000",
+      "Type": "Mixer"
+    }
+  ],
+  "ProviderIds": {
+    "MusicBrainzAlbumArtist": "8da127cc-c432-418f-b356-ef36210d82ac",
+    "MusicBrainzArtist": "8da127cc-c432-418f-b356-ef36210d82ac",
+    "MusicBrainzAlbum": "222e6610-75c9-400e-8dc3-bb61f9fc5ca7",
+    "MusicBrainzReleaseGroup": "aa05ff10-8589-4c9c-a0d4-6b024f4e4556",
+    "MusicBrainzTrack": "ad49b840-da9e-4e7c-924b-29fdee187052"
+  },
+  "Protocol": "File",
+  "Path": "/media/music_metadata.mkv",
+  "Type": "Default",
+  "Container": "flac",
+  "Size": 28714641,
+  "Name": "UP NO MORE",
+  "IsRemote": false,
+  "RunTimeTicks": 2142400000,
+  "ReadAtNativeFramerate": false,
+  "IgnoreDts": false,
+  "IgnoreIndex": false,
+  "GenPtsInput": false,
+  "SupportsTranscoding": true,
+  "SupportsDirectStream": true,
+  "SupportsDirectPlay": true,
+  "IsInfiniteStream": false,
+  "UseMostCompatibleTranscodingProfile": false,
+  "RequiresOpening": false,
+  "RequiresClosing": false,
+  "RequiresLooping": false,
+  "SupportsProbing": true,
+  "MediaStreams": [
+    {
+      "Codec": "flac",
+      "TimeBase": "1/44100",
+      "VideoRange": "Unknown",
+      "VideoRangeType": "Unknown",
+      "AudioSpatialFormat": "None",
+      "LocalizedDefault": "loc:Default",
+      "LocalizedExternal": "loc:External",
+      "LocalizedOriginal": "loc:Original",
+      "DisplayTitle": "FLAC - Stereo",
+      "IsInterlaced": false,
+      "ChannelLayout": "stereo",
+      "BitRate": 1072242,
+      "BitDepth": 16,
+      "Channels": 2,
+      "SampleRate": 44100,
+      "IsDefault": false,
+      "IsForced": false,
+      "IsHearingImpaired": false,
+      "IsOriginal": false,
+      "Type": "Audio",
+      "Index": 0,
+      "IsExternal": false,
+      "IsTextSubtitleStream": false,
+      "SupportsExternalStream": false
+    },
+    {
+      "Codec": "mjpeg",
+      "ColorRange": "pc",
+      "ColorSpace": "bt2020nc",
+      "ColorTransfer": "smpte2084",
+      "ColorPrimaries": "bt2020",
+      "DvVersionMajor": 1,
+      "DvVersionMinor": 0,
+      "DvProfile": 8,
+      "DvLevel": 6,
+      "RpuPresentFlag": 1,
+      "ElPresentFlag": 0,
+      "BlPresentFlag": 1,
+      "DvBlSignalCompatibilityId": 1,
+      "Comment": "Cover (front)",
+      "TimeBase": "1/90000",
+      "VideoRange": "Unknown",
+      "VideoRangeType": "Unknown",
+      "VideoDoViTitle": "Dolby Vision Profile 8.1 (HDR10)",
+      "AudioSpatialFormat": "None",
+      "IsInterlaced": false,
+      "BitDepth": 10,
+      "RefFrames": 1,
+      "IsDefault": false,
+      "IsForced": false,
+      "IsHearingImpaired": false,
+      "IsOriginal": false,
+      "Height": 500,
+      "Width": 500,
+      "RealFrameRate": 90000,
+      "ReferenceFrameRate": 90000,
+      "Profile": "Baseline",
+      "Type": "EmbeddedImage",
+      "AspectRatio": "1:1",
+      "Index": 1,
+      "IsExternal": false,
+      "IsTextSubtitleStream": false,
+      "SupportsExternalStream": false,
+      "PixelFormat": "yuv420p10le",
+      "Level": -99,
+      "IsAnamorphic": false
+    }
+  ],
+  "MediaAttachments": [
+    {
+      "Codec": "mjpeg",
+      "CodecTag": "[0][0][0][0]",
+      "Comment": "Cover (front)",
+      "Index": 1
+    }
+  ],
+  "Formats": [],
+  "Bitrate": 1072242,
+  "RequiredHttpHeaders": {},
+  "TranscodingSubProtocol": "http",
+  "HasSegments": false
+}
