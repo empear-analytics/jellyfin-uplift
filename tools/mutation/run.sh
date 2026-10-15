@@ -42,6 +42,9 @@ run_part() {
     echo "== $part ($(date +%T))"
     (cd "$here" && TMP="$tmp" TEMP="$tmp" TMPDIR="$tmp" \
         dotnet stryker -f "$part.json" -O "$out_root/$part/$stamp" --skip-version-check -L -V debug) || rc=$?
+    # At debug level Stryker also writes a transcript per test runner (logs/test-servers/, about
+    # 2 GB per run); the main log keeps the per-mutant lines, so the transcripts go.
+    rm -rf "$out_root/$part/$stamp/logs/test-servers"
     # Some tests leave read-only files behind; clear the flag so the folder can go.
     chmod -R u+w "$tmp" 2>/dev/null || true
     rm -rf "$tmp" || echo "warning: could not remove $tmp" >&2
