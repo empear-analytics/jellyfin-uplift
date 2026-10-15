@@ -1,0 +1,180 @@
+subtitle profile=null language=null -> True
+subtitle profile=null language= -> True
+subtitle profile=null language=eng -> True
+subtitle profile=null language=swe -> True
+subtitle profile=null language=jpn -> True
+subtitle profile=null language=ger -> True
+subtitle profile=null language=Eng -> True
+subtitle profile= language=null -> True
+subtitle profile= language= -> True
+subtitle profile= language=eng -> True
+subtitle profile= language=swe -> True
+subtitle profile= language=jpn -> True
+subtitle profile= language=ger -> True
+subtitle profile= language=Eng -> True
+subtitle profile=eng language=null -> False
+subtitle profile=eng language= -> False
+subtitle profile=eng language=eng -> True
+subtitle profile=eng language=swe -> False
+subtitle profile=eng language=jpn -> False
+subtitle profile=eng language=ger -> False
+subtitle profile=eng language=Eng -> True
+subtitle profile=eng,swe language=null -> False
+subtitle profile=eng,swe language= -> False
+subtitle profile=eng,swe language=eng -> True
+subtitle profile=eng,swe language=swe -> True
+subtitle profile=eng,swe language=jpn -> False
+subtitle profile=eng,swe language=ger -> False
+subtitle profile=eng,swe language=Eng -> True
+subtitle profile=ENG,jpn language=null -> False
+subtitle profile=ENG,jpn language= -> False
+subtitle profile=ENG,jpn language=eng -> True
+subtitle profile=ENG,jpn language=swe -> False
+subtitle profile=ENG,jpn language=jpn -> True
+subtitle profile=ENG,jpn language=ger -> False
+subtitle profile=ENG,jpn language=Eng -> True
+container profile=mkv/null asked=mkv sub=False -> True
+container profile=mkv/null asked=mkv sub=True -> True
+container profile=mkv/null asked=mp4 sub=False -> False
+container profile=mkv/null asked=mp4 sub=True -> False
+container profile=mkv/null asked=m4v sub=False -> False
+container profile=mkv/null asked=m4v sub=True -> False
+container profile=mkv/null asked=mov sub=False -> False
+container profile=mkv/null asked=mov sub=True -> False
+container profile=mkv/null asked=ts sub=False -> False
+container profile=mkv/null asked=ts sub=True -> False
+container profile=mkv/null asked=hls sub=False -> False
+container profile=mkv/null asked=hls sub=True -> False
+container profile=mkv/null asked=webm sub=False -> False
+container profile=mkv/null asked=webm sub=True -> False
+container profile=mkv/null asked=mkv,webm sub=False -> True
+container profile=mkv/null asked=mkv,webm sub=True -> True
+container profile=mkv/null asked=webm,mp4 sub=False -> False
+container profile=mkv/null asked=webm,mp4 sub=True -> False
+container profile=mkv/null asked= sub=False -> False
+container profile=mkv/null asked= sub=True -> False
+container profile=mp4,m4v/null asked=mkv sub=False -> False
+container profile=mp4,m4v/null asked=mkv sub=True -> False
+container profile=mp4,m4v/null asked=mp4 sub=False -> True
+container profile=mp4,m4v/null asked=mp4 sub=True -> True
+container profile=mp4,m4v/null asked=m4v sub=False -> True
+container profile=mp4,m4v/null asked=m4v sub=True -> True
+container profile=mp4,m4v/null asked=mov sub=False -> False
+container profile=mp4,m4v/null asked=mov sub=True -> False
+container profile=mp4,m4v/null asked=ts sub=False -> False
+container profile=mp4,m4v/null asked=ts sub=True -> False
+container profile=mp4,m4v/null asked=hls sub=False -> False
+container profile=mp4,m4v/null asked=hls sub=True -> False
+container profile=mp4,m4v/null asked=webm sub=False -> False
+container profile=mp4,m4v/null asked=webm sub=True -> False
+container profile=mp4,m4v/null asked=mkv,webm sub=False -> False
+container profile=mp4,m4v/null asked=mkv,webm sub=True -> False
+container profile=mp4,m4v/null asked=webm,mp4 sub=False -> True
+container profile=mp4,m4v/null asked=webm,mp4 sub=True -> True
+container profile=mp4,m4v/null asked= sub=False -> False
+container profile=mp4,m4v/null asked= sub=True -> False
+container profile=mov|mp4/null asked=mkv sub=False -> False
+container profile=mov|mp4/null asked=mkv sub=True -> False
+container profile=mov|mp4/null asked=mp4 sub=False -> False
+container profile=mov|mp4/null asked=mp4 sub=True -> False
+container profile=mov|mp4/null asked=m4v sub=False -> False
+container profile=mov|mp4/null asked=m4v sub=True -> False
+container profile=mov|mp4/null asked=mov sub=False -> False
+container profile=mov|mp4/null asked=mov sub=True -> False
+container profile=mov|mp4/null asked=ts sub=False -> False
+container profile=mov|mp4/null asked=ts sub=True -> False
+container profile=mov|mp4/null asked=hls sub=False -> False
+container profile=mov|mp4/null asked=hls sub=True -> False
+container profile=mov|mp4/null asked=webm sub=False -> False
+container profile=mov|mp4/null asked=webm sub=True -> False
+container profile=mov|mp4/null asked=mkv,webm sub=False -> False
+container profile=mov|mp4/null asked=mkv,webm sub=True -> False
+container profile=mov|mp4/null asked=webm,mp4 sub=False -> False
+container profile=mov|mp4/null asked=webm,mp4 sub=True -> False
+container profile=mov|mp4/null asked= sub=False -> False
+container profile=mov|mp4/null asked= sub=True -> False
+container profile=ts/hls asked=mkv sub=False -> False
+container profile=ts/hls asked=mkv sub=True -> False
+container profile=ts/hls asked=mp4 sub=False -> False
+container profile=ts/hls asked=mp4 sub=True -> False
+container profile=ts/hls asked=m4v sub=False -> False
+container profile=ts/hls asked=m4v sub=True -> False
+container profile=ts/hls asked=mov sub=False -> False
+container profile=ts/hls asked=mov sub=True -> False
+container profile=ts/hls asked=ts sub=False -> True
+container profile=ts/hls asked=ts sub=True -> True
+container profile=ts/hls asked=hls sub=False -> False
+container profile=ts/hls asked=hls sub=True -> False
+container profile=ts/hls asked=webm sub=False -> False
+container profile=ts/hls asked=webm sub=True -> False
+container profile=ts/hls asked=mkv,webm sub=False -> False
+container profile=ts/hls asked=mkv,webm sub=True -> False
+container profile=ts/hls asked=webm,mp4 sub=False -> False
+container profile=ts/hls asked=webm,mp4 sub=True -> False
+container profile=ts/hls asked= sub=False -> False
+container profile=ts/hls asked= sub=True -> False
+container profile=null/null asked=mkv sub=False -> True
+container profile=null/null asked=mkv sub=True -> True
+container profile=null/null asked=mp4 sub=False -> True
+container profile=null/null asked=mp4 sub=True -> True
+container profile=null/null asked=m4v sub=False -> True
+container profile=null/null asked=m4v sub=True -> True
+container profile=null/null asked=mov sub=False -> True
+container profile=null/null asked=mov sub=True -> True
+container profile=null/null asked=ts sub=False -> True
+container profile=null/null asked=ts sub=True -> True
+container profile=null/null asked=hls sub=False -> True
+container profile=null/null asked=hls sub=True -> True
+container profile=null/null asked=webm sub=False -> True
+container profile=null/null asked=webm sub=True -> True
+container profile=null/null asked=mkv,webm sub=False -> True
+container profile=null/null asked=mkv,webm sub=True -> True
+container profile=null/null asked=webm,mp4 sub=False -> True
+container profile=null/null asked=webm,mp4 sub=True -> True
+container profile=null/null asked= sub=False -> True
+container profile=null/null asked= sub=True -> True
+container profile=-mkv/null asked=mkv sub=False -> False
+container profile=-mkv/null asked=mkv sub=True -> False
+container profile=-mkv/null asked=mp4 sub=False -> True
+container profile=-mkv/null asked=mp4 sub=True -> True
+container profile=-mkv/null asked=m4v sub=False -> True
+container profile=-mkv/null asked=m4v sub=True -> True
+container profile=-mkv/null asked=mov sub=False -> True
+container profile=-mkv/null asked=mov sub=True -> True
+container profile=-mkv/null asked=ts sub=False -> True
+container profile=-mkv/null asked=ts sub=True -> True
+container profile=-mkv/null asked=hls sub=False -> True
+container profile=-mkv/null asked=hls sub=True -> True
+container profile=-mkv/null asked=webm sub=False -> True
+container profile=-mkv/null asked=webm sub=True -> True
+container profile=-mkv/null asked=mkv,webm sub=False -> False
+container profile=-mkv/null asked=mkv,webm sub=True -> False
+container profile=-mkv/null asked=webm,mp4 sub=False -> True
+container profile=-mkv/null asked=webm,mp4 sub=True -> True
+container profile=-mkv/null asked= sub=False -> True
+container profile=-mkv/null asked= sub=True -> True
+container profile=mp4/mkv asked=mkv sub=False -> False
+container profile=mp4/mkv asked=mkv sub=True -> False
+container profile=mp4/mkv asked=mp4 sub=False -> True
+container profile=mp4/mkv asked=mp4 sub=True -> True
+container profile=mp4/mkv asked=m4v sub=False -> False
+container profile=mp4/mkv asked=m4v sub=True -> False
+container profile=mp4/mkv asked=mov sub=False -> False
+container profile=mp4/mkv asked=mov sub=True -> False
+container profile=mp4/mkv asked=ts sub=False -> False
+container profile=mp4/mkv asked=ts sub=True -> False
+container profile=mp4/mkv asked=hls sub=False -> False
+container profile=mp4/mkv asked=hls sub=True -> False
+container profile=mp4/mkv asked=webm sub=False -> False
+container profile=mp4/mkv asked=webm sub=True -> False
+container profile=mp4/mkv asked=mkv,webm sub=False -> False
+container profile=mp4/mkv asked=mkv,webm sub=True -> False
+container profile=mp4/mkv asked=webm,mp4 sub=False -> True
+container profile=mp4/mkv asked=webm,mp4 sub=True -> True
+container profile=mp4/mkv asked= sub=False -> False
+container profile=mp4/mkv asked= sub=True -> False
+condition Equals AudioChannels null required=True
+condition LessThanEqual Width 1920 required=False
+condition EqualsAny VideoProfile high|main required=True
+condition NotEquals IsAnamorphic true required=False
+resolution 1280 3000000

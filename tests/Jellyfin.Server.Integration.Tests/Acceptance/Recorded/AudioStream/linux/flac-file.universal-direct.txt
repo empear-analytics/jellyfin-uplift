@@ -1,0 +1,5 @@
+200 OK
+content-type: audio/flac
+location: -
+body: 38 bytes fLaC acceptance test content flac-file
+ffmpeg: -

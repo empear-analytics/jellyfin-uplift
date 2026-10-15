@@ -1,0 +1,7 @@
+progress position=- fps=0 percent=- bytes=- bitrate=1073767
+progress position=- fps=96 percent=- bytes=- bitrate=2145383
+progress position=- fps=95 percent=- bytes=- bitrate=2860954
+progress position=- fps=94 percent=- bytes=- bitrate=2928640
+progress position=- fps=90 percent=- bytes=-1024 bitrate=0
+progress position=- fps=25 percent=- bytes=- bitrate=2147533
+log: |ffmpeg version 7.1 Copyright (c) 2000-2024 the FFmpeg developers|Input #0, matroska,webm, from 'movie.mkv':|frame=   48 fps=0.0 q=28.0 size=     256kB time=00:00:02.00 bitrate=1048.6kbits/s speed=3.99x|frame=  480 fps= 96 q=28.0 size=    5120KiB time=00:00:20.02 bitrate=2095.1kbits/s dup=1 drop=2 speed=4.01x|frame= 1440 fps= 95 q=-1.0 size=   20480kB time=00:01:00.05 bitrate=2793.9kbits/s speed=3.8x|size=N/A time=00:02:00.00 bitrate=N/A speed=6.0x|frame= 2880 fps= 94 q=-1.0 Lsize=   41943kB time=00:02:00.10 bitrate=2860.0kbits/s speed=3.9x|frame=3000 fps=90 size=-1kB time=-00:00:00.50 bitrate=-0.0kbits/s speed=N/A|[hls @ 0x55d] Opening 'segment5.ts' for writing|frame=  100 fps= 25 q=28.0 size=1048576 time=00:00:04.00 bitrate=2097.2kbits/s speed=1x|video:1000kB audio:200kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: 1.5%
