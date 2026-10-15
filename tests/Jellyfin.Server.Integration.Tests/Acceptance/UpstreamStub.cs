@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -29,7 +30,7 @@ public sealed class UpstreamStub : DelegatingHandler
     /// honours them without saying so, "no-ranges" says it does not, "untyped" sends no content type
     /// or length, and "missing" is not found.
     /// </summary>
-    public static string[] Scenarios { get; } = ["plain", "ranges", "partial-only", "no-ranges", "untyped", "missing"];
+    public static IReadOnlyList<string> Scenarios { get; } = ["plain", "ranges", "partial-only", "no-ranges", "untyped", "missing"];
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
