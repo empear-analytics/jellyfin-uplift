@@ -10,7 +10,8 @@ namespace Jellyfin.Server.Integration.Tests.Acceptance;
 /// <param name="Name">The item name, which also determines its path and id.</param>
 /// <param name="Streams">Creates the item's media streams.</param>
 /// <param name="IsAudio">Whether the item is an audio track rather than a movie.</param>
-public sealed record TestItem(string Name, Func<List<MediaStream>> Streams, bool IsAudio = false)
+/// <param name="RealFile">Whether the item is backed by a real (tiny) file, so it can be streamed directly.</param>
+public sealed record TestItem(string Name, Func<List<MediaStream>> Streams, bool IsAudio = false, bool RealFile = false)
 {
     public static readonly TestItem H264Sdr = new("h264-sdr", () =>
     [
@@ -81,6 +82,15 @@ public sealed record TestItem(string Name, Func<List<MediaStream>> Streams, bool
         video.ColorTransfer = null;
         return [video, Audio(1, "eac3", 6, 768_000), Subtitle(2, "subrip", "eng")];
     });
+
+    public static readonly TestItem FlacFile = new(
+        "flac-file",
+        () =>
+        [
+            new MediaStream { Index = 0, Type = MediaStreamType.Audio, Codec = "flac", Channels = 2, SampleRate = 44_100, BitDepth = 16, BitRate = 900_000, IsDefault = true }
+        ],
+        IsAudio: true,
+        RealFile: true);
 
     public static readonly TestItem[] All = [H264Sdr, Hdr10, Dovi, Av1];
 

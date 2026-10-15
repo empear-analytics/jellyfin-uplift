@@ -30,6 +30,12 @@ public sealed class RecordingTranscodeManager : ITranscodeManager
     /// </summary>
     public ConcurrentDictionary<string, string> CommandLines { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Gets or sets the most recent command line, for requests without a play session id. The tests
+    /// of one class run one after another, and each class has its own server.
+    /// </summary>
+    public string? LastCommandLine { get; set; }
+
     public Task<TranscodingJob> StartFfMpeg(
         StreamState state,
         string outputPath,
@@ -40,6 +46,7 @@ public sealed class RecordingTranscodeManager : ITranscodeManager
         string? workingDirectory = null)
     {
         CommandLines[state.Request.PlaySessionId ?? string.Empty] = commandLineArguments;
+        LastCommandLine = commandLineArguments;
         throw new InvalidOperationException("Acceptance tests do not start ffmpeg.");
     }
 

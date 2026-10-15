@@ -1,16 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Entities.Movies;
-using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.Persistence;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
-
-using AudioItem = MediaBrowser.Controller.Entities.Audio.Audio;
 
 namespace Jellyfin.Server.Integration.Tests.Acceptance;
 
@@ -29,9 +21,6 @@ namespace Jellyfin.Server.Integration.Tests.Acceptance;
 /// </remarks>
 public sealed class HlsPlaylistAcceptanceTests : IClassFixture<AcceptanceApplicationFactory>
 {
-    private static readonly SemaphoreSlim _setupLock = new(1, 1);
-    private static string? _accessToken;
-
     private readonly AcceptanceApplicationFactory _factory;
 
     public HlsPlaylistAcceptanceTests(AcceptanceApplicationFactory factory)
@@ -66,8 +55,7 @@ public sealed class HlsPlaylistAcceptanceTests : IClassFixture<AcceptanceApplica
     public async Task Playlist_MatchesRecording(string caseId)
     {
         var testCase = AllCases()[caseId];
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.AddAuthHeader(_accessToken ??= await AuthHelper.CompleteStartupAsync(client));
+        var client = await _factory.CreateAuthenticatedClientAsync();
         var itemId = await EnsureItemAsync(testCase.Item);
 
         var url = $"{testCase.Kind}/{itemId:N}/{testCase.Playlist}?MediaSourceId={itemId:N}&PlaySessionId=acceptance&{testCase.Query}";
@@ -76,7 +64,7 @@ public sealed class HlsPlaylistAcceptanceTests : IClassFixture<AcceptanceApplica
 
         // Carriage returns are written out as "\r": the playlist's line endings follow the OS,
         // and git would otherwise normalise them away in the recordings.
-        var playlist = MaskToken(body, _accessToken).Replace("\r", "\\r", StringComparison.Ordinal);
+        var playlist = _factory.Mask(body).Replace("\r", "\\r", StringComparison.Ordinal);
         var actual = $"{(int)response.StatusCode} {response.StatusCode}\n{playlist}";
         RecordedOutput.Verify("HlsPlaylist", caseId, actual.TrimEnd());
     }
@@ -86,8 +74,7 @@ public sealed class HlsPlaylistAcceptanceTests : IClassFixture<AcceptanceApplica
     public async Task SegmentCommandLine_MatchesRecording(string caseId)
     {
         var testCase = AllSegmentCases()[caseId];
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.AddAuthHeader(_accessToken ??= await AuthHelper.CompleteStartupAsync(client));
+        var client = await _factory.CreateAuthenticatedClientAsync();
         var itemId = await EnsureItemAsync(testCase.Item);
         var session = "segment-" + caseId;
 
@@ -96,22 +83,10 @@ public sealed class HlsPlaylistAcceptanceTests : IClassFixture<AcceptanceApplica
         var response = await client.GetAsync(url, TestContext.Current.CancellationToken);
 
         var commandLine = _factory.Transcodes.CommandLines.TryGetValue(session, out var line)
-            ? MaskRoot(MaskToken(line, _accessToken))
+            ? _factory.Mask(line)
             : "no ffmpeg command line";
         RecordedOutput.Verify("HlsSegmentCommandLine", caseId, $"{(int)response.StatusCode} {response.StatusCode}\n{commandLine}");
     }
-
-    // The root appears as is, with forward slashes, and in ffmpeg's filter escaping (C\:/...).
-    private string MaskRoot(string text)
-    {
-        var forward = _factory.Root.Replace('\\', '/');
-        return text.Replace(_factory.Root, "<root>", StringComparison.Ordinal)
-            .Replace(forward.Replace(":", "\\:", StringComparison.Ordinal), "<root>", StringComparison.Ordinal)
-            .Replace(forward, "<root>", StringComparison.Ordinal);
-    }
-
-    private static string MaskToken(string body, string token)
-        => string.IsNullOrEmpty(token) ? body : body.Replace(token, "<token>", StringComparison.Ordinal);
 
     private static Dictionary<string, PlaylistCase> AllCases()
     {
@@ -192,39 +167,7 @@ public sealed class HlsPlaylistAcceptanceTests : IClassFixture<AcceptanceApplica
         return cases;
     }
 
-    private async Task<Guid> EnsureItemAsync(TestItem testItem)
-    {
-        var services = _factory.Services;
-        var libraryManager = services.GetRequiredService<ILibraryManager>();
-        var path = "/acceptance/media/" + testItem.Name + (testItem.IsAudio ? ".flac" : ".mkv");
-        var id = libraryManager.GetNewItemId(path, testItem.IsAudio ? typeof(AudioItem) : typeof(Movie));
-
-        await _setupLock.WaitAsync(TestContext.Current.CancellationToken);
-        try
-        {
-            if (libraryManager.GetItemById(id) is null)
-            {
-                var root = libraryManager.RootFolder;
-                BaseItem item = testItem.IsAudio ? new AudioItem() : new Movie();
-                item.Id = id;
-                item.Name = testItem.Name;
-                item.Path = path;
-                item.Container = testItem.IsAudio ? "flac" : "mkv";
-                item.RunTimeTicks = TimeSpan.FromSeconds(20).Ticks;
-                item.ParentId = root.Id;
-                item.DateCreated = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-                item.DateModified = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-                libraryManager.CreateItem(item, root);
-                services.GetRequiredService<IMediaStreamRepository>().SaveMediaStreams(id, testItem.Streams(), CancellationToken.None);
-            }
-        }
-        finally
-        {
-            _setupLock.Release();
-        }
-
-        return id;
-    }
+    private Task<Guid> EnsureItemAsync(TestItem testItem) => _factory.EnsureItemAsync(testItem);
 
     private sealed record PlaylistCase(TestItem Item, string Kind, string Playlist, string Query);
 
