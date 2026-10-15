@@ -49,15 +49,16 @@
  },
  "encoding": {
   "reports": [
-   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\encoding\\20261014-221924\\reports\\mutation-report.json",
-   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\encoding-linux\\20261014-231813\\reports\\mutation-report.json"
+   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\encoding\\20261015-172212\\reports\\mutation-report.json",
+   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\encoding-linux\\20261015-165458\\reports\\mutation-report.json"
   ],
   "profiles": {
    "stryker": {
     "total": {
-     "Killed": 2192,
-     "Survived": 1107,
-     "NoCoverage": 2544
+     "Killed": 2878,
+     "Survived": 1124,
+     "NoCoverage": 1838,
+     "Timeout": 3
     },
     "files": {
      "MediaBrowser.Controller/MediaEncoding/BaseEncodingJobOptions.cs": {
@@ -70,14 +71,15 @@
       "NoCoverage": 8
      },
      "MediaBrowser.Controller/MediaEncoding/EncodingHelper.cs": {
-      "Survived": 1024,
-      "Killed": 2119,
-      "NoCoverage": 2164
+      "Survived": 1039,
+      "Killed": 2805,
+      "NoCoverage": 1460,
+      "Timeout": 3
      },
      "MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs": {
       "Killed": 48,
-      "NoCoverage": 132,
-      "Survived": 41
+      "NoCoverage": 130,
+      "Survived": 43
      },
      "MediaBrowser.Controller/MediaEncoding/JobLogger.cs": {
       "NoCoverage": 65
@@ -97,22 +99,24 @@
    },
    "mull": {
     "total": {
-     "Killed": 346,
-     "NoCoverage": 567,
-     "Survived": 138
+     "Killed": 502,
+     "NoCoverage": 387,
+     "Survived": 160,
+     "Timeout": 2
     },
     "files": {
      "MediaBrowser.Controller/MediaEncoding/DownMixAlgorithmsHelper.cs": {
       "Killed": 1
      },
      "MediaBrowser.Controller/MediaEncoding/EncodingHelper.cs": {
-      "Killed": 338,
-      "NoCoverage": 458,
-      "Survived": 131
+      "Killed": 494,
+      "NoCoverage": 279,
+      "Survived": 152,
+      "Timeout": 2
      },
      "MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs": {
-      "NoCoverage": 9,
-      "Survived": 1,
+      "NoCoverage": 8,
+      "Survived": 2,
       "Killed": 1
      },
      "MediaBrowser.Controller/MediaEncoding/JobLogger.cs": {
@@ -242,15 +246,15 @@
  "library": {
   "reports": [
    "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\library\\20261014-153316\\reports\\mutation-report.json",
-   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\library-linux\\20261015-064637\\reports\\mutation-report.json"
+   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\library-linux\\20261015-184953\\reports\\mutation-report.json"
   ],
   "profiles": {
    "stryker": {
     "total": {
-     "Killed": 1020,
-     "Survived": 139,
-     "Timeout": 6,
-     "NoCoverage": 1482
+     "Killed": 1122,
+     "Survived": 112,
+     "NoCoverage": 1408,
+     "Timeout": 5
     },
     "files": {
      "Emby.Server.Implementations/Library/CoreResolutionIgnoreRule.cs": {
@@ -258,8 +262,7 @@
       "Survived": 1
      },
      "Emby.Server.Implementations/Library/DotIgnoreIgnoreRule.cs": {
-      "Killed": 59,
-      "Timeout": 1,
+      "Killed": 60,
       "NoCoverage": 4,
       "Survived": 12
      },
@@ -268,29 +271,30 @@
       "NoCoverage": 15
      },
      "Emby.Server.Implementations/Library/IgnorePatterns.cs": {
-      "Killed": 82
+      "Killed": 74,
+      "Survived": 8
      },
      "Emby.Server.Implementations/Library/KeyframeManager.cs": {
       "Killed": 1,
       "NoCoverage": 5
      },
      "Emby.Server.Implementations/Library/LibraryManager.cs": {
-      "Killed": 475,
-      "NoCoverage": 786,
-      "Survived": 39,
+      "Killed": 501,
+      "NoCoverage": 764,
+      "Survived": 35,
       "Timeout": 1
      },
      "Emby.Server.Implementations/Library/LiveStreamHelper.cs": {
       "NoCoverage": 83
      },
      "Emby.Server.Implementations/Library/MediaSourceManager.cs": {
-      "Killed": 152,
-      "NoCoverage": 263,
-      "Survived": 26
+      "Killed": 170,
+      "NoCoverage": 250,
+      "Survived": 21
      },
      "Emby.Server.Implementations/Library/MediaStreamSelector.cs": {
-      "Killed": 62,
-      "Survived": 35
+      "Killed": 88,
+      "Survived": 9
      },
      "Emby.Server.Implementations/Library/MusicManager.cs": {
       "Killed": 1,
@@ -303,8 +307,8 @@
       "NoCoverage": 2
      },
      "Emby.Server.Implementations/Library/PathManager.cs": {
-      "Killed": 1,
-      "NoCoverage": 38
+      "Killed": 10,
+      "NoCoverage": 29
      },
      "Emby.Server.Implementations/Library/ResolverHelper.cs": {
       "NoCoverage": 15,
@@ -316,30 +320,29 @@
       "NoCoverage": 12
      },
      "Emby.Server.Implementations/Library/UserDataManager.cs": {
-      "Killed": 38,
+      "Killed": 44,
       "Survived": 12,
-      "NoCoverage": 98
+      "NoCoverage": 92
      },
      "Emby.Server.Implementations/Library/UserViewManager.cs": {
-      "Killed": 1,
-      "NoCoverage": 144
+      "Killed": 25,
+      "NoCoverage": 120
      }
     }
    },
    "mull": {
     "total": {
-     "Killed": 340,
-     "Timeout": 4,
-     "Survived": 51,
-     "NoCoverage": 530
+     "Killed": 370,
+     "Survived": 42,
+     "NoCoverage": 510,
+     "Timeout": 3
     },
     "files": {
      "Emby.Server.Implementations/Library/CoreResolutionIgnoreRule.cs": {
       "Killed": 2
      },
      "Emby.Server.Implementations/Library/DotIgnoreIgnoreRule.cs": {
-      "Killed": 18,
-      "Timeout": 1,
+      "Killed": 19,
       "Survived": 6
      },
      "Emby.Server.Implementations/Library/ExternalDataManager.cs": {
@@ -352,22 +355,21 @@
       "NoCoverage": 2
      },
      "Emby.Server.Implementations/Library/LibraryManager.cs": {
-      "Killed": 197,
-      "NoCoverage": 289,
-      "Survived": 17,
+      "Killed": 207,
+      "NoCoverage": 281,
+      "Survived": 15,
       "Timeout": 1
      },
      "Emby.Server.Implementations/Library/LiveStreamHelper.cs": {
       "NoCoverage": 31
      },
      "Emby.Server.Implementations/Library/MediaSourceManager.cs": {
-      "Killed": 38,
-      "NoCoverage": 84,
-      "Survived": 8
+      "Killed": 42,
+      "NoCoverage": 82,
+      "Survived": 6
      },
      "Emby.Server.Implementations/Library/MediaStreamSelector.cs": {
-      "Killed": 21,
-      "Survived": 5
+      "Killed": 26
      },
      "Emby.Server.Implementations/Library/PathExtensions.cs": {
       "Killed": 34,
@@ -375,7 +377,8 @@
       "Survived": 7
      },
      "Emby.Server.Implementations/Library/PathManager.cs": {
-      "NoCoverage": 13
+      "NoCoverage": 12,
+      "Killed": 1
      },
      "Emby.Server.Implementations/Library/ResolverHelper.cs": {
       "NoCoverage": 8,
@@ -386,11 +389,12 @@
      },
      "Emby.Server.Implementations/Library/UserDataManager.cs": {
       "Survived": 8,
-      "Killed": 16,
-      "NoCoverage": 43
+      "Killed": 20,
+      "NoCoverage": 39
      },
      "Emby.Server.Implementations/Library/UserViewManager.cs": {
-      "NoCoverage": 53
+      "Killed": 5,
+      "NoCoverage": 48
      }
     }
    }
@@ -398,38 +402,38 @@
  },
  "api": {
   "reports": [
-   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\api\\20261014-225937\\reports\\mutation-report.json",
-   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\api-linux\\20261014-225232\\reports\\mutation-report.json"
+   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\api\\20261015-192208\\reports\\mutation-report.json",
+   "F:\\Code\\refactoring_cases\\jellyfin\\mutation\\api-linux\\20261015-175503\\reports\\mutation-report.json"
   ],
   "profiles": {
    "stryker": {
     "total": {
-     "Killed": 544,
-     "NoCoverage": 1105,
-     "Survived": 45,
-     "Timeout": 2
+     "Killed": 1041,
+     "NoCoverage": 610,
+     "Survived": 44,
+     "Timeout": 1
     },
     "files": {
      "Jellyfin.Api/Controllers/DynamicHlsController.cs": {
-      "Killed": 105,
-      "NoCoverage": 357,
-      "Survived": 3,
-      "Timeout": 2
+      "Killed": 319,
+      "NoCoverage": 145,
+      "Survived": 2,
+      "Timeout": 1
      },
      "Jellyfin.Api/Helpers/AudioHelper.cs": {
       "NoCoverage": 26
      },
      "Jellyfin.Api/Helpers/DynamicHlsHelper.cs": {
-      "Killed": 221,
-      "NoCoverage": 261
+      "Killed": 363,
+      "NoCoverage": 119
      },
      "Jellyfin.Api/Helpers/FileStreamResponseHelpers.cs": {
       "NoCoverage": 31,
       "Survived": 2
      },
      "Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs": {
-      "NoCoverage": 174,
-      "Killed": 12
+      "Killed": 126,
+      "NoCoverage": 60
      },
      "Jellyfin.Api/Helpers/HlsHelpers.cs": {
       "NoCoverage": 32
@@ -445,37 +449,37 @@
       "NoCoverage": 14
      },
      "Jellyfin.Api/Helpers/StreamingHelpers.cs": {
-      "Killed": 142,
-      "NoCoverage": 108
+      "Killed": 169,
+      "NoCoverage": 81
      }
     }
    },
    "mull": {
     "total": {
-     "NoCoverage": 242,
-     "Killed": 96,
-     "Timeout": 2,
+     "NoCoverage": 158,
+     "Killed": 181,
+     "Timeout": 1,
      "Survived": 9
     },
     "files": {
      "Jellyfin.Api/Controllers/DynamicHlsController.cs": {
-      "NoCoverage": 59,
-      "Killed": 16,
-      "Timeout": 2
+      "NoCoverage": 42,
+      "Killed": 34,
+      "Timeout": 1
      },
      "Jellyfin.Api/Helpers/AudioHelper.cs": {
       "NoCoverage": 6
      },
      "Jellyfin.Api/Helpers/DynamicHlsHelper.cs": {
-      "Killed": 46,
-      "NoCoverage": 63
+      "Killed": 76,
+      "NoCoverage": 33
      },
      "Jellyfin.Api/Helpers/FileStreamResponseHelpers.cs": {
       "NoCoverage": 5
      },
      "Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs": {
-      "NoCoverage": 50,
-      "Killed": 3
+      "NoCoverage": 15,
+      "Killed": 38
      },
      "Jellyfin.Api/Helpers/HlsHelpers.cs": {
       "NoCoverage": 8
@@ -490,8 +494,8 @@
       "NoCoverage": 1
      },
      "Jellyfin.Api/Helpers/StreamingHelpers.cs": {
-      "NoCoverage": 26,
-      "Killed": 15
+      "NoCoverage": 24,
+      "Killed": 17
      }
     }
    }
