@@ -65,3 +65,4 @@ copy of populated:
   ],
   "EnableAudioVbrEncoding": false
 }
+copy of null: threw ArgumentNullException
