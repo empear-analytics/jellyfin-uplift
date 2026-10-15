@@ -1,0 +1,96 @@
+audioPref=- playDefault=True subPref=- original=- remembered=False -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=True subPref=- original=- remembered=True -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=True subPref=- original=jpn remembered=False -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=True subPref=- original=jpn remembered=True -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=True subPref=eng original=- remembered=False -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=True subPref=eng original=- remembered=True -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=True subPref=eng original=jpn remembered=False -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=True subPref=eng original=jpn remembered=True -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=True subPref=swe original=- remembered=False -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=True subPref=swe original=- remembered=True -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=True subPref=swe original=jpn remembered=False -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=True subPref=swe original=jpn remembered=True -> audio=1 (Default) subtitle=- scores=
+audioPref=- playDefault=False subPref=- original=- remembered=False -> audio=1 (None) subtitle=- scores=
+audioPref=- playDefault=False subPref=- original=- remembered=True -> audio=1 (None) subtitle=- scores=
+audioPref=- playDefault=False subPref=- original=jpn remembered=False -> audio=1 (None) subtitle=- scores=
+audioPref=- playDefault=False subPref=- original=jpn remembered=True -> audio=1 (None) subtitle=- scores=
+audioPref=- playDefault=False subPref=eng original=- remembered=False -> audio=1 (None) subtitle=- scores=
+audioPref=- playDefault=False subPref=eng original=- remembered=True -> audio=1 (None) subtitle=- scores=
+audioPref=- playDefault=False subPref=eng original=jpn remembered=False -> audio=1 (None) subtitle=- scores=
+audioPref=- playDefault=False subPref=eng original=jpn remembered=True -> audio=1 (None) subtitle=- scores=
+audioPref=- playDefault=False subPref=swe original=- remembered=False -> audio=1 (None) subtitle=- scores=
+audioPref=- playDefault=False subPref=swe original=- remembered=True -> audio=1 (None) subtitle=- scores=
+audioPref=- playDefault=False subPref=swe original=jpn remembered=False -> audio=1 (None) subtitle=- scores=
+audioPref=- playDefault=False subPref=swe original=jpn remembered=True -> audio=1 (None) subtitle=- scores=
+audioPref=eng playDefault=True subPref=- original=- remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=True subPref=- original=- remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=True subPref=- original=jpn remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=True subPref=- original=jpn remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=True subPref=eng original=- remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=True subPref=eng original=- remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=True subPref=eng original=jpn remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=True subPref=eng original=jpn remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=True subPref=swe original=- remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=True subPref=swe original=- remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=True subPref=swe original=jpn remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=True subPref=swe original=jpn remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=- original=- remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=- original=- remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=- original=jpn remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=- original=jpn remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=eng original=- remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=eng original=- remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=eng original=jpn remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=eng original=jpn remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=swe original=- remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=swe original=- remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=swe original=jpn remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=eng playDefault=False subPref=swe original=jpn remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=- original=- remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=- original=- remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=- original=jpn remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=- original=jpn remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=eng original=- remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=eng original=- remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=eng original=jpn remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=eng original=jpn remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=swe original=- remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=swe original=- remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=swe original=jpn remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=True subPref=swe original=jpn remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=- original=- remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=- original=- remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=- original=jpn remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=- original=jpn remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=eng original=- remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=eng original=- remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=eng original=jpn remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=eng original=jpn remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=swe original=- remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=swe original=- remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=swe original=jpn remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=swe playDefault=False subPref=swe original=jpn remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=- original=- remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=- original=- remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=- original=jpn remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=- original=jpn remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=eng original=- remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=eng original=- remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=eng original=jpn remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=eng original=jpn remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=swe original=- remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=swe original=- remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=swe original=jpn remembered=False -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=True subPref=swe original=jpn remembered=True -> audio=1 (Default, Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=- original=- remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=- original=- remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=- original=jpn remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=- original=jpn remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=eng original=- remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=eng original=- remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=eng original=jpn remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=eng original=jpn remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=swe original=- remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=swe original=- remembered=True -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=swe original=jpn remembered=False -> audio=1 (Language) subtitle=- scores=
+audioPref=jpn playDefault=False subPref=swe original=jpn remembered=True -> audio=1 (Language) subtitle=- scores=

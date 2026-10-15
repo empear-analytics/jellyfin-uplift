@@ -1,0 +1,6 @@
+mediaPath=http://tuner/stream.ts protocol=Http container=ts runtime=60000000000
+videoSync=-1 audioSync=1 nativeFramerate=True iso=- timestamp=Valid
+video=0 audio=1 subtitle=- subtitleMethod=Embed subtitleOffset=0
+requestVideoCodec=hevc requestAudioCodec=eac3 maxWidth=- maxHeight=-
+supportedAudio=eac3,aac,truehd,dts supportedVideo=hevc,h264,av1
+headers=User-Agent:tuner

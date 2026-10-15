@@ -1,0 +1,6 @@
+mediaPath=/media/song.wma protocol=File container=wma runtime=60000000000
+videoSync=- audioSync=1 nativeFramerate=False iso=- timestamp=None
+video=- audio=0 subtitle=- subtitleMethod=Encode subtitleOffset=0
+requestVideoCodec=h264 requestAudioCodec=aac maxWidth=4096 maxHeight=4096
+supportedAudio=aac,ac3 supportedVideo=h264
+headers=

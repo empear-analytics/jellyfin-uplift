@@ -1,0 +1,6 @@
+mediaPath=/media/multi.mkv protocol=File container=mkv runtime=60000000000
+videoSync=- audioSync=- nativeFramerate=False iso=- timestamp=None
+video=0 audio=2 subtitle=5 subtitleMethod=Encode subtitleOffset=1
+requestVideoCodec=h264 requestAudioCodec=aac maxWidth=4096 maxHeight=4096
+supportedAudio=aac,ac3 supportedVideo=h264
+headers=
