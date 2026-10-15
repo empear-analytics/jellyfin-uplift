@@ -41,6 +41,11 @@ public class EncodingCommandLineAcceptanceTests
 
     private static readonly string[] _outputCodecs = ["h264", "hevc", "av1"];
 
+    // EncodingHelper names the VAAPI render node in the command line only if the file exists, so
+    // the real /dev/dri/renderD128 would make the output depend on the machine's GPU. A fixed
+    // file the tests create themselves keeps it the same everywhere.
+    private static readonly string _renderNode = CreateRenderNode();
+
     public static TheoryData<string> Cases()
     {
         var data = new TheoryData<string>();
@@ -91,6 +96,17 @@ public class EncodingCommandLineAcceptanceTests
         }
 
         return cases;
+    }
+
+    private static string CreateRenderNode()
+    {
+        const string Path = "/tmp/jellyfin-acceptance-renderD128";
+        if (!OperatingSystem.IsWindows())
+        {
+            File.WriteAllText(Path, string.Empty);
+        }
+
+        return Path;
     }
 
     private static EncodingHelper CreateHelper()
@@ -166,7 +182,7 @@ public class EncodingCommandLineAcceptanceTests
             EnableVideoToolboxTonemapping = Tonemapping,
             DeinterlaceDoubleRate = DoubleRateDeinterlace,
             EncodingThreadCount = -1,
-            VaapiDevice = "/dev/dri/renderD128",
+            VaapiDevice = _renderNode,
             QsvDevice = string.Empty
         };
 
