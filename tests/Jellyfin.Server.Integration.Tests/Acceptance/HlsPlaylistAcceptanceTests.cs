@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.Entities;
@@ -22,16 +23,18 @@ namespace Jellyfin.Server.Integration.Tests.Acceptance;
 /// ffprobe are needed for a playlist), and the master and variant playlists are requested the
 /// way a client does. Responses are compared with recordings of the current code; the access
 /// token, which differs per run, is masked, and carriage returns are written out as "\r".
-/// Set JELLYFIN_ACCEPTANCE_RECORD=1 to (re)record.
+/// Segment requests are covered too: the server builds the ffmpeg command line for the segment,
+/// and <see cref="RecordingTranscodeManager"/> records it instead of starting ffmpeg; the server's
+/// root folder is masked in it. Set JELLYFIN_ACCEPTANCE_RECORD=1 to (re)record.
 /// </remarks>
-public sealed class HlsPlaylistAcceptanceTests : IClassFixture<JellyfinApplicationFactory>
+public sealed class HlsPlaylistAcceptanceTests : IClassFixture<AcceptanceApplicationFactory>
 {
     private static readonly SemaphoreSlim _setupLock = new(1, 1);
     private static string? _accessToken;
 
-    private readonly JellyfinApplicationFactory _factory;
+    private readonly AcceptanceApplicationFactory _factory;
 
-    public HlsPlaylistAcceptanceTests(JellyfinApplicationFactory factory)
+    public HlsPlaylistAcceptanceTests(AcceptanceApplicationFactory factory)
     {
         _factory = factory;
     }
@@ -40,6 +43,17 @@ public sealed class HlsPlaylistAcceptanceTests : IClassFixture<JellyfinApplicati
     {
         var data = new TheoryData<string>();
         foreach (var id in AllCases().Keys)
+        {
+            data.Add(id);
+        }
+
+        return data;
+    }
+
+    public static TheoryData<string> SegmentCases()
+    {
+        var data = new TheoryData<string>();
+        foreach (var id in AllSegmentCases().Keys)
         {
             data.Add(id);
         }
@@ -67,6 +81,35 @@ public sealed class HlsPlaylistAcceptanceTests : IClassFixture<JellyfinApplicati
         RecordedOutput.Verify("HlsPlaylist", caseId, actual.TrimEnd());
     }
 
+    [Theory]
+    [MemberData(nameof(SegmentCases))]
+    public async Task SegmentCommandLine_MatchesRecording(string caseId)
+    {
+        var testCase = AllSegmentCases()[caseId];
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.AddAuthHeader(_accessToken ??= await AuthHelper.CompleteStartupAsync(client));
+        var itemId = await EnsureItemAsync(testCase.Item);
+        var session = "segment-" + caseId;
+
+        var url = $"{testCase.Kind}/{itemId:N}/hls1/main/0.{testCase.Extension}?MediaSourceId={itemId:N}&PlaySessionId={session}"
+            + $"&{testCase.Query}&runtimeTicks=0&actualSegmentLengthTicks=60000000";
+        var response = await client.GetAsync(url, TestContext.Current.CancellationToken);
+
+        var commandLine = _factory.Transcodes.CommandLines.TryGetValue(session, out var line)
+            ? MaskRoot(MaskToken(line, _accessToken))
+            : "no ffmpeg command line";
+        RecordedOutput.Verify("HlsSegmentCommandLine", caseId, $"{(int)response.StatusCode} {response.StatusCode}\n{commandLine}");
+    }
+
+    // The root appears as is, with forward slashes, and in ffmpeg's filter escaping (C\:/...).
+    private string MaskRoot(string text)
+    {
+        var forward = _factory.Root.Replace('\\', '/');
+        return text.Replace(_factory.Root, "<root>", StringComparison.Ordinal)
+            .Replace(forward.Replace(":", "\\:", StringComparison.Ordinal), "<root>", StringComparison.Ordinal)
+            .Replace(forward, "<root>", StringComparison.Ordinal);
+    }
+
     private static string MaskToken(string body, string token)
         => string.IsNullOrEmpty(token) ? body : body.Replace(token, "<token>", StringComparison.Ordinal);
 
@@ -87,9 +130,23 @@ public sealed class HlsPlaylistAcceptanceTests : IClassFixture<JellyfinApplicati
             ("sdr-only-h264-high", "VideoCodec=h264,hevc&AudioCodec=aac&SegmentContainer=mp4&h264-profile=high,main&hevc-rangetype=SDR&h264-level=41"),
             ("subtitles-hls", "VideoCodec=h264&AudioCodec=aac&SegmentContainer=ts&SubtitleStreamIndex=2&SubtitleMethod=Hls"),
             ("subtitles-encode", "VideoCodec=h264&AudioCodec=aac&SegmentContainer=ts&SubtitleStreamIndex=2&SubtitleMethod=Encode"),
+            ("all-copy", "VideoCodec=h264,hevc,av1,vp9&AudioCodec=aac,ac3,eac3,flac,opus,mp3,dts,truehd&SegmentContainer=mp4&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true"),
+            ("dovi-copy", "VideoCodec=hevc,av1,h264&AudioCodec=aac,eac3,ac3&SegmentContainer=mp4&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true"
+                + "&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&av1-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10"),
+            ("hevc-transcode", "VideoCodec=hevc&AudioCodec=aac&SegmentContainer=mp4&AllowVideoStreamCopy=false&hevc-profile=main,main10&hevc-level=150"),
+            ("av1-transcode", "VideoCodec=av1&AudioCodec=opus&SegmentContainer=mp4&AllowVideoStreamCopy=false"),
+            ("vp9-copy", "VideoCodec=vp9,h264&AudioCodec=opus,aac&SegmentContainer=mp4&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true"),
+            ("adaptive-3m", "VideoCodec=h264&AudioCodec=aac&SegmentContainer=ts&EnableAdaptiveBitrateStreaming=true&VideoBitRate=3000000&AudioBitRate=128000&MaxWidth=1920"),
+            ("vtt-subs", "VideoCodec=h264&AudioCodec=aac&SegmentContainer=mp4&SubtitleStreamIndex=2&SubtitleMethod=Hls&SubtitleCodec=vtt"),
+            ("audio-ac3", "VideoCodec=h264&AudioCodec=ac3&SegmentContainer=mp4&AllowAudioStreamCopy=false&AudioBitRate=256000&MaxAudioChannels=6"),
+            ("audio-eac3", "VideoCodec=h264&AudioCodec=eac3&SegmentContainer=mp4&AllowAudioStreamCopy=false&AudioBitRate=256000&MaxAudioChannels=6"),
+            ("audio-flac", "VideoCodec=h264&AudioCodec=flac&SegmentContainer=mp4&AllowAudioStreamCopy=false&MaxAudioChannels=6"),
+            ("audio-opus", "VideoCodec=h264&AudioCodec=opus&SegmentContainer=mp4&AllowAudioStreamCopy=false&AudioBitRate=192000&MaxAudioChannels=6"),
+            ("audio-mp3", "VideoCodec=h264&AudioCodec=mp3&SegmentContainer=ts&AllowAudioStreamCopy=false&AudioBitRate=192000"),
+            ("audio-alac", "VideoCodec=h264&AudioCodec=alac&SegmentContainer=mp4&AllowAudioStreamCopy=false"),
         };
 
-        foreach (var item in TestItem.All)
+        foreach (var item in TestItem.All.Concat(TestItem.More))
         {
             foreach (var (name, query) in queries)
             {
@@ -106,6 +163,32 @@ public sealed class HlsPlaylistAcceptanceTests : IClassFixture<JellyfinApplicati
             Add(name, TestItem.FlacTrack, "main.m3u8", query, "Audio");
         }
 
+        return cases;
+    }
+
+    private static Dictionary<string, SegmentCase> AllSegmentCases()
+    {
+        var cases = new Dictionary<string, SegmentCase>(StringComparer.Ordinal);
+        var queries = new (string Name, string Extension, string Query)[]
+        {
+            ("h264-aac-ts", "ts", "VideoCodec=h264&AudioCodec=aac&SegmentContainer=ts"),
+            ("copy-fmp4", "mp4", "VideoCodec=hevc,h264,av1,vp9&AudioCodec=aac,eac3,ac3,opus&SegmentContainer=mp4&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true"),
+            ("hevc-fmp4", "mp4", "VideoCodec=hevc&AudioCodec=aac&SegmentContainer=mp4&AllowVideoStreamCopy=false&VideoBitRate=8000000"),
+            ("downscale-sdr", "mp4", "VideoCodec=h264&AudioCodec=aac&SegmentContainer=mp4&AllowVideoStreamCopy=false&MaxWidth=1280&VideoBitRate=3000000&MaxAudioChannels=2&h264-rangetype=SDR"),
+            ("burn-in", "ts", "VideoCodec=h264&AudioCodec=aac&SegmentContainer=ts&SubtitleStreamIndex=2&SubtitleMethod=Encode"),
+        };
+
+        foreach (var item in TestItem.All.Concat(TestItem.More))
+        {
+            foreach (var (name, extension, query) in queries)
+            {
+                cases.Add($"{item.Name}.{name}", new SegmentCase(item, "Videos", extension, query));
+            }
+        }
+
+        cases.Add("flac-track.aac-ts", new SegmentCase(TestItem.FlacTrack, "Audio", "ts", "AudioCodec=aac&SegmentContainer=ts&AudioBitRate=192000"));
+        cases.Add("flac-track.opus-fmp4", new SegmentCase(TestItem.FlacTrack, "Audio", "mp4", "AudioCodec=opus&SegmentContainer=mp4&MaxAudioChannels=2&AudioBitRate=96000"));
+        cases.Add("flac-track.flac-copy", new SegmentCase(TestItem.FlacTrack, "Audio", "mp4", "AudioCodec=flac&SegmentContainer=mp4&AllowAudioStreamCopy=true"));
         return cases;
     }
 
@@ -144,4 +227,6 @@ public sealed class HlsPlaylistAcceptanceTests : IClassFixture<JellyfinApplicati
     }
 
     private sealed record PlaylistCase(TestItem Item, string Kind, string Playlist, string Query);
+
+    private sealed record SegmentCase(TestItem Item, string Kind, string Extension, string Query);
 }

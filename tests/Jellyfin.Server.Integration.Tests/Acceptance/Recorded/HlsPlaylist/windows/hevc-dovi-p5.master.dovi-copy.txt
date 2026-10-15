@@ -1,0 +1,8 @@
+200 OK
+#EXTM3U\r
+#EXT-X-STREAM-INF:BANDWIDTH=640000,AVERAGE-BANDWIDTH=640000,VIDEO-RANGE=PQ,CODECS="dvh1.05.06,ec-3",RESOLUTION=3840x2160,FRAME-RATE=23.976\r
+main.m3u8?MediaSourceId=bb74bd4b9f3fe774adbfccadc2b52ce1&PlaySessionId=acceptance&VideoCodec=hevc,av1,h264&AudioCodec=copy&SegmentContainer=mp4&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&av1-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10\r
+#EXT-X-STREAM-INF:BANDWIDTH=640000,AVERAGE-BANDWIDTH=640000,VIDEO-RANGE=PQ,CODECS="hvc1.2.4.L153.B0,ec-3",RESOLUTION=3840x2160,FRAME-RATE=23.976\r
+main.m3u8?MediaSourceId=bb74bd4b9f3fe774adbfccadc2b52ce1&PlaySessionId=acceptance&VideoCodec=hevc,av1,h264&AudioCodec=copy&SegmentContainer=mp4&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&av1-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10\r
+#EXT-X-STREAM-INF:BANDWIDTH=640000,AVERAGE-BANDWIDTH=640000,VIDEO-RANGE=SDR,CODECS="avc1.424029,ec-3",RESOLUTION=3840x2160,FRAME-RATE=23.976\r
+main.m3u8?MediaSourceId=bb74bd4b9f3fe774adbfccadc2b52ce1&PlaySessionId=acceptance&VideoCodec=h264&AudioCodec=copy&SegmentContainer=mp4&AllowVideoStreamCopy=false&AllowAudioStreamCopy=true&hevc-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10,DOVIWithHLG,DOVIWithSDR&av1-rangetype=SDR,HDR10,HLG,DOVI,DOVIWithHDR10\r

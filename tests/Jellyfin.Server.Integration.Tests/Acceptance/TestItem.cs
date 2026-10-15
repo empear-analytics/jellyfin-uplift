@@ -52,7 +52,42 @@ public sealed record TestItem(string Name, Func<List<MediaStream>> Streams, bool
         ],
         IsAudio: true);
 
+    public static readonly TestItem Vp9Hlg = new("vp9-hlg", () =>
+    [
+        Video("vp9", "Profile 2", 51, 3840, 2160, 10, "arib-std-b67", 20_000_000),
+        Audio(1, "opus", 6, 510_000),
+        Subtitle(2, "webvtt", "eng")
+    ]);
+
+    public static readonly TestItem H264Surround = new("h264-surround", () =>
+    [
+        Video("h264", "High", 41, 1920, 1080, 8, "bt709", 12_000_000),
+        Audio(1, "dts", 6, 1_536_000),
+        Audio(2, "truehd", 8, 4_000_000),
+        Audio(3, "ac3", 6, 640_000),
+        Subtitle(4, "PGSSUB", "eng")
+    ]);
+
+    public static readonly TestItem DoviProfile5 = new("hevc-dovi-p5", () =>
+    {
+        var video = Video("hevc", "Main 10", 153, 3840, 2160, 10, "smpte2084", 30_000_000);
+        video.DvProfile = 5;
+        video.DvLevel = 6;
+        video.DvBlSignalCompatibilityId = 0;
+        video.RpuPresentFlag = 1;
+        video.BlPresentFlag = 1;
+        video.ColorPrimaries = null;
+        video.ColorSpace = null;
+        video.ColorTransfer = null;
+        return [video, Audio(1, "eac3", 6, 768_000), Subtitle(2, "subrip", "eng")];
+    });
+
     public static readonly TestItem[] All = [H264Sdr, Hdr10, Dovi, Av1];
+
+    /// <summary>
+    /// Items added in the second round, kept apart so the first round's case ids stay stable.
+    /// </summary>
+    public static readonly TestItem[] More = [Vp9Hlg, H264Surround, DoviProfile5];
 
     private static MediaStream Video(string codec, string profile, double level, int width, int height, int bitDepth, string transfer, int bitrate)
         => new()

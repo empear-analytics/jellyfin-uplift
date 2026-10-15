@@ -1,0 +1,6 @@
+200 OK
+#EXTM3U\r
+#EXT-X-STREAM-INF:BANDWIDTH=640000,AVERAGE-BANDWIDTH=640000,VIDEO-RANGE=PQ,CODECS="hvc1.2.4.L153.B0,mlpa",SUPPLEMENTAL-CODECS="dvh1.08.06/db1p",RESOLUTION=3840x2160,FRAME-RATE=23.976\r
+main.m3u8?MediaSourceId=32464aefd9e2d6f6c574752cd57aa57b&PlaySessionId=acceptance&VideoCodec=h264,hevc,av1,vp9&AudioCodec=copy&SegmentContainer=mp4&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true\r
+#EXT-X-STREAM-INF:BANDWIDTH=640000,AVERAGE-BANDWIDTH=640000,VIDEO-RANGE=SDR,CODECS="avc1.424029,mlpa",RESOLUTION=3840x2160,FRAME-RATE=23.976\r
+main.m3u8?MediaSourceId=32464aefd9e2d6f6c574752cd57aa57b&PlaySessionId=acceptance&VideoCodec=h264&AudioCodec=copy&SegmentContainer=mp4&AllowVideoStreamCopy=false&AllowAudioStreamCopy=true\r
