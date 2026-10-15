@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MediaBrowser.Model.Entities;
 
 namespace Jellyfin.Server.Integration.Tests.Acceptance;
@@ -11,7 +12,8 @@ namespace Jellyfin.Server.Integration.Tests.Acceptance;
 /// <param name="Streams">Creates the item's media streams.</param>
 /// <param name="IsAudio">Whether the item is an audio track rather than a movie.</param>
 /// <param name="RealFile">Whether the item is backed by a real (tiny) file, so it can be streamed directly.</param>
-public sealed record TestItem(string Name, Func<List<MediaStream>> Streams, bool IsAudio = false, bool RealFile = false)
+/// <param name="RemoteUrl">The item's path when it is a remote (http) stream rather than a file.</param>
+public sealed record TestItem(string Name, Func<List<MediaStream>> Streams, bool IsAudio = false, bool RealFile = false, string? RemoteUrl = null)
 {
     public static readonly TestItem H264Sdr = new("h264-sdr", () =>
     [
@@ -93,6 +95,18 @@ public sealed record TestItem(string Name, Func<List<MediaStream>> Streams, bool
         RealFile: true);
 
     public static readonly TestItem[] All = [H264Sdr, Hdr10, Dovi, Av1];
+
+    /// <summary>
+    /// Remote FLAC tracks, one per behaviour of the stub upstream server (see <see cref="UpstreamStub"/>).
+    /// </summary>
+    public static readonly TestItem[] RemoteFlac = [.. UpstreamStub.Scenarios.Select(scenario => new TestItem(
+        "remote-" + scenario,
+        () =>
+        [
+            new MediaStream { Index = 0, Type = MediaStreamType.Audio, Codec = "flac", Channels = 2, SampleRate = 44_100, BitDepth = 16, BitRate = 900_000, IsDefault = true }
+        ],
+        IsAudio: true,
+        RemoteUrl: UpstreamStub.BaseUrl + scenario + ".flac"))];
 
     /// <summary>
     /// Items added in the second round, kept apart so the first round's case ids stay stable.

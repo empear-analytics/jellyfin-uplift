@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
+using Jellyfin.Data.Enums;
 using MediaBrowser.Model.Dlna;
 using Xunit;
 
@@ -85,6 +87,37 @@ public class DlnaModelAcceptanceTests
         output.Append(CultureInfo.InvariantCulture, $"resolution {resolution.MaxWidth} {resolution.MaxBitrate}");
 
         RecordedOutput.Verify("DlnaModel", "matching", output.ToString());
+    }
+
+    [Fact]
+    public void TranscodingProfileDefaultsAndCopy_MatchRecording()
+    {
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        var defaults = new TranscodingProfile();
+        var populated = new TranscodingProfile
+        {
+            Container = "ts",
+            Type = DlnaProfileType.Video,
+            VideoCodec = "h264,hevc",
+            AudioCodec = "aac,ac3",
+            Protocol = MediaStreamProtocol.hls,
+            EstimateContentLength = true,
+            EnableMpegtsM2TsMode = true,
+            TranscodeSeekInfo = TranscodeSeekInfo.Bytes,
+            CopyTimestamps = true,
+            Context = EncodingContext.Static,
+            EnableSubtitlesInManifest = true,
+            MaxAudioChannels = "6",
+            MinSegments = 2,
+            SegmentLength = 3,
+            Conditions = [new ProfileCondition(ProfileConditionType.LessThanEqual, ProfileConditionValue.Width, "1920")],
+            EnableAudioVbrEncoding = false
+        };
+
+        var output = "defaults:\n" + JsonSerializer.Serialize(defaults, options)
+            + "\ncopy of defaults:\n" + JsonSerializer.Serialize(new TranscodingProfile(defaults), options)
+            + "\ncopy of populated:\n" + JsonSerializer.Serialize(new TranscodingProfile(populated), options);
+        RecordedOutput.Verify("DlnaModel", "transcoding-profile", output.ReplaceLineEndings("\n"));
     }
 
     private static string Show(int? value) => value?.ToString(CultureInfo.InvariantCulture) ?? "-";

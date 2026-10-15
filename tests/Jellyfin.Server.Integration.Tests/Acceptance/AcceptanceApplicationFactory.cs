@@ -1,10 +1,12 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
@@ -63,6 +65,11 @@ public sealed class AcceptanceApplicationFactory : JellyfinApplicationFactory
     public RecordingTranscodeManager Transcodes => Services.GetRequiredService<RecordingTranscodeManager>();
 
     /// <summary>
+    /// Gets the requests the stub upstream server has received.
+    /// </summary>
+    public UpstreamLog Upstream => Services.GetRequiredService<UpstreamLog>();
+
+    /// <summary>
     /// Creates a client authenticated as the server's administrator.
     /// </summary>
     /// <returns>The client.</returns>
@@ -85,10 +92,11 @@ public sealed class AcceptanceApplicationFactory : JellyfinApplicationFactory
         var extension = testItem.IsAudio ? ".flac" : ".mkv";
         string path;
         Guid id;
-        if (testItem.RealFile)
+        if (testItem.RealFile || testItem.RemoteUrl is not null)
         {
-            // A real file, so direct streaming works; its id is fixed because the path is not.
-            path = Path.Combine(MediaFolder, testItem.Name + extension);
+            // A real file, so direct streaming works, or a remote stream; the id is fixed because
+            // a file's path is not.
+            path = testItem.RemoteUrl ?? Path.Combine(MediaFolder, testItem.Name + extension);
             id = new Guid(SHA256.HashData(Encoding.UTF8.GetBytes("acceptance/" + testItem.Name)).AsSpan(0, 16));
         }
         else
@@ -174,6 +182,14 @@ public sealed class AcceptanceApplicationFactory : JellyfinApplicationFactory
             services.AddSingleton<TranscodeManager>();
             services.AddSingleton<RecordingTranscodeManager>();
             services.AddSingleton<ITranscodeManager>(sp => sp.GetRequiredService<RecordingTranscodeManager>());
+
+            // Remote media is fetched from the stub upstream server; other hosts are reached as usual.
+            services.AddSingleton<UpstreamLog>();
+            services.AddHttpClient(NamedClient.Default)
+                .ConfigurePrimaryHttpMessageHandler(sp => new UpstreamStub(sp.GetRequiredService<UpstreamLog>())
+                {
+                    InnerHandler = new SocketsHttpHandler { AutomaticDecompression = DecompressionMethods.All }
+                });
         });
     }
 }

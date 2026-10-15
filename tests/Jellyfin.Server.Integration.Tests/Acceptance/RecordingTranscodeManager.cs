@@ -1,10 +1,15 @@
 using System;
 using System.Collections.Concurrent;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
 using MediaBrowser.MediaEncoding.Transcoding;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Jellyfin.Server.Integration.Tests.Acceptance;
 
@@ -19,6 +24,8 @@ namespace Jellyfin.Server.Integration.Tests.Acceptance;
 public sealed class RecordingTranscodeManager : ITranscodeManager
 {
     private readonly TranscodeManager _inner;
+    private readonly ConcurrentDictionary<TranscodingJob, byte> _fakeJobs = new();
+    private int _liveEndRequests;
 
     public RecordingTranscodeManager(TranscodeManager inner)
     {
@@ -36,7 +43,24 @@ public sealed class RecordingTranscodeManager : ITranscodeManager
     /// </summary>
     public string? LastCommandLine { get; set; }
 
-    public Task<TranscodingJob> StartFfMpeg(
+    /// <summary>
+    /// Gets or sets a value indicating whether a live HLS transcode is answered the way ffmpeg
+    /// would start it: by writing an event playlist with <see cref="LiveSegmentCount"/> segments,
+    /// named as the command line tells ffmpeg to name them.
+    /// </summary>
+    public bool ProduceLivePlaylists { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of segments in a produced live playlist.
+    /// </summary>
+    public int LiveSegmentCount { get; set; } = 4;
+
+    /// <summary>
+    /// Gets the number of times the server ended a request on a produced live transcode.
+    /// </summary>
+    public int LiveEndRequests => _liveEndRequests;
+
+    public async Task<TranscodingJob> StartFfMpeg(
         StreamState state,
         string outputPath,
         string commandLineArguments,
@@ -47,7 +71,23 @@ public sealed class RecordingTranscodeManager : ITranscodeManager
     {
         CommandLines[state.Request.PlaySessionId ?? string.Empty] = commandLineArguments;
         LastCommandLine = commandLineArguments;
-        throw new InvalidOperationException("Acceptance tests do not start ffmpeg.");
+        if (!ProduceLivePlaylists || !outputPath.EndsWith(".m3u8", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Acceptance tests do not start ffmpeg.");
+        }
+
+        await File.WriteAllTextAsync(outputPath, LivePlaylist(commandLineArguments, LiveSegmentCount), cancellationTokenSource.Token).ConfigureAwait(false);
+        var job = new TranscodingJob(NullLogger<TranscodingJob>.Instance)
+        {
+            Path = outputPath,
+            Type = transcodingJobType,
+            PlaySessionId = state.Request.PlaySessionId,
+            DeviceId = state.Request.DeviceId,
+            HasExited = true,
+            ActiveRequestCount = 1
+        };
+        _fakeJobs[job] = 0;
+        return job;
     }
 
     public TranscodingJob? GetTranscodingJob(string playSessionId) => _inner.GetTranscodingJob(playSessionId);
@@ -64,7 +104,41 @@ public sealed class RecordingTranscodeManager : ITranscodeManager
 
     public TranscodingJob? OnTranscodeBeginRequest(string path, TranscodingJobType type) => _inner.OnTranscodeBeginRequest(path, type);
 
-    public void OnTranscodeEndRequest(TranscodingJob job) => _inner.OnTranscodeEndRequest(job);
+    public void OnTranscodeEndRequest(TranscodingJob job)
+    {
+        if (_fakeJobs.ContainsKey(job))
+        {
+            Interlocked.Increment(ref _liveEndRequests);
+            return;
+        }
+
+        _inner.OnTranscodeEndRequest(job);
+    }
 
     public ValueTask<IDisposable> LockAsync(string outputPath, CancellationToken cancellationToken) => _inner.LockAsync(outputPath, cancellationToken);
+
+    private static string LivePlaylist(string commandLine, int segmentCount)
+    {
+        var segmentFile = Argument(commandLine, "-hls_segment_filename") ?? throw new InvalidOperationException("No segment file name: " + commandLine);
+        var baseUrl = Argument(commandLine, "-hls_base_url") ?? string.Empty;
+        var playlist = new StringBuilder("#EXTM3U\n#EXT-X-VERSION:7\n#EXT-X-TARGETDURATION:6\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-PLAYLIST-TYPE:EVENT\n");
+        if (Argument(commandLine, "-hls_fmp4_init_filename") is { } initFile)
+        {
+            playlist.Append("#EXT-X-MAP:URI=\"").Append(initFile).Append("\"\n");
+        }
+
+        for (var i = 0; i < segmentCount; i++)
+        {
+            var segment = Path.GetFileName(segmentFile.Replace("%d", i.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal));
+            playlist.Append("#EXTINF:6.000000,\n").Append(baseUrl).Append(segment).Append('\n');
+        }
+
+        return playlist.ToString();
+    }
+
+    private static string? Argument(string commandLine, string option)
+    {
+        var match = Regex.Match(commandLine, Regex.Escape(option) + " \"([^\"]*)\"");
+        return match.Success ? match.Groups[1].Value : null;
+    }
 }

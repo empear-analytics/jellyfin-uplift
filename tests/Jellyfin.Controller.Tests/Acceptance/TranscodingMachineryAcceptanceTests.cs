@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.MediaEncoding;
@@ -167,6 +169,121 @@ public class TranscodingMachineryAcceptanceTests
         RecordedOutput.Verify("TranscodingMachinery", "job-bookkeeping", output.ToString());
     }
 
+    [Fact]
+    public void TranscodingJobKillTimerAndDisposal_MatchesRecording()
+    {
+        // The kill timer is what stops an abandoned transcode; a short interval fires, a long one does not.
+        var scenarios = new Dictionary<string, Action<TranscodingJob, Action<object?>>>(StringComparer.Ordinal)
+        {
+            ["start"] = (job, callback) => job.StartKillTimer(callback, 50),
+            ["start-with-ping-timeout"] = (job, callback) =>
+            {
+                job.PingTimeout = 50;
+                job.StartKillTimer(callback);
+            },
+            ["start-then-stop"] = (job, callback) =>
+            {
+                job.StartKillTimer(callback, 500);
+                job.StopKillTimer();
+            },
+            ["restart-shorter"] = (job, callback) =>
+            {
+                job.StartKillTimer(callback, 60_000);
+                job.StartKillTimer(callback, 50);
+            },
+            ["exited-start"] = (job, callback) =>
+            {
+                job.HasExited = true;
+                job.StartKillTimer(callback, 50);
+            },
+            ["change-if-started"] = (job, callback) =>
+            {
+                job.StartKillTimer(callback, 60_000);
+                job.PingTimeout = 50;
+                job.ChangeKillTimerIfStarted();
+            },
+            ["change-if-not-started"] = (job, _) =>
+            {
+                job.PingTimeout = 50;
+                job.ChangeKillTimerIfStarted();
+            },
+            ["change-after-exit"] = (job, callback) =>
+            {
+                job.StartKillTimer(callback, 60_000);
+                job.PingTimeout = 50;
+                job.HasExited = true;
+                job.ChangeKillTimerIfStarted();
+            },
+            ["dispose-timer-then-start"] = (job, callback) =>
+            {
+                job.StartKillTimer(callback, 60_000);
+                job.DisposeKillTimer();
+                job.DisposeKillTimer();
+                job.StartKillTimer(callback, 50);
+            },
+            ["dispose-timer"] = (job, callback) =>
+            {
+                job.StartKillTimer(callback, 500);
+                job.DisposeKillTimer();
+            },
+            ["dispose-job"] = (job, callback) =>
+            {
+                job.StartKillTimer(callback, 500);
+                job.Dispose();
+            },
+        };
+
+        var output = new StringBuilder();
+        foreach (var (name, arrange) in scenarios)
+        {
+            var job = new TranscodingJob(NullLogger<TranscodingJob>.Instance) { PlaySessionId = name };
+            using var fired = new ManualResetEventSlim();
+            object? passed = null;
+            string outcome;
+            try
+            {
+                arrange(job, state =>
+                {
+                    passed = state;
+                    fired.Set();
+                });
+                outcome = fired.Wait(1500, TestContext.Current.CancellationToken) ? "fired" + (ReferenceEquals(passed, job) ? " with the job" : " with something else") : "quiet";
+            }
+            catch (Exception ex)
+            {
+                outcome = "threw " + ex.GetType().Name;
+            }
+
+            output.Append(name).Append(": ").Append(outcome).Append('\n');
+            job.Dispose();
+        }
+
+        // Disposing releases what the job holds; stopping a job without a running process is harmless.
+        using var process = new Process();
+        var tokenSource = new CancellationTokenSource();
+        var held = new TranscodingJob(NullLogger<TranscodingJob>.Instance) { Process = process, CancellationTokenSource = tokenSource };
+        held.Dispose();
+        output.Append(Invariant($"dispose: process={held.Process is not null} tokenSource={held.CancellationTokenSource is not null} tokenSourceDisposed={IsDisposed(tokenSource)}\n"));
+        held.Dispose();
+
+        foreach (var exited in new[] { true, false })
+        {
+            using var notStarted = new Process();
+            var stopping = new TranscodingJob(NullLogger<TranscodingJob>.Instance) { HasExited = exited, Process = exited ? null : notStarted };
+            try
+            {
+                stopping.Stop();
+                output.Append(Invariant($"stop exited={exited}: ok\n"));
+            }
+            catch (Exception ex)
+            {
+                output.Append(Invariant($"stop exited={exited}: threw {ex.GetType().Name}\n"));
+            }
+        }
+
+        RecordedOutput.Verify("TranscodingMachinery", "job-kill-timer", output.ToString().TrimEnd());
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -185,6 +302,19 @@ public class TranscodingMachineryAcceptanceTests
     private static string Show(long? value) => value?.ToString(CultureInfo.InvariantCulture) ?? "-";
 
     private static string Invariant(FormattableString text) => FormattableString.Invariant(text);
+
+    private static bool IsDisposed(CancellationTokenSource tokenSource)
+    {
+        try
+        {
+            _ = tokenSource.Token;
+            return false;
+        }
+        catch (ObjectDisposedException)
+        {
+            return true;
+        }
+    }
 
     private static Dictionary<string, Func<(MediaStream Video, MediaStream Audio)>> Streams() => new(StringComparer.Ordinal)
     {

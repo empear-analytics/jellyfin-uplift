@@ -1,0 +1,14 @@
+start: fired with the job
+start-with-ping-timeout: fired with the job
+start-then-stop: quiet
+restart-shorter: fired with the job
+exited-start: quiet
+change-if-started: fired with the job
+change-if-not-started: quiet
+change-after-exit: quiet
+dispose-timer-then-start: fired with the job
+dispose-timer: quiet
+dispose-job: quiet
+dispose: process=False tokenSource=False tokenSourceDisposed=True
+stop exited=True: ok
+stop exited=False: ok
