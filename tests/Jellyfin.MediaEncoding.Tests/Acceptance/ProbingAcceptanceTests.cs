@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization.Metadata;
 using Jellyfin.Extensions.Json;
 using Jellyfin.Extensions.Json.Converters;
 using MediaBrowser.MediaEncoding.Probing;
@@ -33,7 +34,11 @@ public class ProbingAcceptanceTests
 {
     private static readonly JsonSerializerOptions _readOptions = CreateReadOptions();
 
-    private static readonly JsonSerializerOptions _writeOptions = new(JsonDefaults.Options) { WriteIndented = true };
+    private static readonly JsonSerializerOptions _writeOptions = new(JsonDefaults.Options)
+    {
+        WriteIndented = true,
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = { HideExperimentProperties } }
+    };
 
     private static readonly string[] _languages = ["eng", "swe", "jpn", "und", "ger"];
 
@@ -106,6 +111,24 @@ public class ProbingAcceptanceTests
         localization.Setup(l => l.FindLanguageInfo(It.IsAny<string>()))
             .Returns<string>(code => string.IsNullOrEmpty(code) ? null : new CultureDto("lang-" + code, "Lang " + code, code, [code]));
         return new ProbeResultNormalizer(NullLogger<ProbeResultNormalizer>.Instance, localization.Object);
+    }
+
+    // The track flags of the feature experiment (docs/experiment/feature-spec.md) are left out, so
+    // these recordings neither show nor pin how the feature behaves; it is graded elsewhere.
+    private static void HideExperimentProperties(JsonTypeInfo typeInfo)
+    {
+        if (typeInfo.Type != typeof(MediaStream))
+        {
+            return;
+        }
+
+        for (var i = typeInfo.Properties.Count - 1; i >= 0; i--)
+        {
+            if (typeInfo.Properties[i].Name is "IsAudioDescription" or "IsCommentary")
+            {
+                typeInfo.Properties.RemoveAt(i);
+            }
+        }
     }
 
     private static JsonSerializerOptions CreateReadOptions()

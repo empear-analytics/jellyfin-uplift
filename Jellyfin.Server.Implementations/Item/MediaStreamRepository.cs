@@ -162,6 +162,8 @@ public class MediaStreamRepository : IMediaStreamRepository
         dto.BlPresentFlag = entity.BlPresentFlag;
         dto.DvBlSignalCompatibilityId = entity.DvBlSignalCompatibilityId;
         dto.IsHearingImpaired = entity.IsHearingImpaired.GetValueOrDefault();
+        dto.IsAudioDescription = entity.IsAudioDescription.GetValueOrDefault();
+        dto.IsCommentary = entity.IsCommentary.GetValueOrDefault();
         dto.Rotation = entity.Rotation;
         dto.Hdr10PlusPresentFlag = entity.Hdr10PlusPresentFlag;
 
@@ -242,6 +244,8 @@ public class MediaStreamRepository : IMediaStreamRepository
             BlPresentFlag = dto.BlPresentFlag,
             DvBlSignalCompatibilityId = dto.DvBlSignalCompatibilityId,
             IsHearingImpaired = dto.IsHearingImpaired,
+            IsAudioDescription = dto.IsAudioDescription,
+            IsCommentary = dto.IsCommentary,
             Rotation = dto.Rotation,
             Hdr10PlusPresentFlag = dto.Hdr10PlusPresentFlag,
         };

@@ -41,6 +41,12 @@ namespace MediaBrowser.Model.Configuration
         public bool PlayDefaultAudioTrack { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether audio description tracks should be preferred.
+        /// </summary>
+        /// <value><c>true</c> if audio description tracks should be preferred; otherwise, <c>false</c>.</value>
+        public bool PreferAudioDescription { get; set; }
+
+        /// <summary>
         /// Gets or sets the subtitle language preference.
         /// </summary>
         /// <value>The subtitle language preference.</value>
