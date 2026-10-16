@@ -88,25 +88,7 @@ public static class StreamingHelpers
             state.User = userManager.GetUserById(userId);
         }
 
-        if (state.IsVideoRequest && !string.IsNullOrWhiteSpace(state.Request.VideoCodec))
-        {
-            state.SupportedVideoCodecs = state.Request.VideoCodec.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            state.Request.VideoCodec = state.SupportedVideoCodecs.FirstOrDefault();
-        }
-
-        if (!string.IsNullOrWhiteSpace(streamingRequest.AudioCodec))
-        {
-            state.SupportedAudioCodecs = streamingRequest.AudioCodec.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            state.Request.AudioCodec = state.SupportedAudioCodecs.FirstOrDefault(mediaEncoder.CanEncodeToAudioCodec)
-                                       ?? state.SupportedAudioCodecs.FirstOrDefault();
-        }
-
-        if (!string.IsNullOrWhiteSpace(streamingRequest.SubtitleCodec))
-        {
-            state.SupportedSubtitleCodecs = streamingRequest.SubtitleCodec.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            state.Request.SubtitleCodec = state.SupportedSubtitleCodecs.FirstOrDefault(mediaEncoder.CanEncodeToSubtitleCodec)
-                                          ?? state.SupportedSubtitleCodecs.FirstOrDefault();
-        }
+        ApplySupportedCodecs(state, streamingRequest, mediaEncoder);
 
         var item = libraryManager.GetItemById<BaseItem>(streamingRequest.Id)
             ?? throw new ResourceNotFoundException();
@@ -145,14 +127,7 @@ public static class StreamingHelpers
         state.OutputAudioCodec = outputAudioCodec;
         state.OutputContainer = (containerInternal ?? string.Empty).TrimStart('.');
         state.OutputAudioChannels = encodingHelper.GetNumAudioChannelsParam(state, state.AudioStream, state.OutputAudioCodec);
-        if (EncodingHelper.LosslessAudioCodecs.Contains(outputAudioCodec))
-        {
-            state.OutputAudioBitrate = state.AudioStream.BitRate ?? 0;
-        }
-        else
-        {
-            state.OutputAudioBitrate = encodingHelper.GetAudioBitrateParam(streamingRequest.AudioBitRate, streamingRequest.AudioCodec, state.AudioStream, state.OutputAudioChannels) ?? 0;
-        }
+        ApplyOutputAudioBitrate(state, streamingRequest, encodingHelper, outputAudioCodec);
 
         ApplyVideoOutputSettings(state, encodingHelper, encodingOptions, mediaEncoder);
 
@@ -163,6 +138,41 @@ public static class StreamingHelpers
         state.OutputFilePath = GetOutputFilePath(state, ext, serverConfigurationManager, streamingRequest.DeviceId, streamingRequest.PlaySessionId);
 
         return state;
+    }
+
+    private static void ApplySupportedCodecs(StreamState state, StreamingRequestDto streamingRequest, IMediaEncoder mediaEncoder)
+    {
+        if (state.IsVideoRequest && !string.IsNullOrWhiteSpace(state.Request.VideoCodec))
+        {
+            state.SupportedVideoCodecs = state.Request.VideoCodec.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            state.Request.VideoCodec = state.SupportedVideoCodecs.FirstOrDefault();
+        }
+
+        if (!string.IsNullOrWhiteSpace(streamingRequest.AudioCodec))
+        {
+            state.SupportedAudioCodecs = streamingRequest.AudioCodec.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            state.Request.AudioCodec = state.SupportedAudioCodecs.FirstOrDefault(mediaEncoder.CanEncodeToAudioCodec)
+                                       ?? state.SupportedAudioCodecs.FirstOrDefault();
+        }
+
+        if (!string.IsNullOrWhiteSpace(streamingRequest.SubtitleCodec))
+        {
+            state.SupportedSubtitleCodecs = streamingRequest.SubtitleCodec.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            state.Request.SubtitleCodec = state.SupportedSubtitleCodecs.FirstOrDefault(mediaEncoder.CanEncodeToSubtitleCodec)
+                                          ?? state.SupportedSubtitleCodecs.FirstOrDefault();
+        }
+    }
+
+    private static void ApplyOutputAudioBitrate(StreamState state, StreamingRequestDto streamingRequest, EncodingHelper encodingHelper, string? outputAudioCodec)
+    {
+        if (EncodingHelper.LosslessAudioCodecs.Contains(outputAudioCodec))
+        {
+            state.OutputAudioBitrate = state.AudioStream.BitRate ?? 0;
+        }
+        else
+        {
+            state.OutputAudioBitrate = encodingHelper.GetAudioBitrateParam(streamingRequest.AudioBitRate, streamingRequest.AudioCodec, state.AudioStream, state.OutputAudioChannels) ?? 0;
+        }
     }
 
     private static async Task<MediaSourceInfo?> GetPlaybackMediaSource(
