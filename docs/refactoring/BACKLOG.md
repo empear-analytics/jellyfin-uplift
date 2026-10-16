@@ -81,7 +81,7 @@ Update as tasks land.
 | R25 | 9.38 | 9.38 | stopped: the duplicates differ in two places, so Recipe D does not apply |
 | R26 | 9.38 | 10.00 | done (8090c985ad) |
 | R27 | 9.38 | 10.00 | done (pilot, e94a7a323a) |
-| R28 | 9.51 | - | not started |
+| R28 | 9.51 | 9.68 | stopped at 9.68: Recipe P on `IsThrottleAllowed` brings Primitive Obsession (FLAT); low protection |
 | R29 | 9.63 | - | not started |
 | R30 | 9.68 | 10.00 | done (probe, 9057ab1397) |
 | R31 | 9.68 | 9.68 | stopped: only Constructor Over-Injection, which has no recipe |
