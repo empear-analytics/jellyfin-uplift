@@ -99,7 +99,7 @@ public class AudioHelper
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);
 
-        if (streamingRequest.Static && state.DirectStreamProvider is not null)
+        if (IsStaticDirectStream(streamingRequest, state))
         {
             return GetLiveStreamResult(streamingRequest.LiveStreamId);
         }
@@ -163,5 +163,10 @@ public class AudioHelper
         return FileStreamResponseHelpers.GetStaticFileResult(
             state.MediaPath,
             contentType);
+    }
+
+    private static bool IsStaticDirectStream(StreamingRequestDto streamingRequest, StreamState state)
+    {
+        return streamingRequest.Static && state.DirectStreamProvider is not null;
     }
 }
