@@ -2495,25 +2495,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // Can't stream copy if we're burning in subtitles
-            if (request.SubtitleStreamIndex.HasValue
-                && request.SubtitleStreamIndex.Value >= 0
-                && state.SubtitleDeliveryMethod == SubtitleDeliveryMethod.Encode)
+            if (IsBurningInSubtitles(state, request))
             {
                 return false;
             }
 
-            if (string.Equals("h264", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                && videoStream.IsAVC.HasValue
-                && !videoStream.IsAVC.Value
-                && request.RequireAvc)
+            if (IsNonAvcH264WhenAvcRequired(request, videoStream))
             {
                 return false;
             }
 
             // Source and target codecs must match
-            if (string.IsNullOrEmpty(videoStream.Codec)
-                || (state.SupportedVideoCodecs.Length != 0
-                    && !state.SupportedVideoCodecs.Contains(videoStream.Codec, StringComparison.OrdinalIgnoreCase)))
+            if (IsUnsupportedVideoCodec(state, videoStream))
             {
                 return false;
             }
@@ -2559,7 +2552,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 // If SDR is the only supported range, we should not copy any of the HDR streams.
                 // All the following copy check assumes at least one HDR format is supported.
-                if (requestedRangeTypes.Length == 1 && requestHasSDR && videoStream.VideoRangeType != VideoRangeType.SDR)
+                if (IsHdrStreamForSdrOnlyRequest(requestedRangeTypes, requestHasSDR, videoStream))
                 {
                     return false;
                 }
@@ -2570,11 +2563,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return false;
                 }
 
-                if (!requestedRangeTypes.Contains(videoStream.VideoRangeType.ToString(), StringComparison.OrdinalIgnoreCase)
-                     && !((requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.DOVIWithHDR10)
-                            || (requestHasHLG && videoStream.VideoRangeType == VideoRangeType.DOVIWithHLG)
-                            || (requestHasSDR && videoStream.VideoRangeType == VideoRangeType.DOVIWithSDR)
-                            || (requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.HDR10Plus)))
+                if (IsIncompatibleRangeType(requestedRangeTypes, videoStream, requestHasHDR10, requestHasHLG, requestHasSDR))
                 {
                     // If the video stream is in HDR10+ or a static HDR format, don't allow copy if the client does not support HDR10 or HLG.
                     if (videoStream.VideoRangeType is VideoRangeType.HDR10Plus or VideoRangeType.HDR10 or VideoRangeType.HLG)
@@ -2597,23 +2586,20 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (requestedRotations.Length > 0)
             {
                 var rotation = state.VideoStream?.Rotation ?? 0;
-                if (rotation != 0
-                    && !requestedRotations.Contains(rotation.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal))
+                if (IsUnrequestedRotation(rotation, requestedRotations))
                 {
                     return false;
                 }
             }
 
             // Video width must fall within requested value
-            if (request.MaxWidth.HasValue
-                && (!videoStream.Width.HasValue || videoStream.Width.Value > request.MaxWidth.Value))
+            if (ExceedsMaxWidth(request, videoStream))
             {
                 return false;
             }
 
             // Video height must fall within requested value
-            if (request.MaxHeight.HasValue
-                && (!videoStream.Height.HasValue || videoStream.Height.Value > request.MaxHeight.Value))
+            if (ExceedsMaxHeight(request, videoStream))
             {
                 return false;
             }
@@ -2634,8 +2620,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // Video bitrate must fall within requested value
-            if (request.VideoBitRate.HasValue
-                && (!videoStream.BitRate.HasValue || videoStream.BitRate.Value > request.VideoBitRate.Value))
+            if (ExceedsMaxVideoBitRate(request, videoStream))
             {
                 // For LiveTV that has no bitrate, let's try copy if other conditions are met
                 if (string.IsNullOrWhiteSpace(request.LiveStreamId) || videoStream.BitRate.HasValue)
@@ -2654,8 +2639,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             var maxRefFrames = state.GetRequestedMaxRefFrames(videoStream.Codec);
-            if (maxRefFrames.HasValue
-                && videoStream.RefFrames.HasValue && videoStream.RefFrames.Value > maxRefFrames.Value)
+            if (ExceedsMaxRefFrames(maxRefFrames, videoStream))
             {
                 return false;
             }
@@ -2675,15 +2659,86 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (string.Equals(state.InputContainer, "avi", StringComparison.OrdinalIgnoreCase)
-                && string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase)
-                && !(videoStream.IsAVC ?? false))
+            if (IsNonAvcH264InAvi(state, videoStream))
             {
                 // see Coach S01E01 - Kelly and the Professor(0).avi
                 return false;
             }
 
             return true;
+        }
+
+        private static bool IsBurningInSubtitles(EncodingJobInfo state, BaseEncodingJobOptions request)
+        {
+            return request.SubtitleStreamIndex.HasValue
+                && request.SubtitleStreamIndex.Value >= 0
+                && state.SubtitleDeliveryMethod == SubtitleDeliveryMethod.Encode;
+        }
+
+        private static bool IsNonAvcH264WhenAvcRequired(BaseEncodingJobOptions request, MediaStream videoStream)
+        {
+            return string.Equals("h264", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
+                && videoStream.IsAVC.HasValue
+                && !videoStream.IsAVC.Value
+                && request.RequireAvc;
+        }
+
+        private static bool IsUnsupportedVideoCodec(EncodingJobInfo state, MediaStream videoStream)
+        {
+            return string.IsNullOrEmpty(videoStream.Codec)
+                || (state.SupportedVideoCodecs.Length != 0
+                    && !state.SupportedVideoCodecs.Contains(videoStream.Codec, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool IsHdrStreamForSdrOnlyRequest(string[] requestedRangeTypes, bool requestHasSDR, MediaStream videoStream)
+        {
+            return requestedRangeTypes.Length == 1 && requestHasSDR && videoStream.VideoRangeType != VideoRangeType.SDR;
+        }
+
+        private static bool IsIncompatibleRangeType(string[] requestedRangeTypes, MediaStream videoStream, bool requestHasHDR10, bool requestHasHLG, bool requestHasSDR)
+        {
+            return !requestedRangeTypes.Contains(videoStream.VideoRangeType.ToString(), StringComparison.OrdinalIgnoreCase)
+                && !((requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.DOVIWithHDR10)
+                    || (requestHasHLG && videoStream.VideoRangeType == VideoRangeType.DOVIWithHLG)
+                    || (requestHasSDR && videoStream.VideoRangeType == VideoRangeType.DOVIWithSDR)
+                    || (requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.HDR10Plus));
+        }
+
+        private static bool IsUnrequestedRotation(int rotation, string[] requestedRotations)
+        {
+            return rotation != 0
+                && !requestedRotations.Contains(rotation.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        }
+
+        private static bool ExceedsMaxWidth(BaseEncodingJobOptions request, MediaStream videoStream)
+        {
+            return request.MaxWidth.HasValue
+                && (!videoStream.Width.HasValue || videoStream.Width.Value > request.MaxWidth.Value);
+        }
+
+        private static bool ExceedsMaxHeight(BaseEncodingJobOptions request, MediaStream videoStream)
+        {
+            return request.MaxHeight.HasValue
+                && (!videoStream.Height.HasValue || videoStream.Height.Value > request.MaxHeight.Value);
+        }
+
+        private static bool ExceedsMaxVideoBitRate(BaseEncodingJobOptions request, MediaStream videoStream)
+        {
+            return request.VideoBitRate.HasValue
+                && (!videoStream.BitRate.HasValue || videoStream.BitRate.Value > request.VideoBitRate.Value);
+        }
+
+        private static bool ExceedsMaxRefFrames(int? maxRefFrames, MediaStream videoStream)
+        {
+            return maxRefFrames.HasValue
+                && videoStream.RefFrames.HasValue && videoStream.RefFrames.Value > maxRefFrames.Value;
+        }
+
+        private static bool IsNonAvcH264InAvi(EncodingJobInfo state, MediaStream videoStream)
+        {
+            return string.Equals(state.InputContainer, "avi", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase)
+                && !(videoStream.IsAVC ?? false);
         }
 
         public bool CanStreamCopyAudio(EncodingJobInfo state, MediaStream audioStream, IEnumerable<string> supportedAudioCodecs)
