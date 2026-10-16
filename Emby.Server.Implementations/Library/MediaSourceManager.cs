@@ -502,20 +502,14 @@ namespace Emby.Server.Implementations.Library
 
         private void SetDefaultSubtitleStreamIndex(MediaSourceInfo source, UserItemData userData, User user, bool allowRememberingSelection)
         {
-            if (userData is not null
-                && userData.SubtitleStreamIndex.HasValue
-                && user.RememberSubtitleSelections
-                && user.SubtitleMode != SubtitlePlaybackMode.None
-                && allowRememberingSelection)
+            if (IsSubtitleSelectionRemembered(userData, user, allowRememberingSelection))
             {
                 var index = userData.SubtitleStreamIndex.Value;
                 // Make sure the saved index is still valid
                 var savedStream = source.MediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Subtitle && i.Index == index);
                 // "Only forced" rules out full tracks entirely, so a remembered one must not resurrect them.
                 // The client reports whatever is playing, so an index remembered under another mode sticks forever otherwise.
-                if (index == -1
-                    || (savedStream is not null
-                        && (user.SubtitleMode != SubtitlePlaybackMode.OnlyForced || savedStream.IsForced)))
+                if (IsRememberedSubtitleStillAllowed(index, savedStream, user))
                 {
                     source.DefaultSubtitleStreamIndex = index;
                     return;
@@ -536,6 +530,22 @@ namespace Emby.Server.Implementations.Library
                 audioLanguage);
 
             MediaStreamSelector.SetSubtitleStreamScores(source.MediaStreams, preferredSubs, user.SubtitleMode, audioLanguage);
+        }
+
+        private static bool IsSubtitleSelectionRemembered(UserItemData userData, User user, bool allowRememberingSelection)
+        {
+            return userData is not null
+                && userData.SubtitleStreamIndex.HasValue
+                && user.RememberSubtitleSelections
+                && user.SubtitleMode != SubtitlePlaybackMode.None
+                && allowRememberingSelection;
+        }
+
+        private static bool IsRememberedSubtitleStillAllowed(int index, MediaStream savedStream, User user)
+        {
+            return index == -1
+                || (savedStream is not null
+                    && (user.SubtitleMode != SubtitlePlaybackMode.OnlyForced || savedStream.IsForced));
         }
 
         private void SetDefaultAudioStreamIndex(MediaSourceInfo source, UserItemData userData, User user, bool allowRememberingSelection, string originalLanguage)
