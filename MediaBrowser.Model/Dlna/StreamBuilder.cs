@@ -550,6 +550,15 @@ namespace MediaBrowser.Model.Dlna
 
         private static int? GetDefaultSubtitleStreamIndex(MediaSourceInfo item, SubtitleProfile[] subtitleProfiles)
         {
+            int highestScore = GetHighestSubtitleScore(item);
+
+            List<MediaStream> topStreams = GetTopScoringSubtitleStreams(item, highestScore);
+
+            return SelectMostEfficientSubtitleStreamIndex(item, subtitleProfiles, topStreams);
+        }
+
+        private static int GetHighestSubtitleScore(MediaSourceInfo item)
+        {
             int highestScore = -1;
             foreach (var stream in item.MediaStreams)
             {
@@ -561,6 +570,11 @@ namespace MediaBrowser.Model.Dlna
                 }
             }
 
+            return highestScore;
+        }
+
+        private static List<MediaStream> GetTopScoringSubtitleStreams(MediaSourceInfo item, int highestScore)
+        {
             List<MediaStream> topStreams = [];
             foreach (var stream in item.MediaStreams)
             {
@@ -570,6 +584,11 @@ namespace MediaBrowser.Model.Dlna
                 }
             }
 
+            return topStreams;
+        }
+
+        private static int? SelectMostEfficientSubtitleStreamIndex(MediaSourceInfo item, SubtitleProfile[] subtitleProfiles, List<MediaStream> topStreams)
+        {
             // If multiple streams have an equal score, try to pick the most efficient one
             if (topStreams.Count <= 1)
             {
