@@ -183,7 +183,7 @@ public sealed class TranscodingJob : IDisposable
         int? result = null;
         foreach (var (index, endPositionTicks) in _segmentEndPositionTicks)
         {
-            if (endPositionTicks <= positionTicks && (result is null || index > result))
+            if (IsHigherSegmentEndingAtOrBefore(index, endPositionTicks, positionTicks, result))
             {
                 result = index;
             }
@@ -339,5 +339,10 @@ public sealed class TranscodingJob : IDisposable
         TranscodingThrottler = null;
         TranscodingSegmentCleaner?.Dispose();
         TranscodingSegmentCleaner = null;
+    }
+
+    private static bool IsHigherSegmentEndingAtOrBefore(int index, long endPositionTicks, long positionTicks, int? result)
+    {
+        return endPositionTicks <= positionTicks && (result is null || index > result);
     }
 }
