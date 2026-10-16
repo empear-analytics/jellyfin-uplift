@@ -991,14 +991,7 @@ public class DynamicHlsHelper
         {
             string profile = GetOutputVideoCodecProfile(state, "av1");
 
-            // Currently we only transcode to 8 bits AV1
-            int bitDepth = 8;
-            if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-                && state.VideoStream is not null
-                && state.VideoStream.BitDepth.HasValue)
-            {
-                bitDepth = state.VideoStream.BitDepth.Value;
-            }
+            int bitDepth = GetOutputAv1BitDepth(state);
 
             return HlsCodecStringHelpers.GetAv1String(profile, level, false, bitDepth);
         }
@@ -1006,19 +999,38 @@ public class DynamicHlsHelper
         // VP9 HLS is for video remuxing only, everything is probed from the original video
         if (string.Equals(codec, "vp9", StringComparison.OrdinalIgnoreCase))
         {
-            var width = state.VideoStream.Width ?? 0;
-            var height = state.VideoStream.Height ?? 0;
-            var framerate = state.VideoStream.ReferenceFrameRate ?? 30;
-            var bitDepth = state.VideoStream.BitDepth ?? 8;
-            return HlsCodecStringHelpers.GetVp9String(
-                width,
-                height,
-                state.VideoStream.PixelFormat,
-                framerate,
-                bitDepth);
+            return GetVp9CodecString(state);
         }
 
         return string.Empty;
+    }
+
+    private static int GetOutputAv1BitDepth(StreamState state)
+    {
+        // Currently we only transcode to 8 bits AV1
+        int bitDepth = 8;
+        if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
+            && state.VideoStream is not null
+            && state.VideoStream.BitDepth.HasValue)
+        {
+            bitDepth = state.VideoStream.BitDepth.Value;
+        }
+
+        return bitDepth;
+    }
+
+    private static string GetVp9CodecString(StreamState state)
+    {
+        var width = state.VideoStream.Width ?? 0;
+        var height = state.VideoStream.Height ?? 0;
+        var framerate = state.VideoStream.ReferenceFrameRate ?? 30;
+        var bitDepth = state.VideoStream.BitDepth ?? 8;
+        return HlsCodecStringHelpers.GetVp9String(
+            width,
+            height,
+            state.VideoStream.PixelFormat,
+            framerate,
+            bitDepth);
     }
 
     private static bool IsHevcCodec(string codec)
