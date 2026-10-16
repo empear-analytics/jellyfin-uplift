@@ -838,19 +838,7 @@ namespace Emby.Server.Implementations.Library
 
             if (!string.IsNullOrEmpty(cacheKey))
             {
-                FileStream jsonStream = AsyncFile.OpenRead(cacheFilePath);
-                try
-                {
-                    mediaInfo = await JsonSerializer.DeserializeAsync<MediaInfo>(jsonStream, _jsonOptions, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogDebug(ex, "Error parsing cached media info.");
-                }
-                finally
-                {
-                    await jsonStream.DisposeAsync().ConfigureAwait(false);
-                }
+                mediaInfo = await ReadCachedMediaInfo(cacheFilePath, cancellationToken).ConfigureAwait(false);
             }
 
             if (mediaInfo is null)
@@ -876,34 +864,14 @@ namespace Emby.Server.Implementations.Library
                     },
                     cancellationToken).ConfigureAwait(false);
 
-                if (cacheFilePath is not null)
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(cacheFilePath));
-                    FileStream createStream = AsyncFile.Create(cacheFilePath);
-                    await using (createStream.ConfigureAwait(false))
-                    {
-                        await JsonSerializer.SerializeAsync(createStream, mediaInfo, _jsonOptions, cancellationToken).ConfigureAwait(false);
-                    }
-
-                    // _logger.LogDebug("Saved media info to {0}", cacheFilePath);
-                }
+                await SaveCachedMediaInfo(cacheFilePath, mediaInfo, cancellationToken).ConfigureAwait(false);
             }
 
             var mediaStreams = mediaInfo.MediaStreams;
 
             if (isLiveStream && !string.IsNullOrEmpty(cacheKey))
             {
-                var newList = new List<MediaStream>();
-                newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Video).Take(1));
-                newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Audio).Take(1));
-
-                foreach (var stream in newList)
-                {
-                    stream.Index = -1;
-                    stream.Language = null;
-                }
-
-                mediaStreams = newList;
+                mediaStreams = GetFirstVideoAndAudioStreams(mediaStreams);
             }
 
             _logger.LogInformation("Live tv media info probe took {0} seconds", (DateTime.UtcNow - now).TotalSeconds.ToString(CultureInfo.InvariantCulture));
@@ -941,6 +909,69 @@ namespace Emby.Server.Implementations.Library
             }
 
             var videoStream = mediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Video);
+            NormalizeProbedVideoStream(videoStream);
+
+            if (isLiveStream)
+            {
+                mediaSource.AnalyzeDurationMs = 3000;
+            }
+
+            // Try to estimate this
+            mediaSource.InferTotalBitrate(true);
+        }
+
+        private async Task<MediaInfo> ReadCachedMediaInfo(string cacheFilePath, CancellationToken cancellationToken)
+        {
+            MediaInfo mediaInfo = null;
+            FileStream jsonStream = AsyncFile.OpenRead(cacheFilePath);
+            try
+            {
+                mediaInfo = await JsonSerializer.DeserializeAsync<MediaInfo>(jsonStream, _jsonOptions, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error parsing cached media info.");
+            }
+            finally
+            {
+                await jsonStream.DisposeAsync().ConfigureAwait(false);
+            }
+
+            return mediaInfo;
+        }
+
+        private async Task SaveCachedMediaInfo(string cacheFilePath, MediaInfo mediaInfo, CancellationToken cancellationToken)
+        {
+            if (cacheFilePath is not null)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(cacheFilePath));
+                FileStream createStream = AsyncFile.Create(cacheFilePath);
+                await using (createStream.ConfigureAwait(false))
+                {
+                    await JsonSerializer.SerializeAsync(createStream, mediaInfo, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                }
+
+                // _logger.LogDebug("Saved media info to {0}", cacheFilePath);
+            }
+        }
+
+        private static List<MediaStream> GetFirstVideoAndAudioStreams(IReadOnlyList<MediaStream> mediaStreams)
+        {
+            var newList = new List<MediaStream>();
+            newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Video).Take(1));
+            newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Audio).Take(1));
+
+            foreach (var stream in newList)
+            {
+                stream.Index = -1;
+                stream.Language = null;
+            }
+
+            return newList;
+        }
+
+        private static void NormalizeProbedVideoStream(MediaStream videoStream)
+        {
             if (videoStream is not null)
             {
                 if (!videoStream.BitRate.HasValue)
@@ -968,14 +999,6 @@ namespace Emby.Server.Implementations.Library
                 // This is coming up false and preventing stream copy
                 videoStream.IsAVC = null;
             }
-
-            if (isLiveStream)
-            {
-                mediaSource.AnalyzeDurationMs = 3000;
-            }
-
-            // Try to estimate this
-            mediaSource.InferTotalBitrate(true);
         }
 
         public Task<Tuple<MediaSourceInfo, IDirectStreamProvider>> GetLiveStreamWithDirectStreamProvider(string id, CancellationToken cancellationToken)
