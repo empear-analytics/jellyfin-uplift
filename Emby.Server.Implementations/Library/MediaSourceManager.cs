@@ -864,7 +864,7 @@ namespace Emby.Server.Implementations.Library
 
             var mediaStreams = mediaInfo.MediaStreams;
 
-            if (isLiveStream && !string.IsNullOrEmpty(cacheKey))
+            if (IsCachedLiveStream(isLiveStream, cacheKey))
             {
                 mediaStreams = GetFirstVideoAndAudioStreams(mediaStreams);
             }
@@ -897,6 +897,11 @@ namespace Emby.Server.Implementations.Library
 
             // Try to estimate this
             mediaSource.InferTotalBitrate(true);
+        }
+
+        private static bool IsCachedLiveStream(bool isLiveStream, string cacheKey)
+        {
+            return isLiveStream && !string.IsNullOrEmpty(cacheKey);
         }
 
         private static async Task DelayProbe(MediaSourceInfo mediaSource, bool addProbeDelay, CancellationToken cancellationToken)
