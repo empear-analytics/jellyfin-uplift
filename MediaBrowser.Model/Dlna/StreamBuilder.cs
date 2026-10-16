@@ -762,22 +762,13 @@ namespace MediaBrowser.Model.Dlna
                     else if (directPlay == PlayMethod.DirectStream)
                     {
                         playlistItem.AudioStreamIndex = audioStream?.Index;
-                        if (audioStream is not null)
-                        {
-                            playlistItem.AudioCodecs = ContainerHelper.Split(directPlayProfile?.AudioCodec);
-                        }
+                        SetDirectStreamAudioCodecs(playlistItem, audioStream, directPlayProfile);
 
                         SetStreamInfoOptionsFromDirectPlayProfile(options, item, playlistItem, directPlayProfile);
                         BuildStreamVideoItem(playlistItem, options, item, videoStream, audioStream, candidateAudioStreams, directPlayProfile?.Container, directPlayProfile?.VideoCodec, directPlayProfile?.AudioCodec);
                     }
 
-                    if (subtitleStream is not null)
-                    {
-                        var subtitleProfile = GetSubtitleProfile(item, subtitleStream, options.Profile.SubtitleProfiles, directPlay.Value, _transcoderSupport, directPlayProfile?.Container, null);
-
-                        playlistItem.SubtitleDeliveryMethod = subtitleProfile.Method;
-                        playlistItem.SubtitleFormat = subtitleProfile.Format;
-                    }
+                    SetDirectPlaySubtitle(item, options, playlistItem, subtitleStream, directPlay.Value, directPlayProfile);
                 }
 
                 _logger.LogDebug(
@@ -806,6 +797,25 @@ namespace MediaBrowser.Model.Dlna
 
             item.Container = NormalizeMediaSourceFormatIntoSingleContainer(item.Container, options.Profile, DlnaProfileType.Video, directPlayProfile);
             return playlistItem;
+        }
+
+        private static void SetDirectStreamAudioCodecs(StreamInfo playlistItem, MediaStream? audioStream, DirectPlayProfile? directPlayProfile)
+        {
+            if (audioStream is not null)
+            {
+                playlistItem.AudioCodecs = ContainerHelper.Split(directPlayProfile?.AudioCodec);
+            }
+        }
+
+        private void SetDirectPlaySubtitle(MediaSourceInfo item, MediaOptions options, StreamInfo playlistItem, MediaStream? subtitleStream, PlayMethod directPlay, DirectPlayProfile? directPlayProfile)
+        {
+            if (subtitleStream is not null)
+            {
+                var subtitleProfile = GetSubtitleProfile(item, subtitleStream, options.Profile.SubtitleProfiles, directPlay, _transcoderSupport, directPlayProfile?.Container, null);
+
+                playlistItem.SubtitleDeliveryMethod = subtitleProfile.Method;
+                playlistItem.SubtitleFormat = subtitleProfile.Format;
+            }
         }
 
         private static ICollection<MediaStream> GetCandidateAudioStreams(MediaSourceInfo item, MediaOptions options, MediaStream? audioStream)
