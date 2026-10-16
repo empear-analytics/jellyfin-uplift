@@ -3493,7 +3493,7 @@ namespace Emby.Server.Implementations.Library
         {
             // Apply .ignore rules
             var filtered = fileSystemChildren.Where(c => !_dotIgnoreIgnoreRule.ShouldIgnore(c, owner)).ToList();
-            var isFolder = owner.IsFolder || (owner is Video video && (video.VideoType == VideoType.BluRay || video.VideoType == VideoType.Dvd));
+            var isFolder = IsFolderOrDiscVideo(owner);
             var ownerVideoInfo = VideoResolver.Resolve(owner.Path, isFolder, _namingOptions, libraryRoot: owner.ContainingFolderPath);
             if (ownerVideoInfo is null)
             {
@@ -3620,6 +3620,11 @@ namespace Emby.Server.Implementations.Library
 
                 return names.Contains(currentName);
             }
+        }
+
+        private static bool IsFolderOrDiscVideo(BaseItem owner)
+        {
+            return owner.IsFolder || (owner is Video video && (video.VideoType == VideoType.BluRay || video.VideoType == VideoType.Dvd));
         }
 
         /// <summary>
