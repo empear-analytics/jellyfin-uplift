@@ -769,16 +769,7 @@ namespace Emby.Server.Implementations.Library
                 mediaSource.RunTimeTicks = null;
             }
 
-            var audioStream = mediaSource.MediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Audio);
-
-            if (audioStream is null || audioStream.Index == -1)
-            {
-                mediaSource.DefaultAudioStreamIndex = null;
-            }
-            else
-            {
-                mediaSource.DefaultAudioStreamIndex = audioStream.Index;
-            }
+            SetProbedDefaultAudioStreamIndex(mediaSource, mediaSource.MediaStreams);
 
             var videoStream = mediaSource.MediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Video);
             if (videoStream is not null)
