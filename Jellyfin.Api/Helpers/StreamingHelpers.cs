@@ -63,12 +63,7 @@ public static class StreamingHelpers
         }
 
         streamingRequest.StreamOptions = ParseStreamOptions(httpRequest.Query);
-        if (httpRequest.Path.Value is null)
-        {
-            throw new ResourceNotFoundException(nameof(httpRequest.Path));
-        }
-
-        var url = httpRequest.Path.Value.AsSpan().RightPart('.').ToString();
+        var url = GetRequestedUrl(httpRequest);
 
         if (string.IsNullOrEmpty(streamingRequest.AudioCodec))
         {
@@ -82,11 +77,7 @@ public static class StreamingHelpers
             UserAgent = httpRequest.Headers[HeaderNames.UserAgent]
         };
 
-        var userId = httpContext.User.GetUserId();
-        if (!userId.IsEmpty())
-        {
-            state.User = userManager.GetUserById(userId);
-        }
+        ApplyUser(state, httpContext, userManager);
 
         ApplySupportedCodecs(state, streamingRequest, mediaEncoder);
 
@@ -98,14 +89,7 @@ public static class StreamingHelpers
         MediaSourceInfo? mediaSource = null;
         if (string.IsNullOrWhiteSpace(streamingRequest.LiveStreamId))
         {
-            var currentJob = !string.IsNullOrWhiteSpace(streamingRequest.PlaySessionId)
-                ? transcodeManager.GetTranscodingJob(streamingRequest.PlaySessionId)
-                : null;
-
-            if (currentJob is not null)
-            {
-                mediaSource = currentJob.MediaSource;
-            }
+            mediaSource = GetTranscodingJobMediaSource(mediaSource, streamingRequest, transcodeManager);
 
             if (mediaSource is null)
             {
@@ -138,6 +122,40 @@ public static class StreamingHelpers
         state.OutputFilePath = GetOutputFilePath(state, ext, serverConfigurationManager, streamingRequest.DeviceId, streamingRequest.PlaySessionId);
 
         return state;
+    }
+
+    private static string GetRequestedUrl(HttpRequest httpRequest)
+    {
+        if (httpRequest.Path.Value is null)
+        {
+            throw new ResourceNotFoundException(nameof(httpRequest.Path));
+        }
+
+        var url = httpRequest.Path.Value.AsSpan().RightPart('.').ToString();
+        return url;
+    }
+
+    private static void ApplyUser(StreamState state, HttpContext httpContext, IUserManager userManager)
+    {
+        var userId = httpContext.User.GetUserId();
+        if (!userId.IsEmpty())
+        {
+            state.User = userManager.GetUserById(userId);
+        }
+    }
+
+    private static MediaSourceInfo? GetTranscodingJobMediaSource(MediaSourceInfo? mediaSource, StreamingRequestDto streamingRequest, ITranscodeManager transcodeManager)
+    {
+        var currentJob = !string.IsNullOrWhiteSpace(streamingRequest.PlaySessionId)
+            ? transcodeManager.GetTranscodingJob(streamingRequest.PlaySessionId)
+            : null;
+
+        if (currentJob is not null)
+        {
+            mediaSource = currentJob.MediaSource;
+        }
+
+        return mediaSource;
     }
 
     private static void ApplySupportedCodecs(StreamState state, StreamingRequestDto streamingRequest, IMediaEncoder mediaEncoder)
