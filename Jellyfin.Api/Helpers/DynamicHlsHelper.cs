@@ -834,21 +834,18 @@ public class DynamicHlsHelper
         {
             if (string.Equals(state.ActualOutputVideoCodec, "h264", StringComparison.OrdinalIgnoreCase))
             {
-                levelString = state.GetRequestedLevel(state.ActualOutputVideoCodec) ?? "41";
-                levelString = EncodingHelper.NormalizeTranscodingLevel(state, levelString);
+                levelString = GetH264TranscodingLevel(state);
             }
 
             if (string.Equals(state.ActualOutputVideoCodec, "h265", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase))
             {
-                levelString = state.GetRequestedLevel("h265") ?? state.GetRequestedLevel("hevc") ?? "120";
-                levelString = EncodingHelper.NormalizeTranscodingLevel(state, levelString);
+                levelString = GetHevcTranscodingLevel(state);
             }
 
             if (string.Equals(state.ActualOutputVideoCodec, "av1", StringComparison.OrdinalIgnoreCase))
             {
-                levelString = state.GetRequestedLevel("av1") ?? "19";
-                levelString = EncodingHelper.NormalizeTranscodingLevel(state, levelString);
+                levelString = GetAv1TranscodingLevel(state);
             }
         }
 
@@ -858,6 +855,27 @@ public class DynamicHlsHelper
         }
 
         return null;
+    }
+
+    private static string GetH264TranscodingLevel(StreamState state)
+    {
+        var levelString = state.GetRequestedLevel(state.ActualOutputVideoCodec) ?? "41";
+        levelString = EncodingHelper.NormalizeTranscodingLevel(state, levelString);
+        return levelString;
+    }
+
+    private static string GetHevcTranscodingLevel(StreamState state)
+    {
+        var levelString = state.GetRequestedLevel("h265") ?? state.GetRequestedLevel("hevc") ?? "120";
+        levelString = EncodingHelper.NormalizeTranscodingLevel(state, levelString);
+        return levelString;
+    }
+
+    private static string GetAv1TranscodingLevel(StreamState state)
+    {
+        var levelString = state.GetRequestedLevel("av1") ?? "19";
+        levelString = EncodingHelper.NormalizeTranscodingLevel(state, levelString);
+        return levelString;
     }
 
     /// <summary>
