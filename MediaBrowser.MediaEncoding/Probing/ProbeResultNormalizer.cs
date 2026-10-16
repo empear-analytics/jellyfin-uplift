@@ -207,10 +207,7 @@ namespace MediaBrowser.MediaEncoding.Probing
 
             if (tagStream?.Tags is not null)
             {
-                foreach (var (key, value) in tagStream.Tags)
-                {
-                    tags[key] = value;
-                }
+                CopyTags(tags, tagStream.Tags);
             }
 
             if (data.Format?.Tags is not null)
@@ -222,6 +219,14 @@ namespace MediaBrowser.MediaEncoding.Probing
             }
 
             return tags;
+        }
+
+        private static void CopyTags(Dictionary<string, string> tags, IReadOnlyDictionary<string, string> source)
+        {
+            foreach (var (key, value) in source)
+            {
+                tags[key] = value;
+            }
         }
 
         private void SetArtists(MediaInfo info, Dictionary<string, string> tags)
