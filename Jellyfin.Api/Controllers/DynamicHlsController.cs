@@ -2035,47 +2035,46 @@ public class DynamicHlsController : BaseJellyfinApiController
         }
 
         var nextSegmentPath = GetSegmentPath(state, playlistPath, segmentIndex + 1);
-        if (transcodingJob is not null)
+        if (transcodingJob is null)
         {
-            while (!cancellationToken.IsCancellationRequested && !transcodingJob.HasExited)
-            {
-                // To be considered ready, the segment file has to exist AND
-                // either the transcoding job should be done or next segment should also exist
-                if (segmentExists)
-                {
-                    if (transcodingJob.HasExited || System.IO.File.Exists(nextSegmentPath))
-                    {
-                        _logger.LogDebug("Serving up {SegmentPath} as it deemed ready", segmentPath);
-                        return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
-                    }
-                }
-                else
-                {
-                    segmentExists = System.IO.File.Exists(segmentPath);
-                    if (segmentExists)
-                    {
-                        continue; // avoid unnecessary waiting if segment just became available
-                    }
-                }
+            _logger.LogWarning("cannot serve {0} as it doesn't exist and no transcode is running", segmentPath);
+            return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
+        }
 
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (!System.IO.File.Exists(segmentPath))
+        while (!cancellationToken.IsCancellationRequested && !transcodingJob.HasExited)
+        {
+            // To be considered ready, the segment file has to exist AND
+            // either the transcoding job should be done or next segment should also exist
+            if (segmentExists)
             {
-                _logger.LogWarning("cannot serve {0} as transcoding quit before we got there", segmentPath);
+                if (transcodingJob.HasExited || System.IO.File.Exists(nextSegmentPath))
+                {
+                    _logger.LogDebug("Serving up {SegmentPath} as it deemed ready", segmentPath);
+                    return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
+                }
             }
             else
             {
-                _logger.LogDebug("serving {0} as it's on disk and transcoding stopped", segmentPath);
+                segmentExists = System.IO.File.Exists(segmentPath);
+                if (segmentExists)
+                {
+                    continue; // avoid unnecessary waiting if segment just became available
+                }
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
+            await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (!System.IO.File.Exists(segmentPath))
+        {
+            _logger.LogWarning("cannot serve {0} as transcoding quit before we got there", segmentPath);
         }
         else
         {
-            _logger.LogWarning("cannot serve {0} as it doesn't exist and no transcode is running", segmentPath);
+            _logger.LogDebug("serving {0} as it's on disk and transcoding stopped", segmentPath);
         }
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
     }
