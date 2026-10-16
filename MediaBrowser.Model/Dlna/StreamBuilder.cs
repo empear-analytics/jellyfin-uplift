@@ -1215,22 +1215,32 @@ namespace MediaBrowser.Model.Dlna
             if (!string.IsNullOrEmpty(audioCodec))
             {
                 // Default to a higher bitrate for stream copy
-                if (string.Equals(audioCodec, "aac", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(audioCodec, "mp3", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(audioCodec, "ac3", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(audioCodec, "eac3", StringComparison.OrdinalIgnoreCase))
+                if (IsLossyStreamCopyCodec(audioCodec))
                 {
                     return GetLossyCodecDefaultBitrate(audioChannels);
                 }
 
-                if (string.Equals(audioCodec, "flac", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(audioCodec, "alac", StringComparison.OrdinalIgnoreCase))
+                if (IsLosslessStreamCopyCodec(audioCodec))
                 {
                     return GetLosslessCodecDefaultBitrate(audioChannels);
                 }
             }
 
             return 192000;
+        }
+
+        private static bool IsLossyStreamCopyCodec(string? audioCodec)
+        {
+            return string.Equals(audioCodec, "aac", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "mp3", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "ac3", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "eac3", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsLosslessStreamCopyCodec(string? audioCodec)
+        {
+            return string.Equals(audioCodec, "flac", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "alac", StringComparison.OrdinalIgnoreCase);
         }
 
         private static int GetLossyCodecDefaultBitrate(int? audioChannels)
