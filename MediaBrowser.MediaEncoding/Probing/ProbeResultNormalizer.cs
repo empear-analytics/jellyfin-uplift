@@ -1100,7 +1100,7 @@ namespace MediaBrowser.MediaEncoding.Probing
             // Get average bitrate info from tag "NUMBER_OF_BYTES" and "DURATION" if possible.
             var durationInSeconds = GetRuntimeSecondsFromTags(streamInfo);
             var bytes = GetNumberOfBytesFromTags(streamInfo);
-            if (!(durationInSeconds is not null && durationInSeconds.Value >= 1 && bytes is not null))
+            if (!HasDurationAndSize(durationInSeconds, bytes))
             {
                 return;
             }
@@ -1110,6 +1110,11 @@ namespace MediaBrowser.MediaEncoding.Probing
             {
                 stream.BitRate = bps;
             }
+        }
+
+        private static bool HasDurationAndSize(double? durationInSeconds, long? bytes)
+        {
+            return durationInSeconds is not null && durationInSeconds.Value >= 1 && bytes is not null;
         }
 
         private static void ApplyDisposition(MediaStream stream, MediaStreamInfo streamInfo)
