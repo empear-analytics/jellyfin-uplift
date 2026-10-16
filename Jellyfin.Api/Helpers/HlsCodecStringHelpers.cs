@@ -325,9 +325,7 @@ public static class HlsCodecStringHelpers
             level = 19;
         }
 
-        if (bitDepth != 8
-            && bitDepth != 10
-            && bitDepth != 12)
+        if (IsUnsupportedAv1BitDepth(bitDepth))
         {
             // Default to 8 bits
             bitDepth = 8;
@@ -367,6 +365,13 @@ public static class HlsCodecStringHelpers
     }
 
     private static bool IsUnsupportedBitDepth(int bitDepth)
+    {
+        return bitDepth != 8
+            && bitDepth != 10
+            && bitDepth != 12;
+    }
+
+    private static bool IsUnsupportedAv1BitDepth(int bitDepth)
     {
         return bitDepth != 8
             && bitDepth != 10
