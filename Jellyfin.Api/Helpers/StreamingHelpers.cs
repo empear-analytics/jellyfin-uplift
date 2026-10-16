@@ -217,9 +217,7 @@ public static class StreamingHelpers
     {
         string? containerInternal = Path.GetExtension(state.RequestedUrl);
 
-        if (string.IsNullOrEmpty(containerInternal)
-            && (!string.IsNullOrWhiteSpace(streamingRequest.LiveStreamId)
-                || (mediaSource != null && mediaSource.IsInfiniteStream)))
+        if (IsMissingLiveStreamContainer(containerInternal, streamingRequest, mediaSource))
         {
             containerInternal = ".ts";
         }
@@ -237,6 +235,13 @@ public static class StreamingHelpers
         }
 
         return containerInternal;
+    }
+
+    private static bool IsMissingLiveStreamContainer(string? containerInternal, StreamingRequestDto streamingRequest, MediaSourceInfo? mediaSource)
+    {
+        return string.IsNullOrEmpty(containerInternal)
+            && (!string.IsNullOrWhiteSpace(streamingRequest.LiveStreamId)
+                || (mediaSource != null && mediaSource.IsInfiniteStream));
     }
 
     private static void ApplyVideoOutputSettings(StreamState state, EncodingHelper encodingHelper, EncodingOptions encodingOptions, IMediaEncoder mediaEncoder)
