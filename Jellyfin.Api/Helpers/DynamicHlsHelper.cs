@@ -142,7 +142,7 @@ public class DynamicHlsHelper
             return new FileContentResult(Array.Empty<byte>(), MimeTypes.GetMimeType("playlist.m3u8"));
         }
 
-        var totalBitrate = (state.OutputAudioBitrate ?? 0) + (state.OutputVideoBitrate ?? 0);
+        var totalBitrate = GetTotalBitrate(state);
 
         var builder = new StringBuilder();
 
@@ -187,27 +187,37 @@ public class DynamicHlsHelper
 
         if (EnableAdaptiveBitrateStreaming(state, isLiveStream, enableAdaptiveBitrateStreaming, _httpContextAccessor.HttpContext.GetNormalizedRemoteIP()))
         {
-            var requestedVideoBitrate = state.VideoRequest?.VideoBitRate ?? 0;
-
-            // By default, vary by just 200k
-            var variation = GetBitrateVariation(totalBitrate);
-
-            var newBitrate = totalBitrate - variation;
-            var variantQuery = playlistQuery;
-            variantQuery["VideoBitrate"] = (requestedVideoBitrate - variation).ToString(CultureInfo.InvariantCulture);
-            var variantUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(baseUrl, variantQuery);
-            AppendPlaylist(builder, state, variantUrl, newBitrate, subtitleGroup);
-
-            variation *= 2;
-            newBitrate = totalBitrate - variation;
-            variantQuery["VideoBitrate"] = (requestedVideoBitrate - variation).ToString(CultureInfo.InvariantCulture);
-            variantUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(baseUrl, variantQuery);
-            AppendPlaylist(builder, state, variantUrl, newBitrate, subtitleGroup);
+            AppendBitrateVariantPlaylists(builder, state, playlistQuery, baseUrl, totalBitrate, subtitleGroup);
         }
 
         await AddTrickplayIfEnabled(state, isLiveStream, builder, _httpContextAccessor.HttpContext.User).ConfigureAwait(false);
 
         return new FileContentResult(Encoding.UTF8.GetBytes(builder.ToString()), MimeTypes.GetMimeType("playlist.m3u8"));
+    }
+
+    private void AppendBitrateVariantPlaylists(StringBuilder builder, StreamState state, Dictionary<string, Microsoft.Extensions.Primitives.StringValues> playlistQuery, string baseUrl, int totalBitrate, string? subtitleGroup)
+    {
+        var requestedVideoBitrate = state.VideoRequest?.VideoBitRate ?? 0;
+
+        // By default, vary by just 200k
+        var variation = GetBitrateVariation(totalBitrate);
+
+        var newBitrate = totalBitrate - variation;
+        var variantQuery = playlistQuery;
+        variantQuery["VideoBitrate"] = (requestedVideoBitrate - variation).ToString(CultureInfo.InvariantCulture);
+        var variantUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(baseUrl, variantQuery);
+        AppendPlaylist(builder, state, variantUrl, newBitrate, subtitleGroup);
+
+        variation *= 2;
+        newBitrate = totalBitrate - variation;
+        variantQuery["VideoBitrate"] = (requestedVideoBitrate - variation).ToString(CultureInfo.InvariantCulture);
+        variantUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(baseUrl, variantQuery);
+        AppendPlaylist(builder, state, variantUrl, newBitrate, subtitleGroup);
+    }
+
+    private static int GetTotalBitrate(StreamState state)
+    {
+        return (state.OutputAudioBitrate ?? 0) + (state.OutputVideoBitrate ?? 0);
     }
 
     private void AppendCompatibilityPlaylists(StringBuilder builder, StreamState state, Dictionary<string, Microsoft.Extensions.Primitives.StringValues> playlistQuery, string baseUrl, int totalBitrate, string? subtitleGroup, StringBuilder basicPlaylist)
