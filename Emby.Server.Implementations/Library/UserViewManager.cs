@@ -327,12 +327,7 @@ namespace Emby.Server.Implementations.Library
                 }
             }
 
-            var isPlayed = request.IsPlayed;
-
-            if (parents.OfType<ICollectionFolder>().Any(i => i.CollectionType == CollectionType.music))
-            {
-                isPlayed = null;
-            }
+            var isPlayed = GetIsPlayedFilter(request, parents);
 
             if (parents.Count == 0)
             {
@@ -350,23 +345,9 @@ namespace Emby.Server.Implementations.Library
 
             includeItemTypes = ResolveIncludeItemTypes(includeItemTypes, parents);
 
-            MediaType[] mediaTypes = [];
+            MediaType[] mediaTypes = GetMediaTypesFilter(includeItemTypes, parents);
 
-            if (includeItemTypes.Length == 0)
-            {
-                mediaTypes = GetMediaTypes(parents);
-            }
-
-            var excludeItemTypes = includeItemTypes.Length == 0 && mediaTypes.Length == 0
-                ?
-                [
-                    BaseItemKind.Person,
-                    BaseItemKind.Studio,
-                    BaseItemKind.Year,
-                    BaseItemKind.MusicGenre,
-                    BaseItemKind.Genre
-                ]
-                : Array.Empty<BaseItemKind>();
+            var excludeItemTypes = GetExcludeItemTypes(includeItemTypes, mediaTypes);
 
             var query = new InternalItemsQuery(user)
             {
@@ -387,6 +368,44 @@ namespace Emby.Server.Implementations.Library
             };
 
             return GetLatestOrAllItems(request, query, parents, limit);
+        }
+
+        private static bool? GetIsPlayedFilter(LatestItemsQuery request, List<BaseItem> parents)
+        {
+            var isPlayed = request.IsPlayed;
+
+            if (parents.OfType<ICollectionFolder>().Any(i => i.CollectionType == CollectionType.music))
+            {
+                isPlayed = null;
+            }
+
+            return isPlayed;
+        }
+
+        private static MediaType[] GetMediaTypesFilter(BaseItemKind[] includeItemTypes, List<BaseItem> parents)
+        {
+            MediaType[] mediaTypes = [];
+
+            if (includeItemTypes.Length == 0)
+            {
+                mediaTypes = GetMediaTypes(parents);
+            }
+
+            return mediaTypes;
+        }
+
+        private static BaseItemKind[] GetExcludeItemTypes(BaseItemKind[] includeItemTypes, MediaType[] mediaTypes)
+        {
+            return includeItemTypes.Length == 0 && mediaTypes.Length == 0
+                ?
+                [
+                    BaseItemKind.Person,
+                    BaseItemKind.Studio,
+                    BaseItemKind.Year,
+                    BaseItemKind.MusicGenre,
+                    BaseItemKind.Genre
+                ]
+                : Array.Empty<BaseItemKind>();
         }
 
         private static BaseItemKind[] ResolveIncludeItemTypes(BaseItemKind[] includeItemTypes, List<BaseItem> parents)
