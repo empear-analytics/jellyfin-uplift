@@ -3813,8 +3813,7 @@ namespace Emby.Server.Implementations.Library
                 }
                 catch (HttpRequestException ex)
                 {
-                    if (ex.StatusCode.HasValue
-                        && (ex.StatusCode.Value == HttpStatusCode.NotFound || ex.StatusCode.Value == HttpStatusCode.Forbidden))
+                    if (IsNotFoundOrForbidden(ex))
                     {
                         _logger.LogDebug(ex, "Error downloading image {Url}", url);
                         continue;
@@ -3838,6 +3837,12 @@ namespace Emby.Server.Implementations.Library
                 image.Path,
                 item.Name,
                 item.Id));
+        }
+
+        private static bool IsNotFoundOrForbidden(HttpRequestException ex)
+        {
+            return ex.StatusCode.HasValue
+                && (ex.StatusCode.Value == HttpStatusCode.NotFound || ex.StatusCode.Value == HttpStatusCode.Forbidden);
         }
 
         public async Task AddVirtualFolder(string name, CollectionTypeOptions? collectionType, LibraryOptions options, bool refreshLibrary)
