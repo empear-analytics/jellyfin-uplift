@@ -448,7 +448,7 @@ namespace Emby.Server.Implementations.Library
 
             // If deleting a primary version video, clear PrimaryVersionId from alternate versions
             // OwnerId check: items with OwnerId set are alternate versions or extras, not primaries
-            if (item is Video video && !video.PrimaryVersionId.HasValue && video.OwnerId.IsEmpty())
+            if (item is Video video && IsPrimaryVersion(video))
             {
                 PromoteAlternateVersionOfDeletedPrimary(item, video);
             }
@@ -473,7 +473,7 @@ namespace Emby.Server.Implementations.Library
 
             DeleteMetadataPaths(item, GetMetadataPaths(item, children));
 
-            if ((options.DeleteFileLocation && item.IsFileProtocol) || IsInternalItem(item))
+            if (ShouldDeleteItemFiles(item, options))
             {
                 DeleteItemPaths(item);
             }
@@ -507,6 +507,16 @@ namespace Emby.Server.Implementations.Library
             }
 
             ReportItemRemoved(item, parent);
+        }
+
+        private static bool IsPrimaryVersion(Video video)
+        {
+            return !video.PrimaryVersionId.HasValue && video.OwnerId.IsEmpty();
+        }
+
+        private bool ShouldDeleteItemFiles(BaseItem item, DeleteOptions options)
+        {
+            return (options.DeleteFileLocation && item.IsFileProtocol) || IsInternalItem(item);
         }
 
         private void DeleteMetadataPaths(BaseItem item, IEnumerable<string> metadataPaths)
