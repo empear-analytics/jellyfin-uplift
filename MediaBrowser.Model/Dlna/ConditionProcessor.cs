@@ -371,29 +371,39 @@ namespace MediaBrowser.Model.Dlna
             var conditionType = condition.Condition;
             if (conditionType == ProfileConditionType.EqualsAny)
             {
-                foreach (var singleConditionString in condition.Value.AsSpan().Split('|'))
-                {
-                    if (Enum.TryParse(singleConditionString, true, out VideoRangeType conditionValue)
-                        && conditionValue.Equals(currentValue))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                return EqualsAnyVideoRangeType(condition, currentValue);
             }
 
             if (Enum.TryParse(condition.Value, true, out VideoRangeType expected))
             {
-                return conditionType switch
-                {
-                    ProfileConditionType.Equals => currentValue.Value == expected,
-                    ProfileConditionType.NotEquals => currentValue.Value != expected,
-                    _ => throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition)
-                };
+                return CompareVideoRangeType(condition, conditionType, currentValue.Value, expected);
             }
 
             return false;
+        }
+
+        private static bool EqualsAnyVideoRangeType(ProfileCondition condition, VideoRangeType? currentValue)
+        {
+            foreach (var singleConditionString in condition.Value.AsSpan().Split('|'))
+            {
+                if (Enum.TryParse(singleConditionString, true, out VideoRangeType conditionValue)
+                    && conditionValue.Equals(currentValue))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool CompareVideoRangeType(ProfileCondition condition, ProfileConditionType conditionType, VideoRangeType currentValue, VideoRangeType expected)
+        {
+            return conditionType switch
+            {
+                ProfileConditionType.Equals => currentValue == expected,
+                ProfileConditionType.NotEquals => currentValue != expected,
+                _ => throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition)
+            };
         }
     }
 }
