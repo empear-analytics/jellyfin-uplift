@@ -243,28 +243,17 @@ public class MediaInfoHelper
 
         options.MaxBitrate = GetMaxBitrate(maxBitrate, user, ipAddress);
 
-        if (!options.ForceDirectStream)
-        {
-            // direct-stream http streaming is currently broken
-            options.EnableDirectStream = false;
-        }
+        DisableDirectStreamUnlessForced(options);
 
         // Beginning of Playback Determination
-        var streamInfo = item.MediaType == MediaType.Audio
-            ? streamBuilder.GetOptimalAudioStream(options)
-            : streamBuilder.GetOptimalVideoStream(options);
+        var streamInfo = GetOptimalStream(streamBuilder, item, options);
 
         if (streamInfo is not null)
         {
             streamInfo.PlaySessionId = playSessionId;
             streamInfo.StartPositionTicks = startTimeTicks;
 
-            mediaSource.SupportsDirectPlay = streamInfo.PlayMethod == PlayMethod.DirectPlay;
-
-            // Players do not handle this being set according to PlayMethod
-            mediaSource.SupportsDirectStream = IsDirectStreamSupported(options, streamInfo);
-
-            mediaSource.SupportsTranscoding = IsTranscodingSupported(streamInfo, mediaSource, profile, options);
+            SetSupportedPlayMethods(streamInfo, mediaSource, profile, options);
 
             ApplyUserTranscodingPermission(item, user, mediaSource);
 
@@ -276,6 +265,37 @@ public class MediaInfoHelper
             mediaSource.DefaultAudioStreamIndex = streamInfo.AudioStreamIndex;
         }
 
+        SetAttachmentDeliveryUrls(item, mediaSource);
+    }
+
+    private static void SetSupportedPlayMethods(StreamInfo streamInfo, MediaSourceInfo mediaSource, DeviceProfile profile, MediaOptions options)
+    {
+        mediaSource.SupportsDirectPlay = streamInfo.PlayMethod == PlayMethod.DirectPlay;
+
+        // Players do not handle this being set according to PlayMethod
+        mediaSource.SupportsDirectStream = IsDirectStreamSupported(options, streamInfo);
+
+        mediaSource.SupportsTranscoding = IsTranscodingSupported(streamInfo, mediaSource, profile, options);
+    }
+
+    private static void DisableDirectStreamUnlessForced(MediaOptions options)
+    {
+        if (!options.ForceDirectStream)
+        {
+            // direct-stream http streaming is currently broken
+            options.EnableDirectStream = false;
+        }
+    }
+
+    private static StreamInfo? GetOptimalStream(StreamBuilder streamBuilder, BaseItem item, MediaOptions options)
+    {
+        return item.MediaType == MediaType.Audio
+            ? streamBuilder.GetOptimalAudioStream(options)
+            : streamBuilder.GetOptimalVideoStream(options);
+    }
+
+    private static void SetAttachmentDeliveryUrls(BaseItem item, MediaSourceInfo mediaSource)
+    {
         foreach (var attachment in mediaSource.MediaAttachments)
         {
             attachment.DeliveryUrl = string.Format(
