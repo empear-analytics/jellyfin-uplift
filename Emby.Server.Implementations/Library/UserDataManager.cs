@@ -306,8 +306,7 @@ namespace Emby.Server.Implementations.Library
             foreach (var video in candidates)
             {
                 // Only items that actually have alternate versions aggregate over them.
-                if (video.LinkedAlternateVersions.Length == 0
-                    && (withLocalAlternates is null || !withLocalAlternates.Contains(video.Id)))
+                if (HasNoAlternateVersions(video, withLocalAlternates))
                 {
                     continue;
                 }
@@ -332,6 +331,12 @@ namespace Emby.Server.Implementations.Library
             AddMostRecentlyPlayedVersions(result, versionGroups, userDataByVersion);
 
             return result;
+        }
+
+        private static bool HasNoAlternateVersions(Video video, HashSet<Guid>? withLocalAlternates)
+        {
+            return video.LinkedAlternateVersions.Length == 0
+                && (withLocalAlternates is null || !withLocalAlternates.Contains(video.Id));
         }
 
         private HashSet<Guid>? FindIdsWithLocalAlternates(List<Guid>? localProbeIds)
