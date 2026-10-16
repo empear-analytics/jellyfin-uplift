@@ -6294,10 +6294,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 var hwScaleFilter = GetHwScaleFilter("vpp", "rkrga", outFormat, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
                 var doScaling = !string.IsNullOrEmpty(GetHwScaleFilter("vpp", "rkrga", string.Empty, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH));
 
-                if (!hasSubs
-                     || doRkVppTranspose
-                     || !isFullAfbcPipeline
-                     || doScaling)
+                if (NeedsRkrgaScaleFilters(hasSubs, doRkVppTranspose, isFullAfbcPipeline, doScaling))
                 {
                     var isScaleRatioSupported = IsScaleRatioSupported(inW, inH, reqW, reqH, reqMaxW, reqMaxH, 8.0f);
 
@@ -6315,7 +6312,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                     // The RKMPP MJPEG encoder on some newer chip models no longer supports RGB input.
                     // Use 2pass here to enable RGA output of full-range YUV in the 2nd pass.
-                    if (isMjpegEncoder && !doOclTonemap && ((doScaling && isScaleRatioSupported) || !doScaling))
+                    if (NeedsRkrgaMjpegFirstPass(isMjpegEncoder, doOclTonemap, doScaling, isScaleRatioSupported))
                     {
                         var hwScaleFilterFirstPass = "vpp_rkrga=format=bgra:afbc=1";
                         mainFilters.Add(hwScaleFilterFirstPass);
@@ -6352,7 +6349,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var memoryOutput = false;
             var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
-            if ((isRkmppDecoder && isSwEncoder) || isUploadForOclTonemap)
+            if (NeedsMemoryOutput(isRkmppDecoder, isSwEncoder, isUploadForOclTonemap))
             {
                 memoryOutput = true;
 
@@ -6419,7 +6416,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                     // offload 1080p+ subtitles swscale upscaling from CPU to RGA
                     var (overlayW, overlayH) = GetFixedOutputSize(swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                    if (overlayW.HasValue && overlayH.HasValue && overlayH.Value > subMaxH)
+                    if (IsOverlayTallerThan(overlayW, overlayH, subMaxH))
                     {
                         subFilters.Add($"vpp_rkrga=w={overlayW.Value}:h={overlayH.Value}:format=bgra:afbc=1");
                     }
@@ -6445,6 +6442,24 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool NeedsRkrgaScaleFilters(bool hasSubs, bool doRkVppTranspose, bool isFullAfbcPipeline, bool doScaling)
+        {
+            return !hasSubs
+                || doRkVppTranspose
+                || !isFullAfbcPipeline
+                || doScaling;
+        }
+
+        private static bool NeedsRkrgaMjpegFirstPass(bool isMjpegEncoder, bool doOclTonemap, bool doScaling, bool isScaleRatioSupported)
+        {
+            return isMjpegEncoder && !doOclTonemap && ((doScaling && isScaleRatioSupported) || !doScaling);
+        }
+
+        private static bool IsOverlayTallerThan(int? overlayW, int? overlayH, int subMaxH)
+        {
+            return overlayW.HasValue && overlayH.HasValue && overlayH.Value > subMaxH;
         }
 
         /// <summary>
