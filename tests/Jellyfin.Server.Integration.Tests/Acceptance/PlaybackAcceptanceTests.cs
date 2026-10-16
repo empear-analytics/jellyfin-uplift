@@ -169,10 +169,34 @@ public sealed partial class PlaybackAcceptanceTests : IClassFixture<AcceptanceAp
         text = TranscodeFileName().Replace(text, "transcodes$1<file>");
         if (text.StartsWith('{'))
         {
-            text = JsonNode.Parse(text)!.ToJsonString(_indented);
+            var json = JsonNode.Parse(text)!;
+            HideExperimentProperties(json);
+            text = json.ToJsonString(_indented);
         }
 
         return text.ReplaceLineEndings("\n");
+    }
+
+    // The track flags of the feature experiment (docs/experiment/feature-spec.md) are left out, so
+    // these recordings neither show nor pin how the feature behaves; it is graded elsewhere.
+    private static void HideExperimentProperties(JsonNode? node)
+    {
+        if (node is JsonObject obj)
+        {
+            obj.Remove("IsAudioDescription");
+            obj.Remove("IsCommentary");
+            foreach (var (_, child) in obj)
+            {
+                HideExperimentProperties(child);
+            }
+        }
+        else if (node is JsonArray array)
+        {
+            foreach (var child in array)
+            {
+                HideExperimentProperties(child);
+            }
+        }
     }
 
     private static string ProfilePath(string profile, [CallerFilePath] string callerPath = "")

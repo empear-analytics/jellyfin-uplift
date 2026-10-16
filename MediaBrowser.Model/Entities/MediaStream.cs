@@ -513,6 +513,18 @@ namespace MediaBrowser.Model.Entities
         public bool IsOriginal { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether this instance is an audio description for the visually impaired.
+        /// </summary>
+        /// <value><c>true</c> if this instance is an audio description; otherwise, <c>false</c>.</value>
+        public bool IsAudioDescription { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this instance is a commentary.
+        /// </summary>
+        /// <value><c>true</c> if this instance is a commentary; otherwise, <c>false</c>.</value>
+        public bool IsCommentary { get; set; }
+
+        /// <summary>
         /// Gets or sets the height.
         /// </summary>
         /// <value>The height.</value>

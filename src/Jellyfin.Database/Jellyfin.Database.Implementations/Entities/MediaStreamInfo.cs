@@ -98,6 +98,10 @@ public class MediaStreamInfo
 
     public bool? IsHearingImpaired { get; set; }
 
+    public bool? IsAudioDescription { get; set; }
+
+    public bool? IsCommentary { get; set; }
+
     public int? Rotation { get; set; }
 
     public string? KeyFrames { get; set; }

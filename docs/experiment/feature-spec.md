@@ -1,6 +1,6 @@
 # Feature: accessibility-aware tracks
 
-**Status:** draft for review (2026-10-16). It becomes final before any refactoring starts.
+**Status:** agreed 2026-10-16. Fixed for both arms of the experiment.
 
 Media files can mark their tracks for accessibility: an audio track can be an *audio description*
 for blind and partially sighted viewers, or a *commentary*, and a subtitle track can be *SDH*
@@ -22,6 +22,9 @@ The scaffolding commit adds everything the feature needs outside the code it cha
   the `User` entity. It is saved and loaded like `PlayDefaultAudioTrack`.
 
 `MediaStream.IsHearingImpaired` already exists and is already read from ffprobe.
+
+The recorded acceptance tests in `tests/*/Acceptance/` leave `IsAudioDescription` and `IsCommentary`
+out of their recordings, so they neither require nor block this feature.
 
 ## Requirements
 

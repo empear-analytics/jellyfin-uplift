@@ -467,6 +467,7 @@ namespace Jellyfin.Server.Implementations.Users
                     HidePlayedInLatest = user.HidePlayedInLatest,
                     EnableLocalPassword = user.EnableLocalPassword,
                     PlayDefaultAudioTrack = user.PlayDefaultAudioTrack,
+                    PreferAudioDescription = user.PreferAudioDescription,
                     DisplayCollectionsView = user.DisplayCollectionsView,
                     DisplayMissingEpisodes = user.DisplayMissingEpisodes,
                     AudioLanguagePreference = user.AudioLanguagePreference,
@@ -818,6 +819,7 @@ namespace Jellyfin.Server.Implementations.Users
                     user.HidePlayedInLatest = config.HidePlayedInLatest;
                     user.EnableLocalPassword = config.EnableLocalPassword;
                     user.PlayDefaultAudioTrack = config.PlayDefaultAudioTrack;
+                    user.PreferAudioDescription = config.PreferAudioDescription;
                     user.DisplayCollectionsView = config.DisplayCollectionsView;
                     user.DisplayMissingEpisodes = config.DisplayMissingEpisodes;
                     user.AudioLanguagePreference = config.AudioLanguagePreference;

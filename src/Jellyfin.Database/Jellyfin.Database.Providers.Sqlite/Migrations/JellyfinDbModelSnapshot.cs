@@ -943,7 +943,13 @@ namespace Jellyfin.Server.Implementations.Migrations
                     b.Property<bool?>("IsAnamorphic")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool?>("IsAudioDescription")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool?>("IsAvc")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool?>("IsCommentary")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsDefault")
@@ -1360,6 +1366,9 @@ namespace Jellyfin.Server.Implementations.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("PlayDefaultAudioTrack")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("PreferAudioDescription")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("RememberAudioSelections")

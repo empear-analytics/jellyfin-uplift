@@ -176,6 +176,14 @@ namespace Jellyfin.Database.Implementations.Entities
         public bool PlayDefaultAudioTrack { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether audio description tracks should be preferred.
+        /// </summary>
+        /// <remarks>
+        /// Required.
+        /// </remarks>
+        public bool PreferAudioDescription { get; set; }
+
+        /// <summary>
         /// Gets or sets the subtitle language preference.
         /// </summary>
         /// <remarks>
