@@ -378,9 +378,7 @@ namespace MediaBrowser.MediaEncoding.Probing
                     // Limit WebM to supported stream types and codecs.
                     // FFprobe can report "matroska,webm" for Matroska-like containers, so only keep "webm" if all streams are WebM-compatible.
                     // Any stream that is not video nor audio is not supported in WebM and should disqualify the webm container probe result.
-                    if (mediaStreams.Any(stream => stream.Type is not MediaStreamType.Video and not MediaStreamType.Audio)
-                        || mediaStreams.Any(stream => (stream.Type == MediaStreamType.Video && !_webmVideoCodecs.Contains(stream.Codec, StringComparison.OrdinalIgnoreCase))
-                            || (stream.Type == MediaStreamType.Audio && !_webmAudioCodecs.Contains(stream.Codec, StringComparison.OrdinalIgnoreCase))))
+                    if (HasWebmIncompatibleStream(mediaStreams))
                     {
                         splitFormat[i] = string.Empty;
                     }
@@ -388,6 +386,13 @@ namespace MediaBrowser.MediaEncoding.Probing
             }
 
             return string.Join(',', splitFormat.Where(s => !string.IsNullOrEmpty(s)));
+        }
+
+        private static bool HasWebmIncompatibleStream(IReadOnlyList<MediaStream> mediaStreams)
+        {
+            return mediaStreams.Any(stream => stream.Type is not MediaStreamType.Video and not MediaStreamType.Audio)
+                || mediaStreams.Any(stream => (stream.Type == MediaStreamType.Video && !_webmVideoCodecs.Contains(stream.Codec, StringComparison.OrdinalIgnoreCase))
+                    || (stream.Type == MediaStreamType.Audio && !_webmAudioCodecs.Contains(stream.Codec, StringComparison.OrdinalIgnoreCase)));
         }
 
         internal static int? GetEstimatedAudioBitrate(string codec, string profile, int? channels)
