@@ -2065,6 +2065,15 @@ public class DynamicHlsController : BaseJellyfinApiController
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         }
 
+        LogSegmentStateAfterTranscodingStopped(segmentPath);
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
+    }
+
+    private void LogSegmentStateAfterTranscodingStopped(string segmentPath)
+    {
         if (!System.IO.File.Exists(segmentPath))
         {
             _logger.LogWarning("cannot serve {0} as transcoding quit before we got there", segmentPath);
@@ -2073,10 +2082,6 @@ public class DynamicHlsController : BaseJellyfinApiController
         {
             _logger.LogDebug("serving {0} as it's on disk and transcoding stopped", segmentPath);
         }
-
-        cancellationToken.ThrowIfCancellationRequested();
-
-        return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
     }
 
     private ActionResult GetSegmentResult(StreamState state, string segmentPath, int segmentIndex, TranscodingJob? transcodingJob)
