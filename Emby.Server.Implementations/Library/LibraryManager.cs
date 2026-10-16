@@ -2202,8 +2202,7 @@ namespace Emby.Server.Implementations.Library
                 }
 
                 // Handle grouping
-                if (user is not null && view.ViewType != CollectionType.unknown && UserView.IsEligibleForGrouping(view.ViewType)
-                    && user.GetPreference(PreferenceKind.GroupedFolders).Length > 0)
+                if (user is not null && IsGroupedView(view, user))
                 {
                     return GetUserRootFolder()
                         .GetChildren(user, true)
@@ -2228,6 +2227,12 @@ namespace Emby.Server.Implementations.Library
             }
 
             return [];
+        }
+
+        private static bool IsGroupedView(UserView view, User user)
+        {
+            return view.ViewType != CollectionType.unknown && UserView.IsEligibleForGrouping(view.ViewType)
+                && user.GetPreference(PreferenceKind.GroupedFolders).Length > 0;
         }
 
         /// <summary>
