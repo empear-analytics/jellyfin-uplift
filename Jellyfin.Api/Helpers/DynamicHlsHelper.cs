@@ -981,8 +981,7 @@ public class DynamicHlsHelper
             return HlsCodecStringHelpers.GetH264String(profile, level);
         }
 
-        if (string.Equals(codec, "h265", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(codec, "hevc", StringComparison.OrdinalIgnoreCase))
+        if (IsHevcCodec(codec))
         {
             string profile = GetOutputVideoCodecProfile(state, "hevc");
             return HlsCodecStringHelpers.GetH265String(profile, level);
@@ -1020,6 +1019,12 @@ public class DynamicHlsHelper
         }
 
         return string.Empty;
+    }
+
+    private static bool IsHevcCodec(string codec)
+    {
+        return string.Equals(codec, "h265", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(codec, "hevc", StringComparison.OrdinalIgnoreCase);
     }
 
     private int GetBitrateVariation(int bitrate)
