@@ -61,7 +61,7 @@ Update as tasks land.
 | R05 | 2.90 | - | not started |
 | R06 | 4.36 | - | not started |
 | R07 | 4.59 | - | not started |
-| R08 | 4.90 | - | not started |
+| R08 | 4.90 | 7.78 | stopped at 7.78: GetPathProtocol (flat early returns, cc 9); public signatures with 5-6 arguments; Constructor Over-Injection (13); Low Cohesion; Primitive Obsession |
 | R09 | 5.41 | 9.38 | stopped at 9.38: public signatures with too many arguments (5, 19); Constructor Over-Injection |
 | R10 | 5.89 | 9.09 | stopped at 9.09: Excess Number of Function Arguments (public methods and the new helpers), Primitive Obsession, String Heavy Function Arguments |
 | R11 | 6.53 | 7.35 | stopped at 7.35: flat 19-case switch (cc 21); public plugin-API signatures with up to 20 arguments; duplicates differing in type (Recipe D does not apply) |
