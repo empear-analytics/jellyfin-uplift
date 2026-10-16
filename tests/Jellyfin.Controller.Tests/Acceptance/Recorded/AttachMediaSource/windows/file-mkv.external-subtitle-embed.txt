@@ -1,0 +1,6 @@
+mediaPath=/media/movie.mkv protocol=File container=mkv runtime=60000000000
+videoSync=- audioSync=- nativeFramerate=False iso=- timestamp=None
+video=0 audio=1 subtitle=- subtitleMethod=Embed subtitleOffset=0
+requestVideoCodec=hevc requestAudioCodec=eac3 maxWidth=- maxHeight=-
+supportedAudio=eac3,aac,truehd,dts supportedVideo=hevc,h264,av1
+headers=

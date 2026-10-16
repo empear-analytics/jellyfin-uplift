@@ -1,0 +1,7 @@
+200 OK
+accept-ranges: none
+content-range: -
+content-length: 28
+content-type: audio/flac
+body: fLaC remote content of plain
+upstream: GET plain.flac range=-

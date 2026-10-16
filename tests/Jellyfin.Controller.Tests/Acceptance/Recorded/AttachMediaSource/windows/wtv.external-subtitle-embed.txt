@@ -1,0 +1,6 @@
+mediaPath=/media/recording.wtv protocol=File container=wtv runtime=60000000000
+videoSync=-1 audioSync=1 nativeFramerate=False iso=- timestamp=None
+video=0 audio=1 subtitle=- subtitleMethod=Embed subtitleOffset=0
+requestVideoCodec=hevc requestAudioCodec=eac3 maxWidth=- maxHeight=-
+supportedAudio=eac3,aac,truehd,dts supportedVideo=hevc,h264,av1
+headers=

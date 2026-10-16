@@ -1,0 +1,6 @@
+output 720x576 sampleRate=48000 audioBitDepth=
+target level=8 bitDepth=8 refs=4 fps=25 profile=Main range=SDR tag=
+target anamorphic= interlaced=True avc= timestamp=None packet= videoStreams=1 audioStreams=1
+actual video=mpeg2video audio=ac3 segmentedLive=False reasons=VideoCodecNotSupported, AudioChannelsNotSupported
+deinterlace h264=False forced=True mpeg2=False
+requested level= refs= bitDepth= audioBitDepth= channels=

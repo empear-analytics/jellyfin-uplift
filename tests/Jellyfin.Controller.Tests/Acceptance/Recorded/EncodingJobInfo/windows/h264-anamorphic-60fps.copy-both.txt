@@ -1,0 +1,6 @@
+output 1440x1080 sampleRate=96000 audioBitDepth=24
+target level=42 bitDepth=8 refs=16 fps=59.94 profile=Main range=SDR tag=
+target anamorphic=True interlaced=False avc=False timestamp=None packet= videoStreams=1 audioStreams=1
+actual video=h264 audio=flac segmentedLive=False reasons=VideoCodecNotSupported, AudioChannelsNotSupported
+deinterlace h264=False forced=False mpeg2=False
+requested level= refs= bitDepth= audioBitDepth= channels=

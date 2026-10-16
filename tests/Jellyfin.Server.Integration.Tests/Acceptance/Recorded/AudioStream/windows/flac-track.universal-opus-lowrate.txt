@@ -1,0 +1,5 @@
+500 InternalServerError
+content-type: text/plain
+location: -
+body: 25 bytes
+ffmpeg: -analyzeduration 200M -probesize 1G  -i file:"/acceptance/media/flac-track.flac" -threads 0 -vn -ab 64000 -ac 2 -acodec libopus -ar 24000 -id3v2_version 3 -write_id3v1 1 -y "<root>\cache\transcodes\<file>.ogg"

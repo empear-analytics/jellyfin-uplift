@@ -1,0 +1,14 @@
+favorite-rated -> played=False count=0 fav=True likes=True rating=7.5 pos=0 pct=- unplayed=-
+position-half -> played=False count=0 fav=True likes=True rating=7.5 pos=27000000000 pct=50 unplayed=-
+played -> played=True count=3 fav=True likes=True rating=7.5 pos=27000000000 pct=50 unplayed=-
+unplayed -> played=False count=3 fav=True likes=True rating=7.5 pos=0 pct=- unplayed=-
+playstate position=- -> finished=True played=True count=3 fav=True likes=True rating=7.5 pos=0 pct=- unplayed=-
+playstate position=0 -> finished=False played=False count=3 fav=True likes=True rating=7.5 pos=0 pct=- unplayed=-
+playstate position=1080000000 -> finished=False played=False count=3 fav=True likes=True rating=7.5 pos=0 pct=- unplayed=-
+playstate position=27000000000 -> finished=False played=False count=3 fav=True likes=True rating=7.5 pos=27000000000 pct=50 unplayed=-
+playstate position=51300000000 -> finished=True played=True count=3 fav=True likes=True rating=7.5 pos=0 pct=- unplayed=-
+playstate position=54000000001 -> finished=True played=True count=3 fav=True likes=True rating=7.5 pos=0 pct=- unplayed=-
+streams saved -> audio=2
+streams reset -> audio=- subtitle=-
+resume -> -
+series -> played=False count=0 fav=False likes=- rating=- pos=0 pct=33.33 unplayed=2

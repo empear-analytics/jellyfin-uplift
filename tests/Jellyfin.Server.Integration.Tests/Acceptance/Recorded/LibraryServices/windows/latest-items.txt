@@ -1,0 +1,48 @@
+parent=all group=True played=- types= -> 
+parent=all group=True played=- types=Movie -> 
+parent=all group=True played=- types=Episode|Audio -> 
+parent=all group=True played=False types= -> 
+parent=all group=True played=False types=Movie -> 
+parent=all group=True played=False types=Episode|Audio -> 
+parent=all group=False played=- types= -> 
+parent=all group=False played=- types=Movie -> 
+parent=all group=False played=- types=Episode|Audio -> 
+parent=all group=False played=False types= -> 
+parent=all group=False played=False types=Movie -> 
+parent=all group=False played=False types=Episode|Audio -> 
+parent=movies group=True played=- types= -> 
+parent=movies group=True played=- types=Movie -> 
+parent=movies group=True played=- types=Episode|Audio -> 
+parent=movies group=True played=False types= -> 
+parent=movies group=True played=False types=Movie -> 
+parent=movies group=True played=False types=Episode|Audio -> 
+parent=movies group=False played=- types= -> -[Movie 4]
+parent=movies group=False played=- types=Movie -> -[Movie 4]
+parent=movies group=False played=- types=Episode|Audio -> 
+parent=movies group=False played=False types= -> -[Movie 4]
+parent=movies group=False played=False types=Movie -> -[Movie 4]
+parent=movies group=False played=False types=Episode|Audio -> 
+parent=tvshows group=True played=- types= -> -[Show S]
+parent=tvshows group=True played=- types=Movie -> 
+parent=tvshows group=True played=- types=Episode|Audio -> -[Show S]
+parent=tvshows group=True played=False types= -> -[Show S]
+parent=tvshows group=True played=False types=Movie -> 
+parent=tvshows group=True played=False types=Episode|Audio -> -[Show S]
+parent=tvshows group=False played=- types= -> -[Episode 1]
+parent=tvshows group=False played=- types=Movie -> 
+parent=tvshows group=False played=- types=Episode|Audio -> -[Episode 1]
+parent=tvshows group=False played=False types= -> -[Episode 1]
+parent=tvshows group=False played=False types=Movie -> 
+parent=tvshows group=False played=False types=Episode|Audio -> -[Episode 1]
+parent=music group=True played=- types= -> -[Album X]
+parent=music group=True played=- types=Movie -> 
+parent=music group=True played=- types=Episode|Audio -> -[Album X]
+parent=music group=True played=False types= -> -[Album X]
+parent=music group=True played=False types=Movie -> 
+parent=music group=True played=False types=Episode|Audio -> -[Album X]
+parent=music group=False played=- types= -> -[Track 3]
+parent=music group=False played=- types=Movie -> 
+parent=music group=False played=- types=Episode|Audio -> -[Track 3]
+parent=music group=False played=False types= -> -[Track 3]
+parent=music group=False played=False types=Movie -> 
+parent=music group=False played=False types=Episode|Audio -> -[Track 3]

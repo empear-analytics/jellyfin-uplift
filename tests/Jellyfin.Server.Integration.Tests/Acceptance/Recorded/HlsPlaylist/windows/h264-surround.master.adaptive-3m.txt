@@ -1,0 +1,4 @@
+200 OK
+#EXTM3U\r
+#EXT-X-STREAM-INF:BANDWIDTH=3128000,AVERAGE-BANDWIDTH=3128000,VIDEO-RANGE=SDR,CODECS="avc1.424029,mp4a.40.2",RESOLUTION=1280x720,FRAME-RATE=23.976\r
+main.m3u8?MediaSourceId=41a4044e552742111f6c85fdaa8d4005&PlaySessionId=acceptance&VideoCodec=h264&AudioCodec=aac&SegmentContainer=ts&EnableAdaptiveBitrateStreaming=true&VideoBitRate=3000000&AudioBitRate=128000&MaxWidth=1920\r

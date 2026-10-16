@@ -1,0 +1,6 @@
+output 1280x720 sampleRate=44100 audioBitDepth=
+target level= bitDepth= refs= fps=30 profile= range=Unknown tag=
+target anamorphic=False interlaced=False avc=False timestamp=None packet= videoStreams=1 audioStreams=1
+actual video=h264 audio=aac segmentedLive=False reasons=VideoCodecNotSupported, AudioChannelsNotSupported
+deinterlace h264=False forced=False mpeg2=False
+requested level= refs= bitDepth= audioBitDepth=16 channels=2

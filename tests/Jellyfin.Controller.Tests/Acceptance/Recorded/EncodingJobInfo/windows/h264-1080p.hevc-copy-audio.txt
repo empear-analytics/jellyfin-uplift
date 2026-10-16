@@ -1,0 +1,6 @@
+output 1920x1080 sampleRate=48000 audioBitDepth=
+target level=150 bitDepth= refs= fps= profile=main10 range=Unknown tag=
+target anamorphic=False interlaced=False avc=False timestamp=None packet= videoStreams=1 audioStreams=1
+actual video=hevc audio=aac segmentedLive=False reasons=VideoCodecNotSupported, AudioChannelsNotSupported
+deinterlace h264=False forced=False mpeg2=False
+requested level=150 refs= bitDepth=10 audioBitDepth= channels=

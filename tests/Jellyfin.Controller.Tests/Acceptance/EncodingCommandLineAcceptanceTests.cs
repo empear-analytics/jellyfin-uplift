@@ -41,6 +41,13 @@ public class EncodingCommandLineAcceptanceTests
 
     private static readonly string[] _outputCodecs = ["h264", "hevc", "av1"];
 
+    // Option profiles change EncodingOptions; device profiles change what the VAAPI device reports.
+    private static readonly string[] _optionProfiles = ["nodecode", "native", "no10bit", "lowpower", "swencode", "slow-crf"];
+
+    private static readonly string[] _deviceProfiles = ["i965", "amd", "novulkan", "limited"];
+
+    private static readonly Scenario[] _profileScenarios = [Scenarios.H264Sdr, Scenarios.Hdr10, Scenarios.Dovi, Scenarios.Interlaced, Scenarios.PgsBurnIn];
+
     // EncodingHelper names the VAAPI render node in the command line only if the file exists, so
     // the real /dev/dri/renderD128 would make the output depend on the machine's GPU. A fixed
     // file the tests create themselves keeps it the same everywhere.
@@ -62,7 +69,7 @@ public class EncodingCommandLineAcceptanceTests
     public void ProgressiveVideoCommandLine_MatchesRecording(string caseId)
     {
         var testCase = AllCases()[caseId];
-        var helper = CreateHelper();
+        var helper = CreateHelper(testCase.Profile);
         var state = testCase.BuildState();
 
         var actual = helper.GetProgressiveVideoFullCommandLine(state, testCase.Options, EncoderPreset.veryfast);
@@ -93,6 +100,29 @@ public class EncodingCommandLineAcceptanceTests
             Add(new EncodingCase(hw, Scenarios.Hdr10, "hevc", MaxWidth: 1920, Container: "ts"));
             Add(new EncodingCase(hw, Scenarios.Hdr10, "h264", MaxWidth: null, Container: "mkv", Tonemapping: false));
             Add(new EncodingCase(hw, Scenarios.Interlaced, "h264", MaxWidth: null, Container: "mkv", DoubleRateDeinterlace: true));
+
+            // Option profiles: how the hardware decoding, encoding and quality settings change the line.
+            foreach (var profile in _optionProfiles)
+            {
+                foreach (var scenario in _profileScenarios)
+                {
+                    Add(new EncodingCase(hw, scenario, "h264", MaxWidth: null, Container: "mkv", Profile: profile));
+                    Add(new EncodingCase(hw, scenario, "hevc", MaxWidth: null, Container: "mkv", Profile: profile));
+                }
+            }
+        }
+
+        // Device profiles only matter where a VAAPI device is involved.
+        foreach (var hw in new[] { HardwareAccelerationType.vaapi, HardwareAccelerationType.qsv })
+        {
+            foreach (var profile in _deviceProfiles)
+            {
+                foreach (var scenario in _profileScenarios)
+                {
+                    Add(new EncodingCase(hw, scenario, "h264", MaxWidth: null, Container: "mkv", Profile: profile));
+                    Add(new EncodingCase(hw, scenario, "hevc", MaxWidth: 1280, Container: "mkv", Profile: profile));
+                }
+            }
         }
 
         return cases;
@@ -109,9 +139,10 @@ public class EncodingCommandLineAcceptanceTests
         return Path;
     }
 
-    private static EncodingHelper CreateHelper()
+    private static EncodingHelper CreateHelper(string profile)
     {
         // A fully capable ffmpeg: every encoder, decoder, filter and hardware path is available.
+        // Device profiles change which kind of VAAPI device it reports.
         var encoder = new Mock<IMediaEncoder>();
         encoder.Setup(x => x.SupportsEncoder(It.IsAny<string>())).Returns(true);
         encoder.Setup(x => x.SupportsDecoder(It.IsAny<string>())).Returns(true);
@@ -120,8 +151,10 @@ public class EncodingCommandLineAcceptanceTests
         encoder.Setup(x => x.SupportsFilterWithOption(It.IsAny<FilterOptionType>())).Returns(true);
         encoder.Setup(x => x.SupportsBitStreamFilterWithOption(It.IsAny<BitStreamFilterOptionType>())).Returns(true);
         encoder.SetupGet(x => x.EncoderVersion).Returns(new Version(7, 1));
-        encoder.SetupGet(x => x.IsVaapiDeviceInteliHD).Returns(true);
-        encoder.SetupGet(x => x.IsVaapiDeviceSupportVulkanDrmInterop).Returns(true);
+        encoder.SetupGet(x => x.IsVaapiDeviceInteliHD).Returns(profile is "" or "novulkan");
+        encoder.SetupGet(x => x.IsVaapiDeviceInteli965).Returns(profile == "i965");
+        encoder.SetupGet(x => x.IsVaapiDeviceAmd).Returns(profile == "amd");
+        encoder.SetupGet(x => x.IsVaapiDeviceSupportVulkanDrmInterop).Returns(profile is not ("novulkan" or "limited"));
         encoder.Setup(x => x.EscapeSubtitleFilterPath(It.IsAny<string>())).Returns<string>(p => p);
         encoder.Setup(x => x.GetInputPathArgument(It.IsAny<EncodingJobInfo>())).Returns<EncodingJobInfo>(s => "file:\"" + s.MediaPath + "\"");
         encoder.Setup(x => x.GetInputPathArgument(It.IsAny<string>(), It.IsAny<MediaSourceInfo>())).Returns<string, MediaSourceInfo>((p, _) => "file:\"" + p + "\"");
@@ -153,7 +186,8 @@ public class EncodingCommandLineAcceptanceTests
         int? MaxWidth,
         string Container,
         bool Tonemapping = true,
-        bool DoubleRateDeinterlace = false)
+        bool DoubleRateDeinterlace = false,
+        string Profile = "")
     {
         public string Id => string.Join(
             '.',
@@ -165,10 +199,11 @@ public class EncodingCommandLineAcceptanceTests
                 Container,
                 MaxWidth is null ? null : "w" + MaxWidth,
                 Tonemapping ? null : "notonemap",
-                DoubleRateDeinterlace ? "doublerate" : null
+                DoubleRateDeinterlace ? "doublerate" : null,
+                Profile.Length == 0 ? null : Profile
             }.Where(p => p is not null));
 
-        public EncodingOptions Options => new()
+        public EncodingOptions Options => ApplyProfile(new()
         {
             HardwareAccelerationType = Hardware,
             EnableHardwareEncoding = true,
@@ -184,7 +219,44 @@ public class EncodingCommandLineAcceptanceTests
             EncodingThreadCount = -1,
             VaapiDevice = _renderNode,
             QsvDevice = string.Empty
-        };
+        });
+
+        private EncodingOptions ApplyProfile(EncodingOptions options)
+        {
+            switch (Profile)
+            {
+                case "nodecode":
+                    options.HardwareDecodingCodecs = [];
+                    break;
+                case "native":
+                    options.PreferSystemNativeHwDecoder = true;
+                    options.EnableEnhancedNvdecDecoder = true;
+                    break;
+                case "no10bit":
+                    options.EnableDecodingColorDepth10Hevc = false;
+                    options.EnableDecodingColorDepth10Vp9 = false;
+                    options.EnableDecodingColorDepth10HevcRext = true;
+                    options.EnableDecodingColorDepth12HevcRext = true;
+                    break;
+                case "lowpower":
+                    options.EnableIntelLowPowerH264HwEncoder = true;
+                    options.EnableIntelLowPowerHevcHwEncoder = true;
+                    break;
+                case "swencode":
+                    options.EnableHardwareEncoding = false;
+                    break;
+                case "slow-crf":
+                    options.EncoderPreset = EncoderPreset.slow;
+                    options.H264Crf = 18;
+                    options.H265Crf = 22;
+                    options.TonemappingAlgorithm = TonemappingAlgorithm.hable;
+                    options.TonemappingMode = TonemappingMode.max;
+                    options.TonemappingRange = TonemappingRange.tv;
+                    break;
+            }
+
+            return options;
+        }
 
         public EncodingJobInfo BuildState()
         {

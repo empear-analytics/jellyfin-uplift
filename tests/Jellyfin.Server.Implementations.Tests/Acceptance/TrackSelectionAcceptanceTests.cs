@@ -15,6 +15,7 @@ using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.IO;
+using MediaBrowser.Model.MediaInfo;
 using Moq;
 using Xunit;
 
@@ -75,9 +76,10 @@ public class TrackSelectionAcceptanceTests
                         {
                             rememberedData.AudioStreamIndex = remembered ? 2 : null;
                             rememberedData.SubtitleStreamIndex = remembered ? 4 : null;
-                            var (audio, subtitle) = Select(manager, streamSet, mode, audioPreference, playDefault, subtitlePreference, original, remembered);
+                            var source = Select(manager, streamSet, mode, audioPreference, playDefault, subtitlePreference, original, remembered);
+                            var scores = string.Join(',', source.MediaStreams.Where(s => s.Type == MediaStreamType.Subtitle).Select(s => s.Index + ":" + Show(s.Score)));
                             output.Append(CultureInfo.InvariantCulture, $"audioPref={audioPreference ?? "-"} playDefault={playDefault} subPref={subtitlePreference ?? "-"} original={original ?? "-"} remembered={remembered}")
-                                .Append(CultureInfo.InvariantCulture, $" -> audio={Show(audio)} subtitle={Show(subtitle)}\n");
+                                .Append(CultureInfo.InvariantCulture, $" -> audio={Show(source.DefaultAudioStreamIndex)} ({source.DefaultAudioIndexSource}) subtitle={Show(source.DefaultSubtitleStreamIndex)} scores={scores}\n");
                         }
                     }
                 }
@@ -85,6 +87,32 @@ public class TrackSelectionAcceptanceTests
         }
 
         RecordedOutput.Verify("TrackSelection", streamSet + "." + mode, output.ToString().TrimEnd());
+    }
+
+    [Fact]
+    public void PathProtocolAndDirectStream_MatchRecording()
+    {
+        var (manager, _) = CreateManager();
+        var paths = new[]
+        {
+            "/media/movie.mkv", @"C:\media\movie.mkv", "file:///media/movie.mkv", "\\\\server\\share\\movie.mkv",
+            "http://example.com/stream.m3u8", "https://example.com/stream.ts", "rtsp://camera/live", "rtmp://server/live",
+            "rtp://239.0.0.1:1234", "udp://239.0.0.1:1234", "ftp://example.com/movie.mkv", "smb://server/share/movie.mkv", string.Empty
+        };
+        var output = new StringBuilder();
+        foreach (var path in paths)
+        {
+            var protocol = manager.GetPathProtocol(path);
+            output.Append(CultureInfo.InvariantCulture, $"{path} -> {protocol}");
+            foreach (var asked in Enum.GetValues<MediaProtocol>())
+            {
+                output.Append(CultureInfo.InvariantCulture, $" {asked}:{manager.SupportsDirectStream(path, asked)}");
+            }
+
+            output.Append('\n');
+        }
+
+        RecordedOutput.Verify("MediaSourceProtocol", "paths", output.ToString().TrimEnd());
     }
 
     private static string Show(int? index) => index?.ToString(CultureInfo.InvariantCulture) ?? "-";
@@ -107,7 +135,7 @@ public class TrackSelectionAcceptanceTests
         return (fixture.Create<MediaSourceManager>(), remembered);
     }
 
-    private static (int? Audio, int? Subtitle) Select(
+    private static MediaSourceInfo Select(
         IMediaSourceManager manager,
         string streamSet,
         SubtitlePlaybackMode mode,
@@ -136,7 +164,7 @@ public class TrackSelectionAcceptanceTests
         var source = new MediaSourceInfo { MediaStreams = StreamSets()[streamSet]() };
 
         manager.SetDefaultAudioAndSubtitleStreamIndices(item, source, user);
-        return (source.DefaultAudioStreamIndex, source.DefaultSubtitleStreamIndex);
+        return source;
     }
 
     private static Dictionary<string, Func<List<MediaStream>>> StreamSets() => new(StringComparer.Ordinal)
@@ -174,6 +202,20 @@ public class TrackSelectionAcceptanceTests
         [
             Video(),
             Audio(1, "eng", isDefault: true),
+        ],
+        ["undefined-languages"] = () =>
+        [
+            Video(),
+            Audio(1, "und", isDefault: true),
+            Audio(2, "mul"),
+            Audio(3, "jpn", isOriginal: true),
+            Subtitle(4, "und", "subrip", isForced: true),
+            Subtitle(5, "unknown", "subrip"),
+            Subtitle(6, "undetermined", "ass", isForced: true),
+            Subtitle(7, "mul", "PGSSUB"),
+            Subtitle(8, "zxx", "subrip", isDefault: true),
+            Subtitle(9, "eng", "PGSSUB", isForced: true),
+            Subtitle(10, "swe", "subrip", isHearingImpaired: true),
         ],
         ["external-subtitles"] = () =>
         [

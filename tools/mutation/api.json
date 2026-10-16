@@ -8,7 +8,7 @@
     "test-runner": "mtp",
     "concurrency": 4,
     "additional-timeout": 60000,
-    "coverage-analysis": "perTest",
+    "coverage-analysis": "perTestInIsolation",
     "mutation-level": "Standard",
     "reporters": ["json", "html", "progress"],
     "thresholds": { "high": 90, "low": 75, "break": 0 }

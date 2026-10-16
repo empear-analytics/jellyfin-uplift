@@ -1,0 +1,5 @@
+200 OK
+#EXTM3U
+#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="English - WEBVTT",DEFAULT=YES,FORCED=NO,AUTOSELECT=YES,URI="5974978503f59a944955d9ccf1952b4b/Subtitles/2/subtitles.m3u8?SegmentLength=30&ApiKey=<token>",LANGUAGE="eng"
+#EXT-X-STREAM-INF:BANDWIDTH=640000,AVERAGE-BANDWIDTH=640000,VIDEO-RANGE=SDR,CODECS="avc1.424029,mp4a.40.2",RESOLUTION=416x234,FRAME-RATE=23.976,SUBTITLES="subs"
+main.m3u8?MediaSourceId=5974978503f59a944955d9ccf1952b4b&PlaySessionId=acceptance&VideoCodec=h264&AudioCodec=aac&SegmentContainer=mp4&SubtitleStreamIndex=2&SubtitleMethod=Hls&SubtitleCodec=vtt

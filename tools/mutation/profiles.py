@@ -146,7 +146,11 @@ def main() -> int:
     ap.add_argument("parts", nargs="*", default=list(PARTS))
     ap.add_argument("--files", action="store_true", help="show every file")
     ap.add_argument("--json", help="also write the figures to this file")
+    ap.add_argument("--root", help="read reports from this folder instead of ../mutation")
     args = ap.parse_args()
+    if args.root:
+        global OUT_ROOT
+        OUT_ROOT = Path(args.root).resolve()
 
     result, grand = {}, {p: collections.Counter() for p in ("stryker", "mull")}
     print("%-10s %-8s %6s %7s %8s" % ("part", "profile", "tested", "score%", "covered%"))

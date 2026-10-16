@@ -1,0 +1,6 @@
+mediaPath=/media/disc.iso protocol=File container=iso runtime=60000000000
+videoSync=- audioSync=- nativeFramerate=False iso=Dvd timestamp=None
+video=0 audio=1 subtitle=- subtitleMethod=Encode subtitleOffset=0
+requestVideoCodec=vp8 requestAudioCodec=aac maxWidth=- maxHeight=-
+supportedAudio=aac,truehd,opus,dts supportedVideo=
+headers=

@@ -1,0 +1,4 @@
+200 OK
+#EXTM3U
+#EXT-X-STREAM-INF:BANDWIDTH=640000,AVERAGE-BANDWIDTH=640000,VIDEO-RANGE=SDR,CODECS="Opus",RESOLUTION=416x234,FRAME-RATE=23.976
+main.m3u8?MediaSourceId=32464aefd9e2d6f6c574752cd57aa57b&PlaySessionId=acceptance&VideoCodec=vp9,h264&AudioCodec=opus&SegmentContainer=mp4&AllowVideoStreamCopy=true&AllowAudioStreamCopy=true

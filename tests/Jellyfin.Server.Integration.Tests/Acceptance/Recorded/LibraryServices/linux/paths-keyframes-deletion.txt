@@ -1,0 +1,14 @@
+attachment folder: <root>/data/attachments/29/29d60efd-b94a-4cfd-c423-d16345dbe9b1
+attachment: <root>/data/attachments/29/29d60efd-b94a-4cfd-c423-d16345dbe9b1/font.ttf
+subtitle folder: <root>/data/subtitles/29/29d60efd-b94a-4cfd-c423-d16345dbe9b1
+subtitle: <root>/data/subtitles/29/29d60efd-b94a-4cfd-c423-d16345dbe9b1/3.srt
+subtitle no dot: <root>/data/subtitles/29/29d60efd-b94a-4cfd-c423-d16345dbe9b1/4ass
+trickplay: <root>/data/trickplay/29/29d60efd-b94a-4cfd-c423-d16345dbe9b1
+trickplay with media: <root>/root/default/movies/Movie 3.trickplay
+chapter folder: <root>/metadata/library/29/29d60efdb94a4cfdc423d16345dbe9b1/chapters
+chapter: <root>/metadata/library/29/29d60efdb94a4cfdc423d16345dbe9b1/chapters/639030816000000000_7200000000.jpg
+extracted: <root>/data/attachments/29/29d60efd-b94a-4cfd-c423-d16345dbe9b1 | <root>/data/subtitles/29/29d60efd-b94a-4cfd-c423-d16345dbe9b1 | <root>/data/trickplay/29/29d60efd-b94a-4cfd-c423-d16345dbe9b1 | <root>/root/default/movies/Movie 3.trickplay | <root>/metadata/library/29/29d60efdb94a4cfdc423d16345dbe9b1/chapters
+null source: - / -
+keyframes: 54000000000:0,20000000,40000000,70000000
+after deletion: data.bin=False | data.bin=False | data.bin=False | Movie 3.trickplay=True | data.bin=False | 639030816000000000_0.jpg=False | font.ttf=False
+keyframes after deletion: 0

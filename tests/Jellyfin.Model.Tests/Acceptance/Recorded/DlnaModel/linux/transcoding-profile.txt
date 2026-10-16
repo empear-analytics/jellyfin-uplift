@@ -1,0 +1,68 @@
+defaults:
+{
+  "Container": "",
+  "Type": 0,
+  "VideoCodec": "",
+  "AudioCodec": "",
+  "Protocol": 0,
+  "EstimateContentLength": false,
+  "EnableMpegtsM2TsMode": false,
+  "TranscodeSeekInfo": 0,
+  "CopyTimestamps": false,
+  "Context": 0,
+  "EnableSubtitlesInManifest": false,
+  "MaxAudioChannels": null,
+  "MinSegments": 0,
+  "SegmentLength": 0,
+  "BreakOnNonKeyFrames": null,
+  "Conditions": [],
+  "EnableAudioVbrEncoding": true
+}
+copy of defaults:
+{
+  "Container": "",
+  "Type": 0,
+  "VideoCodec": "",
+  "AudioCodec": "",
+  "Protocol": 0,
+  "EstimateContentLength": false,
+  "EnableMpegtsM2TsMode": false,
+  "TranscodeSeekInfo": 0,
+  "CopyTimestamps": false,
+  "Context": 0,
+  "EnableSubtitlesInManifest": false,
+  "MaxAudioChannels": null,
+  "MinSegments": 0,
+  "SegmentLength": 0,
+  "BreakOnNonKeyFrames": null,
+  "Conditions": [],
+  "EnableAudioVbrEncoding": true
+}
+copy of populated:
+{
+  "Container": "ts",
+  "Type": 1,
+  "VideoCodec": "h264,hevc",
+  "AudioCodec": "aac,ac3",
+  "Protocol": 1,
+  "EstimateContentLength": true,
+  "EnableMpegtsM2TsMode": true,
+  "TranscodeSeekInfo": 1,
+  "CopyTimestamps": true,
+  "Context": 1,
+  "EnableSubtitlesInManifest": true,
+  "MaxAudioChannels": "6",
+  "MinSegments": 2,
+  "SegmentLength": 3,
+  "BreakOnNonKeyFrames": null,
+  "Conditions": [
+    {
+      "Condition": 2,
+      "Property": 3,
+      "Value": "1920",
+      "IsRequired": false
+    }
+  ],
+  "EnableAudioVbrEncoding": false
+}
+copy of null: threw ArgumentNullException

@@ -1,0 +1,24 @@
+defaults external=False hidden=False presets=0 -> books(books), homevideos(homevideos), mixed(-), movies(movies), music(music), musicvideos(musicvideos), tvshows(tvshows)
+defaults external=False hidden=False presets=2 -> books(books), homevideos(homevideos), mixed(-), movies<view:movies>, music(music), musicvideos(musicvideos), tvshows<view:tvshows>
+defaults external=True hidden=False presets=0 -> books(books), homevideos(homevideos), mixed(-), movies(movies), music(music), musicvideos(musicvideos), tvshows(tvshows)
+defaults external=True hidden=False presets=2 -> books(books), homevideos(homevideos), mixed(-), movies<view:movies>, music(music), musicvideos(musicvideos), tvshows<view:tvshows>
+defaults external=True hidden=True presets=0 -> books(books), homevideos(homevideos), mixed(-), movies(movies), music(music), musicvideos(musicvideos), tvshows(tvshows)
+defaults external=True hidden=True presets=2 -> books(books), homevideos(homevideos), mixed(-), movies<view:movies>, music(music), musicvideos(musicvideos), tvshows<view:tvshows>
+ordered-reverse external=False hidden=False presets=0 -> tvshows(tvshows), musicvideos(musicvideos), music(music), movies(movies), homevideos(homevideos), books(books), mixed(-)
+ordered-reverse external=False hidden=False presets=2 -> tvshows<view:tvshows>, musicvideos(musicvideos), music(music), movies<view:movies>, homevideos(homevideos), books(books), mixed(-)
+ordered-reverse external=True hidden=False presets=0 -> tvshows(tvshows), musicvideos(musicvideos), music(music), movies(movies), homevideos(homevideos), books(books), mixed(-)
+ordered-reverse external=True hidden=False presets=2 -> tvshows<view:tvshows>, musicvideos(musicvideos), music(music), movies<view:movies>, homevideos(homevideos), books(books), mixed(-)
+ordered-reverse external=True hidden=True presets=0 -> tvshows(tvshows), musicvideos(musicvideos), music(music), movies(movies), homevideos(homevideos), books(books), mixed(-)
+ordered-reverse external=True hidden=True presets=2 -> tvshows<view:tvshows>, musicvideos(musicvideos), music(music), movies<view:movies>, homevideos(homevideos), books(books), mixed(-)
+exclude-music external=False hidden=False presets=0 -> books(books), homevideos(homevideos), mixed(-), movies(movies), musicvideos(musicvideos), tvshows(tvshows)
+exclude-music external=False hidden=False presets=2 -> books(books), homevideos(homevideos), mixed(-), movies<view:movies>, musicvideos(musicvideos), tvshows<view:tvshows>
+exclude-music external=True hidden=False presets=0 -> books(books), homevideos(homevideos), mixed(-), movies(movies), musicvideos(musicvideos), tvshows(tvshows)
+exclude-music external=True hidden=False presets=2 -> books(books), homevideos(homevideos), mixed(-), movies<view:movies>, musicvideos(musicvideos), tvshows<view:tvshows>
+exclude-music external=True hidden=True presets=0 -> books(books), homevideos(homevideos), mixed(-), movies(movies), music(music), musicvideos(musicvideos), tvshows(tvshows)
+exclude-music external=True hidden=True presets=2 -> books(books), homevideos(homevideos), mixed(-), movies<view:movies>, music(music), musicvideos(musicvideos), tvshows<view:tvshows>
+grouped-movies external=False hidden=False presets=0 -> books(books), homevideos(homevideos), mixed(-), movies(movies), music(music), musicvideos(musicvideos), tvshows(tvshows)
+grouped-movies external=False hidden=False presets=2 -> books(books), homevideos(homevideos), mixed(-), movies<view:movies>, music(music), musicvideos(musicvideos), tvshows<view:tvshows>
+grouped-movies external=True hidden=False presets=0 -> books(books), homevideos(homevideos), mixed(-), movies(movies), music(music), musicvideos(musicvideos), tvshows(tvshows)
+grouped-movies external=True hidden=False presets=2 -> books(books), homevideos(homevideos), mixed(-), movies<view:movies>, music(music), musicvideos(musicvideos), tvshows<view:tvshows>
+grouped-movies external=True hidden=True presets=0 -> books(books), homevideos(homevideos), mixed(-), movies(movies), music(music), musicvideos(musicvideos), tvshows(tvshows)
+grouped-movies external=True hidden=True presets=2 -> books(books), homevideos(homevideos), mixed(-), movies<view:movies>, music(music), musicvideos(musicvideos), tvshows<view:tvshows>

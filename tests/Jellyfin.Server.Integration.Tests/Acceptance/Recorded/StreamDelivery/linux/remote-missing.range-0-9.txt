@@ -1,0 +1,7 @@
+404 NotFound
+accept-ranges: none
+content-range: -
+content-length: 9
+content-type: text/plain
+body: not found
+upstream: GET missing.flac range=bytes=0-9
