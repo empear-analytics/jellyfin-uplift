@@ -57,7 +57,7 @@ Update as tasks land.
 | R01 | 1.00 | - | not started |
 | R02 | 1.65 | - | not started |
 | R03 | 2.03 | - | not started |
-| R04 | 2.18 | - | not started |
+| R04 | 2.18 | 8.41 | split early (Recipe S) once every E/P step scored DOWN on "Number of Functions in a Single Module"; split files .Itunes 7.98, .MediaStream 8.15, .Tags 8.22, .Video 8.67, no recipe applied after the split; Recipe P blocked by CS0177 (out variables assigned on some paths); Recipe G WORSE on three nested methods; GetMediaInfo 5 arguments (public) |
 | R05 | 2.90 | - | not started |
 | R06 | 4.36 | 6.61 | stopped at 6.61: ApplyParam (34-case switch, cc 56); ApplyVideoOutputSettings conditionals blocked by CS8602 (nullable flow) and one P step reverted as WORSE by a tool bug, since fixed; GetOutputFileExtension early-return branches; Excess Arguments (GetStreamingState 11) |
 | R07 | 4.59 | 7.78 | stopped at 7.78: GetPlaylistAudioCodecs (flat early returns, cc 10); AppendDvString extraction FLAT; Complex Conditionals blocked by CS8629 (null checks before `.Value`); Excess Arguments (incl. new 6- and 7-argument helpers); Constructor Over-Injection (11) |

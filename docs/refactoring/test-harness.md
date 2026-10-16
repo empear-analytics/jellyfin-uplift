@@ -130,3 +130,6 @@ These were found while recording. The tests record the current behaviour, and no
   adaptive-bitrate variant URLs. (Reported by the R07 agent.)
 - `DynamicHlsHelper.GetOutputVideoCodecProfile`: the defaults `profileString ??= "high"` and
   `??= "main"` never apply. (Reported by the R07 agent.)
+- `ProbeResultNormalizer.FetchWtvInfo` (now `SetWtvDates` in `ProbeResultNormalizer.Video.cs`):
+  `PremiereDate` is parsed from `year`; `premiereDateString` is read and never used. (Reported by
+  the R04 agent.)
