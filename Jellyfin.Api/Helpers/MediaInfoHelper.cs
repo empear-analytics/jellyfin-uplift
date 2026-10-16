@@ -363,7 +363,7 @@ public class MediaInfoHelper
         }
         else
         {
-            if (!mediaSource.SupportsDirectPlay && (mediaSource.SupportsTranscoding || mediaSource.SupportsDirectStream))
+            if (RequiresTranscoding(mediaSource))
             {
                 streamInfo.PlayMethod = PlayMethod.Transcode;
                 mediaSource.TranscodingUrl = streamInfo.ToUrl(null, claimsPrincipal.GetToken(), null);
@@ -384,6 +384,11 @@ public class MediaInfoHelper
                 }
             }
         }
+    }
+
+    private static bool RequiresTranscoding(MediaSourceInfo mediaSource)
+    {
+        return !mediaSource.SupportsDirectPlay && (mediaSource.SupportsTranscoding || mediaSource.SupportsDirectStream);
     }
 
     /// <summary>
