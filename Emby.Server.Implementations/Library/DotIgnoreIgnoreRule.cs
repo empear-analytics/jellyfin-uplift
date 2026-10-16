@@ -149,9 +149,7 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
         // Check if we have a cached result for this directory
         if (_directoryCache.TryGet(directory, out var cached))
         {
-            return cached.IgnoreFileDirectory is null
-                ? null
-                : new FileInfo(Path.Join(cached.IgnoreFileDirectory, ".ignore"));
+            return GetCachedIgnoreFile(cached);
         }
 
         DirectoryInfo startDir;
@@ -176,14 +174,9 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
             {
                 // Cache the result for all directories we checked
                 var entry = new IgnoreFileCacheEntry(parentCached.IgnoreFileDirectory);
-                foreach (var dir in checkedDirs)
-                {
-                    _directoryCache.AddOrUpdate(dir, entry);
-                }
+                CacheEntryForDirectories(checkedDirs, entry);
 
-                return parentCached.IgnoreFileDirectory is null
-                    ? null
-                    : new FileInfo(Path.Join(parentCached.IgnoreFileDirectory, ".ignore"));
+                return GetCachedIgnoreFile(parentCached);
             }
 
             var ignoreFile = new FileInfo(Path.Join(currentPath, ".ignore"));
@@ -191,10 +184,7 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
             {
                 // Cache for all directories we checked
                 var entry = new IgnoreFileCacheEntry(currentPath);
-                foreach (var dir in checkedDirs)
-                {
-                    _directoryCache.AddOrUpdate(dir, entry);
-                }
+                CacheEntryForDirectories(checkedDirs, entry);
 
                 return ignoreFile;
             }
@@ -207,12 +197,24 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
 
         // No .ignore file found - cache null result for all directories
         var nullEntry = new IgnoreFileCacheEntry((string?)null);
-        foreach (var dir in checkedDirs)
-        {
-            _directoryCache.AddOrUpdate(dir, nullEntry);
-        }
+        CacheEntryForDirectories(checkedDirs, nullEntry);
 
         return null;
+    }
+
+    private static FileInfo? GetCachedIgnoreFile(IgnoreFileCacheEntry cached)
+    {
+        return cached.IgnoreFileDirectory is null
+            ? null
+            : new FileInfo(Path.Join(cached.IgnoreFileDirectory, ".ignore"));
+    }
+
+    private void CacheEntryForDirectories(List<string> directories, IgnoreFileCacheEntry entry)
+    {
+        foreach (var dir in directories)
+        {
+            _directoryCache.AddOrUpdate(dir, entry);
+        }
     }
 
     private ParsedIgnoreCacheEntry? GetParsedRules(FileInfo ignoreFile)

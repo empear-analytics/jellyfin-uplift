@@ -138,17 +138,12 @@ public static class HlsCodecStringHelpers
     /// <returns>DTS codec string.</returns>
     public static string GetDTSString(string? profile)
     {
-        if (string.Equals(profile, "DTS", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(profile, "DTS-ES", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(profile, "DTS 96/24", StringComparison.OrdinalIgnoreCase))
+        if (IsDtsCoreProfile(profile))
         {
             return "dtsc";
         }
 
-        if (string.Equals(profile, "DTS-HD HRA", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(profile, "DTS-HD MA", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(profile, "DTS-HD MA + DTS:X", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(profile, "DTS-HD MA + DTS:X IMAX", StringComparison.OrdinalIgnoreCase))
+        if (IsDtsHdProfile(profile))
         {
             return "dtsh";
         }
@@ -273,9 +268,7 @@ public static class HlsCodecStringHelpers
             _ => "00" // This should not happen
         };
 
-        if (bitDepth != 8
-            && bitDepth != 10
-            && bitDepth != 12)
+        if (IsUnsupportedBitDepth(bitDepth))
         {
             // Default to 8 bits
             bitDepth = 8;
@@ -327,9 +320,7 @@ public static class HlsCodecStringHelpers
             level = 19;
         }
 
-        if (bitDepth != 8
-            && bitDepth != 10
-            && bitDepth != 12)
+        if (IsUnsupportedAv1BitDepth(bitDepth))
         {
             // Default to 8 bits
             bitDepth = 8;
@@ -366,5 +357,34 @@ public static class HlsCodecStringHelpers
             .AppendFormat(CultureInfo.InvariantCulture, "{0:D2}", dvLevel);
 
         return result.ToString();
+    }
+
+    private static bool IsDtsCoreProfile(string? profile)
+    {
+        return string.Equals(profile, "DTS", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(profile, "DTS-ES", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(profile, "DTS 96/24", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsDtsHdProfile(string? profile)
+    {
+        return string.Equals(profile, "DTS-HD HRA", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(profile, "DTS-HD MA", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(profile, "DTS-HD MA + DTS:X", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(profile, "DTS-HD MA + DTS:X IMAX", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsUnsupportedBitDepth(int bitDepth)
+    {
+        return bitDepth != 8
+            && bitDepth != 10
+            && bitDepth != 12;
+    }
+
+    private static bool IsUnsupportedAv1BitDepth(int bitDepth)
+    {
+        return bitDepth != 8
+            && bitDepth != 10
+            && bitDepth != 12;
     }
 }

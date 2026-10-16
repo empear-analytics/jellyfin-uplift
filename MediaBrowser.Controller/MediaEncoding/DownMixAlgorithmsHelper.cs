@@ -57,7 +57,13 @@ public static class DownMixAlgorithmsHelper
 
         // When we don't have definitive channel layout, we have to guess from the channel count
         // Guessing is not always correct, but for most videos we don't have to guess like this as the definitive layout is recorded during scan
-        var inferredLayout = audioStream.Channels.Value switch
+        var inferredLayout = GuessLayoutFromChannelCount(audioStream.Channels.Value);
+        return inferredLayout;
+    }
+
+    private static string GuessLayoutFromChannelCount(int channels)
+    {
+        return channels switch
         {
             1 => "mono",
             2 => "stereo",
@@ -69,6 +75,5 @@ public static class DownMixAlgorithmsHelper
             8 => "7.1", // Could also be 8.0, prefer 7.1
             _ => string.Empty // Return empty string for not supported layout
         };
-        return inferredLayout;
     }
 }

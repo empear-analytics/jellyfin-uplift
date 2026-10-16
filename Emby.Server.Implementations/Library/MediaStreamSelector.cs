@@ -50,6 +50,17 @@ namespace Emby.Server.Implementations.Library
                 .ThenByDescending(x => x.IsForced)
                 .ToList();
 
+            MediaStream? stream = SelectDefaultSubtitleStream(sortedStreams, preferredLanguages, mode, audioTrackLanguage);
+
+            return stream?.Index;
+        }
+
+        private static MediaStream? SelectDefaultSubtitleStream(
+            List<MediaStream> sortedStreams,
+            IReadOnlyList<string> preferredLanguages,
+            SubtitlePlaybackMode mode,
+            string audioTrackLanguage)
+        {
             MediaStream? stream = null;
 
             if (mode == SubtitlePlaybackMode.Default)
@@ -62,20 +73,12 @@ namespace Emby.Server.Implementations.Library
                 // Only attempt to load subtitles if the audio language is not one of the user's preferred subtitle languages.
                 // If no subtitles of preferred language available, use none.
                 // If the audio language is one of the user's preferred subtitle languages behave like OnlyForced.
-                if (!preferredLanguages.Contains(audioTrackLanguage, StringComparison.OrdinalIgnoreCase))
-                {
-                    stream = sortedStreams.FirstOrDefault(x => MatchesPreferredLanguage(x.Language, preferredLanguages));
-                }
-                else
-                {
-                    stream = BehaviorOnlyForced(sortedStreams, preferredLanguages).FirstOrDefault();
-                }
+                stream = SelectSmartSubtitleStream(sortedStreams, preferredLanguages, audioTrackLanguage);
             }
             else if (mode == SubtitlePlaybackMode.Always)
             {
                 // Always load (full/non-forced) subtitles of the user's preferred subtitle language if possible, otherwise OnlyForced behaviour.
-                stream = sortedStreams.FirstOrDefault(x => !x.IsForced && MatchesPreferredLanguage(x.Language, preferredLanguages)) ??
-                    BehaviorOnlyForced(sortedStreams, preferredLanguages).FirstOrDefault();
+                stream = SelectAlwaysSubtitleStream(sortedStreams, preferredLanguages);
             }
             else if (mode == SubtitlePlaybackMode.OnlyForced)
             {
@@ -83,7 +86,32 @@ namespace Emby.Server.Implementations.Library
                 stream = BehaviorOnlyForced(sortedStreams, preferredLanguages).FirstOrDefault();
             }
 
-            return stream?.Index;
+            return stream;
+        }
+
+        private static MediaStream? SelectSmartSubtitleStream(
+            List<MediaStream> sortedStreams,
+            IReadOnlyList<string> preferredLanguages,
+            string audioTrackLanguage)
+        {
+            MediaStream? stream;
+
+            if (!preferredLanguages.Contains(audioTrackLanguage, StringComparison.OrdinalIgnoreCase))
+            {
+                stream = sortedStreams.FirstOrDefault(x => MatchesPreferredLanguage(x.Language, preferredLanguages));
+            }
+            else
+            {
+                stream = BehaviorOnlyForced(sortedStreams, preferredLanguages).FirstOrDefault();
+            }
+
+            return stream;
+        }
+
+        private static MediaStream? SelectAlwaysSubtitleStream(List<MediaStream> sortedStreams, IReadOnlyList<string> preferredLanguages)
+        {
+            return sortedStreams.FirstOrDefault(x => !x.IsForced && MatchesPreferredLanguage(x.Language, preferredLanguages)) ??
+                BehaviorOnlyForced(sortedStreams, preferredLanguages).FirstOrDefault();
         }
 
         private static IEnumerable<MediaStream> GetSortedStreams(IEnumerable<MediaStream> streams, MediaStreamType type, IReadOnlyList<string> languagePreferences)
@@ -113,8 +141,7 @@ namespace Emby.Server.Implementations.Library
             {
                 // Prefer embedded metadata over smart logic
                 // Load subtitles according to external, default, and forced flags.
-                filteredStreams = sortedStreams.Where(s => s.IsExternal || s.IsDefault || s.IsForced)
-                    .ToList();
+                filteredStreams = FilterFlaggedSubtitleStreams(sortedStreams);
             }
             else if (mode == SubtitlePlaybackMode.Smart)
             {
@@ -133,8 +160,7 @@ namespace Emby.Server.Implementations.Library
             else if (mode == SubtitlePlaybackMode.Always)
             {
                 // Always load (full/non-forced) subtitles of the user's preferred subtitle language if possible, otherwise OnlyForced behavior.
-                filteredStreams = sortedStreams.Where(s => !s.IsForced && MatchesPreferredLanguage(s.Language, preferredLanguages))
-                    .ToList() ?? BehaviorOnlyForced(sortedStreams, preferredLanguages);
+                filteredStreams = FilterAlwaysSubtitleStreams(sortedStreams, preferredLanguages);
             }
             else if (mode == SubtitlePlaybackMode.OnlyForced)
             {
@@ -145,6 +171,23 @@ namespace Emby.Server.Implementations.Library
             // If filteredStreams is null, initialize it as an empty list to avoid null reference errors
             filteredStreams ??= new List<MediaStream>();
 
+            ApplyStreamScores(filteredStreams, preferredLanguages);
+        }
+
+        private static List<MediaStream> FilterFlaggedSubtitleStreams(List<MediaStream> sortedStreams)
+        {
+            return sortedStreams.Where(s => s.IsExternal || s.IsDefault || s.IsForced)
+                .ToList();
+        }
+
+        private static List<MediaStream> FilterAlwaysSubtitleStreams(List<MediaStream> sortedStreams, IReadOnlyList<string> preferredLanguages)
+        {
+            return sortedStreams.Where(s => !s.IsForced && MatchesPreferredLanguage(s.Language, preferredLanguages))
+                .ToList() ?? BehaviorOnlyForced(sortedStreams, preferredLanguages);
+        }
+
+        private static void ApplyStreamScores(List<MediaStream> filteredStreams, IReadOnlyList<string> preferredLanguages)
+        {
             foreach (var stream in filteredStreams)
             {
                 stream.Score = GetStreamScore(stream, preferredLanguages);

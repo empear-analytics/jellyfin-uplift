@@ -648,16 +648,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return BaseRequest.MaxRefFrames;
             }
 
-            if (!string.IsNullOrEmpty(codec))
-            {
-                var value = BaseRequest.GetOption(codec, "maxrefframes");
-                if (int.TryParse(value, CultureInfo.InvariantCulture, out var result))
-                {
-                    return result;
-                }
-            }
-
-            return null;
+            return GetRequestedIntOption(codec, "maxrefframes");
         }
 
         public int? GetRequestedVideoBitDepth(string codec)
@@ -667,16 +658,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return BaseRequest.MaxVideoBitDepth;
             }
 
-            if (!string.IsNullOrEmpty(codec))
-            {
-                var value = BaseRequest.GetOption(codec, "videobitdepth");
-                if (int.TryParse(value, CultureInfo.InvariantCulture, out var result))
-                {
-                    return result;
-                }
-            }
-
-            return null;
+            return GetRequestedIntOption(codec, "videobitdepth");
         }
 
         public int? GetRequestedAudioBitDepth(string codec)
@@ -686,16 +668,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return BaseRequest.MaxAudioBitDepth;
             }
 
-            if (!string.IsNullOrEmpty(codec))
-            {
-                var value = BaseRequest.GetOption(codec, "audiobitdepth");
-                if (int.TryParse(value, CultureInfo.InvariantCulture, out var result))
-                {
-                    return result;
-                }
-            }
-
-            return null;
+            return GetRequestedIntOption(codec, "audiobitdepth");
         }
 
         public int? GetRequestedAudioChannels(string codec)
@@ -730,6 +703,20 @@ namespace MediaBrowser.Controller.MediaEncoding
         public virtual void ReportTranscodingProgress(TimeSpan? transcodingPosition, float? framerate, double? percentComplete, long? bytesTranscoded, int? bitRate)
         {
             Progress.Report(percentComplete.Value);
+        }
+
+        private int? GetRequestedIntOption(string codec, string optionName)
+        {
+            if (!string.IsNullOrEmpty(codec))
+            {
+                var value = BaseRequest.GetOption(codec, optionName);
+                if (int.TryParse(value, CultureInfo.InvariantCulture, out var result))
+                {
+                    return result;
+                }
+            }
+
+            return null;
         }
     }
 }

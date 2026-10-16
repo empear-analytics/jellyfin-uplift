@@ -108,25 +108,30 @@ namespace Emby.Server.Implementations.Library
             // See if a different path came out of the resolver than what went in
             if (!fileSystem.AreEqual(args.Path, item.Path))
             {
-                var childData = args.IsDirectory ? args.GetFileSystemEntryByPath(item.Path) : null;
-
-                if (childData is not null)
-                {
-                    SetDateCreated(item, childData);
-                }
-                else
-                {
-                    var fileData = fileSystem.GetFileSystemInfo(item.Path);
-
-                    if (fileData.Exists)
-                    {
-                        SetDateCreated(item, fileData);
-                    }
-                }
+                SetDateCreatedFromResolvedPath(fileSystem, item, args);
             }
             else
             {
                 SetDateCreated(item, args.FileInfo);
+            }
+        }
+
+        private static void SetDateCreatedFromResolvedPath(IFileSystem fileSystem, BaseItem item, ItemResolveArgs args)
+        {
+            var childData = args.IsDirectory ? args.GetFileSystemEntryByPath(item.Path) : null;
+
+            if (childData is not null)
+            {
+                SetDateCreated(item, childData);
+            }
+            else
+            {
+                var fileData = fileSystem.GetFileSystemInfo(item.Path);
+
+                if (fileData.Exists)
+                {
+                    SetDateCreated(item, fileData);
+                }
             }
         }
 

@@ -86,19 +86,13 @@ namespace MediaBrowser.Controller.MediaEncoding
                 {
                     var rate = parts[i + 1];
 
-                    if (float.TryParse(rate, CultureInfo.InvariantCulture, out var val))
-                    {
-                        framerate = val;
-                    }
+                    framerate = ParseFramerate(rate, framerate);
                 }
                 else if (part.StartsWith("fps=", StringComparison.OrdinalIgnoreCase))
                 {
                     var rate = part.Split('=', 2)[^1];
 
-                    if (float.TryParse(rate, CultureInfo.InvariantCulture, out var val))
-                    {
-                        framerate = val;
-                    }
+                    framerate = ParseFramerate(rate, framerate);
                 }
                 else if (state.RunTimeTicks.HasValue &&
                     part.StartsWith("time=", StringComparison.OrdinalIgnoreCase))
@@ -116,41 +110,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
                 else if (part.StartsWith("size=", StringComparison.OrdinalIgnoreCase))
                 {
-                    var size = part.Split('=', 2)[^1];
-
-                    int? scale = null;
-                    if (size.Contains("kb", StringComparison.OrdinalIgnoreCase))
-                    {
-                        scale = 1024;
-                        size = size.Replace("kb", string.Empty, StringComparison.OrdinalIgnoreCase);
-                    }
-
-                    if (scale.HasValue)
-                    {
-                        if (long.TryParse(size, CultureInfo.InvariantCulture, out var val))
-                        {
-                            bytesTranscoded = val * scale.Value;
-                        }
-                    }
+                    bytesTranscoded = ParseBytesTranscoded(part, bytesTranscoded);
                 }
                 else if (part.StartsWith("bitrate=", StringComparison.OrdinalIgnoreCase))
                 {
-                    var rate = part.Split('=', 2)[^1];
-
-                    int? scale = null;
-                    if (rate.Contains("kbits/s", StringComparison.OrdinalIgnoreCase))
-                    {
-                        scale = 1024;
-                        rate = rate.Replace("kbits/s", string.Empty, StringComparison.OrdinalIgnoreCase);
-                    }
-
-                    if (scale.HasValue)
-                    {
-                        if (float.TryParse(rate, CultureInfo.InvariantCulture, out var val))
-                        {
-                            bitRate = (int)Math.Ceiling(val * scale.Value);
-                        }
-                    }
+                    bitRate = ParseBitRate(part, bitRate);
                 }
             }
 
@@ -158,6 +122,60 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 state.ReportTranscodingProgress(transcodingPosition, framerate, percent, bytesTranscoded, bitRate);
             }
+        }
+
+        private static float? ParseFramerate(string rate, float? framerate)
+        {
+            if (float.TryParse(rate, CultureInfo.InvariantCulture, out var val))
+            {
+                framerate = val;
+            }
+
+            return framerate;
+        }
+
+        private static long? ParseBytesTranscoded(string part, long? bytesTranscoded)
+        {
+            var size = part.Split('=', 2)[^1];
+
+            int? scale = null;
+            if (size.Contains("kb", StringComparison.OrdinalIgnoreCase))
+            {
+                scale = 1024;
+                size = size.Replace("kb", string.Empty, StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (scale.HasValue)
+            {
+                if (long.TryParse(size, CultureInfo.InvariantCulture, out var val))
+                {
+                    bytesTranscoded = val * scale.Value;
+                }
+            }
+
+            return bytesTranscoded;
+        }
+
+        private static int? ParseBitRate(string part, int? bitRate)
+        {
+            var rate = part.Split('=', 2)[^1];
+
+            int? scale = null;
+            if (rate.Contains("kbits/s", StringComparison.OrdinalIgnoreCase))
+            {
+                scale = 1024;
+                rate = rate.Replace("kbits/s", string.Empty, StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (scale.HasValue)
+            {
+                if (float.TryParse(rate, CultureInfo.InvariantCulture, out var val))
+                {
+                    bitRate = (int)Math.Ceiling(val * scale.Value);
+                }
+            }
+
+            return bitRate;
         }
     }
 }

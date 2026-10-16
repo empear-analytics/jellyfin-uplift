@@ -41,40 +41,13 @@ namespace Emby.Server.Implementations.Library
 
             var now = DateTime.UtcNow;
 
-            MediaInfo? mediaInfo = null;
             var cacheFilePath = string.IsNullOrEmpty(cacheKey) ? null : Path.Combine(_appPaths.CachePath, "mediainfo", cacheKey.GetMD5().ToString("N", CultureInfo.InvariantCulture) + ".json");
 
-            if (cacheFilePath is not null)
-            {
-                try
-                {
-                    FileStream jsonStream = AsyncFile.OpenRead(cacheFilePath);
-
-                    await using (jsonStream.ConfigureAwait(false))
-                    {
-                        mediaInfo = await JsonSerializer.DeserializeAsync<MediaInfo>(jsonStream, _jsonOptions, cancellationToken).ConfigureAwait(false);
-                        // _logger.LogDebug("Found cached media info");
-                    }
-                }
-                catch (IOException ex)
-                {
-                    _logger.LogDebug(ex, "Could not open cached media info");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error opening cached media info");
-                }
-            }
+            MediaInfo? mediaInfo = await ReadCachedMediaInfo(cacheFilePath, cancellationToken).ConfigureAwait(false);
 
             if (mediaInfo is null)
             {
-                if (addProbeDelay)
-                {
-                    var delayMs = mediaSource.AnalyzeDurationMs ?? 0;
-                    delayMs = Math.Max(3000, delayMs);
-                    _logger.LogInformation("Waiting {0}ms before probing the live stream", delayMs);
-                    await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
-                }
+                await DelayBeforeProbe(addProbeDelay, mediaSource, cancellationToken).ConfigureAwait(false);
 
                 mediaSource.AnalyzeDurationMs = 3000;
 
@@ -87,35 +60,10 @@ namespace Emby.Server.Implementations.Library
                     },
                     cancellationToken).ConfigureAwait(false);
 
-                if (cacheFilePath is not null)
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(cacheFilePath) ?? throw new InvalidOperationException("Path can't be a root directory."));
-                    FileStream createStream = AsyncFile.OpenWrite(cacheFilePath);
-                    await using (createStream.ConfigureAwait(false))
-                    {
-                        await JsonSerializer.SerializeAsync(createStream, mediaInfo, _jsonOptions, cancellationToken).ConfigureAwait(false);
-                    }
-
-                    _logger.LogDebug("Saved media info to {0}", cacheFilePath);
-                }
+                await SaveMediaInfoToCache(cacheFilePath, mediaInfo, cancellationToken).ConfigureAwait(false);
             }
 
-            var mediaStreams = mediaInfo.MediaStreams;
-
-            if (!string.IsNullOrEmpty(cacheKey))
-            {
-                var newList = new List<MediaStream>();
-                newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Video).Take(1));
-                newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Audio).Take(1));
-
-                foreach (var stream in newList)
-                {
-                    stream.Index = -1;
-                    stream.Language = null;
-                }
-
-                mediaStreams = newList;
-            }
+            var mediaStreams = SelectCachedStreams(mediaInfo.MediaStreams, cacheKey);
 
             _logger.LogInformation("Live tv media info probe took {0} seconds", (DateTime.UtcNow - now).TotalSeconds.ToString(CultureInfo.InvariantCulture));
 
@@ -149,6 +97,96 @@ namespace Emby.Server.Implementations.Library
             }
 
             var videoStream = mediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Video);
+            NormalizeLiveVideoStream(videoStream);
+
+            mediaSource.AnalyzeDurationMs = 3000;
+
+            // Try to estimate this
+            mediaSource.InferTotalBitrate(true);
+        }
+
+        public Task AddMediaInfoWithProbe(MediaSourceInfo mediaSource, bool isAudio, bool addProbeDelay, CancellationToken cancellationToken)
+        {
+            return AddMediaInfoWithProbe(mediaSource, isAudio, null, addProbeDelay, cancellationToken);
+        }
+
+        private async Task<MediaInfo?> ReadCachedMediaInfo(string? cacheFilePath, CancellationToken cancellationToken)
+        {
+            MediaInfo? mediaInfo = null;
+
+            if (cacheFilePath is not null)
+            {
+                try
+                {
+                    FileStream jsonStream = AsyncFile.OpenRead(cacheFilePath);
+
+                    await using (jsonStream.ConfigureAwait(false))
+                    {
+                        mediaInfo = await JsonSerializer.DeserializeAsync<MediaInfo>(jsonStream, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                        // _logger.LogDebug("Found cached media info");
+                    }
+                }
+                catch (IOException ex)
+                {
+                    _logger.LogDebug(ex, "Could not open cached media info");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error opening cached media info");
+                }
+            }
+
+            return mediaInfo;
+        }
+
+        private async Task DelayBeforeProbe(bool addProbeDelay, MediaSourceInfo mediaSource, CancellationToken cancellationToken)
+        {
+            if (addProbeDelay)
+            {
+                var delayMs = mediaSource.AnalyzeDurationMs ?? 0;
+                delayMs = Math.Max(3000, delayMs);
+                _logger.LogInformation("Waiting {0}ms before probing the live stream", delayMs);
+                await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        private async Task SaveMediaInfoToCache(string? cacheFilePath, MediaInfo mediaInfo, CancellationToken cancellationToken)
+        {
+            if (cacheFilePath is not null)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(cacheFilePath) ?? throw new InvalidOperationException("Path can't be a root directory."));
+                FileStream createStream = AsyncFile.OpenWrite(cacheFilePath);
+                await using (createStream.ConfigureAwait(false))
+                {
+                    await JsonSerializer.SerializeAsync(createStream, mediaInfo, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                }
+
+                _logger.LogDebug("Saved media info to {0}", cacheFilePath);
+            }
+        }
+
+        private static IReadOnlyList<MediaStream> SelectCachedStreams(IReadOnlyList<MediaStream> mediaStreams, string? cacheKey)
+        {
+            if (!string.IsNullOrEmpty(cacheKey))
+            {
+                var newList = new List<MediaStream>();
+                newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Video).Take(1));
+                newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Audio).Take(1));
+
+                foreach (var stream in newList)
+                {
+                    stream.Index = -1;
+                    stream.Language = null;
+                }
+
+                mediaStreams = newList;
+            }
+
+            return mediaStreams;
+        }
+
+        private static void NormalizeLiveVideoStream(MediaStream? videoStream)
+        {
             if (videoStream is not null)
             {
                 if (!videoStream.BitRate.HasValue)
@@ -176,16 +214,6 @@ namespace Emby.Server.Implementations.Library
                 // This is coming up false and preventing stream copy
                 videoStream.IsAVC = null;
             }
-
-            mediaSource.AnalyzeDurationMs = 3000;
-
-            // Try to estimate this
-            mediaSource.InferTotalBitrate(true);
-        }
-
-        public Task AddMediaInfoWithProbe(MediaSourceInfo mediaSource, bool isAudio, bool addProbeDelay, CancellationToken cancellationToken)
-        {
-            return AddMediaInfoWithProbe(mediaSource, isAudio, null, addProbeDelay, cancellationToken);
         }
     }
 }

@@ -157,19 +157,7 @@ public class TranscodingThrottler : IDisposable
 
         if (downloadPositionTicks > 0 && transcodingPositionTicks > 0)
         {
-            // HLS - time-based consideration
-
-            var targetGap = gapLengthInTicks;
-            var gap = transcodingPositionTicks - downloadPositionTicks;
-
-            if (gap < targetGap)
-            {
-                _logger.LogDebug("Not throttling transcoder gap {0} target gap {1}", gap, targetGap);
-                return false;
-            }
-
-            _logger.LogDebug("Throttling transcoder gap {0} target gap {1}", gap, targetGap);
-            return true;
+            return IsTimeBasedThrottleAllowed(transcodingPositionTicks, downloadPositionTicks, gapLengthInTicks);
         }
 
         if (bytesDownloaded > 0 && transcodingPositionTicks > 0)
@@ -180,21 +168,7 @@ public class TranscodingThrottler : IDisposable
             {
                 var bytesTranscoded = job.BytesTranscoded ?? _fileSystem.GetFileInfo(path).Length;
 
-                // Estimate the bytes the transcoder should be ahead
-                double gapFactor = gapLengthInTicks;
-                gapFactor /= transcodingPositionTicks;
-                var targetGap = bytesTranscoded * gapFactor;
-
-                var gap = bytesTranscoded - bytesDownloaded;
-
-                if (gap < targetGap)
-                {
-                    _logger.LogDebug("Not throttling transcoder gap {0} target gap {1} bytes downloaded {2}", gap, targetGap, bytesDownloaded);
-                    return false;
-                }
-
-                _logger.LogDebug("Throttling transcoder gap {0} target gap {1} bytes downloaded {2}", gap, targetGap, bytesDownloaded);
-                return true;
+                return IsByteBasedThrottleAllowed(bytesTranscoded, bytesDownloaded, transcodingPositionTicks, gapLengthInTicks);
             }
             catch (Exception ex)
             {
@@ -205,6 +179,42 @@ public class TranscodingThrottler : IDisposable
 
         _logger.LogDebug("No throttle data for {Path}", path);
         return false;
+    }
+
+    private bool IsTimeBasedThrottleAllowed(long transcodingPositionTicks, long downloadPositionTicks, long gapLengthInTicks)
+    {
+        // HLS - time-based consideration
+
+        var targetGap = gapLengthInTicks;
+        var gap = transcodingPositionTicks - downloadPositionTicks;
+
+        if (gap < targetGap)
+        {
+            _logger.LogDebug("Not throttling transcoder gap {0} target gap {1}", gap, targetGap);
+            return false;
+        }
+
+        _logger.LogDebug("Throttling transcoder gap {0} target gap {1}", gap, targetGap);
+        return true;
+    }
+
+    private bool IsByteBasedThrottleAllowed(long bytesTranscoded, long bytesDownloaded, long transcodingPositionTicks, long gapLengthInTicks)
+    {
+        // Estimate the bytes the transcoder should be ahead
+        double gapFactor = gapLengthInTicks;
+        gapFactor /= transcodingPositionTicks;
+        var targetGap = bytesTranscoded * gapFactor;
+
+        var gap = bytesTranscoded - bytesDownloaded;
+
+        if (gap < targetGap)
+        {
+            _logger.LogDebug("Not throttling transcoder gap {0} target gap {1} bytes downloaded {2}", gap, targetGap, bytesDownloaded);
+            return false;
+        }
+
+        _logger.LogDebug("Throttling transcoder gap {0} target gap {1} bytes downloaded {2}", gap, targetGap, bytesDownloaded);
+        return true;
     }
 
     private void DisposeTimer()

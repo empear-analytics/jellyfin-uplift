@@ -60,16 +60,9 @@ namespace Emby.Server.Implementations.Library
                 var folderViewType = collectionFolder?.CollectionType;
 
                 // Playlist and BoxSet libraries require special handling because the folder only references linked items
-                if (folderViewType == CollectionType.playlists || folderViewType == CollectionType.boxsets)
+                if (IsLinkedItemLibraryWithoutVisibleItems(folderViewType, folders, user))
                 {
-                    var itemKind = folderViewType == CollectionType.playlists
-                        ? BaseItemKind.Playlist
-                        : BaseItemKind.BoxSet;
-
-                    if (!HasVisibleItem(itemKind, folders, user))
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 if (UserView.IsUserSpecific(folder))
@@ -78,65 +71,46 @@ namespace Emby.Server.Implementations.Library
                     continue;
                 }
 
-                if (collectionFolder is not null && UserView.IsEligibleForGrouping(folder) && user.IsFolderGrouped(folder.Id))
+                if (IsGroupedCollectionFolder(collectionFolder, folder, user))
                 {
                     groupedFolders.Add(collectionFolder);
                     continue;
                 }
 
-                if (query.PresetViews.Contains(folderViewType))
-                {
-                    list.Add(GetUserView(folder, folderViewType, string.Empty));
-                }
-                else
-                {
-                    list.Add(folder);
-                }
+                AddFolderOrPresetView(list, folder, folderViewType, query);
             }
 
-            foreach (var viewType in new[] { CollectionType.movies, CollectionType.tvshows })
-            {
-                var parents = groupedFolders.Where(i => i.CollectionType == viewType || i.CollectionType is null)
-                    .ToList();
+            AddGroupedViews(list, groupedFolders, user, query);
 
-                if (parents.Count > 0)
-                {
-                    var localizationKey = viewType == CollectionType.tvshows
-                        ? "TvShows"
-                        : "Movies";
+            AddFolderViewIfEnabled(list);
 
-                    list.Add(GetUserView(parents, viewType, localizationKey, string.Empty, user, query.PresetViews));
-                }
-            }
+            AddExternalContentIfIncluded(list, user, query);
 
-            if (_config.Configuration.EnableFolderView)
-            {
-                var name = _localizationManager.GetServerLocalizedString("Folders");
-                list.Add(_libraryManager.GetNamedView(name, CollectionType.folders, string.Empty));
-            }
+            list = RemoveHiddenViews(list, user, query);
 
+            return OrderViews(list, user);
+        }
+
+        private void AddExternalContentIfIncluded(List<Folder> list, User user, UserViewQuery query)
+        {
             if (query.IncludeExternalContent)
             {
-                var channelResult = _channelManager.GetChannelsInternalAsync(new ChannelQuery
-                {
-                    UserId = user.Id
-                }).GetAwaiter().GetResult();
-
-                var channels = channelResult.Items;
-
-                list.AddRange(channels);
-
-                if (_liveTvManager.IsEnabledForUser(user))
-                {
-                    list.Add(_liveTvManager.GetInternalLiveTvFolder(CancellationToken.None));
-                }
+                AddExternalContent(list, user);
             }
+        }
 
+        private static List<Folder> RemoveHiddenViews(List<Folder> list, User user, UserViewQuery query)
+        {
             if (!query.IncludeHidden)
             {
                 list = list.Where(i => !user.GetPreferenceValues<Guid>(PreferenceKind.MyMediaExcludes).Contains(i.Id)).ToList();
             }
 
+            return list;
+        }
+
+        private Folder[] OrderViews(List<Folder> list, User user)
+        {
             var sorted = _libraryManager.Sort(list, user, [ItemSortBy.SortName], SortOrder.Ascending).ToList();
             var orders = user.GetPreferenceValues<Guid>(PreferenceKind.OrderedViews);
 
@@ -156,6 +130,84 @@ namespace Emby.Server.Implementations.Library
                 .ThenBy(sorted.IndexOf)
                 .ThenBy(i => i.SortName)
                 .ToArray();
+        }
+
+        private void AddFolderOrPresetView(List<Folder> list, Folder folder, CollectionType? folderViewType, UserViewQuery query)
+        {
+            if (query.PresetViews.Contains(folderViewType))
+            {
+                list.Add(GetUserView(folder, folderViewType, string.Empty));
+            }
+            else
+            {
+                list.Add(folder);
+            }
+        }
+
+        private void AddFolderViewIfEnabled(List<Folder> list)
+        {
+            if (_config.Configuration.EnableFolderView)
+            {
+                var name = _localizationManager.GetServerLocalizedString("Folders");
+                list.Add(_libraryManager.GetNamedView(name, CollectionType.folders, string.Empty));
+            }
+        }
+
+        private static bool IsGroupedCollectionFolder(ICollectionFolder collectionFolder, Folder folder, User user)
+        {
+            return collectionFolder is not null && UserView.IsEligibleForGrouping(folder) && user.IsFolderGrouped(folder.Id);
+        }
+
+        private bool IsLinkedItemLibraryWithoutVisibleItems(CollectionType? folderViewType, IReadOnlyList<Folder> folders, User user)
+        {
+            if (folderViewType == CollectionType.playlists || folderViewType == CollectionType.boxsets)
+            {
+                var itemKind = folderViewType == CollectionType.playlists
+                    ? BaseItemKind.Playlist
+                    : BaseItemKind.BoxSet;
+
+                if (!HasVisibleItem(itemKind, folders, user))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void AddGroupedViews(List<Folder> list, List<ICollectionFolder> groupedFolders, User user, UserViewQuery query)
+        {
+            foreach (var viewType in new[] { CollectionType.movies, CollectionType.tvshows })
+            {
+                var parents = groupedFolders.Where(i => i.CollectionType == viewType || i.CollectionType is null)
+                    .ToList();
+
+                if (parents.Count > 0)
+                {
+                    var localizationKey = viewType == CollectionType.tvshows
+                        ? "TvShows"
+                        : "Movies";
+
+                    list.Add(GetUserView(parents, viewType, localizationKey, string.Empty, user, query.PresetViews));
+                }
+            }
+        }
+
+        private void AddExternalContent(List<Folder> list, User user)
+        {
+            var channelResult = _channelManager.GetChannelsInternalAsync(new ChannelQuery
+            {
+                UserId = user.Id
+            }).GetAwaiter().GetResult();
+
+            var channels = channelResult.Items;
+
+            list.AddRange(channels);
+
+            if (_liveTvManager.IsEnabledForUser(user))
+            {
+                list.Add(_liveTvManager.GetInternalLiveTvFolder(CancellationToken.None));
+            }
         }
 
         private bool HasVisibleItem(BaseItemKind itemKind, IReadOnlyList<Folder> folders, User user)
@@ -292,12 +344,7 @@ namespace Emby.Server.Implementations.Library
                 }
             }
 
-            var isPlayed = request.IsPlayed;
-
-            if (parents.OfType<ICollectionFolder>().Any(i => i.CollectionType == CollectionType.music))
-            {
-                isPlayed = null;
-            }
+            var isPlayed = GetIsPlayedFilter(request, parents);
 
             if (parents.Count == 0)
             {
@@ -313,67 +360,11 @@ namespace Emby.Server.Implementations.Library
                 return Array.Empty<BaseItem>();
             }
 
-            if (includeItemTypes.Length == 0)
-            {
-                // Handle situations with the grouping setting, e.g. movies showing up in tv, etc.
-                // Thanks to mixed content libraries included in the UserView
-                var hasCollectionType = parents.OfType<UserView>().ToList();
-                if (hasCollectionType.Count > 0)
-                {
-                    if (hasCollectionType.All(i => i.CollectionType == CollectionType.movies))
-                    {
-                        includeItemTypes = [BaseItemKind.Movie];
-                    }
-                    else if (hasCollectionType.All(i => i.CollectionType == CollectionType.tvshows))
-                    {
-                        includeItemTypes = [BaseItemKind.Episode];
-                    }
-                }
-            }
+            includeItemTypes = ResolveIncludeItemTypes(includeItemTypes, parents);
 
-            MediaType[] mediaTypes = [];
+            MediaType[] mediaTypes = GetMediaTypesFilter(includeItemTypes, parents);
 
-            if (includeItemTypes.Length == 0)
-            {
-                HashSet<MediaType> tmpMediaTypes = [];
-                foreach (var parent in parents.OfType<ICollectionFolder>())
-                {
-                    switch (parent.CollectionType)
-                    {
-                        case CollectionType.books:
-                            tmpMediaTypes.Add(MediaType.Book);
-                            tmpMediaTypes.Add(MediaType.Audio);
-                            break;
-                        case CollectionType.music:
-                            tmpMediaTypes.Add(MediaType.Audio);
-                            break;
-                        case CollectionType.photos:
-                            tmpMediaTypes.Add(MediaType.Photo);
-                            tmpMediaTypes.Add(MediaType.Video);
-                            break;
-                        case CollectionType.homevideos:
-                            tmpMediaTypes.Add(MediaType.Photo);
-                            tmpMediaTypes.Add(MediaType.Video);
-                            break;
-                        default:
-                            tmpMediaTypes.Add(MediaType.Video);
-                            break;
-                    }
-                }
-
-                mediaTypes = tmpMediaTypes.ToArray();
-            }
-
-            var excludeItemTypes = includeItemTypes.Length == 0 && mediaTypes.Length == 0
-                ?
-                [
-                    BaseItemKind.Person,
-                    BaseItemKind.Studio,
-                    BaseItemKind.Year,
-                    BaseItemKind.MusicGenre,
-                    BaseItemKind.Genre
-                ]
-                : Array.Empty<BaseItemKind>();
+            var excludeItemTypes = GetExcludeItemTypes(includeItemTypes, mediaTypes);
 
             var query = new InternalItemsQuery(user)
             {
@@ -393,6 +384,103 @@ namespace Emby.Server.Implementations.Library
                 MediaTypes = mediaTypes
             };
 
+            return GetLatestOrAllItems(request, query, parents, limit);
+        }
+
+        private static bool? GetIsPlayedFilter(LatestItemsQuery request, List<BaseItem> parents)
+        {
+            var isPlayed = request.IsPlayed;
+
+            if (parents.OfType<ICollectionFolder>().Any(i => i.CollectionType == CollectionType.music))
+            {
+                isPlayed = null;
+            }
+
+            return isPlayed;
+        }
+
+        private static MediaType[] GetMediaTypesFilter(BaseItemKind[] includeItemTypes, List<BaseItem> parents)
+        {
+            MediaType[] mediaTypes = [];
+
+            if (includeItemTypes.Length == 0)
+            {
+                mediaTypes = GetMediaTypes(parents);
+            }
+
+            return mediaTypes;
+        }
+
+        private static BaseItemKind[] GetExcludeItemTypes(BaseItemKind[] includeItemTypes, MediaType[] mediaTypes)
+        {
+            return includeItemTypes.Length == 0 && mediaTypes.Length == 0
+                ?
+                [
+                    BaseItemKind.Person,
+                    BaseItemKind.Studio,
+                    BaseItemKind.Year,
+                    BaseItemKind.MusicGenre,
+                    BaseItemKind.Genre
+                ]
+                : Array.Empty<BaseItemKind>();
+        }
+
+        private static BaseItemKind[] ResolveIncludeItemTypes(BaseItemKind[] includeItemTypes, List<BaseItem> parents)
+        {
+            if (includeItemTypes.Length == 0)
+            {
+                // Handle situations with the grouping setting, e.g. movies showing up in tv, etc.
+                // Thanks to mixed content libraries included in the UserView
+                var hasCollectionType = parents.OfType<UserView>().ToList();
+                if (hasCollectionType.Count > 0)
+                {
+                    if (hasCollectionType.All(i => i.CollectionType == CollectionType.movies))
+                    {
+                        includeItemTypes = [BaseItemKind.Movie];
+                    }
+                    else if (hasCollectionType.All(i => i.CollectionType == CollectionType.tvshows))
+                    {
+                        includeItemTypes = [BaseItemKind.Episode];
+                    }
+                }
+            }
+
+            return includeItemTypes;
+        }
+
+        private static MediaType[] GetMediaTypes(List<BaseItem> parents)
+        {
+            HashSet<MediaType> tmpMediaTypes = [];
+            foreach (var parent in parents.OfType<ICollectionFolder>())
+            {
+                switch (parent.CollectionType)
+                {
+                    case CollectionType.books:
+                        tmpMediaTypes.Add(MediaType.Book);
+                        tmpMediaTypes.Add(MediaType.Audio);
+                        break;
+                    case CollectionType.music:
+                        tmpMediaTypes.Add(MediaType.Audio);
+                        break;
+                    case CollectionType.photos:
+                        tmpMediaTypes.Add(MediaType.Photo);
+                        tmpMediaTypes.Add(MediaType.Video);
+                        break;
+                    case CollectionType.homevideos:
+                        tmpMediaTypes.Add(MediaType.Photo);
+                        tmpMediaTypes.Add(MediaType.Video);
+                        break;
+                    default:
+                        tmpMediaTypes.Add(MediaType.Video);
+                        break;
+                }
+            }
+
+            return tmpMediaTypes.ToArray();
+        }
+
+        private IReadOnlyList<BaseItem> GetLatestOrAllItems(LatestItemsQuery request, InternalItemsQuery query, List<BaseItem> parents, int limit)
+        {
             if (request.GroupItems)
             {
                 var collectionType = parents

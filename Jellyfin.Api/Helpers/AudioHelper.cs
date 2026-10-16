@@ -99,17 +99,9 @@ public class AudioHelper
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);
 
-        if (streamingRequest.Static && state.DirectStreamProvider is not null)
+        if (IsStaticDirectStream(streamingRequest, state))
         {
-            var liveStreamInfo = _mediaSourceManager.GetLiveStreamInfo(streamingRequest.LiveStreamId);
-            if (liveStreamInfo is null)
-            {
-                throw new FileNotFoundException();
-            }
-
-            var liveStream = new ProgressiveFileStream(liveStreamInfo.GetStream());
-            // TODO (moved from MediaBrowser.Api): Don't hardcode contentType
-            return new FileStreamResult(liveStream, MimeTypes.GetMimeType("file.ts"));
+            return GetLiveStreamResult(streamingRequest.LiveStreamId);
         }
 
         // Static remote stream
@@ -129,17 +121,7 @@ public class AudioHelper
         // Static stream
         if (streamingRequest.Static)
         {
-            var contentType = state.GetMimeType("." + state.OutputContainer, false) ?? state.GetMimeType(state.MediaPath);
-
-            if (state.MediaSource.IsInfiniteStream)
-            {
-                var stream = new ProgressiveFileStream(state.MediaPath, null, _transcodeManager);
-                return new FileStreamResult(stream, contentType);
-            }
-
-            return FileStreamResponseHelpers.GetStaticFileResult(
-                state.MediaPath,
-                contentType);
+            return GetStaticStreamResult(state);
         }
 
         // Need to start ffmpeg (because media can't be returned directly)
@@ -153,5 +135,38 @@ public class AudioHelper
             ffmpegCommandLineArguments,
             transcodingJobType,
             cancellationTokenSource).ConfigureAwait(false);
+    }
+
+    private ActionResult GetLiveStreamResult(string liveStreamId)
+    {
+        var liveStreamInfo = _mediaSourceManager.GetLiveStreamInfo(liveStreamId);
+        if (liveStreamInfo is null)
+        {
+            throw new FileNotFoundException();
+        }
+
+        var liveStream = new ProgressiveFileStream(liveStreamInfo.GetStream());
+        // TODO (moved from MediaBrowser.Api): Don't hardcode contentType
+        return new FileStreamResult(liveStream, MimeTypes.GetMimeType("file.ts"));
+    }
+
+    private ActionResult GetStaticStreamResult(StreamState state)
+    {
+        var contentType = state.GetMimeType("." + state.OutputContainer, false) ?? state.GetMimeType(state.MediaPath);
+
+        if (state.MediaSource.IsInfiniteStream)
+        {
+            var stream = new ProgressiveFileStream(state.MediaPath, null, _transcodeManager);
+            return new FileStreamResult(stream, contentType);
+        }
+
+        return FileStreamResponseHelpers.GetStaticFileResult(
+            state.MediaPath,
+            contentType);
+    }
+
+    private static bool IsStaticDirectStream(StreamingRequestDto streamingRequest, StreamState state)
+    {
+        return streamingRequest.Static && state.DirectStreamProvider is not null;
     }
 }

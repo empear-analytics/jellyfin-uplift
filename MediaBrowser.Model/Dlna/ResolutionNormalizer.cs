@@ -31,9 +31,9 @@ namespace MediaBrowser.Model.Dlna
             bool isHdr = false) // We are not doing HDR transcoding for now, leave for future use
         {
             // If the bitrate isn't changing, then don't downscale the resolution
-            if (inputBitrate.HasValue && outputBitrate >= inputBitrate.Value)
+            if (IsBitrateUnchanged(inputBitrate, outputBitrate))
             {
-                if (maxWidth.HasValue || maxHeight.HasValue)
+                if (HasMaxDimension(maxWidth, maxHeight))
                 {
                     return new ResolutionOptions
                     {
@@ -43,6 +43,47 @@ namespace MediaBrowser.Model.Dlna
                 }
             }
 
+            var referenceBitrate = GetReferenceBitrate(h264EquivalentOutputBitrate, targetFps, isHdr);
+
+            var resolutionConfig = GetResolutionConfiguration(Convert.ToInt32(referenceBitrate));
+
+            if (resolutionConfig is null)
+            {
+                return new ResolutionOptions { MaxWidth = maxWidth, MaxHeight = maxHeight };
+            }
+
+            var originWidthValue = maxWidth;
+
+            maxWidth = Math.Min(resolutionConfig.MaxWidth, maxWidth ?? resolutionConfig.MaxWidth);
+            if (IsWidthChanged(originWidthValue, maxWidth))
+            {
+                maxHeight = null;
+            }
+
+            return new ResolutionOptions
+            {
+                MaxWidth = maxWidth,
+                MaxHeight = maxHeight
+            };
+        }
+
+        private static bool IsBitrateUnchanged(int? inputBitrate, int outputBitrate)
+        {
+            return inputBitrate.HasValue && outputBitrate >= inputBitrate.Value;
+        }
+
+        private static bool HasMaxDimension(int? maxWidth, int? maxHeight)
+        {
+            return maxWidth.HasValue || maxHeight.HasValue;
+        }
+
+        private static bool IsWidthChanged(int? originWidthValue, int? maxWidth)
+        {
+            return !originWidthValue.HasValue || originWidthValue.Value != maxWidth.Value;
+        }
+
+        private static float GetReferenceBitrate(int h264EquivalentOutputBitrate, float? targetFps, bool isHdr)
+        {
             // Our reference bitrate is based on SDR h264 at 30fps
             var referenceFps = targetFps ?? 30.0f;
             var referenceScale = referenceFps <= 30.0f
@@ -55,26 +96,7 @@ namespace MediaBrowser.Model.Dlna
                 referenceBitrate *= 0.8f;
             }
 
-            var resolutionConfig = GetResolutionConfiguration(Convert.ToInt32(referenceBitrate));
-
-            if (resolutionConfig is null)
-            {
-                return new ResolutionOptions { MaxWidth = maxWidth, MaxHeight = maxHeight };
-            }
-
-            var originWidthValue = maxWidth;
-
-            maxWidth = Math.Min(resolutionConfig.MaxWidth, maxWidth ?? resolutionConfig.MaxWidth);
-            if (!originWidthValue.HasValue || originWidthValue.Value != maxWidth.Value)
-            {
-                maxHeight = null;
-            }
-
-            return new ResolutionOptions
-            {
-                MaxWidth = maxWidth,
-                MaxHeight = maxHeight
-            };
+            return referenceBitrate;
         }
 
         private static ResolutionConfiguration GetResolutionConfiguration(int outputBitrate)

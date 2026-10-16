@@ -119,5 +119,9 @@ These were found while recording. The tests record the current behaviour, and no
 - `JobLogger` does not parse ffmpeg's padded `size=   256kB` progress field, so the bytes
   transcoded are not reported.
 - `TranscodingJob.DecrementActiveRequestCount` can drive the active request count below zero.
+- `MediaStreamSelector.SetSubtitleStreamScores`, Always mode: `...ToList() ?? BehaviorOnlyForced(...)`
+  never falls back, because `ToList()` never returns null. Unlike `GetDefaultSubtitleStreamIndex`,
+  that mode therefore never falls back to forced subtitles. (Reported by the R19 agent during the
+  refactoring campaign.)
 - In the Default subtitle mode, an external Swedish subtitle is selected in a case where the
   preferences point elsewhere. This needs checking against the intended rules.

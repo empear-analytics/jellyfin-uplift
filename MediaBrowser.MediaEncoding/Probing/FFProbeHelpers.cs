@@ -60,13 +60,18 @@ namespace MediaBrowser.MediaEncoding.Probing
         public static DateTime? GetDictionaryDateTime(IReadOnlyDictionary<string, string> tags, string key)
         {
             if (tags.TryGetValue(key, out var val)
-                && (DateTime.TryParse(val, DateTimeFormatInfo.CurrentInfo, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dateTime)
-                    || DateTime.TryParseExact(val, "yyyy", DateTimeFormatInfo.CurrentInfo, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out dateTime)))
+                && TryParseTagDateTime(val, out var dateTime))
             {
                 return dateTime;
             }
 
             return null;
+        }
+
+        private static bool TryParseTagDateTime(string val, out DateTime dateTime)
+        {
+            return DateTime.TryParse(val, DateTimeFormatInfo.CurrentInfo, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out dateTime)
+                || DateTime.TryParseExact(val, "yyyy", DateTimeFormatInfo.CurrentInfo, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out dateTime);
         }
 
         /// <summary>
