@@ -728,248 +728,15 @@ namespace MediaBrowser.MediaEncoding.Probing
 
             if (streamInfo.CodecType == CodecType.Audio)
             {
-                stream.Type = MediaStreamType.Audio;
-                stream.LocalizedDefault = _localization.GetLocalizedString("Default");
-                stream.LocalizedExternal = _localization.GetLocalizedString("External");
-                stream.LocalizedOriginal = _localization.GetLocalizedString("Original");
-                if (!string.IsNullOrEmpty(stream.Language))
-                {
-                    stream.LocalizedLanguage = _localization.GetLanguageDisplayName(stream.Language);
-                }
-
-                stream.Channels = streamInfo.Channels;
-
-                if (int.TryParse(streamInfo.SampleRate, CultureInfo.InvariantCulture, out var sampleRate))
-                {
-                    stream.SampleRate = sampleRate;
-                }
-
-                stream.ChannelLayout = ParseChannelLayout(streamInfo.ChannelLayout);
-
-                if (streamInfo.BitsPerSample > 0)
-                {
-                    stream.BitDepth = streamInfo.BitsPerSample;
-                }
-                else if (streamInfo.BitsPerRawSample > 0)
-                {
-                    stream.BitDepth = streamInfo.BitsPerRawSample;
-                }
-
-                if (string.IsNullOrEmpty(stream.Title))
-                {
-                    // FFprobe exposes MP4 track names via the name tag rather than title
-                    stream.Title = GetDictionaryValue(streamInfo.Tags, "name");
-
-                    if (string.IsNullOrEmpty(stream.Title))
-                    {
-                        // fall back to handler_name if populated and not the default "SoundHandler"
-                        string handlerName = GetDictionaryValue(streamInfo.Tags, "handler_name");
-                        if (!string.IsNullOrEmpty(handlerName) && !string.Equals(handlerName, "SoundHandler", StringComparison.OrdinalIgnoreCase))
-                        {
-                            stream.Title = handlerName;
-                        }
-                    }
-                }
+                SetAudioStreamInfo(stream, streamInfo);
             }
             else if (streamInfo.CodecType == CodecType.Subtitle)
             {
-                stream.Type = MediaStreamType.Subtitle;
-                stream.Codec = NormalizeSubtitleCodec(stream.Codec);
-                stream.LocalizedUndefined = _localization.GetLocalizedString("Undefined");
-                stream.LocalizedDefault = _localization.GetLocalizedString("Default");
-                stream.LocalizedForced = _localization.GetLocalizedString("Forced");
-                stream.LocalizedExternal = _localization.GetLocalizedString("External");
-                stream.LocalizedHearingImpaired = _localization.GetLocalizedString("HearingImpaired");
-                if (!string.IsNullOrEmpty(stream.Language))
-                {
-                    stream.LocalizedLanguage = _localization.GetLanguageDisplayName(stream.Language);
-                }
-
-                if (string.IsNullOrEmpty(stream.Title))
-                {
-                    // FFprobe exposes MP4 track names via the name tag rather than title
-                    stream.Title = GetDictionaryValue(streamInfo.Tags, "name");
-
-                    if (string.IsNullOrEmpty(stream.Title))
-                    {
-                        // fall back to handler_name if populated and not the default "SubtitleHandler"
-                        string handlerName = GetDictionaryValue(streamInfo.Tags, "handler_name");
-                        if (!string.IsNullOrEmpty(handlerName) && !string.Equals(handlerName, "SubtitleHandler", StringComparison.OrdinalIgnoreCase))
-                        {
-                            stream.Title = handlerName;
-                        }
-                    }
-                }
+                SetSubtitleStreamInfo(stream, streamInfo);
             }
             else if (streamInfo.CodecType == CodecType.Video)
             {
-                stream.IsAVC = streamInfo.IsAvc;
-                stream.AverageFrameRate = GetFrameRate(streamInfo.AverageFrameRate);
-                stream.RealFrameRate = GetFrameRate(streamInfo.RFrameRate);
-
-                stream.IsInterlaced = !string.IsNullOrWhiteSpace(streamInfo.FieldOrder)
-                    && !string.Equals(streamInfo.FieldOrder, "progressive", StringComparison.OrdinalIgnoreCase);
-
-                if (isAudio
-                    || string.Equals(stream.Codec, "bmp", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(stream.Codec, "gif", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(stream.Codec, "png", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(stream.Codec, "webp", StringComparison.OrdinalIgnoreCase))
-                {
-                    stream.Type = MediaStreamType.EmbeddedImage;
-                }
-                else if (string.Equals(stream.Codec, "mjpeg", StringComparison.OrdinalIgnoreCase))
-                {
-                    // How to differentiate between video and embedded image?
-                    // The only difference I've seen thus far is presence of codec tag, also embedded images have high (unusual) framerates
-                    if (!string.IsNullOrWhiteSpace(stream.CodecTag))
-                    {
-                        stream.Type = MediaStreamType.Video;
-                    }
-                    else
-                    {
-                        stream.Type = MediaStreamType.EmbeddedImage;
-                    }
-                }
-                else
-                {
-                    stream.Type = MediaStreamType.Video;
-                }
-
-                stream.AspectRatio = GetAspectRatio(streamInfo);
-
-                if (streamInfo.BitsPerSample > 0)
-                {
-                    stream.BitDepth = streamInfo.BitsPerSample;
-                }
-                else if (streamInfo.BitsPerRawSample > 0)
-                {
-                    stream.BitDepth = streamInfo.BitsPerRawSample;
-                }
-
-                if (!stream.BitDepth.HasValue)
-                {
-                    if (!string.IsNullOrEmpty(streamInfo.PixelFormat))
-                    {
-                        if (string.Equals(streamInfo.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase)
-                            || string.Equals(streamInfo.PixelFormat, "yuv444p", StringComparison.OrdinalIgnoreCase))
-                        {
-                            stream.BitDepth = 8;
-                        }
-                        else if (string.Equals(streamInfo.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase)
-                                 || string.Equals(streamInfo.PixelFormat, "yuv444p10le", StringComparison.OrdinalIgnoreCase))
-                        {
-                            stream.BitDepth = 10;
-                        }
-                        else if (string.Equals(streamInfo.PixelFormat, "yuv420p12le", StringComparison.OrdinalIgnoreCase)
-                                 || string.Equals(streamInfo.PixelFormat, "yuv444p12le", StringComparison.OrdinalIgnoreCase))
-                        {
-                            stream.BitDepth = 12;
-                        }
-                    }
-                }
-
-                // http://stackoverflow.com/questions/17353387/how-to-detect-anamorphic-video-with-ffprobe
-                if (string.IsNullOrEmpty(streamInfo.SampleAspectRatio)
-                    && string.IsNullOrEmpty(streamInfo.DisplayAspectRatio))
-                {
-                    stream.IsAnamorphic = false;
-                }
-                else if (IsNearSquarePixelSar(streamInfo.SampleAspectRatio))
-                {
-                    stream.IsAnamorphic = false;
-                }
-                else if (!string.Equals(streamInfo.SampleAspectRatio, "0:1", StringComparison.Ordinal))
-                {
-                    stream.IsAnamorphic = true;
-                }
-                else if (string.Equals(streamInfo.DisplayAspectRatio, "0:1", StringComparison.Ordinal))
-                {
-                    stream.IsAnamorphic = false;
-                }
-                else if (!string.Equals(
-                             streamInfo.DisplayAspectRatio,
-                             // Force GetAspectRatio() to derive ratio from Width/Height directly by using null DAR
-                             GetAspectRatio(new MediaStreamInfo
-                             {
-                                 Width = streamInfo.Width,
-                                 Height = streamInfo.Height,
-                                 DisplayAspectRatio = null
-                             }),
-                             StringComparison.Ordinal))
-                {
-                    stream.IsAnamorphic = true;
-                }
-                else
-                {
-                    stream.IsAnamorphic = false;
-                }
-
-                if (streamInfo.Refs > 0)
-                {
-                    stream.RefFrames = streamInfo.Refs;
-                }
-
-                if (!string.IsNullOrEmpty(streamInfo.ColorRange))
-                {
-                    stream.ColorRange = streamInfo.ColorRange;
-                }
-
-                if (!string.IsNullOrEmpty(streamInfo.ColorSpace))
-                {
-                    stream.ColorSpace = streamInfo.ColorSpace;
-                }
-
-                if (!string.IsNullOrEmpty(streamInfo.ColorTransfer))
-                {
-                    stream.ColorTransfer = streamInfo.ColorTransfer;
-                }
-
-                if (!string.IsNullOrEmpty(streamInfo.ColorPrimaries))
-                {
-                    stream.ColorPrimaries = streamInfo.ColorPrimaries;
-                }
-
-                if (streamInfo.SideDataList is not null)
-                {
-                    foreach (var data in streamInfo.SideDataList)
-                    {
-                        // Parse Dolby Vision metadata from side_data
-                        if (string.Equals(data.SideDataType, "DOVI configuration record", StringComparison.OrdinalIgnoreCase))
-                        {
-                            stream.DvVersionMajor = data.DvVersionMajor;
-                            stream.DvVersionMinor = data.DvVersionMinor;
-                            stream.DvProfile = data.DvProfile;
-                            stream.DvLevel = data.DvLevel;
-                            stream.RpuPresentFlag = data.RpuPresentFlag;
-                            stream.ElPresentFlag = data.ElPresentFlag;
-                            stream.BlPresentFlag = data.BlPresentFlag;
-                            stream.DvBlSignalCompatibilityId = data.DvBlSignalCompatibilityId;
-                        }
-
-                        // Parse video rotation metadata from side_data
-                        else if (string.Equals(data.SideDataType, "Display Matrix", StringComparison.OrdinalIgnoreCase))
-                        {
-                            stream.Rotation = data.Rotation;
-                        }
-
-                        // Parse video frame cropping metadata from side_data
-                        // TODO: save them and make HW filters to apply them in HWA pipelines
-                        else if (string.Equals(data.SideDataType, "Frame Cropping", StringComparison.OrdinalIgnoreCase))
-                        {
-                            // Streams containing artificially added frame cropping
-                            // metadata should not be marked as anamorphic.
-                            stream.IsAnamorphic = false;
-                        }
-                    }
-                }
-
-                var frameInfo = frameInfoList?.FirstOrDefault(i => i.StreamIndex == stream.Index);
-                if (frameInfo?.SideDataList is not null
-                    && frameInfo.SideDataList.Any(data => string.Equals(data.SideDataType, "HDR Dynamic Metadata SMPTE2094-40 (HDR10+)", StringComparison.OrdinalIgnoreCase)))
-                {
-                    stream.Hdr10PlusPresentFlag = true;
-                }
+                SetVideoStreamInfo(isAudio, stream, streamInfo, frameInfoList);
             }
             else if (streamInfo.CodecType == CodecType.Data)
             {
@@ -980,6 +747,297 @@ namespace MediaBrowser.MediaEncoding.Probing
                 return null;
             }
 
+            SetStreamBitRate(isAudio, stream, streamInfo, formatInfo);
+
+            SetBitRateFromTags(stream, streamInfo);
+
+            ApplyDisposition(stream, streamInfo);
+
+            NormalizeStreamTitle(stream);
+
+            return stream;
+        }
+
+        private void SetAudioStreamInfo(MediaStream stream, MediaStreamInfo streamInfo)
+        {
+            stream.Type = MediaStreamType.Audio;
+            stream.LocalizedDefault = _localization.GetLocalizedString("Default");
+            stream.LocalizedExternal = _localization.GetLocalizedString("External");
+            stream.LocalizedOriginal = _localization.GetLocalizedString("Original");
+            if (!string.IsNullOrEmpty(stream.Language))
+            {
+                stream.LocalizedLanguage = _localization.GetLanguageDisplayName(stream.Language);
+            }
+
+            stream.Channels = streamInfo.Channels;
+
+            if (int.TryParse(streamInfo.SampleRate, CultureInfo.InvariantCulture, out var sampleRate))
+            {
+                stream.SampleRate = sampleRate;
+            }
+
+            stream.ChannelLayout = ParseChannelLayout(streamInfo.ChannelLayout);
+
+            if (streamInfo.BitsPerSample > 0)
+            {
+                stream.BitDepth = streamInfo.BitsPerSample;
+            }
+            else if (streamInfo.BitsPerRawSample > 0)
+            {
+                stream.BitDepth = streamInfo.BitsPerRawSample;
+            }
+
+            if (string.IsNullOrEmpty(stream.Title))
+            {
+                // FFprobe exposes MP4 track names via the name tag rather than title
+                stream.Title = GetDictionaryValue(streamInfo.Tags, "name");
+
+                if (string.IsNullOrEmpty(stream.Title))
+                {
+                    // fall back to handler_name if populated and not the default "SoundHandler"
+                    string handlerName = GetDictionaryValue(streamInfo.Tags, "handler_name");
+                    if (!string.IsNullOrEmpty(handlerName) && !string.Equals(handlerName, "SoundHandler", StringComparison.OrdinalIgnoreCase))
+                    {
+                        stream.Title = handlerName;
+                    }
+                }
+            }
+        }
+
+        private void SetSubtitleStreamInfo(MediaStream stream, MediaStreamInfo streamInfo)
+        {
+            stream.Type = MediaStreamType.Subtitle;
+            stream.Codec = NormalizeSubtitleCodec(stream.Codec);
+            stream.LocalizedUndefined = _localization.GetLocalizedString("Undefined");
+            stream.LocalizedDefault = _localization.GetLocalizedString("Default");
+            stream.LocalizedForced = _localization.GetLocalizedString("Forced");
+            stream.LocalizedExternal = _localization.GetLocalizedString("External");
+            stream.LocalizedHearingImpaired = _localization.GetLocalizedString("HearingImpaired");
+            if (!string.IsNullOrEmpty(stream.Language))
+            {
+                stream.LocalizedLanguage = _localization.GetLanguageDisplayName(stream.Language);
+            }
+
+            if (string.IsNullOrEmpty(stream.Title))
+            {
+                // FFprobe exposes MP4 track names via the name tag rather than title
+                stream.Title = GetDictionaryValue(streamInfo.Tags, "name");
+
+                if (string.IsNullOrEmpty(stream.Title))
+                {
+                    // fall back to handler_name if populated and not the default "SubtitleHandler"
+                    string handlerName = GetDictionaryValue(streamInfo.Tags, "handler_name");
+                    if (!string.IsNullOrEmpty(handlerName) && !string.Equals(handlerName, "SubtitleHandler", StringComparison.OrdinalIgnoreCase))
+                    {
+                        stream.Title = handlerName;
+                    }
+                }
+            }
+        }
+
+        private static void SetVideoStreamInfo(bool isAudio, MediaStream stream, MediaStreamInfo streamInfo, IReadOnlyList<MediaFrameInfo> frameInfoList)
+        {
+            stream.IsAVC = streamInfo.IsAvc;
+            stream.AverageFrameRate = GetFrameRate(streamInfo.AverageFrameRate);
+            stream.RealFrameRate = GetFrameRate(streamInfo.RFrameRate);
+
+            stream.IsInterlaced = !string.IsNullOrWhiteSpace(streamInfo.FieldOrder)
+                && !string.Equals(streamInfo.FieldOrder, "progressive", StringComparison.OrdinalIgnoreCase);
+
+            SetVideoStreamType(isAudio, stream);
+
+            stream.AspectRatio = GetAspectRatio(streamInfo);
+
+            if (streamInfo.BitsPerSample > 0)
+            {
+                stream.BitDepth = streamInfo.BitsPerSample;
+            }
+            else if (streamInfo.BitsPerRawSample > 0)
+            {
+                stream.BitDepth = streamInfo.BitsPerRawSample;
+            }
+
+            SetBitDepthFromPixelFormat(stream, streamInfo);
+
+            SetIsAnamorphic(stream, streamInfo);
+
+            if (streamInfo.Refs > 0)
+            {
+                stream.RefFrames = streamInfo.Refs;
+            }
+
+            SetColorInfo(stream, streamInfo);
+
+            ApplySideData(stream, streamInfo);
+
+            SetHdr10PlusFlag(stream, frameInfoList);
+        }
+
+        private static void SetVideoStreamType(bool isAudio, MediaStream stream)
+        {
+            if (isAudio
+                || string.Equals(stream.Codec, "bmp", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(stream.Codec, "gif", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(stream.Codec, "png", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(stream.Codec, "webp", StringComparison.OrdinalIgnoreCase))
+            {
+                stream.Type = MediaStreamType.EmbeddedImage;
+            }
+            else if (string.Equals(stream.Codec, "mjpeg", StringComparison.OrdinalIgnoreCase))
+            {
+                // How to differentiate between video and embedded image?
+                // The only difference I've seen thus far is presence of codec tag, also embedded images have high (unusual) framerates
+                if (!string.IsNullOrWhiteSpace(stream.CodecTag))
+                {
+                    stream.Type = MediaStreamType.Video;
+                }
+                else
+                {
+                    stream.Type = MediaStreamType.EmbeddedImage;
+                }
+            }
+            else
+            {
+                stream.Type = MediaStreamType.Video;
+            }
+        }
+
+        private static void SetBitDepthFromPixelFormat(MediaStream stream, MediaStreamInfo streamInfo)
+        {
+            if (!stream.BitDepth.HasValue)
+            {
+                if (!string.IsNullOrEmpty(streamInfo.PixelFormat))
+                {
+                    if (string.Equals(streamInfo.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(streamInfo.PixelFormat, "yuv444p", StringComparison.OrdinalIgnoreCase))
+                    {
+                        stream.BitDepth = 8;
+                    }
+                    else if (string.Equals(streamInfo.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase)
+                             || string.Equals(streamInfo.PixelFormat, "yuv444p10le", StringComparison.OrdinalIgnoreCase))
+                    {
+                        stream.BitDepth = 10;
+                    }
+                    else if (string.Equals(streamInfo.PixelFormat, "yuv420p12le", StringComparison.OrdinalIgnoreCase)
+                             || string.Equals(streamInfo.PixelFormat, "yuv444p12le", StringComparison.OrdinalIgnoreCase))
+                    {
+                        stream.BitDepth = 12;
+                    }
+                }
+            }
+        }
+
+        private static void SetIsAnamorphic(MediaStream stream, MediaStreamInfo streamInfo)
+        {
+            // http://stackoverflow.com/questions/17353387/how-to-detect-anamorphic-video-with-ffprobe
+            if (string.IsNullOrEmpty(streamInfo.SampleAspectRatio)
+                && string.IsNullOrEmpty(streamInfo.DisplayAspectRatio))
+            {
+                stream.IsAnamorphic = false;
+            }
+            else if (IsNearSquarePixelSar(streamInfo.SampleAspectRatio))
+            {
+                stream.IsAnamorphic = false;
+            }
+            else if (!string.Equals(streamInfo.SampleAspectRatio, "0:1", StringComparison.Ordinal))
+            {
+                stream.IsAnamorphic = true;
+            }
+            else if (string.Equals(streamInfo.DisplayAspectRatio, "0:1", StringComparison.Ordinal))
+            {
+                stream.IsAnamorphic = false;
+            }
+            else if (!string.Equals(
+                         streamInfo.DisplayAspectRatio,
+                         // Force GetAspectRatio() to derive ratio from Width/Height directly by using null DAR
+                         GetAspectRatio(new MediaStreamInfo
+                         {
+                             Width = streamInfo.Width,
+                             Height = streamInfo.Height,
+                             DisplayAspectRatio = null
+                         }),
+                         StringComparison.Ordinal))
+            {
+                stream.IsAnamorphic = true;
+            }
+            else
+            {
+                stream.IsAnamorphic = false;
+            }
+        }
+
+        private static void SetColorInfo(MediaStream stream, MediaStreamInfo streamInfo)
+        {
+            if (!string.IsNullOrEmpty(streamInfo.ColorRange))
+            {
+                stream.ColorRange = streamInfo.ColorRange;
+            }
+
+            if (!string.IsNullOrEmpty(streamInfo.ColorSpace))
+            {
+                stream.ColorSpace = streamInfo.ColorSpace;
+            }
+
+            if (!string.IsNullOrEmpty(streamInfo.ColorTransfer))
+            {
+                stream.ColorTransfer = streamInfo.ColorTransfer;
+            }
+
+            if (!string.IsNullOrEmpty(streamInfo.ColorPrimaries))
+            {
+                stream.ColorPrimaries = streamInfo.ColorPrimaries;
+            }
+        }
+
+        private static void ApplySideData(MediaStream stream, MediaStreamInfo streamInfo)
+        {
+            if (streamInfo.SideDataList is not null)
+            {
+                foreach (var data in streamInfo.SideDataList)
+                {
+                    // Parse Dolby Vision metadata from side_data
+                    if (string.Equals(data.SideDataType, "DOVI configuration record", StringComparison.OrdinalIgnoreCase))
+                    {
+                        stream.DvVersionMajor = data.DvVersionMajor;
+                        stream.DvVersionMinor = data.DvVersionMinor;
+                        stream.DvProfile = data.DvProfile;
+                        stream.DvLevel = data.DvLevel;
+                        stream.RpuPresentFlag = data.RpuPresentFlag;
+                        stream.ElPresentFlag = data.ElPresentFlag;
+                        stream.BlPresentFlag = data.BlPresentFlag;
+                        stream.DvBlSignalCompatibilityId = data.DvBlSignalCompatibilityId;
+                    }
+
+                    // Parse video rotation metadata from side_data
+                    else if (string.Equals(data.SideDataType, "Display Matrix", StringComparison.OrdinalIgnoreCase))
+                    {
+                        stream.Rotation = data.Rotation;
+                    }
+
+                    // Parse video frame cropping metadata from side_data
+                    // TODO: save them and make HW filters to apply them in HWA pipelines
+                    else if (string.Equals(data.SideDataType, "Frame Cropping", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Streams containing artificially added frame cropping
+                        // metadata should not be marked as anamorphic.
+                        stream.IsAnamorphic = false;
+                    }
+                }
+            }
+        }
+
+        private static void SetHdr10PlusFlag(MediaStream stream, IReadOnlyList<MediaFrameInfo> frameInfoList)
+        {
+            var frameInfo = frameInfoList?.FirstOrDefault(i => i.StreamIndex == stream.Index);
+            if (frameInfo?.SideDataList is not null
+                && frameInfo.SideDataList.Any(data => string.Equals(data.SideDataType, "HDR Dynamic Metadata SMPTE2094-40 (HDR10+)", StringComparison.OrdinalIgnoreCase)))
+            {
+                stream.Hdr10PlusPresentFlag = true;
+            }
+        }
+
+        private static void SetStreamBitRate(bool isAudio, MediaStream stream, MediaStreamInfo streamInfo, MediaFormatInfo formatInfo)
+        {
             // Get stream bitrate
             var bitrate = 0;
 
@@ -1006,7 +1064,10 @@ namespace MediaBrowser.MediaEncoding.Probing
             {
                 stream.BitRate = bitrate;
             }
+        }
 
+        private static void SetBitRateFromTags(MediaStream stream, MediaStreamInfo streamInfo)
+        {
             // Extract bitrate info from tag "BPS" if possible.
             if (!stream.BitRate.HasValue
                 && (streamInfo.CodecType == CodecType.Audio
@@ -1032,7 +1093,10 @@ namespace MediaBrowser.MediaEncoding.Probing
                     }
                 }
             }
+        }
 
+        private static void ApplyDisposition(MediaStream stream, MediaStreamInfo streamInfo)
+        {
             var disposition = streamInfo.Disposition;
             if (disposition is not null)
             {
@@ -1056,10 +1120,6 @@ namespace MediaBrowser.MediaEncoding.Probing
                     stream.IsOriginal = true;
                 }
             }
-
-            NormalizeStreamTitle(stream);
-
-            return stream;
         }
 
         private static void NormalizeStreamTitle(MediaStream stream)
