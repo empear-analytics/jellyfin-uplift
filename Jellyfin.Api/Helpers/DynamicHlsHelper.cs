@@ -183,6 +183,35 @@ public class DynamicHlsHelper
 
         var basicPlaylist = AppendPlaylist(builder, state, playlistUrl, totalBitrate, subtitleGroup);
 
+        AppendCompatibilityPlaylists(builder, state, playlistQuery, baseUrl, totalBitrate, subtitleGroup, basicPlaylist);
+
+        if (EnableAdaptiveBitrateStreaming(state, isLiveStream, enableAdaptiveBitrateStreaming, _httpContextAccessor.HttpContext.GetNormalizedRemoteIP()))
+        {
+            var requestedVideoBitrate = state.VideoRequest?.VideoBitRate ?? 0;
+
+            // By default, vary by just 200k
+            var variation = GetBitrateVariation(totalBitrate);
+
+            var newBitrate = totalBitrate - variation;
+            var variantQuery = playlistQuery;
+            variantQuery["VideoBitrate"] = (requestedVideoBitrate - variation).ToString(CultureInfo.InvariantCulture);
+            var variantUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(baseUrl, variantQuery);
+            AppendPlaylist(builder, state, variantUrl, newBitrate, subtitleGroup);
+
+            variation *= 2;
+            newBitrate = totalBitrate - variation;
+            variantQuery["VideoBitrate"] = (requestedVideoBitrate - variation).ToString(CultureInfo.InvariantCulture);
+            variantUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(baseUrl, variantQuery);
+            AppendPlaylist(builder, state, variantUrl, newBitrate, subtitleGroup);
+        }
+
+        await AddTrickplayIfEnabled(state, isLiveStream, builder, _httpContextAccessor.HttpContext.User).ConfigureAwait(false);
+
+        return new FileContentResult(Encoding.UTF8.GetBytes(builder.ToString()), MimeTypes.GetMimeType("playlist.m3u8"));
+    }
+
+    private void AppendCompatibilityPlaylists(StringBuilder builder, StreamState state, Dictionary<string, Microsoft.Extensions.Primitives.StringValues> playlistQuery, string baseUrl, int totalBitrate, string? subtitleGroup, StringBuilder basicPlaylist)
+    {
         if (state.VideoStream is not null && state.VideoRequest is not null)
         {
             var encodingOptions = _serverConfigurationManager.GetEncodingOptions();
@@ -234,30 +263,6 @@ public class DynamicHlsHelper
 
             AppendLevel150CompatibilityPlaylist(builder, state, basicPlaylist);
         }
-
-        if (EnableAdaptiveBitrateStreaming(state, isLiveStream, enableAdaptiveBitrateStreaming, _httpContextAccessor.HttpContext.GetNormalizedRemoteIP()))
-        {
-            var requestedVideoBitrate = state.VideoRequest?.VideoBitRate ?? 0;
-
-            // By default, vary by just 200k
-            var variation = GetBitrateVariation(totalBitrate);
-
-            var newBitrate = totalBitrate - variation;
-            var variantQuery = playlistQuery;
-            variantQuery["VideoBitrate"] = (requestedVideoBitrate - variation).ToString(CultureInfo.InvariantCulture);
-            var variantUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(baseUrl, variantQuery);
-            AppendPlaylist(builder, state, variantUrl, newBitrate, subtitleGroup);
-
-            variation *= 2;
-            newBitrate = totalBitrate - variation;
-            variantQuery["VideoBitrate"] = (requestedVideoBitrate - variation).ToString(CultureInfo.InvariantCulture);
-            variantUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(baseUrl, variantQuery);
-            AppendPlaylist(builder, state, variantUrl, newBitrate, subtitleGroup);
-        }
-
-        await AddTrickplayIfEnabled(state, isLiveStream, builder, _httpContextAccessor.HttpContext.User).ConfigureAwait(false);
-
-        return new FileContentResult(Encoding.UTF8.GetBytes(builder.ToString()), MimeTypes.GetMimeType("playlist.m3u8"));
     }
 
     private static bool IsSdrEncodingAllowed(EncodingOptions encodingOptions, string sdrVideoCodec, StreamState state)
