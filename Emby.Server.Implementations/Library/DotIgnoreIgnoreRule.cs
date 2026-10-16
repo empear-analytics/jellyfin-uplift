@@ -176,10 +176,7 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
             {
                 // Cache the result for all directories we checked
                 var entry = new IgnoreFileCacheEntry(parentCached.IgnoreFileDirectory);
-                foreach (var dir in checkedDirs)
-                {
-                    _directoryCache.AddOrUpdate(dir, entry);
-                }
+                CacheEntryForDirectories(checkedDirs, entry);
 
                 return parentCached.IgnoreFileDirectory is null
                     ? null
@@ -191,10 +188,7 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
             {
                 // Cache for all directories we checked
                 var entry = new IgnoreFileCacheEntry(currentPath);
-                foreach (var dir in checkedDirs)
-                {
-                    _directoryCache.AddOrUpdate(dir, entry);
-                }
+                CacheEntryForDirectories(checkedDirs, entry);
 
                 return ignoreFile;
             }
@@ -213,6 +207,14 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
         }
 
         return null;
+    }
+
+    private void CacheEntryForDirectories(List<string> directories, IgnoreFileCacheEntry entry)
+    {
+        foreach (var dir in directories)
+        {
+            _directoryCache.AddOrUpdate(dir, entry);
+        }
     }
 
     private ParsedIgnoreCacheEntry? GetParsedRules(FileInfo ignoreFile)
