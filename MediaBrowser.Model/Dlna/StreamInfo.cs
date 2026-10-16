@@ -1248,9 +1248,21 @@ public class StreamInfo
         long startPositionTicks = GetSubtitleStartPositionTicks();
 
         // First add the selected track
+        AddSelectedSubtitleProfiles(list, MediaSource, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
+
+        if (!includeSelectedTrackOnly)
+        {
+            AddUnselectedSubtitleProfiles(list, MediaSource, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
+        }
+
+        return list;
+    }
+
+    private void AddSelectedSubtitleProfiles(List<SubtitleStreamInfo> list, MediaSourceInfo mediaSource, ITranscoderSupport transcoderSupport, bool enableAllProfiles, string baseUrl, string? accessToken, long startPositionTicks)
+    {
         if (SubtitleStreamIndex.HasValue)
         {
-            foreach (var stream in MediaSource.MediaStreams)
+            foreach (var stream in mediaSource.MediaStreams)
             {
                 if (stream.Type == MediaStreamType.Subtitle && stream.Index == SubtitleStreamIndex.Value)
                 {
@@ -1258,19 +1270,17 @@ public class StreamInfo
                 }
             }
         }
+    }
 
-        if (!includeSelectedTrackOnly)
+    private void AddUnselectedSubtitleProfiles(List<SubtitleStreamInfo> list, MediaSourceInfo mediaSource, ITranscoderSupport transcoderSupport, bool enableAllProfiles, string baseUrl, string? accessToken, long startPositionTicks)
+    {
+        foreach (var stream in mediaSource.MediaStreams)
         {
-            foreach (var stream in MediaSource.MediaStreams)
+            if (IsUnselectedSubtitleStream(stream))
             {
-                if (IsUnselectedSubtitleStream(stream))
-                {
-                    AddSubtitleProfiles(list, stream, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
-                }
+                AddSubtitleProfiles(list, stream, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
             }
         }
-
-        return list;
     }
 
     private long GetSubtitleStartPositionTicks()
