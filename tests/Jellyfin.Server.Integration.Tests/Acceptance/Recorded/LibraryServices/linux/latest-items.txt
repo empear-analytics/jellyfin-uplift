@@ -31,9 +31,9 @@ parent=tvshows group=True played=False types=Episode|Audio -> -[Show S]
 parent=tvshows group=False played=- types= -> -[Episode 1]
 parent=tvshows group=False played=- types=Movie -> 
 parent=tvshows group=False played=- types=Episode|Audio -> -[Episode 1]
-parent=tvshows group=False played=False types= -> -[Episode 3]
+parent=tvshows group=False played=False types= -> -[Episode 1]
 parent=tvshows group=False played=False types=Movie -> 
-parent=tvshows group=False played=False types=Episode|Audio -> -[Episode 3]
+parent=tvshows group=False played=False types=Episode|Audio -> -[Episode 1]
 parent=music group=True played=- types= -> -[Album X]
 parent=music group=True played=- types=Movie -> 
 parent=music group=True played=- types=Episode|Audio -> -[Album X]
