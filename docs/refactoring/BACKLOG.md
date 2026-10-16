@@ -75,15 +75,15 @@ Update as tasks land.
 | R19 | 8.69 | - | not started |
 | R20 | 8.91 | - | not started |
 | R21 | 9.21 | - | not started |
-| R22 | 9.36 | - | not started |
+| R22 | 9.36 | 9.68 | stopped: Excess Number of Function Arguments on `Normalize` (no recipe; plugin API) |
 | R23 | 9.38 | - | not started |
-| R24 | 9.38 | - | not started |
-| R25 | 9.38 | - | not started |
-| R26 | 9.38 | - | not started |
+| R24 | 9.38 | 9.68 | stopped: Excess Number of Function Arguments on `GetTranscodedFile` (no recipe; callers outside the scope) |
+| R25 | 9.38 | 9.38 | stopped: the duplicates differ in two places, so Recipe D does not apply |
+| R26 | 9.38 | 10.00 | done (8090c985ad) |
 | R27 | 9.38 | 10.00 | done (pilot, e94a7a323a) |
 | R28 | 9.51 | - | not started |
 | R29 | 9.63 | - | not started |
 | R30 | 9.68 | 10.00 | done (probe, 9057ab1397) |
 | R31 | 9.68 | - | not started |
 | R32 | 9.68 | 10.00 | done (probe, e41b7c597c) |
-| R33 | 9.84 | - | not started |
+| R33 | 9.84 | 10.00 | done (7abe64773b) |
