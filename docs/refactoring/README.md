@@ -125,7 +125,7 @@ All 33 files, worst first: R01 `EncodingHelper.cs`, R02 `StreamBuilder.cs`, R03
 ## Rules for every agent
 
 1. Apply **only** the recipes in [`PLAYBOOK.md`](PLAYBOOK.md). Nothing else.
-2. **One recipe, one method, one commit.**
+2. **One recipe, one method, one commit.** (Recipe D across several methods: one commit.)
 3. Re-measure after every step, before committing it. Score did not improve, revert the step.
 4. Never change literals, arithmetic, comparisons, types, or the order of side effects.
 5. Found a bug? **Report it, do not fix it.**

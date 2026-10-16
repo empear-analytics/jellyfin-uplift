@@ -13,7 +13,10 @@ recipes are the protection; the tests are the backstop.
 
 ## The three rules
 
-1. **One recipe, one method, one commit.** Never combine two recipes in one commit.
+1. **One recipe, one method, one commit.** Never combine two recipes in one commit. One
+   commit may apply the same recipe several times within the same method, for example two
+   extractions from one method. The one exception to "one method" is Recipe D across
+   several methods (see Recipe D).
 2. **Re-measure after every step, before committing it.** If the Code Health score did not
    improve, revert.
 3. **When in doubt, stop and report.** An unfinished task is fine. A silently broken
@@ -246,6 +249,15 @@ private static bool IsParsableDate(string val, out DateTime dateTime)
 more places, leave them alone - forcing a shared abstraction over near-miss duplicates is
 how behaviour gets broken.
 
+**A duplicate spread over several methods** is deduplicated in one commit, for every copy
+at once: removing one copy at a time leaves the others flagged, so no single step can
+score UP. The copies must still be identical or differ by a single value.
+
+**An identical copy CodeScene does not report** may also call the helper (or predicate) that
+an earlier step extracted from the same file, instead of getting a second helper with the same
+body. The copy must be identical to the helper's body, character for character, apart from
+the names of the variables passed in.
+
 Removing a copy removes its literals, so check this recipe with
 `python tools/refactor_guard.py --dedup <file>`: a literal may occur fewer times, as long as
 it still occurs, and no value new to the file may appear.
@@ -327,3 +339,5 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | Date | Change | Evidence |
 | --- | --- | --- |
 | 2026-10-16 | Recipe P: an `out` variable the expression already declares becomes an `out` parameter of the predicate. | Calibration probe, R32 `FFProbeHelpers.GetDictionaryDateTime`: all three agents (Claude Haiku, Sonnet and Opus) needed it, applied it, and asked independently whether P allows it. Decided by the campaign owner. |
+| 2026-10-16 | Rule 1: one commit may apply the same recipe several times within the same method. | First backlog batches: agents already made several extractions per method and commit (R13, R19, R22); in R14 two mapping `switch` expressions only score UP if both are extracted together. Decided by the campaign owner. |
+| 2026-10-16 | Recipe D: a duplicate spread over several methods is deduplicated in one commit; an identical copy CodeScene does not report may reuse a helper extracted earlier from the same file. | R17 `EncodingJobInfo`: deduplicating one of three methods per commit is FLAT, all three at once UP (8.54 to 9.09). R18 `DotIgnoreIgnoreRule` and R14 `HlsCodecStringHelpers`: identical copies needed a second helper with the same body, because reuse counted as Recipe D without a duplication report. Decided by the campaign owner. |

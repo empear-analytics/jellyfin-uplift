@@ -126,7 +126,8 @@ In the second case, stop and report.
 
 ## Commits
 
-- One recipe, one method, one commit.
+- One recipe, one method, one commit. One commit may apply the same recipe several times
+  within one method; Recipe D across several methods is one commit (see the playbook).
 - Message format: `refactor(<File>): simplify <Method>`
 - Never squash several methods into one commit. The campaign relies on being able to
   revert a single step.
