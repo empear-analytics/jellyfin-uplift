@@ -1266,7 +1266,7 @@ public class StreamInfo
         {
             foreach (var stream in MediaSource.MediaStreams)
             {
-                if (stream.Type == MediaStreamType.Subtitle && (!SubtitleStreamIndex.HasValue || stream.Index != SubtitleStreamIndex.Value))
+                if (IsUnselectedSubtitleStream(stream))
                 {
                     AddSubtitleProfiles(list, stream, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
                 }
@@ -1274,6 +1274,11 @@ public class StreamInfo
         }
 
         return list;
+    }
+
+    private bool IsUnselectedSubtitleStream(MediaStream stream)
+    {
+        return stream.Type == MediaStreamType.Subtitle && (!SubtitleStreamIndex.HasValue || stream.Index != SubtitleStreamIndex.Value);
     }
 
     private void AddSubtitleProfiles(List<SubtitleStreamInfo> list, MediaStream stream, ITranscoderSupport transcoderSupport, bool enableAllProfiles, string baseUrl, string? accessToken, long startPositionTicks)
