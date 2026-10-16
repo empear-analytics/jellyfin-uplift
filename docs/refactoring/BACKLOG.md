@@ -63,9 +63,9 @@ Update as tasks land.
 | R07 | 4.59 | - | not started |
 | R08 | 4.90 | - | not started |
 | R09 | 5.41 | - | not started |
-| R10 | 5.89 | - | not started |
-| R11 | 6.53 | - | not started |
-| R12 | 6.69 | - | not started |
+| R10 | 5.89 | 9.09 | stopped at 9.09: Excess Number of Function Arguments (public methods and the new helpers), Primitive Obsession, String Heavy Function Arguments |
+| R11 | 6.53 | 7.35 | stopped at 7.35: flat 19-case switch (cc 21); public plugin-API signatures with up to 20 arguments; duplicates differing in type (Recipe D does not apply) |
+| R12 | 6.69 | 8.69 | stopped at 8.69: remaining bumps write two outer variables (Recipe E rule 4); public 5-argument SaveUserData |
 | R13 | 7.23 | 9.38 | stopped at 9.38: Excess Number of Function Arguments (GetUserView, 6); Complex Conditional with a pattern variable that Recipe P cannot move |
 | R14 | 7.32 | 8.45 | stopped at 8.45: GetVp9String (cc 26) is two mapping switches; extracted alone or together they stay Complex Methods (rerun: FLAT); public 5-argument signature |
 | R15 | 7.83 | 8.44 | stopped at 8.44: Recipe P helpers score DOWN (string/primitive parameters trigger Primitive Obsession, String Heavy Function Arguments, Overall Code Complexity) |

@@ -877,6 +877,58 @@ public class StreamInfo
     public string ToUrl(string? baseUrl, string? accessToken, string? query)
     {
         var sb = new StringBuilder();
+        AppendItemPath(sb, baseUrl);
+
+        var queryStart = sb.Length;
+
+        AppendSourceParameters(sb);
+
+        AppendCodecParameters(sb);
+
+        AppendLimitParameters(sb);
+
+        AppendSegmentParameters(sb);
+
+        AppendSessionParameters(sb, accessToken);
+
+        AppendTranscodingParameters(sb);
+
+        AppendTagParameter(sb);
+
+        AppendSubtitleDeliveryParameters(sb);
+
+        foreach (var pair in StreamOptions)
+        {
+            // Strip spaces to avoid having to encode h264 profile names
+            sb.Append('&');
+            sb.Append(pair.Key);
+            sb.Append('=');
+            sb.Append(pair.Value.Replace(" ", string.Empty, StringComparison.Ordinal));
+        }
+
+        var transcodeReasonsValues = TranscodeReasons.GetUniqueFlags().ToArray();
+        if (!IsDirectStream && transcodeReasonsValues.Length > 0)
+        {
+            sb.Append("&TranscodeReasons=");
+            sb.AppendJoin(',', transcodeReasonsValues);
+        }
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            sb.Append(query);
+        }
+
+        // Replace the first '&' with '?' to form a valid query string.
+        if (sb.Length > queryStart)
+        {
+            sb[queryStart] = '?';
+        }
+
+        return sb.ToString();
+    }
+
+    private void AppendItemPath(StringBuilder sb, string? baseUrl)
+    {
         if (!string.IsNullOrEmpty(baseUrl))
         {
             sb.Append(baseUrl.TrimEnd('/'));
@@ -893,23 +945,11 @@ public class StreamInfo
 
         sb.Append(ItemId);
 
-        if (SubProtocol == MediaStreamProtocol.hls)
-        {
-            sb.Append("/master.m3u8");
-        }
-        else
-        {
-            sb.Append("/stream");
+        AppendStreamPath(sb);
+    }
 
-            if (!string.IsNullOrEmpty(Container))
-            {
-                sb.Append('.');
-                sb.Append(Container);
-            }
-        }
-
-        var queryStart = sb.Length;
-
+    private void AppendSourceParameters(StringBuilder sb)
+    {
         if (!string.IsNullOrEmpty(DeviceProfileId))
         {
             sb.Append("&DeviceProfileId=");
@@ -933,7 +973,10 @@ public class StreamInfo
         {
             sb.Append("&Static=true");
         }
+    }
 
+    private void AppendCodecParameters(StringBuilder sb)
+    {
         if (VideoCodecs.Count != 0)
         {
             sb.Append("&VideoCodec=");
@@ -952,12 +995,15 @@ public class StreamInfo
             sb.Append(AudioStreamIndex.Value.ToString(CultureInfo.InvariantCulture));
         }
 
-        if (SubtitleStreamIndex.HasValue && (AlwaysBurnInSubtitleWhenTranscoding || SubtitleDeliveryMethod != SubtitleDeliveryMethod.External) && SubtitleStreamIndex != -1)
+        if (SubtitleStreamIndex.HasValue && IsSubtitleStreamIndexRequested())
         {
             sb.Append("&SubtitleStreamIndex=");
             sb.Append(SubtitleStreamIndex.Value.ToString(CultureInfo.InvariantCulture));
         }
+    }
 
+    private void AppendLimitParameters(StringBuilder sb)
+    {
         if (VideoBitrate.HasValue)
         {
             sb.Append("&VideoBitrate=");
@@ -993,36 +1039,10 @@ public class StreamInfo
             sb.Append("&MaxHeight=");
             sb.Append(MaxHeight.Value.ToString(CultureInfo.InvariantCulture));
         }
+    }
 
-        if (SubProtocol == MediaStreamProtocol.hls)
-        {
-            if (!string.IsNullOrEmpty(Container))
-            {
-                sb.Append("&SegmentContainer=");
-                sb.Append(Container);
-            }
-
-            if (SegmentLength.HasValue)
-            {
-                sb.Append("&SegmentLength=");
-                sb.Append(SegmentLength.Value.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (MinSegments.HasValue)
-            {
-                sb.Append("&MinSegments=");
-                sb.Append(MinSegments.Value.ToString(CultureInfo.InvariantCulture));
-            }
-        }
-        else
-        {
-            if (StartPositionTicks != 0)
-            {
-                sb.Append("&StartTimeTicks=");
-                sb.Append(StartPositionTicks.ToString(CultureInfo.InvariantCulture));
-            }
-        }
-
+    private void AppendSessionParameters(StringBuilder sb, string? accessToken)
+    {
         if (!string.IsNullOrEmpty(PlaySessionId))
         {
             sb.Append("&PlaySessionId=");
@@ -1041,105 +1061,157 @@ public class StreamInfo
             sb.Append("&LiveStreamId=");
             sb.Append(liveStreamId);
         }
+    }
 
-        if (!IsDirectStream)
-        {
-            if (RequireNonAnamorphic)
-            {
-                sb.Append("&RequireNonAnamorphic=");
-                sb.Append(RequireNonAnamorphic.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (TranscodingMaxAudioChannels.HasValue)
-            {
-                sb.Append("&TranscodingMaxAudioChannels=");
-                sb.Append(TranscodingMaxAudioChannels.Value.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (EnableSubtitlesInManifest)
-            {
-                sb.Append("&EnableSubtitlesInManifest=");
-                sb.Append(EnableSubtitlesInManifest.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (EnableMpegtsM2TsMode)
-            {
-                sb.Append("&EnableMpegtsM2TsMode=");
-                sb.Append(EnableMpegtsM2TsMode.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (EstimateContentLength)
-            {
-                sb.Append("&EstimateContentLength=");
-                sb.Append(EstimateContentLength.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (TranscodeSeekInfo != TranscodeSeekInfo.Auto)
-            {
-                sb.Append("&TranscodeSeekInfo=");
-                sb.Append(TranscodeSeekInfo.ToString());
-            }
-
-            if (CopyTimestamps)
-            {
-                sb.Append("&CopyTimestamps=");
-                sb.Append(CopyTimestamps.ToString(CultureInfo.InvariantCulture));
-            }
-
-            sb.Append("&RequireAvc=");
-            sb.Append(RequireAvc.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
-
-            sb.Append("&EnableAudioVbrEncoding=");
-            sb.Append(EnableAudioVbrEncoding.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
-        }
-
+    private void AppendTagParameter(StringBuilder sb)
+    {
         var etag = MediaSource?.ETag;
         if (!string.IsNullOrEmpty(etag))
         {
             sb.Append("&Tag=");
             sb.Append(etag);
         }
+    }
 
+    private void AppendSubtitleDeliveryParameters(StringBuilder sb)
+    {
         if (SubtitleStreamIndex.HasValue && SubtitleDeliveryMethod != SubtitleDeliveryMethod.External)
         {
             sb.Append("&SubtitleMethod=");
             sb.Append(SubtitleDeliveryMethod);
         }
 
-        if (SubtitleStreamIndex.HasValue && SubtitleDeliveryMethod == SubtitleDeliveryMethod.Embed && SubtitleCodecs.Count != 0)
+        if (ShouldAppendSubtitleCodecs())
         {
             sb.Append("&SubtitleCodec=");
             sb.AppendJoin(',', SubtitleCodecs);
         }
+    }
 
-        foreach (var pair in StreamOptions)
+    private bool IsSubtitleStreamIndexRequested()
+    {
+        return (AlwaysBurnInSubtitleWhenTranscoding || SubtitleDeliveryMethod != SubtitleDeliveryMethod.External) && SubtitleStreamIndex != -1;
+    }
+
+    private bool ShouldAppendSubtitleCodecs()
+    {
+        return SubtitleStreamIndex.HasValue && SubtitleDeliveryMethod == SubtitleDeliveryMethod.Embed && SubtitleCodecs.Count != 0;
+    }
+
+    private void AppendStreamPath(StringBuilder sb)
+    {
+        if (SubProtocol == MediaStreamProtocol.hls)
         {
-            // Strip spaces to avoid having to encode h264 profile names
-            sb.Append('&');
-            sb.Append(pair.Key);
-            sb.Append('=');
-            sb.Append(pair.Value.Replace(" ", string.Empty, StringComparison.Ordinal));
+            sb.Append("/master.m3u8");
+        }
+        else
+        {
+            sb.Append("/stream");
+
+            if (!string.IsNullOrEmpty(Container))
+            {
+                sb.Append('.');
+                sb.Append(Container);
+            }
+        }
+    }
+
+    private void AppendSegmentParameters(StringBuilder sb)
+    {
+        if (SubProtocol == MediaStreamProtocol.hls)
+        {
+            AppendHlsSegmentParameters(sb);
+        }
+        else
+        {
+            if (StartPositionTicks != 0)
+            {
+                sb.Append("&StartTimeTicks=");
+                sb.Append(StartPositionTicks.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+    }
+
+    private void AppendHlsSegmentParameters(StringBuilder sb)
+    {
+        if (!string.IsNullOrEmpty(Container))
+        {
+            sb.Append("&SegmentContainer=");
+            sb.Append(Container);
         }
 
-        var transcodeReasonsValues = TranscodeReasons.GetUniqueFlags().ToArray();
-        if (!IsDirectStream && transcodeReasonsValues.Length > 0)
+        if (SegmentLength.HasValue)
         {
-            sb.Append("&TranscodeReasons=");
-            sb.AppendJoin(',', transcodeReasonsValues);
+            sb.Append("&SegmentLength=");
+            sb.Append(SegmentLength.Value.ToString(CultureInfo.InvariantCulture));
         }
 
-        if (!string.IsNullOrEmpty(query))
+        if (MinSegments.HasValue)
         {
-            sb.Append(query);
+            sb.Append("&MinSegments=");
+            sb.Append(MinSegments.Value.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
+    private void AppendTranscodingParameters(StringBuilder sb)
+    {
+        if (IsDirectStream)
+        {
+            return;
         }
 
-        // Replace the first '&' with '?' to form a valid query string.
-        if (sb.Length > queryStart)
+        AppendTranscodingOptions(sb);
+
+        if (EstimateContentLength)
         {
-            sb[queryStart] = '?';
+            sb.Append("&EstimateContentLength=");
+            sb.Append(EstimateContentLength.ToString(CultureInfo.InvariantCulture));
         }
 
-        return sb.ToString();
+        if (TranscodeSeekInfo != TranscodeSeekInfo.Auto)
+        {
+            sb.Append("&TranscodeSeekInfo=");
+            sb.Append(TranscodeSeekInfo.ToString());
+        }
+
+        if (CopyTimestamps)
+        {
+            sb.Append("&CopyTimestamps=");
+            sb.Append(CopyTimestamps.ToString(CultureInfo.InvariantCulture));
+        }
+
+        sb.Append("&RequireAvc=");
+        sb.Append(RequireAvc.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
+
+        sb.Append("&EnableAudioVbrEncoding=");
+        sb.Append(EnableAudioVbrEncoding.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
+    }
+
+    private void AppendTranscodingOptions(StringBuilder sb)
+    {
+        if (RequireNonAnamorphic)
+        {
+            sb.Append("&RequireNonAnamorphic=");
+            sb.Append(RequireNonAnamorphic.ToString(CultureInfo.InvariantCulture));
+        }
+
+        if (TranscodingMaxAudioChannels.HasValue)
+        {
+            sb.Append("&TranscodingMaxAudioChannels=");
+            sb.Append(TranscodingMaxAudioChannels.Value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        if (EnableSubtitlesInManifest)
+        {
+            sb.Append("&EnableSubtitlesInManifest=");
+            sb.Append(EnableSubtitlesInManifest.ToString(CultureInfo.InvariantCulture));
+        }
+
+        if (EnableMpegtsM2TsMode)
+        {
+            sb.Append("&EnableMpegtsM2TsMode=");
+            sb.Append(EnableMpegtsM2TsMode.ToString(CultureInfo.InvariantCulture));
+        }
     }
 
     /// <summary>
@@ -1173,15 +1245,24 @@ public class StreamInfo
 
         List<SubtitleStreamInfo> list = [];
 
-        // HLS will preserve timestamps so we can just grab the full subtitle stream
-        long startPositionTicks = SubProtocol == MediaStreamProtocol.hls
-            ? 0
-            : (PlayMethod == PlayMethod.Transcode && !CopyTimestamps ? StartPositionTicks : 0);
+        long startPositionTicks = GetSubtitleStartPositionTicks();
 
         // First add the selected track
+        AddSelectedSubtitleProfiles(list, MediaSource, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
+
+        if (!includeSelectedTrackOnly)
+        {
+            AddUnselectedSubtitleProfiles(list, MediaSource, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
+        }
+
+        return list;
+    }
+
+    private void AddSelectedSubtitleProfiles(List<SubtitleStreamInfo> list, MediaSourceInfo mediaSource, ITranscoderSupport transcoderSupport, bool enableAllProfiles, string baseUrl, string? accessToken, long startPositionTicks)
+    {
         if (SubtitleStreamIndex.HasValue)
         {
-            foreach (var stream in MediaSource.MediaStreams)
+            foreach (var stream in mediaSource.MediaStreams)
             {
                 if (stream.Type == MediaStreamType.Subtitle && stream.Index == SubtitleStreamIndex.Value)
                 {
@@ -1189,37 +1270,53 @@ public class StreamInfo
                 }
             }
         }
+    }
 
-        if (!includeSelectedTrackOnly)
+    private void AddUnselectedSubtitleProfiles(List<SubtitleStreamInfo> list, MediaSourceInfo mediaSource, ITranscoderSupport transcoderSupport, bool enableAllProfiles, string baseUrl, string? accessToken, long startPositionTicks)
+    {
+        foreach (var stream in mediaSource.MediaStreams)
         {
-            foreach (var stream in MediaSource.MediaStreams)
+            if (IsUnselectedSubtitleStream(stream))
             {
-                if (stream.Type == MediaStreamType.Subtitle && (!SubtitleStreamIndex.HasValue || stream.Index != SubtitleStreamIndex.Value))
-                {
-                    AddSubtitleProfiles(list, stream, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
-                }
+                AddSubtitleProfiles(list, stream, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
             }
         }
+    }
 
-        return list;
+    private long GetSubtitleStartPositionTicks()
+    {
+        // HLS will preserve timestamps so we can just grab the full subtitle stream
+        return SubProtocol == MediaStreamProtocol.hls
+            ? 0
+            : (PlayMethod == PlayMethod.Transcode && !CopyTimestamps ? StartPositionTicks : 0);
+    }
+
+    private bool IsUnselectedSubtitleStream(MediaStream stream)
+    {
+        return stream.Type == MediaStreamType.Subtitle && (!SubtitleStreamIndex.HasValue || stream.Index != SubtitleStreamIndex.Value);
     }
 
     private void AddSubtitleProfiles(List<SubtitleStreamInfo> list, MediaStream stream, ITranscoderSupport transcoderSupport, bool enableAllProfiles, string baseUrl, string? accessToken, long startPositionTicks)
     {
         if (enableAllProfiles)
         {
-            foreach (var profile in DeviceProfile.SubtitleProfiles)
-            {
-                var info = GetSubtitleStreamInfo(stream, baseUrl, accessToken, startPositionTicks, new[] { profile }, transcoderSupport);
-                if (info is not null)
-                {
-                    list.Add(info);
-                }
-            }
+            AddSubtitleStreamInfoPerProfile(list, stream, transcoderSupport, baseUrl, accessToken, startPositionTicks);
         }
         else
         {
             var info = GetSubtitleStreamInfo(stream, baseUrl, accessToken, startPositionTicks, DeviceProfile.SubtitleProfiles, transcoderSupport);
+            if (info is not null)
+            {
+                list.Add(info);
+            }
+        }
+    }
+
+    private void AddSubtitleStreamInfoPerProfile(List<SubtitleStreamInfo> list, MediaStream stream, ITranscoderSupport transcoderSupport, string baseUrl, string? accessToken, long startPositionTicks)
+    {
+        foreach (var profile in DeviceProfile.SubtitleProfiles)
+        {
+            var info = GetSubtitleStreamInfo(stream, baseUrl, accessToken, startPositionTicks, new[] { profile }, transcoderSupport);
             if (info is not null)
             {
                 list.Add(info);
@@ -1261,12 +1358,7 @@ public class StreamInfo
             info.IsExternalUrl = false;
 
             // Check conditions for potentially using the direct path
-            if (stream.IsExternal // Must be external
-                && stream.SupportsExternalStream
-                && string.Equals(stream.Codec, subtitleProfile.Format, StringComparison.OrdinalIgnoreCase) // Format must match (no conversion needed)
-                && !string.IsNullOrEmpty(stream.Path) // Path must exist
-                && Uri.TryCreate(stream.Path, UriKind.Absolute, out Uri? uriResult) // Path must be an absolute URI
-                && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps)) // Scheme must be HTTP or HTTPS
+            if (CanUseDirectSubtitlePath(stream, subtitleProfile))
             {
                 // All conditions met, override with the direct path
                 info.Url = stream.Path;
@@ -1282,6 +1374,16 @@ public class StreamInfo
         }
 
         return info;
+    }
+
+    private static bool CanUseDirectSubtitlePath(MediaStream stream, SubtitleProfile subtitleProfile)
+    {
+        return stream.IsExternal // Must be external
+            && stream.SupportsExternalStream
+            && string.Equals(stream.Codec, subtitleProfile.Format, StringComparison.OrdinalIgnoreCase) // Format must match (no conversion needed)
+            && !string.IsNullOrEmpty(stream.Path) // Path must exist
+            && Uri.TryCreate(stream.Path, UriKind.Absolute, out Uri? uriResult) // Path must be an absolute URI
+            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps); // Scheme must be HTTP or HTTPS
     }
 
     /// <summary>

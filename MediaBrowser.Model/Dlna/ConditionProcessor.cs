@@ -198,36 +198,46 @@ namespace MediaBrowser.Model.Dlna
             var conditionType = condition.Condition;
             if (condition.Condition == ProfileConditionType.EqualsAny)
             {
-                foreach (var singleConditionString in condition.Value.AsSpan().Split('|'))
-                {
-                    if (int.TryParse(singleConditionString, NumberStyles.Integer, CultureInfo.InvariantCulture, out int conditionValue)
-                        && conditionValue.Equals(currentValue))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                return EqualsAnyInt(condition, currentValue);
             }
 
             if (int.TryParse(condition.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var expected))
             {
-                switch (conditionType)
+                return CompareInt(condition, conditionType, currentValue.Value, expected);
+            }
+
+            return false;
+        }
+
+        private static bool EqualsAnyInt(ProfileCondition condition, int? currentValue)
+        {
+            foreach (var singleConditionString in condition.Value.AsSpan().Split('|'))
+            {
+                if (int.TryParse(singleConditionString, NumberStyles.Integer, CultureInfo.InvariantCulture, out int conditionValue)
+                    && conditionValue.Equals(currentValue))
                 {
-                    case ProfileConditionType.Equals:
-                        return currentValue.Value.Equals(expected);
-                    case ProfileConditionType.GreaterThanEqual:
-                        return currentValue.Value >= expected;
-                    case ProfileConditionType.LessThanEqual:
-                        return currentValue.Value <= expected;
-                    case ProfileConditionType.NotEquals:
-                        return !currentValue.Value.Equals(expected);
-                    default:
-                        throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition);
+                    return true;
                 }
             }
 
             return false;
+        }
+
+        private static bool CompareInt(ProfileCondition condition, ProfileConditionType conditionType, int currentValue, int expected)
+        {
+            switch (conditionType)
+            {
+                case ProfileConditionType.Equals:
+                    return currentValue.Equals(expected);
+                case ProfileConditionType.GreaterThanEqual:
+                    return currentValue >= expected;
+                case ProfileConditionType.LessThanEqual:
+                    return currentValue <= expected;
+                case ProfileConditionType.NotEquals:
+                    return !currentValue.Equals(expected);
+                default:
+                    throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition);
+            }
         }
 
         private static bool IsConditionSatisfied(ProfileCondition condition, string? currentValue)
@@ -302,22 +312,27 @@ namespace MediaBrowser.Model.Dlna
 
             if (double.TryParse(condition.Value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var expected))
             {
-                switch (conditionType)
-                {
-                    case ProfileConditionType.Equals:
-                        return currentValue.Value.Equals(expected);
-                    case ProfileConditionType.GreaterThanEqual:
-                        return currentValue.Value >= expected;
-                    case ProfileConditionType.LessThanEqual:
-                        return currentValue.Value <= expected;
-                    case ProfileConditionType.NotEquals:
-                        return !currentValue.Value.Equals(expected);
-                    default:
-                        throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition);
-                }
+                return CompareDouble(condition, conditionType, currentValue.Value, expected);
             }
 
             return false;
+        }
+
+        private static bool CompareDouble(ProfileCondition condition, ProfileConditionType conditionType, double currentValue, double expected)
+        {
+            switch (conditionType)
+            {
+                case ProfileConditionType.Equals:
+                    return currentValue.Equals(expected);
+                case ProfileConditionType.GreaterThanEqual:
+                    return currentValue >= expected;
+                case ProfileConditionType.LessThanEqual:
+                    return currentValue <= expected;
+                case ProfileConditionType.NotEquals:
+                    return !currentValue.Equals(expected);
+                default:
+                    throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition);
+            }
         }
 
         private static bool IsConditionSatisfied(ProfileCondition condition, TransportStreamTimestamp? timestamp)
@@ -361,29 +376,39 @@ namespace MediaBrowser.Model.Dlna
             var conditionType = condition.Condition;
             if (conditionType == ProfileConditionType.EqualsAny)
             {
-                foreach (var singleConditionString in condition.Value.AsSpan().Split('|'))
-                {
-                    if (Enum.TryParse(singleConditionString, true, out VideoRangeType conditionValue)
-                        && conditionValue.Equals(currentValue))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                return EqualsAnyVideoRangeType(condition, currentValue);
             }
 
             if (Enum.TryParse(condition.Value, true, out VideoRangeType expected))
             {
-                return conditionType switch
-                {
-                    ProfileConditionType.Equals => currentValue.Value == expected,
-                    ProfileConditionType.NotEquals => currentValue.Value != expected,
-                    _ => throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition)
-                };
+                return CompareVideoRangeType(condition, conditionType, currentValue.Value, expected);
             }
 
             return false;
+        }
+
+        private static bool EqualsAnyVideoRangeType(ProfileCondition condition, VideoRangeType? currentValue)
+        {
+            foreach (var singleConditionString in condition.Value.AsSpan().Split('|'))
+            {
+                if (Enum.TryParse(singleConditionString, true, out VideoRangeType conditionValue)
+                    && conditionValue.Equals(currentValue))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool CompareVideoRangeType(ProfileCondition condition, ProfileConditionType conditionType, VideoRangeType currentValue, VideoRangeType expected)
+        {
+            return conditionType switch
+            {
+                ProfileConditionType.Equals => currentValue == expected,
+                ProfileConditionType.NotEquals => currentValue != expected,
+                _ => throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition)
+            };
         }
     }
 }

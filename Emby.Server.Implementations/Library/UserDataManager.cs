@@ -64,7 +64,7 @@ namespace Emby.Server.Implementations.Library
             {
                 userData.Key = key;
                 var userDataEntry = Map(userData, user.Id, item.Id);
-                if (dbContext.UserData.Any(f => f.ItemId == userDataEntry.ItemId && f.UserId == userDataEntry.UserId && f.CustomDataKey == userDataEntry.CustomDataKey))
+                if (UserDataExists(dbContext, userDataEntry))
                 {
                     dbContext.UserData.Attach(userDataEntry).State = EntityState.Modified;
                 }
@@ -108,6 +108,11 @@ namespace Emby.Server.Implementations.Library
             });
         }
 
+        private static bool UserDataExists(JellyfinDbContext dbContext, UserData userDataEntry)
+        {
+            return dbContext.UserData.Any(f => f.ItemId == userDataEntry.ItemId && f.UserId == userDataEntry.UserId && f.CustomDataKey == userDataEntry.CustomDataKey);
+        }
+
         /// <inheritdoc />
         public void SaveUserData(User user, BaseItem item, UpdateUserItemDataDto userDataDto, UserDataSaveReason reason)
         {
@@ -117,6 +122,13 @@ namespace Emby.Server.Implementations.Library
 
             var userData = GetUserData(user, item) ?? throw new InvalidOperationException("UserData should not be null.");
 
+            ApplyUserDataUpdates(userData, userDataDto);
+
+            SaveUserData(user, item, userData, reason, CancellationToken.None);
+        }
+
+        private static void ApplyUserDataUpdates(UserItemData userData, UpdateUserItemDataDto userDataDto)
+        {
             if (userDataDto.PlaybackPositionTicks.HasValue)
             {
                 userData.PlaybackPositionTicks = userDataDto.PlaybackPositionTicks.Value;
@@ -151,8 +163,6 @@ namespace Emby.Server.Implementations.Library
             {
                 userData.Rating = userDataDto.Rating.Value;
             }
-
-            SaveUserData(user, item, userData, reason, CancellationToken.None);
         }
 
         private UserData Map(UserItemData dto, Guid userId, Guid itemId)
@@ -197,31 +207,7 @@ namespace Emby.Server.Implementations.Library
         public Dictionary<Guid, UserItemData> GetUserDataBatch(IReadOnlyList<BaseItem> items, User user)
         {
             var result = new Dictionary<Guid, UserItemData>(items.Count);
-            var itemsNeedingQuery = new List<(BaseItem Item, List<string> Keys)>();
-
-            foreach (var item in items)
-            {
-                var cacheKey = GetCacheKey(user.InternalId, item.Id);
-                if (_cache.TryGet(cacheKey, out var cachedData))
-                {
-                    result[item.Id] = cachedData;
-                }
-                else
-                {
-                    var userDataRow = ResolveUserDataRow(item, item.UserData?.Where(e => e.UserId.Equals(user.Id)));
-                    var userData = userDataRow is not null ? Map(userDataRow) : null;
-                    if (userData is not null)
-                    {
-                        result[item.Id] = userData;
-                        _cache.AddOrUpdate(cacheKey, userData);
-                    }
-                    else
-                    {
-                        var keys = item.GetUserDataKeys();
-                        itemsNeedingQuery.Add((item, keys));
-                    }
-                }
-            }
+            var itemsNeedingQuery = AddKnownUserData(items, user, result);
 
             if (itemsNeedingQuery.Count == 0)
             {
@@ -241,15 +227,7 @@ namespace Emby.Server.Implementations.Library
             var userDataByItem = userDataArray.GroupBy(e => e.ItemId).ToDictionary(g => g.Key, g => g.ToArray());
             foreach (var (item, keys) in itemsNeedingQuery)
             {
-                UserItemData userData;
-                if (userDataByItem.TryGetValue(item.Id, out var itemUserData) && itemUserData.Length > 0)
-                {
-                    userData = Map(ResolveUserDataRow(item, itemUserData)!);
-                }
-                else
-                {
-                    userData = new UserItemData { Key = keys.Count > 0 ? keys[0] : string.Empty };
-                }
+                UserItemData userData = ResolveQueriedUserData(item, keys, userDataByItem);
 
                 result[item.Id] = userData;
                 var cacheKey = GetCacheKey(user.InternalId, item.Id);
@@ -257,6 +235,57 @@ namespace Emby.Server.Implementations.Library
             }
 
             return result;
+        }
+
+        private List<(BaseItem Item, List<string> Keys)> AddKnownUserData(IReadOnlyList<BaseItem> items, User user, Dictionary<Guid, UserItemData> result)
+        {
+            var itemsNeedingQuery = new List<(BaseItem Item, List<string> Keys)>();
+
+            foreach (var item in items)
+            {
+                AddKnownItemUserData(item, user, result, itemsNeedingQuery);
+            }
+
+            return itemsNeedingQuery;
+        }
+
+        private void AddKnownItemUserData(BaseItem item, User user, Dictionary<Guid, UserItemData> result, List<(BaseItem Item, List<string> Keys)> itemsNeedingQuery)
+        {
+            var cacheKey = GetCacheKey(user.InternalId, item.Id);
+            if (_cache.TryGet(cacheKey, out var cachedData))
+            {
+                result[item.Id] = cachedData;
+            }
+            else
+            {
+                var userDataRow = ResolveUserDataRow(item, item.UserData?.Where(e => e.UserId.Equals(user.Id)));
+                var userData = userDataRow is not null ? Map(userDataRow) : null;
+                if (userData is not null)
+                {
+                    result[item.Id] = userData;
+                    _cache.AddOrUpdate(cacheKey, userData);
+                }
+                else
+                {
+                    var keys = item.GetUserDataKeys();
+                    itemsNeedingQuery.Add((item, keys));
+                }
+            }
+        }
+
+        private static UserItemData ResolveQueriedUserData(BaseItem item, List<string> keys, Dictionary<Guid, UserData[]> userDataByItem)
+        {
+            UserItemData userData;
+            if (userDataByItem.TryGetValue(item.Id, out var itemUserData) && itemUserData.Length > 0)
+            {
+                userData = Map(ResolveUserDataRow(item, itemUserData)!);
+            }
+            else
+            {
+                userData = new UserItemData { Key = keys.Count > 0 ? keys[0] : string.Empty };
+            }
+
+            return userData;
         }
 
         /// <inheritdoc />
@@ -298,17 +327,7 @@ namespace Emby.Server.Implementations.Library
                 return result;
             }
 
-            HashSet<Guid>? withLocalAlternates = null;
-            if (localProbeIds is not null)
-            {
-                using var dbContext = _repository.CreateDbContext();
-                withLocalAlternates = dbContext.LinkedChildren
-                    .Where(lc => lc.ChildType == Jellyfin.Database.Implementations.Entities.LinkedChildType.LocalAlternateVersion)
-                    .WhereOneOrMany(localProbeIds, lc => lc.ParentId)
-                    .Select(lc => lc.ParentId)
-                    .Distinct()
-                    .ToHashSet();
-            }
+            HashSet<Guid>? withLocalAlternates = FindIdsWithLocalAlternates(localProbeIds);
 
             List<(Guid PrimaryId, IReadOnlyList<Video> Versions)>? versionGroups = null;
             List<BaseItem>? allVersions = null;
@@ -316,8 +335,7 @@ namespace Emby.Server.Implementations.Library
             foreach (var video in candidates)
             {
                 // Only items that actually have alternate versions aggregate over them.
-                if (video.LinkedAlternateVersions.Length == 0
-                    && (withLocalAlternates is null || !withLocalAlternates.Contains(video.Id)))
+                if (HasNoAlternateVersions(video, withLocalAlternates))
                 {
                     continue;
                 }
@@ -339,6 +357,38 @@ namespace Emby.Server.Implementations.Library
 
             var userDataByVersion = GetUserDataBatch(allVersions!.DistinctBy(i => i.Id).ToList(), user);
 
+            AddMostRecentlyPlayedVersions(result, versionGroups, userDataByVersion);
+
+            return result;
+        }
+
+        private static bool HasNoAlternateVersions(Video video, HashSet<Guid>? withLocalAlternates)
+        {
+            return video.LinkedAlternateVersions.Length == 0
+                && (withLocalAlternates is null || !withLocalAlternates.Contains(video.Id));
+        }
+
+        private HashSet<Guid>? FindIdsWithLocalAlternates(List<Guid>? localProbeIds)
+        {
+            if (localProbeIds is null)
+            {
+                return null;
+            }
+
+            using var dbContext = _repository.CreateDbContext();
+            return dbContext.LinkedChildren
+                .Where(lc => lc.ChildType == Jellyfin.Database.Implementations.Entities.LinkedChildType.LocalAlternateVersion)
+                .WhereOneOrMany(localProbeIds, lc => lc.ParentId)
+                .Select(lc => lc.ParentId)
+                .Distinct()
+                .ToHashSet();
+        }
+
+        private static void AddMostRecentlyPlayedVersions(
+            Dictionary<Guid, VersionResumeData> result,
+            List<(Guid PrimaryId, IReadOnlyList<Video> Versions)> versionGroups,
+            Dictionary<Guid, UserItemData> userDataByVersion)
+        {
             foreach (var (primaryId, versions) in versionGroups)
             {
                 // Consider both in-progress and completed versions so a finished alternate still marks the primary as played.
@@ -352,8 +402,6 @@ namespace Emby.Server.Implementations.Library
                     result[primaryId] = new VersionResumeData(resumeVersion.Id, userDataByVersion[resumeVersion.Id]);
                 }
             }
-
-            return result;
         }
 
         /// <summary>
@@ -462,7 +510,7 @@ namespace Emby.Server.Implementations.Library
             var hasRuntime = runtimeTicks > 0;
 
             // If a position has been reported, and if we know the duration
-            if (positionTicks > 0 && hasRuntime && item is not AudioBook && item is not Book)
+            if (HasProgressOnNonBookItem(item, positionTicks, hasRuntime))
             {
                 var pctIn = decimal.Divide(positionTicks, runtimeTicks) * 100;
 
@@ -471,7 +519,7 @@ namespace Emby.Server.Implementations.Library
                     // ignore progress during the beginning
                     positionTicks = 0;
                 }
-                else if (pctIn > _config.Configuration.MaxResumePct || positionTicks >= (runtimeTicks - TimeSpan.TicksPerSecond))
+                else if (IsNearEndOfItem(pctIn, positionTicks, runtimeTicks))
                 {
                     // mark as completed close to the end
                     positionTicks = 0;
@@ -488,7 +536,7 @@ namespace Emby.Server.Implementations.Library
                     }
                 }
             }
-            else if (positionTicks > 0 && hasRuntime && item is AudioBook)
+            else if (HasProgressOnAudioBook(item, positionTicks, hasRuntime))
             {
                 var playbackPositionInMinutes = TimeSpan.FromTicks(positionTicks).TotalMinutes;
                 var remainingTimeInMinutes = TimeSpan.FromTicks(runtimeTicks - positionTicks).TotalMinutes;
@@ -498,7 +546,7 @@ namespace Emby.Server.Implementations.Library
                     // ignore progress during the beginning
                     positionTicks = 0;
                 }
-                else if (remainingTimeInMinutes < _config.Configuration.MaxAudiobookResume || positionTicks >= runtimeTicks)
+                else if (IsNearEndOfAudioBook(remainingTimeInMinutes, positionTicks, runtimeTicks))
                 {
                     // mark as completed close to the end
                     positionTicks = 0;
@@ -512,6 +560,15 @@ namespace Emby.Server.Implementations.Library
                 positionTicks = 0;
             }
 
+            positionTicks = ApplyItemPlayStateSupport(item, data, positionTicks);
+
+            data.PlaybackPositionTicks = positionTicks;
+
+            return playedToCompletion;
+        }
+
+        private static long ApplyItemPlayStateSupport(BaseItem item, UserItemData data, long positionTicks)
+        {
             if (!item.SupportsPlayedStatus)
             {
                 positionTicks = 0;
@@ -523,9 +580,27 @@ namespace Emby.Server.Implementations.Library
                 positionTicks = 0;
             }
 
-            data.PlaybackPositionTicks = positionTicks;
+            return positionTicks;
+        }
 
-            return playedToCompletion;
+        private bool IsNearEndOfItem(decimal pctIn, long positionTicks, long runtimeTicks)
+        {
+            return pctIn > _config.Configuration.MaxResumePct || positionTicks >= (runtimeTicks - TimeSpan.TicksPerSecond);
+        }
+
+        private bool IsNearEndOfAudioBook(double remainingTimeInMinutes, long positionTicks, long runtimeTicks)
+        {
+            return remainingTimeInMinutes < _config.Configuration.MaxAudiobookResume || positionTicks >= runtimeTicks;
+        }
+
+        private static bool HasProgressOnNonBookItem(BaseItem item, long positionTicks, bool hasRuntime)
+        {
+            return positionTicks > 0 && hasRuntime && item is not AudioBook && item is not Book;
+        }
+
+        private static bool HasProgressOnAudioBook(BaseItem item, long positionTicks, bool hasRuntime)
+        {
+            return positionTicks > 0 && hasRuntime && item is AudioBook;
         }
 
         /// <inheritdoc />
