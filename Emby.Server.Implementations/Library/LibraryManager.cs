@@ -3344,18 +3344,7 @@ namespace Emby.Server.Implementations.Library
             EpisodeInfo? episodeInfo = null;
             if (episode.IsFileProtocol)
             {
-                episodeInfo = resolver.Resolve(episode.Path, isFolder, null, null, isAbsoluteNaming);
-                // Resolve from parent folder if it's not the Season folder
-                var parent = episode.GetParent();
-                if (episodeInfo is null && parent.GetType() == typeof(Folder))
-                {
-                    episodeInfo = resolver.Resolve(parent.Path, true, null, null, isAbsoluteNaming);
-                    if (episodeInfo is not null)
-                    {
-                        // add the container
-                        episodeInfo.Container = Path.GetExtension(episode.Path)?.TrimStart('.');
-                    }
-                }
+                episodeInfo = ResolveEpisodeInfo(episode, resolver, isFolder, isAbsoluteNaming);
             }
 
             var changed = false;
@@ -3366,72 +3355,11 @@ namespace Emby.Server.Implementations.Library
 
             if (episodeInfo.IsByDate)
             {
-                if (episode.IndexNumber.HasValue)
-                {
-                    episode.IndexNumber = null;
-                    changed = true;
-                }
-
-                if (episode.IndexNumberEnd.HasValue)
-                {
-                    episode.IndexNumberEnd = null;
-                    changed = true;
-                }
-
-                if (!episode.PremiereDate.HasValue)
-                {
-                    if (episodeInfo.Year.HasValue && episodeInfo.Month.HasValue && episodeInfo.Day.HasValue)
-                    {
-                        episode.PremiereDate = new DateTime(episodeInfo.Year.Value, episodeInfo.Month.Value, episodeInfo.Day.Value).ToUniversalTime();
-                    }
-
-                    if (episode.PremiereDate.HasValue)
-                    {
-                        changed = true;
-                    }
-                }
-
-                if (episode.ProductionYear is null)
-                {
-                    episode.ProductionYear = episodeInfo.Year;
-
-                    if (episode.ProductionYear is not null)
-                    {
-                        changed = true;
-                    }
-                }
+                changed = UpdateDateBasedEpisodeNumbers(episode, episodeInfo);
             }
             else
             {
-                if (!episode.IndexNumber.HasValue || forceRefresh)
-                {
-                    if (episode.IndexNumber != episodeInfo.EpisodeNumber)
-                    {
-                        changed = true;
-                    }
-
-                    episode.IndexNumber = episodeInfo.EpisodeNumber;
-                }
-
-                if (!episode.IndexNumberEnd.HasValue || forceRefresh)
-                {
-                    if (episode.IndexNumberEnd != episodeInfo.EndingEpisodeNumber)
-                    {
-                        changed = true;
-                    }
-
-                    episode.IndexNumberEnd = episodeInfo.EndingEpisodeNumber;
-                }
-
-                if (!episode.ParentIndexNumber.HasValue || forceRefresh)
-                {
-                    if (episode.ParentIndexNumber != episodeInfo.SeasonNumber)
-                    {
-                        changed = true;
-                    }
-
-                    episode.ParentIndexNumber = episodeInfo.SeasonNumber;
-                }
+                changed = UpdateEpisodeNumbers(episode, episodeInfo, forceRefresh);
             }
 
             if (!episode.ParentIndexNumber.HasValue)
@@ -3444,6 +3372,103 @@ namespace Emby.Server.Implementations.Library
                 }
 
                 if (episode.ParentIndexNumber.HasValue)
+                {
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        private static EpisodeInfo? ResolveEpisodeInfo(Episode episode, EpisodeResolver resolver, bool isFolder, bool? isAbsoluteNaming)
+        {
+            EpisodeInfo? episodeInfo = resolver.Resolve(episode.Path, isFolder, null, null, isAbsoluteNaming);
+            // Resolve from parent folder if it's not the Season folder
+            var parent = episode.GetParent();
+            if (episodeInfo is null && parent.GetType() == typeof(Folder))
+            {
+                episodeInfo = resolver.Resolve(parent.Path, true, null, null, isAbsoluteNaming);
+                if (episodeInfo is not null)
+                {
+                    // add the container
+                    episodeInfo.Container = Path.GetExtension(episode.Path)?.TrimStart('.');
+                }
+            }
+
+            return episodeInfo;
+        }
+
+        private static bool UpdateEpisodeNumbers(Episode episode, EpisodeInfo episodeInfo, bool forceRefresh)
+        {
+            var changed = false;
+
+            if (!episode.IndexNumber.HasValue || forceRefresh)
+            {
+                if (episode.IndexNumber != episodeInfo.EpisodeNumber)
+                {
+                    changed = true;
+                }
+
+                episode.IndexNumber = episodeInfo.EpisodeNumber;
+            }
+
+            if (!episode.IndexNumberEnd.HasValue || forceRefresh)
+            {
+                if (episode.IndexNumberEnd != episodeInfo.EndingEpisodeNumber)
+                {
+                    changed = true;
+                }
+
+                episode.IndexNumberEnd = episodeInfo.EndingEpisodeNumber;
+            }
+
+            if (!episode.ParentIndexNumber.HasValue || forceRefresh)
+            {
+                if (episode.ParentIndexNumber != episodeInfo.SeasonNumber)
+                {
+                    changed = true;
+                }
+
+                episode.ParentIndexNumber = episodeInfo.SeasonNumber;
+            }
+
+            return changed;
+        }
+
+        private static bool UpdateDateBasedEpisodeNumbers(Episode episode, EpisodeInfo episodeInfo)
+        {
+            var changed = false;
+
+            if (episode.IndexNumber.HasValue)
+            {
+                episode.IndexNumber = null;
+                changed = true;
+            }
+
+            if (episode.IndexNumberEnd.HasValue)
+            {
+                episode.IndexNumberEnd = null;
+                changed = true;
+            }
+
+            if (!episode.PremiereDate.HasValue)
+            {
+                if (episodeInfo.Year.HasValue && episodeInfo.Month.HasValue && episodeInfo.Day.HasValue)
+                {
+                    episode.PremiereDate = new DateTime(episodeInfo.Year.Value, episodeInfo.Month.Value, episodeInfo.Day.Value).ToUniversalTime();
+                }
+
+                if (episode.PremiereDate.HasValue)
+                {
+                    changed = true;
+                }
+            }
+
+            if (episode.ProductionYear is null)
+            {
+                episode.ProductionYear = episodeInfo.Year;
+
+                if (episode.ProductionYear is not null)
                 {
                     changed = true;
                 }
