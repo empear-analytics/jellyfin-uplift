@@ -531,6 +531,15 @@ namespace Emby.Server.Implementations.Library
                 positionTicks = 0;
             }
 
+            positionTicks = ApplyItemPlayStateSupport(item, data, positionTicks);
+
+            data.PlaybackPositionTicks = positionTicks;
+
+            return playedToCompletion;
+        }
+
+        private static long ApplyItemPlayStateSupport(BaseItem item, UserItemData data, long positionTicks)
+        {
             if (!item.SupportsPlayedStatus)
             {
                 positionTicks = 0;
@@ -542,9 +551,7 @@ namespace Emby.Server.Implementations.Library
                 positionTicks = 0;
             }
 
-            data.PlaybackPositionTicks = positionTicks;
-
-            return playedToCompletion;
+            return positionTicks;
         }
 
         private bool IsNearEndOfItem(decimal pctIn, long positionTicks, long runtimeTicks)
