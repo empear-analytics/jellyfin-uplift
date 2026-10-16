@@ -3939,14 +3939,7 @@ namespace Emby.Server.Implementations.Library
                     }
                 }
 
-                foreach (var id in person.ProviderIds)
-                {
-                    if (!string.Equals(personEntity.GetProviderId(id.Key), id.Value, StringComparison.OrdinalIgnoreCase))
-                    {
-                        personEntity.SetProviderId(id.Key, id.Value);
-                        saveEntity = true;
-                    }
-                }
+                saveEntity = UpdatePersonProviderIds(personEntity, person, saveEntity);
 
                 if (!string.IsNullOrWhiteSpace(person.ImageUrl) && !personEntity.HasImage(ImageType.Primary))
                 {
@@ -3970,6 +3963,20 @@ namespace Emby.Server.Implementations.Library
                     CreateItems([personEntity], null, CancellationToken.None);
                 }
             }
+        }
+
+        private static bool UpdatePersonProviderIds(Person personEntity, PersonInfo person, bool saveEntity)
+        {
+            foreach (var id in person.ProviderIds)
+            {
+                if (!string.Equals(personEntity.GetProviderId(id.Key), id.Value, StringComparison.OrdinalIgnoreCase))
+                {
+                    personEntity.SetProviderId(id.Key, id.Value);
+                    saveEntity = true;
+                }
+            }
+
+            return saveEntity;
         }
 
         internal Task StartScanInBackground()
