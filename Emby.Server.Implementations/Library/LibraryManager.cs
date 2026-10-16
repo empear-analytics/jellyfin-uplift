@@ -3126,26 +3126,7 @@ namespace Emby.Server.Implementations.Library
                 item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
             }
 
-            var lastRefreshedUtc = item.DateLastRefreshed;
-            var refresh = isNew || DateTime.UtcNow - lastRefreshedUtc >= _viewRefreshInterval;
-
-            if (!refresh && !item.DisplayParentId.IsEmpty())
-            {
-                var displayParent = GetItemById(item.DisplayParentId);
-                refresh = displayParent is not null && displayParent.DateLastSaved > lastRefreshedUtc;
-            }
-
-            if (refresh)
-            {
-                ProviderManager.QueueRefresh(
-                    item.Id,
-                    new MetadataRefreshOptions(new DirectoryService(_fileSystem))
-                    {
-                        // Need to force save to increment DateLastSaved
-                        ForceSave = true
-                    },
-                    RefreshPriority.Normal);
-            }
+            QueueViewRefreshIfStale(item, isNew);
 
             return item;
         }
@@ -3199,26 +3180,7 @@ namespace Emby.Server.Implementations.Library
                 isNew = true;
             }
 
-            var lastRefreshedUtc = item.DateLastRefreshed;
-            var refresh = isNew || DateTime.UtcNow - lastRefreshedUtc >= _viewRefreshInterval;
-
-            if (!refresh && !item.DisplayParentId.IsEmpty())
-            {
-                var displayParent = GetItemById(item.DisplayParentId);
-                refresh = displayParent is not null && displayParent.DateLastSaved > lastRefreshedUtc;
-            }
-
-            if (refresh)
-            {
-                ProviderManager.QueueRefresh(
-                    item.Id,
-                    new MetadataRefreshOptions(new DirectoryService(_fileSystem))
-                    {
-                        // Need to force save to increment DateLastSaved
-                        ForceSave = true
-                    },
-                    RefreshPriority.Normal);
-            }
+            QueueViewRefreshIfStale(item, isNew);
 
             return item;
         }
@@ -3283,6 +3245,13 @@ namespace Emby.Server.Implementations.Library
                 item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
             }
 
+            QueueViewRefreshIfStale(item, isNew);
+
+            return item;
+        }
+
+        private void QueueViewRefreshIfStale(UserView item, bool isNew)
+        {
             var lastRefreshedUtc = item.DateLastRefreshed;
             var refresh = isNew || DateTime.UtcNow - lastRefreshedUtc >= _viewRefreshInterval;
 
@@ -3303,8 +3272,6 @@ namespace Emby.Server.Implementations.Library
                     },
                     RefreshPriority.Normal);
             }
-
-            return item;
         }
 
         public BaseItem GetParentItem(Guid? parentId, Guid? userId)
