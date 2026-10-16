@@ -15,6 +15,7 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
+using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
 using Microsoft.AspNetCore.Http;
@@ -126,44 +127,94 @@ public static class StreamingHelpers
 
             if (mediaSource is null)
             {
-                var mediaSources = await mediaSourceManager.GetPlaybackMediaSources(libraryManager.GetItemById<BaseItem>(streamingRequest.Id), null, false, false, cancellationToken).ConfigureAwait(false);
-
-                mediaSource = string.IsNullOrEmpty(streamingRequest.MediaSourceId)
-                    ? mediaSources[0]
-                    : mediaSources.FirstOrDefault(i => string.Equals(i.Id, streamingRequest.MediaSourceId, StringComparison.Ordinal));
-
-                if (mediaSource is null && Guid.Parse(streamingRequest.MediaSourceId).Equals(streamingRequest.Id))
-                {
-                    mediaSource = mediaSources[0];
-                }
+                mediaSource = await GetPlaybackMediaSource(streamingRequest, mediaSourceManager, libraryManager, cancellationToken).ConfigureAwait(false);
             }
         }
         else
         {
-            var liveStreamInfo = await mediaSourceManager.GetLiveStreamWithDirectStreamProvider(streamingRequest.LiveStreamId, cancellationToken).ConfigureAwait(false);
-            mediaSource = liveStreamInfo.Item1;
-            state.DirectStreamProvider = liveStreamInfo.Item2;
-
-            // The requested live stream is no longer open. This commonly happens when a client keeps
-            // polling the HLS playlist (e.g. live.m3u8) after the stream was disposed because its
-            // consumer count dropped to zero. GetLiveStreamWithDirectStreamProvider returns a null
-            // MediaSource in that case, so return 404 instead of dereferencing it below.
-            if (mediaSource is null)
-            {
-                throw new ResourceNotFoundException($"The live stream with id {streamingRequest.LiveStreamId} could not be found or is no longer available.");
-            }
-
-            // Cap the max bitrate when it is too high. This is usually due to ffmpeg is unable to probe the source liveTV streams' bitrate.
-            if (mediaSource.FallbackMaxStreamingBitrate is not null && streamingRequest.VideoBitRate is not null)
-            {
-                streamingRequest.VideoBitRate = Math.Min(streamingRequest.VideoBitRate.Value, mediaSource.FallbackMaxStreamingBitrate.Value);
-            }
+            mediaSource = await GetLiveStreamMediaSource(state, streamingRequest, mediaSourceManager, cancellationToken).ConfigureAwait(false);
         }
 
         var encodingOptions = serverConfigurationManager.GetEncodingOptions();
 
         encodingHelper.AttachMediaSourceInfo(state, encodingOptions, mediaSource, url);
 
+        string? containerInternal = GetOutputContainer(state, streamingRequest, mediaSource);
+
+        var outputAudioCodec = streamingRequest.AudioCodec;
+        state.OutputAudioCodec = outputAudioCodec;
+        state.OutputContainer = (containerInternal ?? string.Empty).TrimStart('.');
+        state.OutputAudioChannels = encodingHelper.GetNumAudioChannelsParam(state, state.AudioStream, state.OutputAudioCodec);
+        if (EncodingHelper.LosslessAudioCodecs.Contains(outputAudioCodec))
+        {
+            state.OutputAudioBitrate = state.AudioStream.BitRate ?? 0;
+        }
+        else
+        {
+            state.OutputAudioBitrate = encodingHelper.GetAudioBitrateParam(streamingRequest.AudioBitRate, streamingRequest.AudioCodec, state.AudioStream, state.OutputAudioChannels) ?? 0;
+        }
+
+        ApplyVideoOutputSettings(state, encodingHelper, encodingOptions, mediaEncoder);
+
+        var ext = string.IsNullOrWhiteSpace(state.OutputContainer)
+            ? GetOutputFileExtension(state, mediaSource)
+            : ("." + GetContainerFileExtension(state.OutputContainer));
+
+        state.OutputFilePath = GetOutputFilePath(state, ext, serverConfigurationManager, streamingRequest.DeviceId, streamingRequest.PlaySessionId);
+
+        return state;
+    }
+
+    private static async Task<MediaSourceInfo?> GetPlaybackMediaSource(
+        StreamingRequestDto streamingRequest,
+        IMediaSourceManager mediaSourceManager,
+        ILibraryManager libraryManager,
+        CancellationToken cancellationToken)
+    {
+        var mediaSources = await mediaSourceManager.GetPlaybackMediaSources(libraryManager.GetItemById<BaseItem>(streamingRequest.Id), null, false, false, cancellationToken).ConfigureAwait(false);
+
+        MediaSourceInfo? mediaSource = string.IsNullOrEmpty(streamingRequest.MediaSourceId)
+            ? mediaSources[0]
+            : mediaSources.FirstOrDefault(i => string.Equals(i.Id, streamingRequest.MediaSourceId, StringComparison.Ordinal));
+
+        if (mediaSource is null && Guid.Parse(streamingRequest.MediaSourceId).Equals(streamingRequest.Id))
+        {
+            mediaSource = mediaSources[0];
+        }
+
+        return mediaSource;
+    }
+
+    private static async Task<MediaSourceInfo?> GetLiveStreamMediaSource(
+        StreamState state,
+        StreamingRequestDto streamingRequest,
+        IMediaSourceManager mediaSourceManager,
+        CancellationToken cancellationToken)
+    {
+        var liveStreamInfo = await mediaSourceManager.GetLiveStreamWithDirectStreamProvider(streamingRequest.LiveStreamId, cancellationToken).ConfigureAwait(false);
+        MediaSourceInfo? mediaSource = liveStreamInfo.Item1;
+        state.DirectStreamProvider = liveStreamInfo.Item2;
+
+        // The requested live stream is no longer open. This commonly happens when a client keeps
+        // polling the HLS playlist (e.g. live.m3u8) after the stream was disposed because its
+        // consumer count dropped to zero. GetLiveStreamWithDirectStreamProvider returns a null
+        // MediaSource in that case, so return 404 instead of dereferencing it below.
+        if (mediaSource is null)
+        {
+            throw new ResourceNotFoundException($"The live stream with id {streamingRequest.LiveStreamId} could not be found or is no longer available.");
+        }
+
+        // Cap the max bitrate when it is too high. This is usually due to ffmpeg is unable to probe the source liveTV streams' bitrate.
+        if (mediaSource.FallbackMaxStreamingBitrate is not null && streamingRequest.VideoBitRate is not null)
+        {
+            streamingRequest.VideoBitRate = Math.Min(streamingRequest.VideoBitRate.Value, mediaSource.FallbackMaxStreamingBitrate.Value);
+        }
+
+        return mediaSource;
+    }
+
+    private static string? GetOutputContainer(StreamState state, StreamingRequestDto streamingRequest, MediaSourceInfo? mediaSource)
+    {
         string? containerInternal = Path.GetExtension(state.RequestedUrl);
 
         if (string.IsNullOrEmpty(containerInternal)
@@ -185,79 +236,65 @@ public static class StreamingHelpers
                 : GetOutputFileExtension(state, mediaSource);
         }
 
-        var outputAudioCodec = streamingRequest.AudioCodec;
-        state.OutputAudioCodec = outputAudioCodec;
-        state.OutputContainer = (containerInternal ?? string.Empty).TrimStart('.');
-        state.OutputAudioChannels = encodingHelper.GetNumAudioChannelsParam(state, state.AudioStream, state.OutputAudioCodec);
-        if (EncodingHelper.LosslessAudioCodecs.Contains(outputAudioCodec))
+        return containerInternal;
+    }
+
+    private static void ApplyVideoOutputSettings(StreamState state, EncodingHelper encodingHelper, EncodingOptions encodingOptions, IMediaEncoder mediaEncoder)
+    {
+        if (state.VideoRequest is null)
         {
-            state.OutputAudioBitrate = state.AudioStream.BitRate ?? 0;
-        }
-        else
-        {
-            state.OutputAudioBitrate = encodingHelper.GetAudioBitrateParam(streamingRequest.AudioBitRate, streamingRequest.AudioCodec, state.AudioStream, state.OutputAudioChannels) ?? 0;
+            return;
         }
 
-        if (state.VideoRequest is not null)
+        state.OutputVideoCodec = state.Request.VideoCodec;
+        state.OutputVideoBitrate = encodingHelper.GetVideoBitrateParamValue(state.VideoRequest, state.VideoStream, state.OutputVideoCodec);
+
+        encodingHelper.TryStreamCopy(state, encodingOptions);
+
+        if (!EncodingHelper.IsCopyCodec(state.OutputVideoCodec) && state.OutputVideoBitrate.HasValue)
         {
-            state.OutputVideoCodec = state.Request.VideoCodec;
-            state.OutputVideoBitrate = encodingHelper.GetVideoBitrateParamValue(state.VideoRequest, state.VideoStream, state.OutputVideoCodec);
+            var isVideoResolutionNotRequested = !state.VideoRequest.Width.HasValue
+                && !state.VideoRequest.Height.HasValue
+                && !state.VideoRequest.MaxWidth.HasValue
+                && !state.VideoRequest.MaxHeight.HasValue;
 
-            encodingHelper.TryStreamCopy(state, encodingOptions);
-
-            if (!EncodingHelper.IsCopyCodec(state.OutputVideoCodec) && state.OutputVideoBitrate.HasValue)
+            if (isVideoResolutionNotRequested
+                && state.VideoStream is not null
+                && state.VideoRequest.VideoBitRate.HasValue
+                && state.VideoStream.BitRate.HasValue
+                && state.VideoRequest.VideoBitRate.Value >= state.VideoStream.BitRate.Value)
             {
-                var isVideoResolutionNotRequested = !state.VideoRequest.Width.HasValue
-                    && !state.VideoRequest.Height.HasValue
-                    && !state.VideoRequest.MaxWidth.HasValue
-                    && !state.VideoRequest.MaxHeight.HasValue;
-
-                if (isVideoResolutionNotRequested
-                    && state.VideoStream is not null
-                    && state.VideoRequest.VideoBitRate.HasValue
-                    && state.VideoStream.BitRate.HasValue
-                    && state.VideoRequest.VideoBitRate.Value >= state.VideoStream.BitRate.Value)
+                // Don't downscale the resolution if the width/height/MaxWidth/MaxHeight is not requested,
+                // and the requested video bitrate is greater than source video bitrate.
+                if (state.VideoStream.Width.HasValue || state.VideoStream.Height.HasValue)
                 {
-                    // Don't downscale the resolution if the width/height/MaxWidth/MaxHeight is not requested,
-                    // and the requested video bitrate is greater than source video bitrate.
-                    if (state.VideoStream.Width.HasValue || state.VideoStream.Height.HasValue)
-                    {
-                        state.VideoRequest.MaxWidth = state.VideoStream?.Width;
-                        state.VideoRequest.MaxHeight = state.VideoStream?.Height;
-                    }
-                }
-                else
-                {
-                    var h264EquivalentBitrate = EncodingHelper.ScaleBitrate(
-                        state.OutputVideoBitrate.Value,
-                        state.ActualOutputVideoCodec,
-                        "h264");
-                    var resolution = ResolutionNormalizer.Normalize(
-                        state.VideoStream?.BitRate,
-                        state.OutputVideoBitrate.Value,
-                        h264EquivalentBitrate,
-                        state.VideoRequest.MaxWidth,
-                        state.VideoRequest.MaxHeight,
-                        state.TargetFramerate);
-
-                    state.VideoRequest.MaxWidth = resolution.MaxWidth;
-                    state.VideoRequest.MaxHeight = resolution.MaxHeight;
+                    state.VideoRequest.MaxWidth = state.VideoStream?.Width;
+                    state.VideoRequest.MaxHeight = state.VideoStream?.Height;
                 }
             }
-
-            if (state.AudioStream is not null && !EncodingHelper.IsCopyCodec(state.OutputAudioCodec) && string.Equals(state.AudioStream.Codec, state.OutputAudioCodec, StringComparison.OrdinalIgnoreCase) && state.OutputAudioBitrate.HasValue)
+            else
             {
-                state.OutputAudioCodec = state.SupportedAudioCodecs.Where(c => !EncodingHelper.LosslessAudioCodecs.Contains(c)).FirstOrDefault(mediaEncoder.CanEncodeToAudioCodec);
+                var h264EquivalentBitrate = EncodingHelper.ScaleBitrate(
+                    state.OutputVideoBitrate.Value,
+                    state.ActualOutputVideoCodec,
+                    "h264");
+                var resolution = ResolutionNormalizer.Normalize(
+                    state.VideoStream?.BitRate,
+                    state.OutputVideoBitrate.Value,
+                    h264EquivalentBitrate,
+                    state.VideoRequest.MaxWidth,
+                    state.VideoRequest.MaxHeight,
+                    state.TargetFramerate);
+
+                state.VideoRequest.MaxWidth = resolution.MaxWidth;
+                state.VideoRequest.MaxHeight = resolution.MaxHeight;
             }
         }
 
-        var ext = string.IsNullOrWhiteSpace(state.OutputContainer)
-            ? GetOutputFileExtension(state, mediaSource)
-            : ("." + GetContainerFileExtension(state.OutputContainer));
-
-        state.OutputFilePath = GetOutputFilePath(state, ext, serverConfigurationManager, streamingRequest.DeviceId, streamingRequest.PlaySessionId);
-
-        return state;
+        if (state.AudioStream is not null && !EncodingHelper.IsCopyCodec(state.OutputAudioCodec) && string.Equals(state.AudioStream.Codec, state.OutputAudioCodec, StringComparison.OrdinalIgnoreCase) && state.OutputAudioBitrate.HasValue)
+        {
+            state.OutputAudioCodec = state.SupportedAudioCodecs.Where(c => !EncodingHelper.LosslessAudioCodecs.Contains(c)).FirstOrDefault(mediaEncoder.CanEncodeToAudioCodec);
+        }
     }
 
     /// <summary>
