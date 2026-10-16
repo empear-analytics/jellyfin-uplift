@@ -685,6 +685,13 @@ public class MediaInfoHelper
         }
 
         var prefix = smartApiUrl.TrimEnd('/');
+        prefix = AppendMissingBaseUrl(prefix, baseUrl);
+
+        return prefix + relativePath;
+    }
+
+    private static string AppendMissingBaseUrl(string prefix, string baseUrl)
+    {
         if (!string.IsNullOrEmpty(baseUrl))
         {
             var includesBaseUrl = Uri.TryCreate(prefix, UriKind.Absolute, out var publishedUri)
@@ -698,6 +705,6 @@ public class MediaInfoHelper
             }
         }
 
-        return prefix + relativePath;
+        return prefix;
     }
 }
