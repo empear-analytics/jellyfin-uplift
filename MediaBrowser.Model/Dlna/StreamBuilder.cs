@@ -1375,19 +1375,7 @@ namespace MediaBrowser.Model.Dlna
             // Check audio candidates profile conditions
             var audioStreamMatches = candidateAudioStreams.ToDictionary(s => s, audioStream => GetCompatibilityAudioCodecDirect(options, mediaSource, container, audioStream, true, mediaSource.IsSecondaryAudio(audioStream) ?? false));
 
-            TranscodeReason subtitleProfileReasons = 0;
-            if (subtitleStream is not null)
-            {
-                var subtitleProfile = GetSubtitleProfile(mediaSource, subtitleStream, options.Profile.SubtitleProfiles, PlayMethod.DirectPlay, _transcoderSupport, container, null);
-
-                if (subtitleProfile.Method != SubtitleDeliveryMethod.Drop
-                    && subtitleProfile.Method != SubtitleDeliveryMethod.External
-                    && subtitleProfile.Method != SubtitleDeliveryMethod.Embed)
-                {
-                    _logger.LogDebug("Not eligible for {0} due to unsupported subtitles", PlayMethod.DirectPlay);
-                    subtitleProfileReasons |= TranscodeReason.SubtitleCodecNotSupported;
-                }
-            }
+            TranscodeReason subtitleProfileReasons = GetDirectPlaySubtitleReasons(options, mediaSource, subtitleStream, container);
 
             var containerSupported = false;
             TranscodeReason[] rankings = [TranscodeReason.VideoCodecNotSupported, VideoCodecReasons, TranscodeReason.AudioCodecNotSupported, AudioCodecReasons, ContainerReasons];
@@ -1484,6 +1472,25 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return (Profile: null, PlayMethod: null, AudioStreamIndex: null, TranscodeReasons: failureReasons);
+        }
+
+        private TranscodeReason GetDirectPlaySubtitleReasons(MediaOptions options, MediaSourceInfo mediaSource, MediaStream? subtitleStream, string container)
+        {
+            TranscodeReason subtitleProfileReasons = 0;
+            if (subtitleStream is not null)
+            {
+                var subtitleProfile = GetSubtitleProfile(mediaSource, subtitleStream, options.Profile.SubtitleProfiles, PlayMethod.DirectPlay, _transcoderSupport, container, null);
+
+                if (subtitleProfile.Method != SubtitleDeliveryMethod.Drop
+                    && subtitleProfile.Method != SubtitleDeliveryMethod.External
+                    && subtitleProfile.Method != SubtitleDeliveryMethod.Embed)
+                {
+                    _logger.LogDebug("Not eligible for {0} due to unsupported subtitles", PlayMethod.DirectPlay);
+                    subtitleProfileReasons |= TranscodeReason.SubtitleCodecNotSupported;
+                }
+            }
+
+            return subtitleProfileReasons;
         }
 
         private TranscodeReason AggregateFailureConditions(MediaSourceInfo mediaSource, DeviceProfile profile, string type, IEnumerable<ProfileCondition> conditions)
