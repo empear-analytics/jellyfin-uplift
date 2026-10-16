@@ -2695,13 +2695,7 @@ namespace Emby.Server.Implementations.Library
 
             _persistenceService.SaveItems(allItems, cancellationToken);
 
-            foreach (var item in allItems)
-            {
-                if (!items.Contains(item))
-                {
-                    RegisterItem(item);
-                }
-            }
+            RegisterAddedItems(items, allItems);
 
             if (parent is Folder folder)
             {
@@ -2734,6 +2728,17 @@ namespace Emby.Server.Implementations.Library
                     {
                         _logger.LogError(ex, "Error in ItemUpdated event handler");
                     }
+                }
+            }
+        }
+
+        private void RegisterAddedItems(IReadOnlyList<BaseItem> items, List<BaseItem> allItems)
+        {
+            foreach (var item in allItems)
+            {
+                if (!items.Contains(item))
+                {
+                    RegisterItem(item);
                 }
             }
         }
