@@ -1650,21 +1650,14 @@ namespace MediaBrowser.Model.Dlna
                     continue;
                 }
 
-                if (!subtitleStream.IsExternal
-                    && playMethod == PlayMethod.Transcode
-                    && !transcoderSupport.CanExtractSubtitles(subtitleStream.Codec)
-                    && !subtitleStream.IsPgsSubtitleStream
-                    && !subtitleStream.IsVobSubSubtitleStream)
+                if (IsUnextractableEmbeddedSubtitle(subtitleStream, playMethod, transcoderSupport))
                 {
                     continue;
                 }
 
                 bool isVobSubMksProfile = IsVobSubMksProfile(profile, subtitleStream);
 
-                if ((profile.Method == SubtitleDeliveryMethod.External
-                        && (isVobSubMksProfile
-                            || (!IsVobSubMksDeliveryProfile(profile) && subtitleStream.IsTextSubtitleStream == MediaStream.IsTextFormat(profile.Format)))) ||
-                    (profile.Method == SubtitleDeliveryMethod.Hls && subtitleStream.IsTextSubtitleStream))
+                if (IsMatchingExternalOrHlsProfile(profile, subtitleStream, isVobSubMksProfile))
                 {
                     bool requiresConversion = !isVobSubMksProfile
                         && !string.Equals(subtitleStream.Codec, profile.Format, StringComparison.OrdinalIgnoreCase);
@@ -1685,7 +1678,7 @@ namespace MediaBrowser.Model.Dlna
                         continue;
                     }
 
-                    if (subtitleStream.IsTextSubtitleStream && subtitleStream.SupportsExternalStream && subtitleStream.SupportsSubtitleConversionTo(profile.Format))
+                    if (CanConvertToExternalTextSubtitle(subtitleStream, profile))
                     {
                         return profile;
                     }
@@ -1693,6 +1686,28 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return null;
+        }
+
+        private static bool IsUnextractableEmbeddedSubtitle(MediaStream subtitleStream, PlayMethod playMethod, ITranscoderSupport transcoderSupport)
+        {
+            return !subtitleStream.IsExternal
+                && playMethod == PlayMethod.Transcode
+                && !transcoderSupport.CanExtractSubtitles(subtitleStream.Codec)
+                && !subtitleStream.IsPgsSubtitleStream
+                && !subtitleStream.IsVobSubSubtitleStream;
+        }
+
+        private static bool IsMatchingExternalOrHlsProfile(SubtitleProfile profile, MediaStream subtitleStream, bool isVobSubMksProfile)
+        {
+            return (profile.Method == SubtitleDeliveryMethod.External
+                    && (isVobSubMksProfile
+                        || (!IsVobSubMksDeliveryProfile(profile) && subtitleStream.IsTextSubtitleStream == MediaStream.IsTextFormat(profile.Format)))) ||
+                (profile.Method == SubtitleDeliveryMethod.Hls && subtitleStream.IsTextSubtitleStream);
+        }
+
+        private static bool CanConvertToExternalTextSubtitle(MediaStream subtitleStream, SubtitleProfile profile)
+        {
+            return subtitleStream.IsTextSubtitleStream && subtitleStream.SupportsExternalStream && subtitleStream.SupportsSubtitleConversionTo(profile.Format);
         }
 
         private static bool IsVobSubMksDeliveryProfile(SubtitleProfile profile)
