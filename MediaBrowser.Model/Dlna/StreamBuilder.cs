@@ -578,13 +578,18 @@ namespace MediaBrowser.Model.Dlna
             List<MediaStream> topStreams = [];
             foreach (var stream in item.MediaStreams)
             {
-                if (stream.Type == MediaStreamType.Subtitle && stream.Score.HasValue && stream.Score.Value == highestScore)
+                if (IsSubtitleWithScore(stream, highestScore))
                 {
                     topStreams.Add(stream);
                 }
             }
 
             return topStreams;
+        }
+
+        private static bool IsSubtitleWithScore(MediaStream stream, int highestScore)
+        {
+            return stream.Type == MediaStreamType.Subtitle && stream.Score.HasValue && stream.Score.Value == highestScore;
         }
 
         private static int? SelectMostEfficientSubtitleStreamIndex(MediaSourceInfo item, SubtitleProfile[] subtitleProfiles, List<MediaStream> topStreams)
