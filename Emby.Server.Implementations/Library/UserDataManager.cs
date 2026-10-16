@@ -481,7 +481,7 @@ namespace Emby.Server.Implementations.Library
             var hasRuntime = runtimeTicks > 0;
 
             // If a position has been reported, and if we know the duration
-            if (positionTicks > 0 && hasRuntime && item is not AudioBook && item is not Book)
+            if (HasProgressOnNonBookItem(item, positionTicks, hasRuntime))
             {
                 var pctIn = decimal.Divide(positionTicks, runtimeTicks) * 100;
 
@@ -507,7 +507,7 @@ namespace Emby.Server.Implementations.Library
                     }
                 }
             }
-            else if (positionTicks > 0 && hasRuntime && item is AudioBook)
+            else if (HasProgressOnAudioBook(item, positionTicks, hasRuntime))
             {
                 var playbackPositionInMinutes = TimeSpan.FromTicks(positionTicks).TotalMinutes;
                 var remainingTimeInMinutes = TimeSpan.FromTicks(runtimeTicks - positionTicks).TotalMinutes;
@@ -545,6 +545,16 @@ namespace Emby.Server.Implementations.Library
             data.PlaybackPositionTicks = positionTicks;
 
             return playedToCompletion;
+        }
+
+        private static bool HasProgressOnNonBookItem(BaseItem item, long positionTicks, bool hasRuntime)
+        {
+            return positionTicks > 0 && hasRuntime && item is not AudioBook && item is not Book;
+        }
+
+        private static bool HasProgressOnAudioBook(BaseItem item, long positionTicks, bool hasRuntime)
+        {
+            return positionTicks > 0 && hasRuntime && item is AudioBook;
         }
 
         /// <inheritdoc />
