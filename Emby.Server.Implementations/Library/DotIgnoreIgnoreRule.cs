@@ -176,9 +176,7 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
                 var entry = new IgnoreFileCacheEntry(parentCached.IgnoreFileDirectory);
                 CacheEntryForDirectories(checkedDirs, entry);
 
-                return parentCached.IgnoreFileDirectory is null
-                    ? null
-                    : new FileInfo(Path.Join(parentCached.IgnoreFileDirectory, ".ignore"));
+                return GetCachedIgnoreFile(parentCached);
             }
 
             var ignoreFile = new FileInfo(Path.Join(currentPath, ".ignore"));
@@ -199,10 +197,7 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
 
         // No .ignore file found - cache null result for all directories
         var nullEntry = new IgnoreFileCacheEntry((string?)null);
-        foreach (var dir in checkedDirs)
-        {
-            _directoryCache.AddOrUpdate(dir, nullEntry);
-        }
+        CacheEntryForDirectories(checkedDirs, nullEntry);
 
         return null;
     }
