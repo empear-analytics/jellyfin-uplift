@@ -558,7 +558,7 @@ namespace Emby.Server.Implementations.Library
 
         private static bool TrySetRememberedAudioStreamIndex(MediaSourceInfo source, UserItemData userData, User user, bool allowRememberingSelection)
         {
-            if (userData is not null && userData.AudioStreamIndex.HasValue && user.RememberAudioSelections && allowRememberingSelection)
+            if (IsAudioSelectionRemembered(userData, user, allowRememberingSelection))
             {
                 var index = userData.AudioStreamIndex.Value;
                 // Make sure the saved index is still valid
@@ -571,6 +571,11 @@ namespace Emby.Server.Implementations.Library
             }
 
             return false;
+        }
+
+        private static bool IsAudioSelectionRemembered(UserItemData userData, User user, bool allowRememberingSelection)
+        {
+            return userData is not null && userData.AudioStreamIndex.HasValue && user.RememberAudioSelections && allowRememberingSelection;
         }
 
         private bool TrySetOriginalLanguageAudioStreamIndex(MediaSourceInfo source, User user, string originalLanguage)
