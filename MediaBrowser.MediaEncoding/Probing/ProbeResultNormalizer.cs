@@ -875,11 +875,7 @@ namespace MediaBrowser.MediaEncoding.Probing
 
         private static void SetVideoStreamType(bool isAudio, MediaStream stream)
         {
-            if (isAudio
-                || string.Equals(stream.Codec, "bmp", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(stream.Codec, "gif", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(stream.Codec, "png", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(stream.Codec, "webp", StringComparison.OrdinalIgnoreCase))
+            if (IsEmbeddedImageCodec(isAudio, stream))
             {
                 stream.Type = MediaStreamType.EmbeddedImage;
             }
@@ -900,6 +896,15 @@ namespace MediaBrowser.MediaEncoding.Probing
             {
                 stream.Type = MediaStreamType.Video;
             }
+        }
+
+        private static bool IsEmbeddedImageCodec(bool isAudio, MediaStream stream)
+        {
+            return isAudio
+                || string.Equals(stream.Codec, "bmp", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(stream.Codec, "gif", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(stream.Codec, "png", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(stream.Codec, "webp", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void SetBitDepthFromPixelFormat(MediaStream stream, MediaStreamInfo streamInfo)
