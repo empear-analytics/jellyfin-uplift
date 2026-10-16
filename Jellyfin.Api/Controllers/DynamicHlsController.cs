@@ -1789,10 +1789,10 @@ public class DynamicHlsController : BaseJellyfinApiController
     {
         var args = string.Empty;
         var bitrate = state.OutputAudioBitrate;
-        if (bitrate.HasValue && !EncodingHelper.LosslessAudioCodecs.Contains(actualOutputAudioCodec, StringComparison.OrdinalIgnoreCase))
+        if (IsLossyAudioBitrate(bitrate, actualOutputAudioCodec))
         {
             var vbrParam = _encodingHelper.GetAudioVbrModeParam(audioCodec, bitrate.Value, channels ?? 2);
-            if (_encodingOptions.EnableAudioVbr && state.EnableAudioVbrEncoding && vbrParam is not null)
+            if (IsAudioVbrEnabled(state, vbrParam))
             {
                 args += vbrParam;
             }
@@ -1803,6 +1803,16 @@ public class DynamicHlsController : BaseJellyfinApiController
         }
 
         return args;
+    }
+
+    private static bool IsLossyAudioBitrate([NotNullWhen(true)] int? bitrate, string actualOutputAudioCodec)
+    {
+        return bitrate.HasValue && !EncodingHelper.LosslessAudioCodecs.Contains(actualOutputAudioCodec, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsAudioVbrEnabled(StreamState state, string vbrParam)
+    {
+        return _encodingOptions.EnableAudioVbr && state.EnableAudioVbrEncoding && vbrParam is not null;
     }
 
     private static string GetAudioSampleRateArguments(StreamState state)
