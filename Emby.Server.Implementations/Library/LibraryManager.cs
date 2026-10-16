@@ -2181,24 +2181,12 @@ namespace Emby.Server.Implementations.Library
                 // Translate view into folders
                 if (!view.DisplayParentId.IsEmpty())
                 {
-                    var displayParent = GetItemById(view.DisplayParentId);
-                    if (displayParent is not null)
-                    {
-                        return GetTopParentIdsForQuery(displayParent, user);
-                    }
-
-                    return [];
+                    return GetTopParentIdsForParent(view.DisplayParentId, user);
                 }
 
                 if (!view.ParentId.IsEmpty())
                 {
-                    var displayParent = GetItemById(view.ParentId);
-                    if (displayParent is not null)
-                    {
-                        return GetTopParentIdsForQuery(displayParent, user);
-                    }
-
-                    return [];
+                    return GetTopParentIdsForParent(view.ParentId, user);
                 }
 
                 // Handle grouping
@@ -2224,6 +2212,17 @@ namespace Emby.Server.Implementations.Library
             if (topParent is not null)
             {
                 return [topParent.Id];
+            }
+
+            return [];
+        }
+
+        private IEnumerable<Guid> GetTopParentIdsForParent(Guid parentId, User? user)
+        {
+            var displayParent = GetItemById(parentId);
+            if (displayParent is not null)
+            {
+                return GetTopParentIdsForQuery(displayParent, user);
             }
 
             return [];
