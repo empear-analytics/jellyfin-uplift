@@ -174,12 +174,7 @@ public class DynamicHlsHelper
         }
 
         // Video rotation metadata is only supported in fMP4 remuxing
-        if (state.VideoStream is not null
-            && state.VideoRequest is not null
-            && (state.VideoStream?.Rotation ?? 0) != 0
-            && EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-            && !string.IsNullOrWhiteSpace(state.Request.SegmentContainer)
-            && !string.Equals(state.Request.SegmentContainer, "mp4", StringComparison.OrdinalIgnoreCase))
+        if (IsRotatedVideoCopiedToNonMp4Container(state))
         {
             queryString += "&AllowVideoStreamCopy=false";
         }
@@ -216,14 +211,7 @@ public class DynamicHlsHelper
         // select it over the fallback when both have identical BANDWIDTH.
         // Only emit for clients that explicitly declared DOVI support to avoid breaking
         // non-compliant players that don't recognize dvh1/dav1 CODECS strings.
-        if (state.VideoStream is not null
-            && state.VideoRequest is not null
-            && EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-            && state.VideoStream.VideoRangeType == VideoRangeType.DOVI
-            && state.VideoStream.DvProfile.HasValue
-            && state.VideoStream.DvLevel.HasValue
-            && state.GetRequestedRangeTypes(state.VideoStream.Codec)
-                .Contains(VideoRangeType.DOVI.ToString(), StringComparison.OrdinalIgnoreCase))
+        if (IsRequestedDoviCopyWithKnownProfileAndLevel(state))
         {
             AppendDoviPlaylist(builder, state, playlistUrl, totalBitrate, subtitleGroup);
         }
@@ -245,9 +233,7 @@ public class DynamicHlsHelper
                     && string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase);
                 var isEncodingAllowed = isAv1EncodingAllowed || isHevcEncodingAllowed;
 
-                if (isEncodingAllowed
-                    && EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-                    && state.VideoStream.VideoRange == VideoRange.HDR)
+                if (IsHdrCopyWithEncodingAllowed(isEncodingAllowed, state))
                 {
                     // Force AV1 and HEVC Main Profile and disable video stream copy.
                     state.OutputVideoCodec = sdrVideoCodec;
@@ -290,11 +276,7 @@ public class DynamicHlsHelper
             // Provide Level 5.0 entrance for backward compatibility.
             // e.g. Apple A10 chips refuse the master playlist containing SDR HEVC Main Level 5.1 video,
             // but in fact it is capable of playing videos up to Level 6.1.
-            if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-                && state.VideoStream.Level.HasValue
-                && state.VideoStream.Level > 150
-                && state.VideoStream.VideoRange == VideoRange.SDR
-                && string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase))
+            if (IsSdrHevcCopyAboveLevel150(state))
             {
                 var playlistCodecsField = new StringBuilder();
                 AppendPlaylistCodecsField(playlistCodecsField, state);
@@ -340,6 +322,44 @@ public class DynamicHlsHelper
         }
 
         return new FileContentResult(Encoding.UTF8.GetBytes(builder.ToString()), MimeTypes.GetMimeType("playlist.m3u8"));
+    }
+
+    private static bool IsRotatedVideoCopiedToNonMp4Container(StreamState state)
+    {
+        return state.VideoStream is not null
+            && state.VideoRequest is not null
+            && (state.VideoStream?.Rotation ?? 0) != 0
+            && EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
+            && !string.IsNullOrWhiteSpace(state.Request.SegmentContainer)
+            && !string.Equals(state.Request.SegmentContainer, "mp4", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsRequestedDoviCopyWithKnownProfileAndLevel(StreamState state)
+    {
+        return state.VideoStream is not null
+            && state.VideoRequest is not null
+            && EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
+            && state.VideoStream.VideoRangeType == VideoRangeType.DOVI
+            && state.VideoStream.DvProfile.HasValue
+            && state.VideoStream.DvLevel.HasValue
+            && state.GetRequestedRangeTypes(state.VideoStream.Codec)
+                .Contains(VideoRangeType.DOVI.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsHdrCopyWithEncodingAllowed(bool isEncodingAllowed, StreamState state)
+    {
+        return isEncodingAllowed
+            && EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
+            && state.VideoStream.VideoRange == VideoRange.HDR;
+    }
+
+    private static bool IsSdrHevcCopyAboveLevel150(StreamState state)
+    {
+        return EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
+            && state.VideoStream.Level.HasValue
+            && state.VideoStream.Level > 150
+            && state.VideoStream.VideoRange == VideoRange.SDR
+            && string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase);
     }
 
     private StringBuilder AppendPlaylist(StringBuilder builder, StreamState state, string url, int bitrate, string? subtitleGroup)
