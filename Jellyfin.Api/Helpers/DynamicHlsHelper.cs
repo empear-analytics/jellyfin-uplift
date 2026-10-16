@@ -441,36 +441,37 @@ public class DynamicHlsHelper
     /// <param name="state">StreamState of the current stream.</param>
     private void AppendPlaylistVideoRangeField(StringBuilder builder, StreamState state)
     {
-        if (state.VideoStream is not null && state.VideoStream.VideoRange != VideoRange.Unknown)
+        if (state.VideoStream is null || state.VideoStream.VideoRange == VideoRange.Unknown)
         {
-            var videoRange = state.VideoStream.VideoRange;
-            var videoRangeType = state.VideoStream.VideoRangeType;
-            if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec))
-            {
-                if (videoRange == VideoRange.SDR)
-                {
-                    builder.Append(",VIDEO-RANGE=SDR");
-                }
+            return;
+        }
 
-                if (videoRange == VideoRange.HDR)
-                {
-                    switch (videoRangeType)
-                    {
-                        case VideoRangeType.HLG:
-                        case VideoRangeType.DOVIWithHLG:
-                        case VideoRangeType.DOVIInvalid when string.Equals(state.VideoStream.ColorTransfer, "arib-std-b67", StringComparison.OrdinalIgnoreCase):
-                            builder.Append(",VIDEO-RANGE=HLG");
-                            break;
-                        default:
-                            builder.Append(",VIDEO-RANGE=PQ");
-                            break;
-                    }
-                }
-            }
-            else
+        var videoRange = state.VideoStream.VideoRange;
+        var videoRangeType = state.VideoStream.VideoRangeType;
+        if (!EncodingHelper.IsCopyCodec(state.OutputVideoCodec))
+        {
+            // Currently we only encode to SDR.
+            builder.Append(",VIDEO-RANGE=SDR");
+            return;
+        }
+
+        if (videoRange == VideoRange.SDR)
+        {
+            builder.Append(",VIDEO-RANGE=SDR");
+        }
+
+        if (videoRange == VideoRange.HDR)
+        {
+            switch (videoRangeType)
             {
-                // Currently we only encode to SDR.
-                builder.Append(",VIDEO-RANGE=SDR");
+                case VideoRangeType.HLG:
+                case VideoRangeType.DOVIWithHLG:
+                case VideoRangeType.DOVIInvalid when string.Equals(state.VideoStream.ColorTransfer, "arib-std-b67", StringComparison.OrdinalIgnoreCase):
+                    builder.Append(",VIDEO-RANGE=HLG");
+                    break;
+                default:
+                    builder.Append(",VIDEO-RANGE=PQ");
+                    break;
             }
         }
     }
