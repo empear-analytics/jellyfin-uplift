@@ -900,15 +900,20 @@ public class DynamicHlsHelper
                 profileString ??= "high";
             }
 
-            if (string.Equals(state.ActualOutputVideoCodec, "h265", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(state.ActualOutputVideoCodec, "av1", StringComparison.OrdinalIgnoreCase))
+            if (IsHevcOrAv1OutputCodec(state))
             {
                 profileString ??= "main";
             }
         }
 
         return profileString;
+    }
+
+    private static bool IsHevcOrAv1OutputCodec(StreamState state)
+    {
+        return string.Equals(state.ActualOutputVideoCodec, "h265", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(state.ActualOutputVideoCodec, "av1", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
