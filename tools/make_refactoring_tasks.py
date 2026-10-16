@@ -255,7 +255,8 @@ def task_text(task_id: str, entry: dict) -> str:
     out += ["- [ ] `python tools/codehealth_check.py` reports 10.00, or every remaining smell is one the playbook has no recipe for and is listed in the report"]
     out += ["- [ ] `dotnet build Jellyfin.sln --no-incremental` succeeds with no new warnings (211 on the base)"]
     out += ["- [ ] `dotnet test Jellyfin.sln --no-build` passes in full"]
-    out += [f"- [ ] `python tools/refactor_guard.py --base <start commit> --together {rel} <any files split off it>` reports no removed literals"]
+    dedup = "--dedup " if "D" in recipes else ""
+    out += [f"- [ ] `python tools/refactor_guard.py --base <start commit> {dedup}--together {rel} <any files split off it>` reports no removed literals"]
     out += ["- [ ] Each commit covers one method and uses the message format above"]
     out += ["- [ ] Nothing in `tests/` changed: `git diff --stat <start commit> -- tests` is empty", ""]
 

@@ -168,7 +168,7 @@ python tools/codehealth_check.py Jellyfin.Api/Helpers/MediaInfoHelper.cs
 - [ ] `python tools/codehealth_check.py` reports 10.00, or every remaining smell is one the playbook has no recipe for and is listed in the report
 - [ ] `dotnet build Jellyfin.sln --no-incremental` succeeds with no new warnings (211 on the base)
 - [ ] `dotnet test Jellyfin.sln --no-build` passes in full
-- [ ] `python tools/refactor_guard.py --base <start commit> --together Jellyfin.Api/Helpers/MediaInfoHelper.cs <any files split off it>` reports no removed literals
+- [ ] `python tools/refactor_guard.py --base <start commit> --dedup --together Jellyfin.Api/Helpers/MediaInfoHelper.cs <any files split off it>` reports no removed literals
 - [ ] Each commit covers one method and uses the message format above
 - [ ] Nothing in `tests/` changed: `git diff --stat <start commit> -- tests` is empty
 
