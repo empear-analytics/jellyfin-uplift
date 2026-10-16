@@ -1049,17 +1049,7 @@ namespace MediaBrowser.Model.Dlna
             }
 
             // Enforce HLS audio codec restrictions
-            if (playlistItem.SubProtocol == MediaStreamProtocol.hls)
-            {
-                if (string.Equals(playlistItem.Container, "mp4", StringComparison.OrdinalIgnoreCase))
-                {
-                    audioCodecs = audioCodecs.Where(codec => _supportedHlsAudioCodecsMp4.Contains(codec)).ToList();
-                }
-                else
-                {
-                    audioCodecs = audioCodecs.Where(codec => _supportedHlsAudioCodecsTs.Contains(codec)).ToList();
-                }
-            }
+            audioCodecs = FilterHlsAudioCodecs(playlistItem, audioCodecs);
 
             var audioStreamWithSupportedCodec = candidateAudioStreams.Where(stream => ContainerHelper.ContainsContainer(audioCodecs, false, stream.Codec)).FirstOrDefault();
 
@@ -1139,17 +1129,7 @@ namespace MediaBrowser.Model.Dlna
                     i.ApplyConditions.All(applyCondition => ConditionProcessor.IsVideoConditionSatisfied(applyCondition, width, height, bitDepth, videoBitrate, videoProfile, videoRangeType, videoLevel, videoFramerate, packetLength, timestamp, isAnamorphic, isInterlaced, refFrames, numStreams, numVideoStreams, numAudioStreams, videoCodecTag, isAvc, videoRotation)))
                 // Reverse codec profiles for backward compatibility - first codec profile has higher priority
                 .Reverse();
-            foreach (var condition in appliedVideoConditions)
-            {
-                foreach (var transcodingVideoCodec in playlistItem.VideoCodecs)
-                {
-                    if (condition.ContainsAnyCodec(transcodingVideoCodec, container, useSubContainer))
-                    {
-                        ApplyTranscodingConditions(playlistItem, condition.Conditions, transcodingVideoCodec, true, true);
-                        continue;
-                    }
-                }
-            }
+            ApplyVideoCodecProfileConditions(playlistItem, appliedVideoConditions, container, useSubContainer);
 
             // Honor requested max channels
             playlistItem.GlobalMaxAudioChannels = channelsExceedsLimit ? playlistItem.TranscodingMaxAudioChannels : options.MaxAudioChannels;
@@ -1171,6 +1151,56 @@ namespace MediaBrowser.Model.Dlna
                 // Reverse codec profiles for backward compatibility - first codec profile has higher priority
                 .Reverse();
 
+            ApplyAudioCodecProfileConditions(playlistItem, appliedAudioConditions, container);
+
+            var maxBitrateSetting = options.GetMaxBitrate(false);
+            // Honor max rate
+            ApplyMaxVideoBitrate(playlistItem, maxBitrateSetting);
+
+            _logger.LogDebug(
+                "Transcode Result for Profile: {Profile}, Path: {Path}, PlayMethod: {PlayMethod}, AudioStreamIndex: {AudioStreamIndex}, SubtitleStreamIndex: {SubtitleStreamIndex}, Reasons: {TranscodeReason}",
+                options.Profile.Name ?? "Anonymous Profile",
+                item.Path ?? "Unknown path",
+                playlistItem.PlayMethod,
+                audioStream?.Index,
+                playlistItem.SubtitleStreamIndex,
+                playlistItem.TranscodeReasons);
+        }
+
+        private static List<string> FilterHlsAudioCodecs(StreamInfo playlistItem, List<string> audioCodecs)
+        {
+            if (playlistItem.SubProtocol == MediaStreamProtocol.hls)
+            {
+                if (string.Equals(playlistItem.Container, "mp4", StringComparison.OrdinalIgnoreCase))
+                {
+                    audioCodecs = audioCodecs.Where(codec => _supportedHlsAudioCodecsMp4.Contains(codec)).ToList();
+                }
+                else
+                {
+                    audioCodecs = audioCodecs.Where(codec => _supportedHlsAudioCodecsTs.Contains(codec)).ToList();
+                }
+            }
+
+            return audioCodecs;
+        }
+
+        private void ApplyVideoCodecProfileConditions(StreamInfo playlistItem, IEnumerable<CodecProfile> appliedVideoConditions, string? container, bool useSubContainer)
+        {
+            foreach (var condition in appliedVideoConditions)
+            {
+                foreach (var transcodingVideoCodec in playlistItem.VideoCodecs)
+                {
+                    if (condition.ContainsAnyCodec(transcodingVideoCodec, container, useSubContainer))
+                    {
+                        ApplyTranscodingConditions(playlistItem, condition.Conditions, transcodingVideoCodec, true, true);
+                        continue;
+                    }
+                }
+            }
+        }
+
+        private void ApplyAudioCodecProfileConditions(StreamInfo playlistItem, IEnumerable<CodecProfile> appliedAudioConditions, string? container)
+        {
             foreach (var codecProfile in appliedAudioConditions)
             {
                 foreach (var transcodingAudioCodec in playlistItem.AudioCodecs)
@@ -1182,9 +1212,10 @@ namespace MediaBrowser.Model.Dlna
                     }
                 }
             }
+        }
 
-            var maxBitrateSetting = options.GetMaxBitrate(false);
-            // Honor max rate
+        private static void ApplyMaxVideoBitrate(StreamInfo playlistItem, int? maxBitrateSetting)
+        {
             if (maxBitrateSetting.HasValue)
             {
                 var availableBitrateForVideo = maxBitrateSetting.Value;
@@ -1199,15 +1230,6 @@ namespace MediaBrowser.Model.Dlna
                 var currentValue = playlistItem.VideoBitrate ?? availableBitrateForVideo;
                 playlistItem.VideoBitrate = Math.Max(Math.Min(availableBitrateForVideo, currentValue), 64_000);
             }
-
-            _logger.LogDebug(
-                "Transcode Result for Profile: {Profile}, Path: {Path}, PlayMethod: {PlayMethod}, AudioStreamIndex: {AudioStreamIndex}, SubtitleStreamIndex: {SubtitleStreamIndex}, Reasons: {TranscodeReason}",
-                options.Profile.Name ?? "Anonymous Profile",
-                item.Path ?? "Unknown path",
-                playlistItem.PlayMethod,
-                audioStream?.Index,
-                playlistItem.SubtitleStreamIndex,
-                playlistItem.TranscodeReasons);
         }
 
         private static int GetDefaultAudioBitrate(string? audioCodec, int? audioChannels)
