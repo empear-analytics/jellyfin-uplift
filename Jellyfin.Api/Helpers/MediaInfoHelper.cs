@@ -345,17 +345,27 @@ public class MediaInfoHelper
     {
         if (item is Audio)
         {
-            if (!user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding))
-            {
-                mediaSource.SupportsTranscoding = false;
-            }
+            ApplyAudioTranscodingPermission(user, mediaSource);
         }
         else if (item is Video)
         {
-            if (LacksVideoPlaybackPermissions(user))
-            {
-                mediaSource.SupportsTranscoding = false;
-            }
+            ApplyVideoTranscodingPermission(user, mediaSource);
+        }
+    }
+
+    private static void ApplyAudioTranscodingPermission(User user, MediaSourceInfo mediaSource)
+    {
+        if (!user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding))
+        {
+            mediaSource.SupportsTranscoding = false;
+        }
+    }
+
+    private static void ApplyVideoTranscodingPermission(User user, MediaSourceInfo mediaSource)
+    {
+        if (LacksVideoPlaybackPermissions(user))
+        {
+            mediaSource.SupportsTranscoding = false;
         }
     }
 
