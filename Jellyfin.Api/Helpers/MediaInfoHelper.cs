@@ -506,14 +506,7 @@ public class MediaInfoHelper
         RewritePublishedLiveStreamPath(result.MediaSource, httpContext.Request);
 
         var profile = request.DeviceProfile;
-        if (profile is null)
-        {
-            var clientCapabilities = _deviceManager.GetCapabilities(httpContext.User.GetDeviceId());
-            if (clientCapabilities is not null)
-            {
-                profile = clientCapabilities.DeviceProfile;
-            }
-        }
+        profile = FallBackToClientDeviceProfile(profile, httpContext);
 
         if (profile is not null)
         {
@@ -543,16 +536,35 @@ public class MediaInfoHelper
         }
         else
         {
-            if (!string.IsNullOrWhiteSpace(result.MediaSource.TranscodingUrl))
-            {
-                result.MediaSource.TranscodingUrl += "&LiveStreamId=" + result.MediaSource.LiveStreamId;
-            }
+            AppendLiveStreamIdToTranscodingUrl(result.MediaSource);
         }
 
         // here was a check if (result.MediaSource is not null) but Rider said it will never be null
         NormalizeMediaSourceContainer(result.MediaSource, profile!, DlnaProfileType.Video);
 
         return result;
+    }
+
+    private static void AppendLiveStreamIdToTranscodingUrl(MediaSourceInfo mediaSource)
+    {
+        if (!string.IsNullOrWhiteSpace(mediaSource.TranscodingUrl))
+        {
+            mediaSource.TranscodingUrl += "&LiveStreamId=" + mediaSource.LiveStreamId;
+        }
+    }
+
+    private DeviceProfile? FallBackToClientDeviceProfile(DeviceProfile? profile, HttpContext httpContext)
+    {
+        if (profile is null)
+        {
+            var clientCapabilities = _deviceManager.GetCapabilities(httpContext.User.GetDeviceId());
+            if (clientCapabilities is not null)
+            {
+                profile = clientCapabilities.DeviceProfile;
+            }
+        }
+
+        return profile;
     }
 
     /// <summary>
