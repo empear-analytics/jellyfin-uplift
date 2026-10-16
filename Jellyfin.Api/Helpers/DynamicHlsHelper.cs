@@ -887,8 +887,7 @@ public class DynamicHlsHelper
     private string GetOutputVideoCodecProfile(StreamState state, string codec)
     {
         string profileString = string.Empty;
-        if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-            && !string.IsNullOrEmpty(state.VideoStream.Profile))
+        if (IsCopyWithKnownProfile(state))
         {
             profileString = state.VideoStream.Profile;
         }
@@ -907,6 +906,12 @@ public class DynamicHlsHelper
         }
 
         return profileString;
+    }
+
+    private static bool IsCopyWithKnownProfile(StreamState state)
+    {
+        return EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
+            && !string.IsNullOrEmpty(state.VideoStream.Profile);
     }
 
     private static bool IsHevcOrAv1OutputCodec(StreamState state)
