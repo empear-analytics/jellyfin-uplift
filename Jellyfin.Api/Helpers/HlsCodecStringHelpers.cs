@@ -273,9 +273,7 @@ public static class HlsCodecStringHelpers
             _ => "00" // This should not happen
         };
 
-        if (bitDepth != 8
-            && bitDepth != 10
-            && bitDepth != 12)
+        if (IsUnsupportedBitDepth(bitDepth))
         {
             // Default to 8 bits
             bitDepth = 8;
@@ -366,5 +364,12 @@ public static class HlsCodecStringHelpers
             .AppendFormat(CultureInfo.InvariantCulture, "{0:D2}", dvLevel);
 
         return result.ToString();
+    }
+
+    private static bool IsUnsupportedBitDepth(int bitDepth)
+    {
+        return bitDepth != 8
+            && bitDepth != 10
+            && bitDepth != 12;
     }
 }
