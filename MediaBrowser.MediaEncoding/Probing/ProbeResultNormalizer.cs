@@ -1054,9 +1054,7 @@ namespace MediaBrowser.MediaEncoding.Probing
             // The bitrate info of FLAC audio is included in formatInfo.
             // Don't do this for video streams: formatInfo.BitRate is the overall container
             // bitrate (video + audio + subtitles + overhead), not the video bitrate.
-            if (bitrate == 0
-                && formatInfo is not null
-                && isAudio && stream.Type == MediaStreamType.Audio)
+            if (ShouldUseFormatBitRate(bitrate, formatInfo, isAudio, stream))
             {
                 // If the stream info doesn't have a bitrate get the value from the media format info
                 if (int.TryParse(formatInfo.BitRate, CultureInfo.InvariantCulture, out value))
@@ -1069,6 +1067,13 @@ namespace MediaBrowser.MediaEncoding.Probing
             {
                 stream.BitRate = bitrate;
             }
+        }
+
+        private static bool ShouldUseFormatBitRate(int bitrate, MediaFormatInfo formatInfo, bool isAudio, MediaStream stream)
+        {
+            return bitrate == 0
+                && formatInfo is not null
+                && isAudio && stream.Type == MediaStreamType.Audio;
         }
 
         private static void SetBitRateFromTags(MediaStream stream, MediaStreamInfo streamInfo)
