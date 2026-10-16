@@ -580,33 +580,35 @@ namespace Emby.Server.Implementations.Library
 
         private bool TrySetOriginalLanguageAudioStreamIndex(MediaSourceInfo source, User user, string originalLanguage)
         {
-            if (string.Equals(user.AudioLanguagePreference, "OriginalLanguage", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(user.AudioLanguagePreference, "OriginalLanguage", StringComparison.OrdinalIgnoreCase))
             {
-                if (user.PlayDefaultAudioTrack)
-                {
-                    source.DefaultAudioStreamIndex = MediaStreamSelector.GetDefaultAudioStreamIndex(
-                        source.MediaStreams,
-                        NormalizeLanguage(originalLanguage),
-                        user.PlayDefaultAudioTrack);
-                    return true;
-                }
+                return false;
+            }
 
-                var originalIndex = source.MediaStreams.FindIndex(i => i.Type == MediaStreamType.Audio && i.IsOriginal);
+            if (user.PlayDefaultAudioTrack)
+            {
+                source.DefaultAudioStreamIndex = MediaStreamSelector.GetDefaultAudioStreamIndex(
+                    source.MediaStreams,
+                    NormalizeLanguage(originalLanguage),
+                    user.PlayDefaultAudioTrack);
+                return true;
+            }
 
-                if (!string.IsNullOrWhiteSpace(originalLanguage) && originalIndex != -1)
-                {
-                    var mediaLanguageOriginal = source.MediaStreams[originalIndex].Language;
-                    if (NormalizeLanguage(mediaLanguageOriginal).Contains(NormalizeLanguage(originalLanguage).FirstOrDefault()))
-                    {
-                        source.DefaultAudioStreamIndex = originalIndex;
-                        return true;
-                    }
-                }
-                else if (originalIndex != -1)
+            var originalIndex = source.MediaStreams.FindIndex(i => i.Type == MediaStreamType.Audio && i.IsOriginal);
+
+            if (!string.IsNullOrWhiteSpace(originalLanguage) && originalIndex != -1)
+            {
+                var mediaLanguageOriginal = source.MediaStreams[originalIndex].Language;
+                if (NormalizeLanguage(mediaLanguageOriginal).Contains(NormalizeLanguage(originalLanguage).FirstOrDefault()))
                 {
                     source.DefaultAudioStreamIndex = originalIndex;
                     return true;
                 }
+            }
+            else if (originalIndex != -1)
+            {
+                source.DefaultAudioStreamIndex = originalIndex;
+                return true;
             }
 
             return false;
