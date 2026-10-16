@@ -599,9 +599,7 @@ namespace MediaBrowser.Model.Dlna
             {
                 foreach (var profile in subtitleProfiles)
                 {
-                    if (profile.Method == SubtitleDeliveryMethod.External
-                        && (IsVobSubMksProfile(profile, stream)
-                            || (!IsVobSubMksDeliveryProfile(profile) && string.Equals(profile.Format, stream.Codec, StringComparison.OrdinalIgnoreCase))))
+                    if (IsEfficientExternalSubtitleProfile(profile, stream))
                     {
                         return stream.Index;
                     }
@@ -610,6 +608,13 @@ namespace MediaBrowser.Model.Dlna
 
             // If no optimization panned out, just use the original default
             return item.DefaultSubtitleStreamIndex;
+        }
+
+        private static bool IsEfficientExternalSubtitleProfile(SubtitleProfile profile, MediaStream stream)
+        {
+            return profile.Method == SubtitleDeliveryMethod.External
+                && (IsVobSubMksProfile(profile, stream)
+                    || (!IsVobSubMksDeliveryProfile(profile) && string.Equals(profile.Format, stream.Codec, StringComparison.OrdinalIgnoreCase)));
         }
 
         private static void SetStreamInfoOptionsFromTranscodingProfile(MediaSourceInfo item, StreamInfo playlistItem, TranscodingProfile transcodingProfile)
