@@ -490,7 +490,7 @@ namespace Emby.Server.Implementations.Library
                     // ignore progress during the beginning
                     positionTicks = 0;
                 }
-                else if (pctIn > _config.Configuration.MaxResumePct || positionTicks >= (runtimeTicks - TimeSpan.TicksPerSecond))
+                else if (IsNearEndOfItem(pctIn, positionTicks, runtimeTicks))
                 {
                     // mark as completed close to the end
                     positionTicks = 0;
@@ -517,7 +517,7 @@ namespace Emby.Server.Implementations.Library
                     // ignore progress during the beginning
                     positionTicks = 0;
                 }
-                else if (remainingTimeInMinutes < _config.Configuration.MaxAudiobookResume || positionTicks >= runtimeTicks)
+                else if (IsNearEndOfAudioBook(remainingTimeInMinutes, positionTicks, runtimeTicks))
                 {
                     // mark as completed close to the end
                     positionTicks = 0;
@@ -545,6 +545,16 @@ namespace Emby.Server.Implementations.Library
             data.PlaybackPositionTicks = positionTicks;
 
             return playedToCompletion;
+        }
+
+        private bool IsNearEndOfItem(decimal pctIn, long positionTicks, long runtimeTicks)
+        {
+            return pctIn > _config.Configuration.MaxResumePct || positionTicks >= (runtimeTicks - TimeSpan.TicksPerSecond);
+        }
+
+        private bool IsNearEndOfAudioBook(double remainingTimeInMinutes, long positionTicks, long runtimeTicks)
+        {
+            return remainingTimeInMinutes < _config.Configuration.MaxAudiobookResume || positionTicks >= runtimeTicks;
         }
 
         private static bool HasProgressOnNonBookItem(BaseItem item, long positionTicks, bool hasRuntime)
