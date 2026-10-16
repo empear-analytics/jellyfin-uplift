@@ -5910,7 +5910,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isHwmapNotUsable = hasGraphicalSubs || isUploadForOclTonemap;
             var isHwmapForSubs = hasSubs && isVaapiDecoder;
             var isHwUnmapForTextSubs = hasTextSubs && isVaInVaOut && !isUploadForOclTonemap;
-            if ((isVaapiDecoder && isSwEncoder) || isUploadForOclTonemap || isHwmapForSubs)
+            if (NeedsMemoryOutput(isVaapiDecoder, isSwEncoder, isUploadForOclTonemap) || isHwmapForSubs)
             {
                 memoryOutput = true;
 
