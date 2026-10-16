@@ -1053,7 +1053,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else if (optHwaccelType == HardwareAccelerationType.qsv)
             {
-                if ((!isLinux && !isWindows) || !_mediaEncoder.SupportsHwaccel("qsv"))
+                if (IsQsvHwaccelUnsupported(isLinux, isWindows))
                 {
                     return string.Empty;
                 }
@@ -1072,7 +1072,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else if (optHwaccelType == HardwareAccelerationType.nvenc)
             {
-                if ((!isLinux && !isWindows) || !IsCudaFullSupported())
+                if (IsNvencHwaccelUnsupported(isLinux, isWindows))
                 {
                     return string.Empty;
                 }
@@ -1145,6 +1145,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return args.ToString().Trim();
+        }
+
+        private bool IsQsvHwaccelUnsupported(bool isLinux, bool isWindows)
+        {
+            return (!isLinux && !isWindows) || !_mediaEncoder.SupportsHwaccel("qsv");
+        }
+
+        private bool IsNvencHwaccelUnsupported(bool isLinux, bool isWindows)
+        {
+            return (!isLinux && !isWindows) || !IsCudaFullSupported();
         }
 
         private void AppendVaapiHwDeviceArgs(StringBuilder args, EncodingOptions options, bool isVaapiDecoder, bool isHwTonemapAvailable)
