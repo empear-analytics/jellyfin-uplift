@@ -84,16 +84,33 @@ namespace Emby.Server.Implementations.Library
 
             AddFolderViewIfEnabled(list);
 
+            AddExternalContentIfIncluded(list, user, query);
+
+            list = RemoveHiddenViews(list, user, query);
+
+            return OrderViews(list, user);
+        }
+
+        private void AddExternalContentIfIncluded(List<Folder> list, User user, UserViewQuery query)
+        {
             if (query.IncludeExternalContent)
             {
                 AddExternalContent(list, user);
             }
+        }
 
+        private static List<Folder> RemoveHiddenViews(List<Folder> list, User user, UserViewQuery query)
+        {
             if (!query.IncludeHidden)
             {
                 list = list.Where(i => !user.GetPreferenceValues<Guid>(PreferenceKind.MyMediaExcludes).Contains(i.Id)).ToList();
             }
 
+            return list;
+        }
+
+        private Folder[] OrderViews(List<Folder> list, User user)
+        {
             var sorted = _libraryManager.Sort(list, user, [ItemSortBy.SortName], SortOrder.Ascending).ToList();
             var orders = user.GetPreferenceValues<Guid>(PreferenceKind.OrderedViews);
 
