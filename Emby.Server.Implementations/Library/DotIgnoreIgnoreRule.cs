@@ -149,9 +149,7 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
         // Check if we have a cached result for this directory
         if (_directoryCache.TryGet(directory, out var cached))
         {
-            return cached.IgnoreFileDirectory is null
-                ? null
-                : new FileInfo(Path.Join(cached.IgnoreFileDirectory, ".ignore"));
+            return GetCachedIgnoreFile(cached);
         }
 
         DirectoryInfo startDir;
@@ -207,6 +205,13 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
         }
 
         return null;
+    }
+
+    private static FileInfo? GetCachedIgnoreFile(IgnoreFileCacheEntry cached)
+    {
+        return cached.IgnoreFileDirectory is null
+            ? null
+            : new FileInfo(Path.Join(cached.IgnoreFileDirectory, ".ignore"));
     }
 
     private void CacheEntryForDirectories(List<string> directories, IgnoreFileCacheEntry entry)
