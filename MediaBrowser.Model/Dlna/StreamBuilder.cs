@@ -1220,27 +1220,37 @@ namespace MediaBrowser.Model.Dlna
                     || string.Equals(audioCodec, "ac3", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(audioCodec, "eac3", StringComparison.OrdinalIgnoreCase))
                 {
-                    if ((audioChannels ?? 0) < 2)
-                    {
-                        return 128000;
-                    }
-
-                    return (audioChannels ?? 0) >= 6 ? 640000 : 384000;
+                    return GetLossyCodecDefaultBitrate(audioChannels);
                 }
 
                 if (string.Equals(audioCodec, "flac", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(audioCodec, "alac", StringComparison.OrdinalIgnoreCase))
                 {
-                    if ((audioChannels ?? 0) < 2)
-                    {
-                        return 768000;
-                    }
-
-                    return (audioChannels ?? 0) >= 6 ? 3584000 : 1536000;
+                    return GetLosslessCodecDefaultBitrate(audioChannels);
                 }
             }
 
             return 192000;
+        }
+
+        private static int GetLossyCodecDefaultBitrate(int? audioChannels)
+        {
+            if ((audioChannels ?? 0) < 2)
+            {
+                return 128000;
+            }
+
+            return (audioChannels ?? 0) >= 6 ? 640000 : 384000;
+        }
+
+        private static int GetLosslessCodecDefaultBitrate(int? audioChannels)
+        {
+            if ((audioChannels ?? 0) < 2)
+            {
+                return 768000;
+            }
+
+            return (audioChannels ?? 0) >= 6 ? 3584000 : 1536000;
         }
 
         private static int GetAudioBitrate(long maxTotalBitrate, IReadOnlyList<string> targetAudioCodecs, MediaStream? audioStream, StreamInfo item)
