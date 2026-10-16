@@ -1672,58 +1672,12 @@ public class DynamicHlsController : BaseJellyfinApiController
         var bitStreamArgs = _encodingHelper.GetAudioBitStreamArguments(state, state.Request.SegmentContainer, state.MediaSource.Container);
 
         // opus, dts, truehd and flac (in FFmpeg 5 and older) are experimental in mp4 muxer
-        var strictArgs = string.Empty;
         var actualOutputAudioCodec = state.ActualOutputAudioCodec;
-        if (string.Equals(actualOutputAudioCodec, "opus", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(actualOutputAudioCodec, "dts", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(actualOutputAudioCodec, "truehd", StringComparison.OrdinalIgnoreCase)
-            || (string.Equals(actualOutputAudioCodec, "flac", StringComparison.OrdinalIgnoreCase)
-                && _mediaEncoder.EncoderVersion < _minFFmpegFlacInMp4))
-        {
-            strictArgs = " -strict -2";
-        }
+        var strictArgs = GetAudioStrictArguments(actualOutputAudioCodec);
 
         if (!state.IsOutputVideo)
         {
-            var audioTranscodeParams = string.Empty;
-
-            // -vn to drop any video streams
-            audioTranscodeParams += "-vn";
-
-            if (EncodingHelper.IsCopyCodec(audioCodec))
-            {
-                return audioTranscodeParams + " -acodec copy" + bitStreamArgs + strictArgs;
-            }
-
-            audioTranscodeParams += " -acodec " + audioCodec + bitStreamArgs + strictArgs;
-
-            var audioBitrate = state.OutputAudioBitrate;
-            var audioChannels = state.OutputAudioChannels;
-
-            if (audioBitrate.HasValue && !EncodingHelper.LosslessAudioCodecs.Contains(state.ActualOutputAudioCodec, StringComparison.OrdinalIgnoreCase))
-            {
-                var vbrParam = _encodingHelper.GetAudioVbrModeParam(audioCodec, audioBitrate.Value, audioChannels ?? 2);
-                if (_encodingOptions.EnableAudioVbr && state.EnableAudioVbrEncoding && vbrParam is not null)
-                {
-                    audioTranscodeParams += vbrParam;
-                }
-                else
-                {
-                    audioTranscodeParams += " -ab " + audioBitrate.Value.ToString(CultureInfo.InvariantCulture);
-                }
-            }
-
-            if (audioChannels.HasValue)
-            {
-                audioTranscodeParams += " -ac " + audioChannels.Value.ToString(CultureInfo.InvariantCulture);
-            }
-
-            if (state.OutputAudioSampleRate.HasValue)
-            {
-                audioTranscodeParams += " -ar " + state.OutputAudioSampleRate.Value.ToString(CultureInfo.InvariantCulture);
-            }
-
-            return audioTranscodeParams;
+            return GetAudioOnlyArguments(state, audioCodec, bitStreamArgs, strictArgs);
         }
 
         if (EncodingHelper.IsCopyCodec(audioCodec))
@@ -1738,15 +1692,92 @@ public class DynamicHlsController : BaseJellyfinApiController
 
         var channels = state.OutputAudioChannels;
 
+        args += GetAudioChannelArguments(state, channels);
+
+        args += GetAudioBitrateArguments(state, audioCodec, actualOutputAudioCodec, channels);
+
+        args += GetAudioSampleRateArguments(state);
+
+        args += _encodingHelper.GetAudioFilterParam(state, _encodingOptions);
+
+        return args;
+    }
+
+    private string GetAudioChannelArguments(StreamState state, int? channels)
+    {
         var useDownMixAlgorithm = DownMixAlgorithmsHelper.AlgorithmFilterStrings.ContainsKey((_encodingOptions.DownMixStereoAlgorithm, DownMixAlgorithmsHelper.InferChannelLayout(state.AudioStream)));
 
         if (channels.HasValue
             && (channels.Value != 2
                 || (state.AudioStream?.Channels is not null && !useDownMixAlgorithm)))
         {
-            args += " -ac " + channels.Value;
+            return " -ac " + channels.Value;
         }
 
+        return string.Empty;
+    }
+
+    private string GetAudioStrictArguments(string actualOutputAudioCodec)
+    {
+        var strictArgs = string.Empty;
+        if (string.Equals(actualOutputAudioCodec, "opus", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(actualOutputAudioCodec, "dts", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(actualOutputAudioCodec, "truehd", StringComparison.OrdinalIgnoreCase)
+            || (string.Equals(actualOutputAudioCodec, "flac", StringComparison.OrdinalIgnoreCase)
+                && _mediaEncoder.EncoderVersion < _minFFmpegFlacInMp4))
+        {
+            strictArgs = " -strict -2";
+        }
+
+        return strictArgs;
+    }
+
+    private string GetAudioOnlyArguments(StreamState state, string audioCodec, string bitStreamArgs, string strictArgs)
+    {
+        var audioTranscodeParams = string.Empty;
+
+        // -vn to drop any video streams
+        audioTranscodeParams += "-vn";
+
+        if (EncodingHelper.IsCopyCodec(audioCodec))
+        {
+            return audioTranscodeParams + " -acodec copy" + bitStreamArgs + strictArgs;
+        }
+
+        audioTranscodeParams += " -acodec " + audioCodec + bitStreamArgs + strictArgs;
+
+        var audioBitrate = state.OutputAudioBitrate;
+        var audioChannels = state.OutputAudioChannels;
+
+        if (audioBitrate.HasValue && !EncodingHelper.LosslessAudioCodecs.Contains(state.ActualOutputAudioCodec, StringComparison.OrdinalIgnoreCase))
+        {
+            var vbrParam = _encodingHelper.GetAudioVbrModeParam(audioCodec, audioBitrate.Value, audioChannels ?? 2);
+            if (_encodingOptions.EnableAudioVbr && state.EnableAudioVbrEncoding && vbrParam is not null)
+            {
+                audioTranscodeParams += vbrParam;
+            }
+            else
+            {
+                audioTranscodeParams += " -ab " + audioBitrate.Value.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        if (audioChannels.HasValue)
+        {
+            audioTranscodeParams += " -ac " + audioChannels.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (state.OutputAudioSampleRate.HasValue)
+        {
+            audioTranscodeParams += " -ar " + state.OutputAudioSampleRate.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return audioTranscodeParams;
+    }
+
+    private string GetAudioBitrateArguments(StreamState state, string audioCodec, string actualOutputAudioCodec, int? channels)
+    {
+        var args = string.Empty;
         var bitrate = state.OutputAudioBitrate;
         if (bitrate.HasValue && !EncodingHelper.LosslessAudioCodecs.Contains(actualOutputAudioCodec, StringComparison.OrdinalIgnoreCase))
         {
@@ -1761,20 +1792,23 @@ public class DynamicHlsController : BaseJellyfinApiController
             }
         }
 
+        return args;
+    }
+
+    private static string GetAudioSampleRateArguments(StreamState state)
+    {
         if (state.OutputAudioSampleRate.HasValue)
         {
-            args += " -ar " + state.OutputAudioSampleRate.Value.ToString(CultureInfo.InvariantCulture);
+            return " -ar " + state.OutputAudioSampleRate.Value.ToString(CultureInfo.InvariantCulture);
         }
         else if (state.AudioStream?.CodecTag is not null && state.AudioStream.CodecTag.Equals("ac-4", StringComparison.Ordinal))
         {
             // ac-4 audio tends to have a super weird sample rate that will fail most encoders
             // force resample it to 48KHz
-            args += " -ar 48000";
+            return " -ar 48000";
         }
 
-        args += _encodingHelper.GetAudioFilterParam(state, _encodingOptions);
-
-        return args;
+        return string.Empty;
     }
 
     /// <summary>
