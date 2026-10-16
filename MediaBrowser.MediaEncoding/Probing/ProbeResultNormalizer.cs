@@ -120,36 +120,9 @@ namespace MediaBrowser.MediaEncoding.Probing
                 .Where(i => i is not null)
                 .ToList();
 
-            if (data.Format is not null)
-            {
-                info.Container = NormalizeFormat(data.Format.FormatName, info.MediaStreams);
+            SetContainerAndBitrate(info, data);
 
-                if (int.TryParse(data.Format.BitRate, CultureInfo.InvariantCulture, out var value))
-                {
-                    info.Bitrate = value;
-                }
-            }
-
-            var tags = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            var tagStreamType = isAudio ? CodecType.Audio : CodecType.Video;
-
-            var tagStream = data.Streams?.FirstOrDefault(i => i.CodecType == tagStreamType);
-
-            if (tagStream?.Tags is not null)
-            {
-                foreach (var (key, value) in tagStream.Tags)
-                {
-                    tags[key] = value;
-                }
-            }
-
-            if (data.Format?.Tags is not null)
-            {
-                foreach (var (key, value) in data.Format.Tags)
-                {
-                    tags[key] = value;
-                }
-            }
+            var tags = GetCombinedTags(data, isAudio);
 
             FetchGenres(info, tags);
 
@@ -176,17 +149,7 @@ namespace MediaBrowser.MediaEncoding.Probing
             // Set common metadata for music (audio) and music videos (video)
             info.Album = tags.GetValueOrDefault("album");
 
-            if (tags.TryGetValue("artists", out var artists) && !string.IsNullOrWhiteSpace(artists))
-            {
-                info.Artists = SplitDistinctArtists(artists, _basicDelimiters, false).ToArray();
-            }
-            else
-            {
-                var artist = tags.GetFirstNotNullNorWhiteSpaceValue("artist");
-                info.Artists = artist is null
-                    ? Array.Empty<string>()
-                    : SplitDistinctArtists(artist, _nameDelimiters, true).ToArray();
-            }
+            SetArtists(info, tags);
 
             // Guess ProductionYear from PremiereDate if missing
             if (info.ProductionYear is null && info.PremiereDate is not null)
@@ -211,84 +174,158 @@ namespace MediaBrowser.MediaEncoding.Probing
             }
             else
             {
-                FetchStudios(info, tags, "copyright");
-
-                var iTunExtc = tags.GetFirstNotNullNorWhiteSpaceValue("iTunEXTC");
-                if (iTunExtc is not null)
-                {
-                    var parts = iTunExtc.Split('|', StringSplitOptions.RemoveEmptyEntries);
-                    // Example
-                    // mpaa|G|100|For crude humor
-                    if (parts.Length > 1)
-                    {
-                        info.OfficialRating = parts[1];
-
-                        if (parts.Length > 3)
-                        {
-                            info.OfficialRatingDescription = parts[3];
-                        }
-                    }
-                }
-
-                var iTunXml = tags.GetFirstNotNullNorWhiteSpaceValue("iTunMOVI");
-                if (iTunXml is not null)
-                {
-                    FetchFromItunesInfo(iTunXml, info);
-                }
-
-                if (data.Format is not null && !string.IsNullOrEmpty(data.Format.Duration))
-                {
-                    info.RunTimeTicks = TimeSpan.FromSeconds(double.Parse(data.Format.Duration, CultureInfo.InvariantCulture)).Ticks;
-                }
-
-                FetchWtvInfo(info, data);
-
-                ExtractTimestamp(info);
-
-                if (tags.TryGetValue("stereo_mode", out var stereoMode) && string.Equals(stereoMode, "left_right", StringComparison.OrdinalIgnoreCase))
-                {
-                    info.Video3DFormat = Video3DFormat.FullSideBySide;
-                }
-
-                foreach (var mediaStream in info.MediaStreams)
-                {
-                    if (mediaStream.Type == MediaStreamType.Audio && !mediaStream.BitRate.HasValue)
-                    {
-                        mediaStream.BitRate = GetEstimatedAudioBitrate(mediaStream.Codec, mediaStream.Profile, mediaStream.Channels);
-                    }
-                }
-
-                // ffprobe frequently omits the per-stream video bitrate (common in MP4/MKV containers).
-                // Estimate the missing video bitrate as the container bitrate minus the combined stream bitrates.
-                var videoStreams = info.MediaStreams.Where(i => i.Type == MediaStreamType.Video).ToList();
-                if (info.Bitrate.HasValue
-                    && videoStreams.Count == 1
-                    && !videoStreams[0].BitRate.HasValue)
-                {
-                    var otherStreams = info.MediaStreams
-                        .Where(i => i.Type != MediaStreamType.Video && !i.IsExternal)
-                        .ToList();
-
-                    // Only attribute the leftover bitrate to the video stream if every audio stream's bitrate is known.
-                    var audioBitratesKnown = otherStreams
-                        .Where(i => i.Type == MediaStreamType.Audio)
-                        .All(i => i.BitRate.HasValue);
-
-                    if (audioBitratesKnown)
-                    {
-                        var estimatedVideoBitrate = info.Bitrate.Value - otherStreams.Sum(i => i.BitRate ?? 0);
-                        if (estimatedVideoBitrate > 0)
-                        {
-                            videoStreams[0].BitRate = estimatedVideoBitrate;
-                        }
-                    }
-                }
-
-                // If the container bitrate is still unknown, infer it from the sum of the streams.
-                info.InferTotalBitrate();
+                SetVideoInfo(info, data, tags);
             }
 
             return info;
+        }
+
+        private void SetContainerAndBitrate(MediaInfo info, InternalMediaInfoResult data)
+        {
+            if (data.Format is not null)
+            {
+                info.Container = NormalizeFormat(data.Format.FormatName, info.MediaStreams);
+
+                if (int.TryParse(data.Format.BitRate, CultureInfo.InvariantCulture, out var value))
+                {
+                    info.Bitrate = value;
+                }
+            }
+        }
+
+        private static Dictionary<string, string> GetCombinedTags(InternalMediaInfoResult data, bool isAudio)
+        {
+            var tags = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var tagStreamType = isAudio ? CodecType.Audio : CodecType.Video;
+
+            var tagStream = data.Streams?.FirstOrDefault(i => i.CodecType == tagStreamType);
+
+            if (tagStream?.Tags is not null)
+            {
+                foreach (var (key, value) in tagStream.Tags)
+                {
+                    tags[key] = value;
+                }
+            }
+
+            if (data.Format?.Tags is not null)
+            {
+                foreach (var (key, value) in data.Format.Tags)
+                {
+                    tags[key] = value;
+                }
+            }
+
+            return tags;
+        }
+
+        private void SetArtists(MediaInfo info, Dictionary<string, string> tags)
+        {
+            if (tags.TryGetValue("artists", out var artists) && !string.IsNullOrWhiteSpace(artists))
+            {
+                info.Artists = SplitDistinctArtists(artists, _basicDelimiters, false).ToArray();
+            }
+            else
+            {
+                var artist = tags.GetFirstNotNullNorWhiteSpaceValue("artist");
+                info.Artists = artist is null
+                    ? Array.Empty<string>()
+                    : SplitDistinctArtists(artist, _nameDelimiters, true).ToArray();
+            }
+        }
+
+        private void SetVideoInfo(MediaInfo info, InternalMediaInfoResult data, Dictionary<string, string> tags)
+        {
+            FetchStudios(info, tags, "copyright");
+
+            SetOfficialRatingFromItunExtc(info, tags);
+
+            var iTunXml = tags.GetFirstNotNullNorWhiteSpaceValue("iTunMOVI");
+            if (iTunXml is not null)
+            {
+                FetchFromItunesInfo(iTunXml, info);
+            }
+
+            if (data.Format is not null && !string.IsNullOrEmpty(data.Format.Duration))
+            {
+                info.RunTimeTicks = TimeSpan.FromSeconds(double.Parse(data.Format.Duration, CultureInfo.InvariantCulture)).Ticks;
+            }
+
+            FetchWtvInfo(info, data);
+
+            ExtractTimestamp(info);
+
+            if (tags.TryGetValue("stereo_mode", out var stereoMode) && string.Equals(stereoMode, "left_right", StringComparison.OrdinalIgnoreCase))
+            {
+                info.Video3DFormat = Video3DFormat.FullSideBySide;
+            }
+
+            EstimateAudioBitrates(info);
+
+            EstimateVideoBitrate(info);
+
+            // If the container bitrate is still unknown, infer it from the sum of the streams.
+            info.InferTotalBitrate();
+        }
+
+        private static void SetOfficialRatingFromItunExtc(MediaInfo info, Dictionary<string, string> tags)
+        {
+            var iTunExtc = tags.GetFirstNotNullNorWhiteSpaceValue("iTunEXTC");
+            if (iTunExtc is not null)
+            {
+                var parts = iTunExtc.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                // Example
+                // mpaa|G|100|For crude humor
+                if (parts.Length > 1)
+                {
+                    info.OfficialRating = parts[1];
+
+                    if (parts.Length > 3)
+                    {
+                        info.OfficialRatingDescription = parts[3];
+                    }
+                }
+            }
+        }
+
+        private static void EstimateAudioBitrates(MediaInfo info)
+        {
+            foreach (var mediaStream in info.MediaStreams)
+            {
+                if (mediaStream.Type == MediaStreamType.Audio && !mediaStream.BitRate.HasValue)
+                {
+                    mediaStream.BitRate = GetEstimatedAudioBitrate(mediaStream.Codec, mediaStream.Profile, mediaStream.Channels);
+                }
+            }
+        }
+
+        private static void EstimateVideoBitrate(MediaInfo info)
+        {
+            // ffprobe frequently omits the per-stream video bitrate (common in MP4/MKV containers).
+            // Estimate the missing video bitrate as the container bitrate minus the combined stream bitrates.
+            var videoStreams = info.MediaStreams.Where(i => i.Type == MediaStreamType.Video).ToList();
+            if (info.Bitrate.HasValue
+                && videoStreams.Count == 1
+                && !videoStreams[0].BitRate.HasValue)
+            {
+                var otherStreams = info.MediaStreams
+                    .Where(i => i.Type != MediaStreamType.Video && !i.IsExternal)
+                    .ToList();
+
+                // Only attribute the leftover bitrate to the video stream if every audio stream's bitrate is known.
+                var audioBitratesKnown = otherStreams
+                    .Where(i => i.Type == MediaStreamType.Audio)
+                    .All(i => i.BitRate.HasValue);
+
+                if (audioBitratesKnown)
+                {
+                    var estimatedVideoBitrate = info.Bitrate.Value - otherStreams.Sum(i => i.BitRate ?? 0);
+                    if (estimatedVideoBitrate > 0)
+                    {
+                        videoStreams[0].BitRate = estimatedVideoBitrate;
+                    }
+                }
+            }
         }
 
         private string NormalizeFormat(string format, IReadOnlyList<MediaStream> mediaStreams)
