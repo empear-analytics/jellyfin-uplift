@@ -43,14 +43,7 @@ public static class FileStreamResponseHelpers
         }
 
         // Forward Range header if present in the client request
-        if (httpContext.Request.Headers.TryGetValue(HeaderNames.Range, out var rangeValue))
-        {
-            var rangeString = rangeValue.ToString();
-            if (!string.IsNullOrEmpty(rangeString))
-            {
-                requestMessage.Headers.Range = System.Net.Http.Headers.RangeHeaderValue.Parse(rangeString);
-            }
-        }
+        ForwardRangeHeader(httpContext, requestMessage);
 
         // Send the request to the upstream server
         // Use ResponseHeadersRead to avoid downloading the whole content immediately
@@ -164,6 +157,18 @@ public static class FileStreamResponseHelpers
 
             var stream = new ProgressiveFileStream(outputPath, job, transcodeManager);
             return new FileStreamResult(stream, contentType);
+        }
+    }
+
+    private static void ForwardRangeHeader(HttpContext httpContext, HttpRequestMessage requestMessage)
+    {
+        if (httpContext.Request.Headers.TryGetValue(HeaderNames.Range, out var rangeValue))
+        {
+            var rangeString = rangeValue.ToString();
+            if (!string.IsNullOrEmpty(rangeString))
+            {
+                requestMessage.Headers.Range = System.Net.Http.Headers.RangeHeaderValue.Parse(rangeString);
+            }
         }
     }
 }
