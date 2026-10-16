@@ -701,42 +701,7 @@ namespace MediaBrowser.Model.Dlna
             }
 
             // Collect candidate audio streams
-            ICollection<MediaStream> candidateAudioStreams = audioStream is null ? [] : [audioStream];
-            // When the index is explicitly required by client or the default is specified by user, don't do any stream reselection.
-            if (!item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.User) && (options.AudioStreamIndex is null or < 0))
-            {
-                // When user has no preferences allow stream selection on all streams.
-                if (item.DefaultAudioIndexSource == AudioIndexSource.None && audioStream is not null)
-                {
-                    candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio).ToArray();
-                    if (audioStream.IsDefault)
-                    {
-                        // If default is picked, only allow selection within default streams.
-                        candidateAudioStreams = candidateAudioStreams.Where(stream => stream.IsDefault).ToArray();
-                    }
-                }
-
-                if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Language))
-                {
-                    // If user has language preference, only allow stream selection within the same language.
-                    candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.Language == audioStream?.Language).ToArray();
-                    if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Default))
-                    {
-                        var defaultStreamsInPreferredLanguage = candidateAudioStreams.Where(stream => stream.IsDefault).ToArray();
-
-                        // If the user also prefers default streams, try limit selection within default tracks in the same language.
-                        // If there is no default stream in the preferred language, allow selection on all default streams to match the "Play default audio track regardless of language" setting.
-                        candidateAudioStreams = defaultStreamsInPreferredLanguage.Length > 0
-                            ? defaultStreamsInPreferredLanguage
-                            : item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.IsDefault).ToArray();
-                    }
-                }
-                else if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Default))
-                {
-                    // If user prefers default streams, only allow stream selection on default streams.
-                    candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.IsDefault).ToArray();
-                }
-            }
+            ICollection<MediaStream> candidateAudioStreams = GetCandidateAudioStreams(item, options, audioStream);
 
             var videoStream = item.VideoStream;
 
@@ -792,12 +757,7 @@ namespace MediaBrowser.Model.Dlna
                         playlistItem.SubProtocol = MediaStreamProtocol.http;
 
                         var audioStreamIndex = directPlayInfo.AudioStreamIndex ?? audioStream?.Index;
-                        if (audioStreamIndex.HasValue)
-                        {
-                            playlistItem.AudioStreamIndex = audioStreamIndex;
-                            var audioCodec = item.GetMediaStream(MediaStreamType.Audio, audioStreamIndex.Value)?.Codec;
-                            playlistItem.AudioCodecs = audioCodec is null ? [] : [audioCodec];
-                        }
+                        SetDirectPlayAudioStream(playlistItem, item, audioStreamIndex);
                     }
                     else if (directPlay == PlayMethod.DirectStream)
                     {
@@ -832,6 +792,76 @@ namespace MediaBrowser.Model.Dlna
 
             playlistItem.TranscodeReasons = transcodeReasons;
 
+            ApplyVideoTranscodeProfile(item, options, playlistItem, videoStream, audioStream, candidateAudioStreams, subtitleStream);
+
+            _logger.LogDebug(
+                "StreamBuilder.BuildVideoItem( Profile={0}, Path={1}, AudioStreamIndex={2}, SubtitleStreamIndex={3} ) => ( PlayMethod={4}, TranscodeReason={5} ) {6}",
+                options.Profile.Name ?? "Anonymous Profile",
+                item.Path ?? "Unknown path",
+                options.AudioStreamIndex,
+                options.SubtitleStreamIndex,
+                playlistItem.PlayMethod,
+                playlistItem.TranscodeReasons,
+                playlistItem.ToUrl("media:", "<token>", null));
+
+            item.Container = NormalizeMediaSourceFormatIntoSingleContainer(item.Container, options.Profile, DlnaProfileType.Video, directPlayProfile);
+            return playlistItem;
+        }
+
+        private static ICollection<MediaStream> GetCandidateAudioStreams(MediaSourceInfo item, MediaOptions options, MediaStream? audioStream)
+        {
+            ICollection<MediaStream> candidateAudioStreams = audioStream is null ? [] : [audioStream];
+            // When the index is explicitly required by client or the default is specified by user, don't do any stream reselection.
+            if (!item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.User) && (options.AudioStreamIndex is null or < 0))
+            {
+                // When user has no preferences allow stream selection on all streams.
+                if (item.DefaultAudioIndexSource == AudioIndexSource.None && audioStream is not null)
+                {
+                    candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio).ToArray();
+                    if (audioStream.IsDefault)
+                    {
+                        // If default is picked, only allow selection within default streams.
+                        candidateAudioStreams = candidateAudioStreams.Where(stream => stream.IsDefault).ToArray();
+                    }
+                }
+
+                if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Language))
+                {
+                    // If user has language preference, only allow stream selection within the same language.
+                    candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.Language == audioStream?.Language).ToArray();
+                    if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Default))
+                    {
+                        var defaultStreamsInPreferredLanguage = candidateAudioStreams.Where(stream => stream.IsDefault).ToArray();
+
+                        // If the user also prefers default streams, try limit selection within default tracks in the same language.
+                        // If there is no default stream in the preferred language, allow selection on all default streams to match the "Play default audio track regardless of language" setting.
+                        candidateAudioStreams = defaultStreamsInPreferredLanguage.Length > 0
+                            ? defaultStreamsInPreferredLanguage
+                            : item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.IsDefault).ToArray();
+                    }
+                }
+                else if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Default))
+                {
+                    // If user prefers default streams, only allow stream selection on default streams.
+                    candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.IsDefault).ToArray();
+                }
+            }
+
+            return candidateAudioStreams;
+        }
+
+        private static void SetDirectPlayAudioStream(StreamInfo playlistItem, MediaSourceInfo item, int? audioStreamIndex)
+        {
+            if (audioStreamIndex.HasValue)
+            {
+                playlistItem.AudioStreamIndex = audioStreamIndex;
+                var audioCodec = item.GetMediaStream(MediaStreamType.Audio, audioStreamIndex.Value)?.Codec;
+                playlistItem.AudioCodecs = audioCodec is null ? [] : [audioCodec];
+            }
+        }
+
+        private void ApplyVideoTranscodeProfile(MediaSourceInfo item, MediaOptions options, StreamInfo playlistItem, MediaStream? videoStream, MediaStream? audioStream, ICollection<MediaStream> candidateAudioStreams, MediaStream? subtitleStream)
+        {
             if (playlistItem.PlayMethod != PlayMethod.DirectStream && playlistItem.PlayMethod != PlayMethod.DirectPlay)
             {
                 // Can't direct play, find the transcoding profile
@@ -860,19 +890,6 @@ namespace MediaBrowser.Model.Dlna
                     }
                 }
             }
-
-            _logger.LogDebug(
-                "StreamBuilder.BuildVideoItem( Profile={0}, Path={1}, AudioStreamIndex={2}, SubtitleStreamIndex={3} ) => ( PlayMethod={4}, TranscodeReason={5} ) {6}",
-                options.Profile.Name ?? "Anonymous Profile",
-                item.Path ?? "Unknown path",
-                options.AudioStreamIndex,
-                options.SubtitleStreamIndex,
-                playlistItem.PlayMethod,
-                playlistItem.TranscodeReasons,
-                playlistItem.ToUrl("media:", "<token>", null));
-
-            item.Container = NormalizeMediaSourceFormatIntoSingleContainer(item.Container, options.Profile, DlnaProfileType.Video, directPlayProfile);
-            return playlistItem;
         }
 
         private (TranscodingProfile? Profile, PlayMethod? PlayMethod) GetVideoTranscodeProfile(
