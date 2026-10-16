@@ -1807,9 +1807,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     _ => " -preset 10"
                 };
             }
-            else if (string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
-                     || string.Equals(videoEncoder, "hevc_vaapi", StringComparison.OrdinalIgnoreCase)
-                     || string.Equals(videoEncoder, "av1_vaapi", StringComparison.OrdinalIgnoreCase))
+            else if (IsVaapiVideoEncoder(videoEncoder))
             {
                 // -compression_level is not reliable on AMD.
                 if (_mediaEncoder.IsVaapiDeviceInteliHD)
@@ -1829,9 +1827,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     };
                 }
             }
-            else if (string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase) // h264 (h264_qsv)
-                     || string.Equals(videoEncoder, "hevc_qsv", StringComparison.OrdinalIgnoreCase) // hevc (hevc_qsv)
-                     || string.Equals(videoEncoder, "av1_qsv", StringComparison.OrdinalIgnoreCase)) // av1 (av1_qsv)
+            else if (IsQsvVideoEncoder(videoEncoder))
             {
                 EncoderPreset[] valid_presets = [EncoderPreset.veryslow, EncoderPreset.slower, EncoderPreset.slow, EncoderPreset.medium, EncoderPreset.fast, EncoderPreset.faster, EncoderPreset.veryfast];
 
@@ -1844,10 +1840,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     param += " -mbbrc 1";
                 }
             }
-            else if (string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase) // h264 (h264_nvenc)
-                        || string.Equals(videoEncoder, "hevc_nvenc", StringComparison.OrdinalIgnoreCase) // hevc (hevc_nvenc)
-                        || string.Equals(videoEncoder, "av1_nvenc", StringComparison.OrdinalIgnoreCase) // av1 (av1_nvenc)
-            )
+            else if (IsNvencVideoEncoder(videoEncoder))
             {
                 param += encoderPreset switch
                 {
@@ -1867,10 +1860,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     param += " -spatial-aq 1 -aq-strength 15";
                 }
             }
-            else if (string.Equals(videoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase) // h264 (h264_amf)
-                        || string.Equals(videoEncoder, "hevc_amf", StringComparison.OrdinalIgnoreCase) // hevc (hevc_amf)
-                        || string.Equals(videoEncoder, "av1_amf", StringComparison.OrdinalIgnoreCase) // av1 (av1_amf)
-            )
+            else if (IsAmfVideoEncoder(videoEncoder))
             {
                 param += encoderPreset switch
                 {
@@ -1919,6 +1909,34 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return param;
+        }
+
+        private static bool IsVaapiVideoEncoder(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoEncoder, "hevc_vaapi", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoEncoder, "av1_vaapi", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsQsvVideoEncoder(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase) // h264 (h264_qsv)
+                || string.Equals(videoEncoder, "hevc_qsv", StringComparison.OrdinalIgnoreCase) // hevc (hevc_qsv)
+                || string.Equals(videoEncoder, "av1_qsv", StringComparison.OrdinalIgnoreCase); // av1 (av1_qsv)
+        }
+
+        private static bool IsNvencVideoEncoder(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase) // h264 (h264_nvenc)
+                || string.Equals(videoEncoder, "hevc_nvenc", StringComparison.OrdinalIgnoreCase) // hevc (hevc_nvenc)
+                || string.Equals(videoEncoder, "av1_nvenc", StringComparison.OrdinalIgnoreCase); // av1 (av1_nvenc)
+        }
+
+        private static bool IsAmfVideoEncoder(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase) // h264 (h264_amf)
+                || string.Equals(videoEncoder, "hevc_amf", StringComparison.OrdinalIgnoreCase) // hevc (hevc_amf)
+                || string.Equals(videoEncoder, "av1_amf", StringComparison.OrdinalIgnoreCase); // av1 (av1_amf)
         }
 
         public static string NormalizeTranscodingLevel(EncodingJobInfo state, string level)
