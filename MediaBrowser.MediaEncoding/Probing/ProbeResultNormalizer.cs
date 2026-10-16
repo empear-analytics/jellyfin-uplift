@@ -1069,29 +1069,36 @@ namespace MediaBrowser.MediaEncoding.Probing
         private static void SetBitRateFromTags(MediaStream stream, MediaStreamInfo streamInfo)
         {
             // Extract bitrate info from tag "BPS" if possible.
-            if (!stream.BitRate.HasValue
-                && (streamInfo.CodecType == CodecType.Audio
-                    || streamInfo.CodecType == CodecType.Video))
+            if (stream.BitRate.HasValue)
             {
-                var bps = GetBPSFromTags(streamInfo);
-                if (bps > 0)
-                {
-                    stream.BitRate = bps;
-                }
-                else
-                {
-                    // Get average bitrate info from tag "NUMBER_OF_BYTES" and "DURATION" if possible.
-                    var durationInSeconds = GetRuntimeSecondsFromTags(streamInfo);
-                    var bytes = GetNumberOfBytesFromTags(streamInfo);
-                    if (durationInSeconds is not null && durationInSeconds.Value >= 1 && bytes is not null)
-                    {
-                        bps = Convert.ToInt32(bytes * 8 / durationInSeconds, CultureInfo.InvariantCulture);
-                        if (bps > 0)
-                        {
-                            stream.BitRate = bps;
-                        }
-                    }
-                }
+                return;
+            }
+
+            if (streamInfo.CodecType != CodecType.Audio
+                && streamInfo.CodecType != CodecType.Video)
+            {
+                return;
+            }
+
+            var bps = GetBPSFromTags(streamInfo);
+            if (bps > 0)
+            {
+                stream.BitRate = bps;
+                return;
+            }
+
+            // Get average bitrate info from tag "NUMBER_OF_BYTES" and "DURATION" if possible.
+            var durationInSeconds = GetRuntimeSecondsFromTags(streamInfo);
+            var bytes = GetNumberOfBytesFromTags(streamInfo);
+            if (!(durationInSeconds is not null && durationInSeconds.Value >= 1 && bytes is not null))
+            {
+                return;
+            }
+
+            bps = Convert.ToInt32(bytes * 8 / durationInSeconds, CultureInfo.InvariantCulture);
+            if (bps > 0)
+            {
+                stream.BitRate = bps;
             }
         }
 
