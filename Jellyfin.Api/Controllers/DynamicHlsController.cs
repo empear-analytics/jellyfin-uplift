@@ -1759,10 +1759,10 @@ public class DynamicHlsController : BaseJellyfinApiController
         var audioBitrate = state.OutputAudioBitrate;
         var audioChannels = state.OutputAudioChannels;
 
-        if (audioBitrate.HasValue && !EncodingHelper.LosslessAudioCodecs.Contains(state.ActualOutputAudioCodec, StringComparison.OrdinalIgnoreCase))
+        if (IsLossyAudioBitrate(audioBitrate, state.ActualOutputAudioCodec))
         {
             var vbrParam = _encodingHelper.GetAudioVbrModeParam(audioCodec, audioBitrate.Value, audioChannels ?? 2);
-            if (_encodingOptions.EnableAudioVbr && state.EnableAudioVbrEncoding && vbrParam is not null)
+            if (IsAudioVbrEnabled(state, vbrParam))
             {
                 audioTranscodeParams += vbrParam;
             }
