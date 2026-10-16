@@ -843,12 +843,7 @@ namespace Emby.Server.Implementations.Library
 
             if (mediaInfo is null)
             {
-                if (addProbeDelay)
-                {
-                    var delayMs = mediaSource.AnalyzeDurationMs ?? 0;
-                    delayMs = Math.Max(3000, delayMs);
-                    await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
-                }
+                await DelayProbe(mediaSource, addProbeDelay, cancellationToken).ConfigureAwait(false);
 
                 if (isLiveStream)
                 {
@@ -888,25 +883,9 @@ namespace Emby.Server.Implementations.Library
 
             mediaSource.DefaultSubtitleStreamIndex = null;
 
-            if (isLiveStream)
-            {
-                // Null this out so that it will be treated like a live stream
-                if (!originalRuntime.HasValue)
-                {
-                    mediaSource.RunTimeTicks = null;
-                }
-            }
+            ClearLiveStreamRuntime(mediaSource, isLiveStream, originalRuntime);
 
-            var audioStream = mediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Audio);
-
-            if (audioStream is null || audioStream.Index == -1)
-            {
-                mediaSource.DefaultAudioStreamIndex = null;
-            }
-            else
-            {
-                mediaSource.DefaultAudioStreamIndex = audioStream.Index;
-            }
+            SetProbedDefaultAudioStreamIndex(mediaSource, mediaStreams);
 
             var videoStream = mediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Video);
             NormalizeProbedVideoStream(videoStream);
@@ -918,6 +897,42 @@ namespace Emby.Server.Implementations.Library
 
             // Try to estimate this
             mediaSource.InferTotalBitrate(true);
+        }
+
+        private static async Task DelayProbe(MediaSourceInfo mediaSource, bool addProbeDelay, CancellationToken cancellationToken)
+        {
+            if (addProbeDelay)
+            {
+                var delayMs = mediaSource.AnalyzeDurationMs ?? 0;
+                delayMs = Math.Max(3000, delayMs);
+                await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        private static void ClearLiveStreamRuntime(MediaSourceInfo mediaSource, bool isLiveStream, long? originalRuntime)
+        {
+            if (isLiveStream)
+            {
+                // Null this out so that it will be treated like a live stream
+                if (!originalRuntime.HasValue)
+                {
+                    mediaSource.RunTimeTicks = null;
+                }
+            }
+        }
+
+        private static void SetProbedDefaultAudioStreamIndex(MediaSourceInfo mediaSource, IReadOnlyList<MediaStream> mediaStreams)
+        {
+            var audioStream = mediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Audio);
+
+            if (audioStream is null || audioStream.Index == -1)
+            {
+                mediaSource.DefaultAudioStreamIndex = null;
+            }
+            else
+            {
+                mediaSource.DefaultAudioStreamIndex = audioStream.Index;
+            }
         }
 
         private async Task<MediaInfo> ReadCachedMediaInfo(string cacheFilePath, CancellationToken cancellationToken)
