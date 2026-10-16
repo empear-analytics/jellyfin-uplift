@@ -939,7 +939,7 @@ public class StreamInfo
             sb.Append(AudioStreamIndex.Value.ToString(CultureInfo.InvariantCulture));
         }
 
-        if (SubtitleStreamIndex.HasValue && (AlwaysBurnInSubtitleWhenTranscoding || SubtitleDeliveryMethod != SubtitleDeliveryMethod.External) && SubtitleStreamIndex != -1)
+        if (SubtitleStreamIndex.HasValue && IsSubtitleStreamIndexRequested())
         {
             sb.Append("&SubtitleStreamIndex=");
             sb.Append(SubtitleStreamIndex.Value.ToString(CultureInfo.InvariantCulture));
@@ -1017,7 +1017,7 @@ public class StreamInfo
             sb.Append(SubtitleDeliveryMethod);
         }
 
-        if (SubtitleStreamIndex.HasValue && SubtitleDeliveryMethod == SubtitleDeliveryMethod.Embed && SubtitleCodecs.Count != 0)
+        if (ShouldAppendSubtitleCodecs())
         {
             sb.Append("&SubtitleCodec=");
             sb.AppendJoin(',', SubtitleCodecs);
@@ -1051,6 +1051,16 @@ public class StreamInfo
         }
 
         return sb.ToString();
+    }
+
+    private bool IsSubtitleStreamIndexRequested()
+    {
+        return (AlwaysBurnInSubtitleWhenTranscoding || SubtitleDeliveryMethod != SubtitleDeliveryMethod.External) && SubtitleStreamIndex != -1;
+    }
+
+    private bool ShouldAppendSubtitleCodecs()
+    {
+        return SubtitleStreamIndex.HasValue && SubtitleDeliveryMethod == SubtitleDeliveryMethod.Embed && SubtitleCodecs.Count != 0;
     }
 
     private void AppendStreamPath(StringBuilder sb)
