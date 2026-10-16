@@ -2455,37 +2455,7 @@ namespace Emby.Server.Implementations.Library
                 // Parental controls filter on the stored score, so it has to match the ratings being saved.
                 item.OnMetadataChanged();
 
-                if (item is Video video && video.LocalAlternateVersions.Length > 0)
-                {
-                    var videoType = video.GetType();
-                    foreach (var path in video.LocalAlternateVersions)
-                    {
-                        if (string.IsNullOrEmpty(path))
-                        {
-                            continue;
-                        }
-
-                        // Use the primary video's type for ID calculation to ensure consistency
-                        var altId = GetNewItemId(path, videoType);
-                        if (GetItemById(altId) is null && !allItems.Any(i => i.Id.Equals(altId)))
-                        {
-                            // Alternate version doesn't exist, resolve and create it
-                            // ensuring it has the same type as the primary video
-                            var altVideo = ResolveAlternateVersion(path, videoType, parentFolder, parentCollectionType);
-                            if (altVideo is not null)
-                            {
-                                altVideo.OwnerId = video.Id;
-                                altVideo.SetPrimaryVersionId(video.Id);
-                                altVideo.IsInMixedFolder = video.IsInMixedFolder;
-                                // ResolveAlternateVersion only sees the alternate's primary file.
-                                // If the alternate is itself a stack (e.g. 1080p part1 + part2),
-                                // detect its parts from sibling files so its AdditionalParts persist.
-                                SetAdditionalPartsFromStack(altVideo, path);
-                                allItems.Add(altVideo);
-                            }
-                        }
-                    }
-                }
+                AddMissingLocalAlternateVersions(item, allItems, parentFolder, parentCollectionType);
             }
 
             _persistenceService.SaveItems(allItems, cancellationToken);
@@ -2501,6 +2471,46 @@ namespace Emby.Server.Implementations.Library
                 folder.UserData = null;
             }
 
+            NotifyItemsAdded(items, parent);
+        }
+
+        private void AddMissingLocalAlternateVersions(BaseItem item, List<BaseItem> allItems, Folder? parentFolder, CollectionType? parentCollectionType)
+        {
+            if (item is Video video && video.LocalAlternateVersions.Length > 0)
+            {
+                var videoType = video.GetType();
+                foreach (var path in video.LocalAlternateVersions)
+                {
+                    if (string.IsNullOrEmpty(path))
+                    {
+                        continue;
+                    }
+
+                    // Use the primary video's type for ID calculation to ensure consistency
+                    var altId = GetNewItemId(path, videoType);
+                    if (GetItemById(altId) is null && !allItems.Any(i => i.Id.Equals(altId)))
+                    {
+                        // Alternate version doesn't exist, resolve and create it
+                        // ensuring it has the same type as the primary video
+                        var altVideo = ResolveAlternateVersion(path, videoType, parentFolder, parentCollectionType);
+                        if (altVideo is not null)
+                        {
+                            altVideo.OwnerId = video.Id;
+                            altVideo.SetPrimaryVersionId(video.Id);
+                            altVideo.IsInMixedFolder = video.IsInMixedFolder;
+                            // ResolveAlternateVersion only sees the alternate's primary file.
+                            // If the alternate is itself a stack (e.g. 1080p part1 + part2),
+                            // detect its parts from sibling files so its AdditionalParts persist.
+                            SetAdditionalPartsFromStack(altVideo, path);
+                            allItems.Add(altVideo);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void NotifyItemsAdded(IReadOnlyList<BaseItem> items, BaseItem? parent)
+        {
             if (ItemAdded is not null)
             {
                 foreach (var item in items)
