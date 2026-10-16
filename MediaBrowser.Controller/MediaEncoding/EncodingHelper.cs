@@ -7003,8 +7003,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isWindows = OperatingSystem.IsWindows();
             var isLinux = OperatingSystem.IsLinux();
 
-            if ((!isWindows && !isLinux)
-                || options.HardwareAccelerationType != HardwareAccelerationType.qsv)
+            if (IsQsvDecodingUnavailable(isWindows, isLinux, options))
             {
                 return null;
             }
@@ -7079,6 +7078,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private static bool IsQsvDecodingUnavailable(bool isWindows, bool isLinux, EncodingOptions options)
+        {
+            return (!isWindows && !isLinux)
+                || options.HardwareAccelerationType != HardwareAccelerationType.qsv;
         }
 
         public string GetNvdecVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
