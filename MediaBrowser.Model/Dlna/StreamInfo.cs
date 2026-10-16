@@ -1245,10 +1245,7 @@ public class StreamInfo
 
         List<SubtitleStreamInfo> list = [];
 
-        // HLS will preserve timestamps so we can just grab the full subtitle stream
-        long startPositionTicks = SubProtocol == MediaStreamProtocol.hls
-            ? 0
-            : (PlayMethod == PlayMethod.Transcode && !CopyTimestamps ? StartPositionTicks : 0);
+        long startPositionTicks = GetSubtitleStartPositionTicks();
 
         // First add the selected track
         if (SubtitleStreamIndex.HasValue)
@@ -1274,6 +1271,14 @@ public class StreamInfo
         }
 
         return list;
+    }
+
+    private long GetSubtitleStartPositionTicks()
+    {
+        // HLS will preserve timestamps so we can just grab the full subtitle stream
+        return SubProtocol == MediaStreamProtocol.hls
+            ? 0
+            : (PlayMethod == PlayMethod.Transcode && !CopyTimestamps ? StartPositionTicks : 0);
     }
 
     private bool IsUnselectedSubtitleStream(MediaStream stream)
