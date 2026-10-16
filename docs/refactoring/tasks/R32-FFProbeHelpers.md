@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **9.68** / 10 (Green) |
 | Exit target | **10.00** |
-| File size | 88 lines (28 lines of code) |
-| Git churn | 26 commits |
+| File size | 93 lines (30 lines of code) |
+| Git churn | 27 commits |
 | Part | probing (`MediaBrowser.MediaEncoding/Probing`) |
 | Recipes needed | P |
 | Smells without a recipe | none |

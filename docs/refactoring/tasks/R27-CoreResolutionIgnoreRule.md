@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **9.38** / 10 (Green) |
 | Exit target | **10.00** |
-| File size | 69 lines (30 lines of code) |
-| Git churn | 74 commits |
+| File size | 74 lines (32 lines of code) |
+| Git churn | 75 commits |
 | Part | library (`Emby.Server.Implementations/Library`) |
 | Recipes needed | E, G, P |
 | Smells without a recipe | none |

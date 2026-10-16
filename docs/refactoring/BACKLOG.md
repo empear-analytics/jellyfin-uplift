@@ -34,17 +34,17 @@ allowed transformations.
 | [R24](tasks/R24-FileStreamResponseHelpers.md) | `Jellyfin.Api/Helpers/FileStreamResponseHelpers.cs` | **9.38** | 76 | 32 | 94 / 60 | E, G, P | Excess Number of Function Arguments | `GetStaticRemoteStreamResult` (cc 9) |
 | [R25](tasks/R25-PathManager.md) | `Emby.Server.Implementations/Library/PathManager.cs` | **9.38** | 72 | 9 | 92 / 92 | D | - | - |
 | [R26](tasks/R26-HlsHelpers.md) | `Jellyfin.Api/Helpers/HlsHelpers.cs` | **9.38** | 59 | 21 | 81 / 75 | G | - | - |
-| [R27](tasks/R27-CoreResolutionIgnoreRule.md) | `Emby.Server.Implementations/Library/CoreResolutionIgnoreRule.cs` | **9.38** | 30 | 74 | 94 / 100 | E, G, P | - | `ShouldIgnore` (cc 11) |
+| [R27](tasks/R27-CoreResolutionIgnoreRule.md) | `Emby.Server.Implementations/Library/CoreResolutionIgnoreRule.cs` | **9.38** | 32 | 75 | 94 / 100 | E, G, P | - | `ShouldIgnore` (cc 11) |
 | [R28](tasks/R28-TranscodingThrottler.md) | `MediaBrowser.Controller/MediaEncoding/TranscodingThrottler.cs` | **9.51** | 97 | 44 | 0 / 0 (low) | E, G, P | - | `IsThrottleAllowed` (cc 12) |
 | [R29](tasks/R29-DownMixAlgorithmsHelper.md) | `MediaBrowser.Controller/MediaEncoding/DownMixAlgorithmsHelper.cs` | **9.63** | 38 | 5 | 35 / 100 | E, G, P | - | `InferChannelLayout` (cc 13) |
-| [R30](tasks/R30-TranscodingJob.md) | `MediaBrowser.Controller/MediaEncoding/TranscodingJob.cs` | **9.68** | 111 | 19 | 58 / 57 | P | - | - |
+| [R30](tasks/R30-TranscodingJob.md) | `MediaBrowser.Controller/MediaEncoding/TranscodingJob.cs` | **9.68** | 113 | 20 | 58 / 57 | P | - | - |
 | [R31](tasks/R31-ExternalDataManager.md) | `Emby.Server.Implementations/Library/ExternalDataManager.cs` | **9.68** | 46 | 4 | 88 / 86 | - | Constructor Over-Injection | - |
-| [R32](tasks/R32-FFProbeHelpers.md) | `MediaBrowser.MediaEncoding/Probing/FFProbeHelpers.cs` | **9.68** | 28 | 26 | 69 / 60 | P | - | - |
+| [R32](tasks/R32-FFProbeHelpers.md) | `MediaBrowser.MediaEncoding/Probing/FFProbeHelpers.cs` | **9.68** | 30 | 27 | 69 / 60 | P | - | - |
 | [R33](tasks/R33-ResolverHelper.md) | `Emby.Server.Implementations/Library/ResolverHelper.cs` | **9.84** | 62 | 55 | 69 / 53 | E | - | - |
 
 ## Aggregate
 
-- **33 files** below 10.00, 14,481 lines of code
+- **33 files** below 10.00, 14,487 lines of code
 - 246 flagged methods
 - The other 14 scored scope files are already at 10.00; 28 scope files have no methods to score
 
@@ -80,10 +80,10 @@ Update as tasks land.
 | R24 | 9.38 | - | not started |
 | R25 | 9.38 | - | not started |
 | R26 | 9.38 | - | not started |
-| R27 | 9.38 | - | not started |
+| R27 | 9.38 | 10.00 | done (pilot, e94a7a323a) |
 | R28 | 9.51 | - | not started |
 | R29 | 9.63 | - | not started |
-| R30 | 9.68 | - | not started |
+| R30 | 9.68 | 10.00 | done (probe, 9057ab1397) |
 | R31 | 9.68 | - | not started |
-| R32 | 9.68 | - | not started |
+| R32 | 9.68 | 10.00 | done (probe, e41b7c597c) |
 | R33 | 9.84 | - | not started |
