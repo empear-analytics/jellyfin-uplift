@@ -2134,14 +2134,7 @@ namespace Emby.Server.Implementations.Library
                 query.SetUser(user);
             }
 
-            if (query.AncestorIds.Length == 0 &&
-                query.ParentId.IsEmpty() &&
-                query.ChannelIds.Count == 0 &&
-                query.TopParentIds.Length == 0 &&
-                string.IsNullOrEmpty(query.AncestorWithPresentationUniqueKey) &&
-                string.IsNullOrEmpty(query.SeriesPresentationUniqueKey) &&
-                query.ItemIds.Length == 0 &&
-                query.OwnerIds.Length == 0)
+            if (HasNoParentFilter(query))
             {
                 var userViews = UserViewManager.GetUserViews(new UserViewQuery
                 {
@@ -2158,6 +2151,18 @@ namespace Emby.Server.Implementations.Library
                     query.TopParentIds = [Guid.NewGuid()];
                 }
             }
+        }
+
+        private static bool HasNoParentFilter(InternalItemsQuery query)
+        {
+            return query.AncestorIds.Length == 0 &&
+                query.ParentId.IsEmpty() &&
+                query.ChannelIds.Count == 0 &&
+                query.TopParentIds.Length == 0 &&
+                string.IsNullOrEmpty(query.AncestorWithPresentationUniqueKey) &&
+                string.IsNullOrEmpty(query.SeriesPresentationUniqueKey) &&
+                query.ItemIds.Length == 0 &&
+                query.OwnerIds.Length == 0;
         }
 
         /// <inheritdoc/>
