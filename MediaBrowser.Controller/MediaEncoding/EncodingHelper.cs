@@ -4489,7 +4489,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT yuv420p surface
-            if (isSwDecoder && isAmfEncoder && !isUploadForOclTonemap)
+            if (NeedsAmfHwUpload(isSwDecoder, isAmfEncoder, isUploadForOclTonemap))
             {
                 memoryOutput = true;
             }
@@ -4504,7 +4504,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if ((isDxInDxOut || isUploadForOclTonemap) && !hasSubs)
+            if (NeedsAmfHwOutputMap(isDxInDxOut, isUploadForOclTonemap, hasSubs))
             {
                 // OUTPUT d3d11(nv12) surface(vram)
                 // reverse-mapping via d3d11-opencl interop.
@@ -4559,6 +4559,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool NeedsAmfHwUpload(bool isSwDecoder, bool isAmfEncoder, bool isUploadForOclTonemap)
+        {
+            return isSwDecoder && isAmfEncoder && !isUploadForOclTonemap;
+        }
+
+        private static bool NeedsAmfHwOutputMap(bool isDxInDxOut, bool isUploadForOclTonemap, bool hasSubs)
+        {
+            return (isDxInDxOut || isUploadForOclTonemap) && !hasSubs;
         }
 
         /// <summary>
