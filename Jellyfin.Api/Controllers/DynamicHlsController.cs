@@ -1707,14 +1707,19 @@ public class DynamicHlsController : BaseJellyfinApiController
     {
         var useDownMixAlgorithm = DownMixAlgorithmsHelper.AlgorithmFilterStrings.ContainsKey((_encodingOptions.DownMixStereoAlgorithm, DownMixAlgorithmsHelper.InferChannelLayout(state.AudioStream)));
 
-        if (channels.HasValue
-            && (channels.Value != 2
-                || (state.AudioStream?.Channels is not null && !useDownMixAlgorithm)))
+        if (RequiresExplicitChannelCount(state, channels, useDownMixAlgorithm))
         {
             return " -ac " + channels.Value;
         }
 
         return string.Empty;
+    }
+
+    private static bool RequiresExplicitChannelCount(StreamState state, [NotNullWhen(true)] int? channels, bool useDownMixAlgorithm)
+    {
+        return channels.HasValue
+            && (channels.Value != 2
+                || (state.AudioStream?.Channels is not null && !useDownMixAlgorithm));
     }
 
     private string GetAudioStrictArguments(string actualOutputAudioCodec)
