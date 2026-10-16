@@ -3552,15 +3552,14 @@ namespace Emby.Server.Implementations.Library
                 // The name derived from the file is only a default. A name that came from anywhere else,
                 // such as a local metadata file, is the user's and has to survive the scan, so only a
                 // name this method handed out itself is renewed; RefreshExtras persists the change.
-                if (!string.IsNullOrEmpty(name)
-                    && extra.LockedFields?.Contains(MetadataField.Name) != true
+                if (IsUnlockedNewName(name, extra)
                     && (itemById is null || IsGeneratedExtraName(extra.Name, candidate)))
                 {
                     extra.Name = name;
                 }
 
                 // Only update extra type if it is more specific then the currently known extra type
-                if (extra.ExtraType is null or ExtraType.Unknown || candidate.ExtraType != ExtraType.Unknown)
+                if (IsMoreSpecificExtraType(extra, candidate))
                 {
                     extra.ExtraType = candidate.ExtraType;
                 }
@@ -3606,6 +3605,17 @@ namespace Emby.Server.Implementations.Library
         private static bool IsFolderOrDiscVideo(BaseItem owner)
         {
             return owner.IsFolder || (owner is Video video && (video.VideoType == VideoType.BluRay || video.VideoType == VideoType.Dvd));
+        }
+
+        private static bool IsUnlockedNewName(string name, BaseItem extra)
+        {
+            return !string.IsNullOrEmpty(name)
+                && extra.LockedFields?.Contains(MetadataField.Name) != true;
+        }
+
+        private static bool IsMoreSpecificExtraType(BaseItem extra, ExtraCandidate candidate)
+        {
+            return extra.ExtraType is null or ExtraType.Unknown || candidate.ExtraType != ExtraType.Unknown;
         }
 
         /// <summary>
