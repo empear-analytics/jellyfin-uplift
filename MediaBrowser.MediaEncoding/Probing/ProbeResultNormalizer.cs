@@ -309,9 +309,7 @@ namespace MediaBrowser.MediaEncoding.Probing
             // ffprobe frequently omits the per-stream video bitrate (common in MP4/MKV containers).
             // Estimate the missing video bitrate as the container bitrate minus the combined stream bitrates.
             var videoStreams = info.MediaStreams.Where(i => i.Type == MediaStreamType.Video).ToList();
-            if (info.Bitrate.HasValue
-                && videoStreams.Count == 1
-                && !videoStreams[0].BitRate.HasValue)
+            if (CanEstimateVideoBitrate(info, videoStreams))
             {
                 var otherStreams = info.MediaStreams
                     .Where(i => i.Type != MediaStreamType.Video && !i.IsExternal)
@@ -331,6 +329,13 @@ namespace MediaBrowser.MediaEncoding.Probing
                     }
                 }
             }
+        }
+
+        private static bool CanEstimateVideoBitrate(MediaInfo info, List<MediaStream> videoStreams)
+        {
+            return info.Bitrate.HasValue
+                && videoStreams.Count == 1
+                && !videoStreams[0].BitRate.HasValue;
         }
 
         private string NormalizeFormat(string format, IReadOnlyList<MediaStream> mediaStreams)
