@@ -444,45 +444,53 @@ public class MediaInfoHelper
 
         result.MediaSources = result.MediaSources
             .OrderByDescending(i => preferredId is not null && string.Equals(i.Id, preferredId, StringComparison.OrdinalIgnoreCase))
-            .ThenBy(i =>
-            {
-                // Nothing beats direct playing a file
-                if (i.SupportsDirectPlay && i.Protocol == MediaProtocol.File)
-                {
-                    return 0;
-                }
-
-                return 1;
-            })
-            .ThenBy(i =>
-            {
-                // Let's assume direct streaming a file is just as desirable as direct playing a remote url
-                if (i.SupportsDirectPlay || i.SupportsDirectStream)
-                {
-                    return 0;
-                }
-
-                return 1;
-            })
-            .ThenBy(i =>
-            {
-                return i.Protocol switch
-                {
-                    MediaProtocol.File => 0,
-                    _ => 1,
-                };
-            })
-            .ThenBy(i =>
-            {
-                if (maxBitrate.HasValue && i.Bitrate.HasValue)
-                {
-                    return i.Bitrate.Value <= maxBitrate.Value ? 0 : 2;
-                }
-
-                return 1;
-            })
+            .ThenBy(i => GetDirectPlayFileRank(i))
+            .ThenBy(i => GetDirectPlayOrStreamRank(i))
+            .ThenBy(i => GetProtocolRank(i))
+            .ThenBy(i => GetBitrateRank(i, maxBitrate))
             .ThenBy(originalList.IndexOf)
             .ToArray();
+    }
+
+    private static int GetDirectPlayFileRank(MediaSourceInfo i)
+    {
+        // Nothing beats direct playing a file
+        if (i.SupportsDirectPlay && i.Protocol == MediaProtocol.File)
+        {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    private static int GetDirectPlayOrStreamRank(MediaSourceInfo i)
+    {
+        // Let's assume direct streaming a file is just as desirable as direct playing a remote url
+        if (i.SupportsDirectPlay || i.SupportsDirectStream)
+        {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    private static int GetProtocolRank(MediaSourceInfo i)
+    {
+        return i.Protocol switch
+        {
+            MediaProtocol.File => 0,
+            _ => 1,
+        };
+    }
+
+    private static int GetBitrateRank(MediaSourceInfo i, long? maxBitrate)
+    {
+        if (maxBitrate.HasValue && i.Bitrate.HasValue)
+        {
+            return i.Bitrate.Value <= maxBitrate.Value ? 0 : 2;
+        }
+
+        return 1;
     }
 
     /// <summary>
