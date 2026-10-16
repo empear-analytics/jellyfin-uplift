@@ -1779,16 +1779,7 @@ namespace MediaBrowser.MediaEncoding.Probing
                 return;
             }
 
-            if (tags.TryGetValue("WM/Genre", out var genres) && !string.IsNullOrWhiteSpace(genres))
-            {
-                var genreList = genres.Split(_genreDelimiters, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-                // If this is empty then don't overwrite genres that might have been fetched earlier
-                if (genreList.Length > 0)
-                {
-                    video.Genres = genreList;
-                }
-            }
+            SetWtvGenres(video, tags);
 
             if (tags.TryGetValue("WM/ParentalRating", out var officialRating) && !string.IsNullOrWhiteSpace(officialRating))
             {
@@ -1825,6 +1816,30 @@ namespace MediaBrowser.MediaEncoding.Probing
             // OR -> COMMENT. SUBTITLE: DESCRIPTION
             // e.g. -> 4/13. The Doctor's Wife: Science fiction drama. When he follows a Time Lord distress signal, the Doctor puts Amy, Rory and his beloved TARDIS in grave danger. Also in HD. [AD,S]
             // e.g. -> CBeebies Bedtime Hour. The Mystery: Animated adventures of two friends who live on an island in the middle of the big city. Some of Abney and Teal's favourite objects are missing. [S]
+            description = ParseDescriptionFromSubtitle(video, subTitle, description);
+
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                video.Overview = description;
+            }
+        }
+
+        private static void SetWtvGenres(MediaInfo video, IReadOnlyDictionary<string, string> tags)
+        {
+            if (tags.TryGetValue("WM/Genre", out var genres) && !string.IsNullOrWhiteSpace(genres))
+            {
+                var genreList = genres.Split(_genreDelimiters, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                // If this is empty then don't overwrite genres that might have been fetched earlier
+                if (genreList.Length > 0)
+                {
+                    video.Genres = genreList;
+                }
+            }
+        }
+
+        private string ParseDescriptionFromSubtitle(MediaInfo video, string subTitle, string description)
+        {
             if (string.IsNullOrWhiteSpace(subTitle)
                 && !string.IsNullOrWhiteSpace(description)
                 && description.AsSpan()[..Math.Min(description.Length, MaxSubtitleDescriptionExtractionLength)].Contains(':')) // Check within the Subtitle size limit, otherwise from description it can get too long creating an invalid filename
@@ -1874,10 +1889,7 @@ namespace MediaBrowser.MediaEncoding.Probing
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(description))
-            {
-                video.Overview = description;
-            }
+            return description;
         }
 
         private void ExtractTimestamp(MediaInfo video)
