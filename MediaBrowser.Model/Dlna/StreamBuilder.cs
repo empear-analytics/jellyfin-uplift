@@ -1300,9 +1300,7 @@ namespace MediaBrowser.Model.Dlna
             }
             else
             {
-                if (targetAudioChannels.HasValue
-                    && audioStream.Channels.HasValue
-                    && audioStream.Channels.Value > targetAudioChannels.Value)
+                if (IsDownmixing(targetAudioChannels, audioStream))
                 {
                     // Reduce the bitrate if we're down mixing.
                     defaultBitrate = GetDefaultAudioBitrate(targetAudioCodec, targetAudioChannels);
@@ -1338,6 +1336,13 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return Math.Min(defaultBitrate, encoderAudioBitrateLimit);
+        }
+
+        private static bool IsDownmixing(int? targetAudioChannels, MediaStream audioStream)
+        {
+            return targetAudioChannels.HasValue
+                && audioStream.Channels.HasValue
+                && audioStream.Channels.Value > targetAudioChannels.Value;
         }
 
         private static int GetMaxAudioBitrateForTotalBitrate(long totalBitrate)
