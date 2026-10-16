@@ -198,36 +198,46 @@ namespace MediaBrowser.Model.Dlna
             var conditionType = condition.Condition;
             if (condition.Condition == ProfileConditionType.EqualsAny)
             {
-                foreach (var singleConditionString in condition.Value.AsSpan().Split('|'))
-                {
-                    if (int.TryParse(singleConditionString, NumberStyles.Integer, CultureInfo.InvariantCulture, out int conditionValue)
-                        && conditionValue.Equals(currentValue))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                return EqualsAnyInt(condition, currentValue);
             }
 
             if (int.TryParse(condition.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var expected))
             {
-                switch (conditionType)
+                return CompareInt(condition, conditionType, currentValue.Value, expected);
+            }
+
+            return false;
+        }
+
+        private static bool EqualsAnyInt(ProfileCondition condition, int? currentValue)
+        {
+            foreach (var singleConditionString in condition.Value.AsSpan().Split('|'))
+            {
+                if (int.TryParse(singleConditionString, NumberStyles.Integer, CultureInfo.InvariantCulture, out int conditionValue)
+                    && conditionValue.Equals(currentValue))
                 {
-                    case ProfileConditionType.Equals:
-                        return currentValue.Value.Equals(expected);
-                    case ProfileConditionType.GreaterThanEqual:
-                        return currentValue.Value >= expected;
-                    case ProfileConditionType.LessThanEqual:
-                        return currentValue.Value <= expected;
-                    case ProfileConditionType.NotEquals:
-                        return !currentValue.Value.Equals(expected);
-                    default:
-                        throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition);
+                    return true;
                 }
             }
 
             return false;
+        }
+
+        private static bool CompareInt(ProfileCondition condition, ProfileConditionType conditionType, int currentValue, int expected)
+        {
+            switch (conditionType)
+            {
+                case ProfileConditionType.Equals:
+                    return currentValue.Equals(expected);
+                case ProfileConditionType.GreaterThanEqual:
+                    return currentValue >= expected;
+                case ProfileConditionType.LessThanEqual:
+                    return currentValue <= expected;
+                case ProfileConditionType.NotEquals:
+                    return !currentValue.Equals(expected);
+                default:
+                    throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition);
+            }
         }
 
         private static bool IsConditionSatisfied(ProfileCondition condition, string? currentValue)
