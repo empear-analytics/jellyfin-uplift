@@ -31,9 +31,9 @@ namespace MediaBrowser.Model.Dlna
             bool isHdr = false) // We are not doing HDR transcoding for now, leave for future use
         {
             // If the bitrate isn't changing, then don't downscale the resolution
-            if (inputBitrate.HasValue && outputBitrate >= inputBitrate.Value)
+            if (IsBitrateUnchanged(inputBitrate, outputBitrate))
             {
-                if (maxWidth.HasValue || maxHeight.HasValue)
+                if (HasMaxDimension(maxWidth, maxHeight))
                 {
                     return new ResolutionOptions
                     {
@@ -55,7 +55,7 @@ namespace MediaBrowser.Model.Dlna
             var originWidthValue = maxWidth;
 
             maxWidth = Math.Min(resolutionConfig.MaxWidth, maxWidth ?? resolutionConfig.MaxWidth);
-            if (!originWidthValue.HasValue || originWidthValue.Value != maxWidth.Value)
+            if (IsWidthChanged(originWidthValue, maxWidth))
             {
                 maxHeight = null;
             }
@@ -65,6 +65,21 @@ namespace MediaBrowser.Model.Dlna
                 MaxWidth = maxWidth,
                 MaxHeight = maxHeight
             };
+        }
+
+        private static bool IsBitrateUnchanged(int? inputBitrate, int outputBitrate)
+        {
+            return inputBitrate.HasValue && outputBitrate >= inputBitrate.Value;
+        }
+
+        private static bool HasMaxDimension(int? maxWidth, int? maxHeight)
+        {
+            return maxWidth.HasValue || maxHeight.HasValue;
+        }
+
+        private static bool IsWidthChanged(int? originWidthValue, int? maxWidth)
+        {
+            return !originWidthValue.HasValue || originWidthValue.Value != maxWidth.Value;
         }
 
         private static float GetReferenceBitrate(int h264EquivalentOutputBitrate, float? targetFps, bool isHdr)
