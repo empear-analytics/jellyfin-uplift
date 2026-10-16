@@ -27,7 +27,7 @@ dotnet test Jellyfin.sln --no-build
 - A cold build takes about three minutes; an incremental build after a one-file change
   under a minute. The base has **0 errors and 211 warnings** (`--no-incremental`); keep it so.
 - The full test suite takes about three minutes. Each task file names the test projects
-  that cover its part; run those after every commit and the full suite before you finish.
+  that cover its part; run those after every step and the full suite before you finish.
 - Some analyzer errors appear only when the whole solution builds. Always build
   `Jellyfin.sln`, not a single project.
 - Never commit a broken build or a failing test.
@@ -74,7 +74,9 @@ Never, in any commit:
 
 ## Verification sequence
 
-Run all four after **every** commit, in this order:
+Run all four after **every** step, **before you commit it**, in this order. Both tools compare
+your working tree with `HEAD`; run after the commit, they would compare the commit with itself
+(add `--base HEAD~1` if you need to re-check a commit you already made):
 
 ```bash
 # 1. it still builds

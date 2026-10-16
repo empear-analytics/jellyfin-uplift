@@ -14,7 +14,8 @@ recipes are the protection; the tests are the backstop.
 ## The three rules
 
 1. **One recipe, one method, one commit.** Never combine two recipes in one commit.
-2. **Re-measure after every commit.** If the Code Health score did not improve, revert.
+2. **Re-measure after every step, before committing it.** If the Code Health score did not
+   improve, revert.
 3. **When in doubt, stop and report.** An unfinished task is fine. A silently broken
    media server is not.
 
@@ -277,7 +278,9 @@ sense that matters here: it changes what the rest of the program can reach.
 
 ## The verification loop
 
-After **every** commit, run the four checks your task file lists:
+After **every** step, before you commit it, run the four checks your task file lists. The
+tools compare the working tree with `HEAD`, so they must run before the commit; to re-check a
+commit you already made, add `--base HEAD~1`.
 
 ```bash
 dotnet build Jellyfin.sln

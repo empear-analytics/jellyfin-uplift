@@ -231,7 +231,9 @@ def task_text(task_id: str, entry: dict) -> str:
         out += [""]
     out += ["### Final step: re-measure, then stop", "", "Once the score reaches 10.00, **stop**.", ""]
 
-    out += ["## 7. Verification - run all four after EVERY step", ""]
+    out += ["## 7. Verification - run all four after EVERY step, before committing it", ""]
+    out += ["The tools compare your working tree with `HEAD`, so run them before `git commit`. To"]
+    out += ["re-check a commit you already made, add `--base HEAD~1`.", ""]
     out += ["**1 - it still builds, warnings included.**", "", "```bash", "dotnet build Jellyfin.sln", "```", ""]
     out += ["Zero errors, and no new warning in the file you changed.", ""]
     out += ["**2 - the tests that cover this part still pass.**", "", "```bash"]
@@ -262,6 +264,22 @@ def task_text(task_id: str, entry: dict) -> str:
         out += ["Protection: LOW - the tests barely cover this file; the changes are effectively unverified"]
     out += ["Commits: <sha list>", "Unsure about: <free text, or NONE>", "```", ""]
     return "\n".join(out)
+
+
+def existing_progress() -> dict[str, tuple[str, str]]:
+    """The Current and Status columns of the backlog's progress table, kept across regenerations."""
+    backlog = DOCS / "BACKLOG.md"
+    if not backlog.is_file():
+        return {}
+    rows = {}
+    in_progress = False
+    for line in backlog.read_text(encoding="utf-8").splitlines():
+        if line.startswith("## Progress"):
+            in_progress = True
+        elif in_progress and re.match(r"\| R\d+ \|", line):
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            rows[cells[0]] = (cells[2], cells[3])
+    return rows
 
 
 def main() -> None:
@@ -316,8 +334,10 @@ def main() -> None:
     out += [f"- {sum(len(e['functions']) for _, _, e, _ in rows)} flagged methods"]
     out += ["- The other 14 scored scope files are already at 10.00; 28 scope files have no methods to score", ""]
     out += ["## Progress", "", "Update as tasks land.", "", "| Task | Baseline | Current | Status |", "| --- | --- | --- | --- |"]
+    progress = existing_progress()
     for task_id, _, e, _ in rows:
-        out += [f"| {task_id} | {e['score']:.2f} | - | not started |"]
+        current, status = progress.get(task_id, ("-", "not started"))
+        out += [f"| {task_id} | {e['score']:.2f} | {current} | {status} |"]
     (DOCS / "BACKLOG.md").write_text("\n".join(out) + "\n", encoding="utf-8", newline="\n")
     print(f"wrote {len(rows)} task files and BACKLOG.md")
 

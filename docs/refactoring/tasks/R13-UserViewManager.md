@@ -84,7 +84,10 @@ Commit message: `refactor(UserViewManager): simplify GetUserView`
 
 Once the score reaches 10.00, **stop**.
 
-## 7. Verification - run all four after EVERY step
+## 7. Verification - run all four after EVERY step, before committing it
+
+The tools compare your working tree with `HEAD`, so run them before `git commit`. To
+re-check a commit you already made, add `--base HEAD~1`.
 
 **1 - it still builds, warnings included.**
 

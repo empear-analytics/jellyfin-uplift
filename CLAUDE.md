@@ -26,7 +26,7 @@ routed across harnesses.
 
 ## Reminders that matter here
 
-- Run `python tools/refactor_guard.py <file>` after every commit. It is cheap and it
+- Run `python tools/refactor_guard.py <file>` after every step, before committing. It is cheap and it
   catches the one class of mistake that no build error will.
 - Build the whole solution: some analyzer errors only appear in a full build.
 - Never touch `tests/`. A failing test means revert your change.

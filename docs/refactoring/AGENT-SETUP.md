@@ -116,7 +116,7 @@ Read, in this order:
 
 Follow the task file exactly. Apply only Recipe P.
 
-After every commit run all four checks from section 7 of the task file:
+After every step, before committing it, run all four checks from section 7 of the task file:
   dotnet build Jellyfin.sln
   dotnet test tests/Jellyfin.MediaEncoding.Tests --no-build
   python tools/refactor_guard.py MediaBrowser.MediaEncoding/Probing/FFProbeHelpers.cs
