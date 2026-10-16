@@ -298,17 +298,7 @@ namespace Emby.Server.Implementations.Library
                 return result;
             }
 
-            HashSet<Guid>? withLocalAlternates = null;
-            if (localProbeIds is not null)
-            {
-                using var dbContext = _repository.CreateDbContext();
-                withLocalAlternates = dbContext.LinkedChildren
-                    .Where(lc => lc.ChildType == Jellyfin.Database.Implementations.Entities.LinkedChildType.LocalAlternateVersion)
-                    .WhereOneOrMany(localProbeIds, lc => lc.ParentId)
-                    .Select(lc => lc.ParentId)
-                    .Distinct()
-                    .ToHashSet();
-            }
+            HashSet<Guid>? withLocalAlternates = FindIdsWithLocalAlternates(localProbeIds);
 
             List<(Guid PrimaryId, IReadOnlyList<Video> Versions)>? versionGroups = null;
             List<BaseItem>? allVersions = null;
@@ -339,6 +329,32 @@ namespace Emby.Server.Implementations.Library
 
             var userDataByVersion = GetUserDataBatch(allVersions!.DistinctBy(i => i.Id).ToList(), user);
 
+            AddMostRecentlyPlayedVersions(result, versionGroups, userDataByVersion);
+
+            return result;
+        }
+
+        private HashSet<Guid>? FindIdsWithLocalAlternates(List<Guid>? localProbeIds)
+        {
+            if (localProbeIds is null)
+            {
+                return null;
+            }
+
+            using var dbContext = _repository.CreateDbContext();
+            return dbContext.LinkedChildren
+                .Where(lc => lc.ChildType == Jellyfin.Database.Implementations.Entities.LinkedChildType.LocalAlternateVersion)
+                .WhereOneOrMany(localProbeIds, lc => lc.ParentId)
+                .Select(lc => lc.ParentId)
+                .Distinct()
+                .ToHashSet();
+        }
+
+        private static void AddMostRecentlyPlayedVersions(
+            Dictionary<Guid, VersionResumeData> result,
+            List<(Guid PrimaryId, IReadOnlyList<Video> Versions)> versionGroups,
+            Dictionary<Guid, UserItemData> userDataByVersion)
+        {
             foreach (var (primaryId, versions) in versionGroups)
             {
                 // Consider both in-progress and completed versions so a finished alternate still marks the primary as played.
@@ -352,8 +368,6 @@ namespace Emby.Server.Implementations.Library
                     result[primaryId] = new VersionResumeData(resumeVersion.Id, userDataByVersion[resumeVersion.Id]);
                 }
             }
-
-            return result;
         }
 
         /// <summary>
