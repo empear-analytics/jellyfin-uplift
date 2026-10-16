@@ -1049,65 +1049,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return string.Empty;
                 }
 
-                if (_mediaEncoder.IsVaapiDeviceInteliHD)
-                {
-                    args.Append(GetVaapiDeviceArgs(options.VaapiDevice, "iHD", null, null, null, VaapiAlias));
-                }
-                else if (_mediaEncoder.IsVaapiDeviceInteli965)
-                {
-                    // Only override i965 since it has lower priority than iHD in libva lookup.
-                    Environment.SetEnvironmentVariable("LIBVA_DRIVER_NAME", "i965");
-                    Environment.SetEnvironmentVariable("LIBVA_DRIVER_NAME_JELLYFIN", "i965");
-                    args.Append(GetVaapiDeviceArgs(options.VaapiDevice, "i965", null, null, null, VaapiAlias));
-                }
-
-                var filterDevArgs = string.Empty;
-                var doOclTonemap = isHwTonemapAvailable && IsOpenclFullSupported();
-
-                if (_mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965)
-                {
-                    if (doOclTonemap && !isVaapiDecoder)
-                    {
-                        args.Append(GetOpenclDeviceArgs(0, null, VaapiAlias, OpenclAlias));
-                        filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-                    }
-                }
-                else if (_mediaEncoder.IsVaapiDeviceAmd)
-                {
-                    // Disable AMD EFC feature since it's still unstable in upstream Mesa.
-                    Environment.SetEnvironmentVariable("AMD_DEBUG", "noefc");
-
-                    if (IsVulkanFullSupported()
-                        && _mediaEncoder.IsVaapiDeviceSupportVulkanDrmInterop
-                        && Environment.OSVersion.Version >= _minKernelVersionAmdVkFmtModifier)
-                    {
-                        args.Append(GetDrmDeviceArgs(options.VaapiDevice, DrmAlias));
-                        args.Append(GetVaapiDeviceArgs(null, null, null, null, DrmAlias, VaapiAlias));
-                        args.Append(GetVulkanDeviceArgs(0, null, DrmAlias, VulkanAlias));
-
-                        // libplacebo wants an explicitly set vulkan filter device.
-                        filterDevArgs = GetFilterHwDeviceArgs(VulkanAlias);
-                    }
-                    else
-                    {
-                        args.Append(GetVaapiDeviceArgs(options.VaapiDevice, null, null, null, null, VaapiAlias));
-                        filterDevArgs = GetFilterHwDeviceArgs(VaapiAlias);
-
-                        if (doOclTonemap)
-                        {
-                            // ROCm/ROCr OpenCL runtime
-                            args.Append(GetOpenclDeviceArgs(0, "Advanced Micro Devices", null, OpenclAlias));
-                            filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-                        }
-                    }
-                }
-                else if (doOclTonemap)
-                {
-                    args.Append(GetOpenclDeviceArgs(0, null, null, OpenclAlias));
-                    filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-                }
-
-                args.Append(filterDevArgs);
+                AppendVaapiHwDeviceArgs(args, options, isVaapiDecoder, isHwTonemapAvailable);
             }
             else if (optHwaccelType == HardwareAccelerationType.qsv)
             {
@@ -1126,23 +1068,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return string.Empty;
                 }
 
-                args.Append(GetQsvDeviceArgs(options.QsvDevice, QsvAlias));
-                var filterDevArgs = GetFilterHwDeviceArgs(QsvAlias);
-                // child device used by qsv.
-                if (_mediaEncoder.SupportsHwaccel("vaapi") || _mediaEncoder.SupportsHwaccel("d3d11va"))
-                {
-                    if (isHwTonemapAvailable && IsOpenclFullSupported())
-                    {
-                        var srcAlias = isLinux ? VaapiAlias : D3d11vaAlias;
-                        args.Append(GetOpenclDeviceArgs(0, null, srcAlias, OpenclAlias));
-                        if (!isHwDecoder)
-                        {
-                            filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-                        }
-                    }
-                }
-
-                args.Append(filterDevArgs);
+                AppendQsvHwDeviceArgs(args, options, isLinux, isHwDecoder, isHwTonemapAvailable);
             }
             else if (optHwaccelType == HardwareAccelerationType.nvenc)
             {
@@ -1177,16 +1103,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return string.Empty;
                 }
 
-                // no dxva video processor hw filter.
-                args.Append(GetD3d11vaDeviceArgs(0, "0x1002", D3d11vaAlias));
-                var filterDevArgs = string.Empty;
-                if (IsOpenclFullSupported())
-                {
-                    args.Append(GetOpenclDeviceArgs(0, null, D3d11vaAlias, OpenclAlias));
-                    filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-                }
-
-                args.Append(filterDevArgs);
+                AppendAmfHwDeviceArgs(args);
             }
             else if (optHwaccelType == HardwareAccelerationType.videotoolbox)
             {
@@ -1219,18 +1136,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return string.Empty;
                 }
 
-                args.Append(GetRkmppDeviceArgs(RkmppAlias));
-
-                var filterDevArgs = string.Empty;
-                var doOclTonemap = isHwTonemapAvailable && IsOpenclFullSupported();
-
-                if (doOclTonemap && !isRkmppDecoder)
-                {
-                    args.Append(GetOpenclDeviceArgs(0, null, RkmppAlias, OpenclAlias));
-                    filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-                }
-
-                args.Append(filterDevArgs);
+                AppendRkmppHwDeviceArgs(args, isRkmppDecoder, isHwTonemapAvailable);
             }
 
             if (!string.IsNullOrEmpty(vidDecoder))
@@ -1239,6 +1145,120 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return args.ToString().Trim();
+        }
+
+        private void AppendVaapiHwDeviceArgs(StringBuilder args, EncodingOptions options, bool isVaapiDecoder, bool isHwTonemapAvailable)
+        {
+            if (_mediaEncoder.IsVaapiDeviceInteliHD)
+            {
+                args.Append(GetVaapiDeviceArgs(options.VaapiDevice, "iHD", null, null, null, VaapiAlias));
+            }
+            else if (_mediaEncoder.IsVaapiDeviceInteli965)
+            {
+                // Only override i965 since it has lower priority than iHD in libva lookup.
+                Environment.SetEnvironmentVariable("LIBVA_DRIVER_NAME", "i965");
+                Environment.SetEnvironmentVariable("LIBVA_DRIVER_NAME_JELLYFIN", "i965");
+                args.Append(GetVaapiDeviceArgs(options.VaapiDevice, "i965", null, null, null, VaapiAlias));
+            }
+
+            var filterDevArgs = string.Empty;
+            var doOclTonemap = isHwTonemapAvailable && IsOpenclFullSupported();
+
+            if (_mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965)
+            {
+                if (doOclTonemap && !isVaapiDecoder)
+                {
+                    args.Append(GetOpenclDeviceArgs(0, null, VaapiAlias, OpenclAlias));
+                    filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
+                }
+            }
+            else if (_mediaEncoder.IsVaapiDeviceAmd)
+            {
+                // Disable AMD EFC feature since it's still unstable in upstream Mesa.
+                Environment.SetEnvironmentVariable("AMD_DEBUG", "noefc");
+
+                if (IsVulkanFullSupported()
+                    && _mediaEncoder.IsVaapiDeviceSupportVulkanDrmInterop
+                    && Environment.OSVersion.Version >= _minKernelVersionAmdVkFmtModifier)
+                {
+                    args.Append(GetDrmDeviceArgs(options.VaapiDevice, DrmAlias));
+                    args.Append(GetVaapiDeviceArgs(null, null, null, null, DrmAlias, VaapiAlias));
+                    args.Append(GetVulkanDeviceArgs(0, null, DrmAlias, VulkanAlias));
+
+                    // libplacebo wants an explicitly set vulkan filter device.
+                    filterDevArgs = GetFilterHwDeviceArgs(VulkanAlias);
+                }
+                else
+                {
+                    args.Append(GetVaapiDeviceArgs(options.VaapiDevice, null, null, null, null, VaapiAlias));
+                    filterDevArgs = GetFilterHwDeviceArgs(VaapiAlias);
+
+                    if (doOclTonemap)
+                    {
+                        // ROCm/ROCr OpenCL runtime
+                        args.Append(GetOpenclDeviceArgs(0, "Advanced Micro Devices", null, OpenclAlias));
+                        filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
+                    }
+                }
+            }
+            else if (doOclTonemap)
+            {
+                args.Append(GetOpenclDeviceArgs(0, null, null, OpenclAlias));
+                filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
+            }
+
+            args.Append(filterDevArgs);
+        }
+
+        private void AppendQsvHwDeviceArgs(StringBuilder args, EncodingOptions options, bool isLinux, bool isHwDecoder, bool isHwTonemapAvailable)
+        {
+            args.Append(GetQsvDeviceArgs(options.QsvDevice, QsvAlias));
+            var filterDevArgs = GetFilterHwDeviceArgs(QsvAlias);
+            // child device used by qsv.
+            if (_mediaEncoder.SupportsHwaccel("vaapi") || _mediaEncoder.SupportsHwaccel("d3d11va"))
+            {
+                if (isHwTonemapAvailable && IsOpenclFullSupported())
+                {
+                    var srcAlias = isLinux ? VaapiAlias : D3d11vaAlias;
+                    args.Append(GetOpenclDeviceArgs(0, null, srcAlias, OpenclAlias));
+                    if (!isHwDecoder)
+                    {
+                        filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
+                    }
+                }
+            }
+
+            args.Append(filterDevArgs);
+        }
+
+        private void AppendAmfHwDeviceArgs(StringBuilder args)
+        {
+            // no dxva video processor hw filter.
+            args.Append(GetD3d11vaDeviceArgs(0, "0x1002", D3d11vaAlias));
+            var filterDevArgs = string.Empty;
+            if (IsOpenclFullSupported())
+            {
+                args.Append(GetOpenclDeviceArgs(0, null, D3d11vaAlias, OpenclAlias));
+                filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
+            }
+
+            args.Append(filterDevArgs);
+        }
+
+        private void AppendRkmppHwDeviceArgs(StringBuilder args, bool isRkmppDecoder, bool isHwTonemapAvailable)
+        {
+            args.Append(GetRkmppDeviceArgs(RkmppAlias));
+
+            var filterDevArgs = string.Empty;
+            var doOclTonemap = isHwTonemapAvailable && IsOpenclFullSupported();
+
+            if (doOclTonemap && !isRkmppDecoder)
+            {
+                args.Append(GetOpenclDeviceArgs(0, null, RkmppAlias, OpenclAlias));
+                filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
+            }
+
+            args.Append(filterDevArgs);
         }
 
         /// <summary>
