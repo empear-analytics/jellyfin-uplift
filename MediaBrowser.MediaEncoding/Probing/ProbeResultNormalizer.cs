@@ -1506,24 +1506,7 @@ namespace MediaBrowser.MediaEncoding.Probing
                 }
             }
 
-            if (tags.TryGetValue("performer", out var performer) && !string.IsNullOrWhiteSpace(performer))
-            {
-                foreach (var person in Split(performer, false))
-                {
-                    Match match = PerformerRegex().Match(person);
-
-                    // If the performer doesn't have any instrument/role associated, it won't match. In that case, chances are it's simply a band name, so we skip it.
-                    if (match.Success)
-                    {
-                        people.Add(new BaseItemPerson
-                        {
-                            Name = match.Groups["name"].Value,
-                            Type = PersonKind.Actor,
-                            Role = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(match.Groups["instrument"].Value)
-                        });
-                    }
-                }
-            }
+            AddPerformers(people, tags);
 
             // In cases where there isn't sufficient information as to which role a writer performed on a recording, tagging software uses the "writer" tag.
             if (tags.TryGetValue("writer", out var writer) && !string.IsNullOrWhiteSpace(writer))
@@ -1568,17 +1551,7 @@ namespace MediaBrowser.MediaEncoding.Probing
 
             audio.People = people.ToArray();
 
-            // Set album artist
-            var albumArtist = tags.GetFirstNotNullNorWhiteSpaceValue("albumartist", "album artist", "album_artist");
-            audio.AlbumArtists = albumArtist is not null
-                ? SplitDistinctArtists(albumArtist, _nameDelimiters, true).ToArray()
-                : Array.Empty<string>();
-
-            // Set album artist to artist if empty
-            if (audio.AlbumArtists.Length == 0)
-            {
-                audio.AlbumArtists = audio.Artists;
-            }
+            SetAlbumArtists(audio, tags);
 
             // Track number
             audio.IndexNumber = GetDictionaryTrackOrDiscNumber(tags, "track");
@@ -1592,6 +1565,48 @@ namespace MediaBrowser.MediaEncoding.Probing
             FetchStudios(audio, tags, "publisher");
             FetchStudios(audio, tags, "label");
 
+            SetMusicBrainzIds(audio, tags);
+        }
+
+        private void AddPerformers(List<BaseItemPerson> people, Dictionary<string, string> tags)
+        {
+            if (tags.TryGetValue("performer", out var performer) && !string.IsNullOrWhiteSpace(performer))
+            {
+                foreach (var person in Split(performer, false))
+                {
+                    Match match = PerformerRegex().Match(person);
+
+                    // If the performer doesn't have any instrument/role associated, it won't match. In that case, chances are it's simply a band name, so we skip it.
+                    if (match.Success)
+                    {
+                        people.Add(new BaseItemPerson
+                        {
+                            Name = match.Groups["name"].Value,
+                            Type = PersonKind.Actor,
+                            Role = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(match.Groups["instrument"].Value)
+                        });
+                    }
+                }
+            }
+        }
+
+        private void SetAlbumArtists(MediaInfo audio, Dictionary<string, string> tags)
+        {
+            // Set album artist
+            var albumArtist = tags.GetFirstNotNullNorWhiteSpaceValue("albumartist", "album artist", "album_artist");
+            audio.AlbumArtists = albumArtist is not null
+                ? SplitDistinctArtists(albumArtist, _nameDelimiters, true).ToArray()
+                : Array.Empty<string>();
+
+            // Set album artist to artist if empty
+            if (audio.AlbumArtists.Length == 0)
+            {
+                audio.AlbumArtists = audio.Artists;
+            }
+        }
+
+        private static void SetMusicBrainzIds(MediaInfo audio, Dictionary<string, string> tags)
+        {
             // These support multiple values, but for now we only store the first.
             var mb = GetMultipleMusicBrainzId(tags.GetValueOrDefault("MusicBrainz Album Artist Id"))
                 ?? GetMultipleMusicBrainzId(tags.GetValueOrDefault("MUSICBRAINZ_ALBUMARTISTID"));
