@@ -122,6 +122,13 @@ namespace Emby.Server.Implementations.Library
 
             var userData = GetUserData(user, item) ?? throw new InvalidOperationException("UserData should not be null.");
 
+            ApplyUserDataUpdates(userData, userDataDto);
+
+            SaveUserData(user, item, userData, reason, CancellationToken.None);
+        }
+
+        private static void ApplyUserDataUpdates(UserItemData userData, UpdateUserItemDataDto userDataDto)
+        {
             if (userDataDto.PlaybackPositionTicks.HasValue)
             {
                 userData.PlaybackPositionTicks = userDataDto.PlaybackPositionTicks.Value;
@@ -156,8 +163,6 @@ namespace Emby.Server.Implementations.Library
             {
                 userData.Rating = userDataDto.Rating.Value;
             }
-
-            SaveUserData(user, item, userData, reason, CancellationToken.None);
         }
 
         private UserData Map(UserItemData dto, Guid userId, Guid itemId)
