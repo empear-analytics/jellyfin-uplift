@@ -304,29 +304,10 @@ public class DynamicHlsController : BaseJellyfinApiController
                 if (!System.IO.File.Exists(playlistPath))
                 {
                     // If the playlist doesn't already exist, startup ffmpeg
-                    try
-                    {
-                        job = await _transcodeManager.StartFfMpeg(
-                                state,
-                                playlistPath,
-                                GetCommandLineArguments(playlistPath, state, true, 0),
-                                Request.HttpContext.User.GetUserId(),
-                                TranscodingJobType,
-                                cancellationTokenSource)
-                            .ConfigureAwait(false);
-                        job.IsLiveOutput = true;
-                    }
-                    catch
-                    {
-                        state.Dispose();
-                        throw;
-                    }
+                    job = await StartLiveTranscoding(state, playlistPath, cancellationTokenSource).ConfigureAwait(false);
 
                     minSegments = state.MinSegments;
-                    if (minSegments > 0)
-                    {
-                        await HlsHelpers.WaitForMinimumSegmentCount(playlistPath, minSegments, _logger, cancellationToken).ConfigureAwait(false);
-                    }
+                    await WaitForMinimumLiveSegments(playlistPath, minSegments, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -341,6 +322,38 @@ public class DynamicHlsController : BaseJellyfinApiController
         var playlistText = HlsHelpers.GetLivePlaylistText(playlistPath, state);
 
         return Content(playlistText, MimeTypes.GetMimeType("playlist.m3u8"));
+    }
+
+    private async Task<TranscodingJob> StartLiveTranscoding(StreamState state, string playlistPath, CancellationTokenSource cancellationTokenSource)
+    {
+        TranscodingJob job;
+        try
+        {
+            job = await _transcodeManager.StartFfMpeg(
+                    state,
+                    playlistPath,
+                    GetCommandLineArguments(playlistPath, state, true, 0),
+                    Request.HttpContext.User.GetUserId(),
+                    TranscodingJobType,
+                    cancellationTokenSource)
+                .ConfigureAwait(false);
+            job.IsLiveOutput = true;
+        }
+        catch
+        {
+            state.Dispose();
+            throw;
+        }
+
+        return job;
+    }
+
+    private async Task WaitForMinimumLiveSegments(string playlistPath, int? minSegments, CancellationToken cancellationToken)
+    {
+        if (minSegments > 0)
+        {
+            await HlsHelpers.WaitForMinimumSegmentCount(playlistPath, minSegments, _logger, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
