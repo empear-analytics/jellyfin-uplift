@@ -71,7 +71,7 @@ Update as tasks land.
 | R15 | 7.83 | 8.44 | stopped at 8.44: Recipe P helpers score DOWN (string/primitive parameters trigger Primitive Obsession, String Heavy Function Arguments, Overall Code Complexity) |
 | R16 | 8.28 | 9.45 | stopped at 9.45: further P/G/E steps score DOWN (new helpers trigger Code Duplication between two near-duplicate parsers, which differ in more than one place) |
 | R17 | 8.54 | 8.54 | stopped: the duplicate spans three methods; Recipe D one method per commit is FLAT, all three at once is UP (8.54 to 9.09) but breaks one method per commit |
-| R18 | 8.63 | 9.38 | stopped at 9.38: Complex Method (cc 10) only reducible by reusing helpers for identical copies (Recipe D without a duplication report); Primitive Obsession has no recipe |
+| R18 | 8.63 | 9.68 | stopped at 9.68: only Primitive Obsession left (no recipe); rerun used the new Recipe D reuse clause |
 | R19 | 8.69 | 10.00 | done |
 | R20 | 8.91 | 9.68 | stopped at 9.68: Excess Number of Function Arguments on public `AddMediaInfoWithProbe` (no recipe); low protection |
 | R21 | 9.21 | 9.68 | stopped at 9.68: Constructor Over-Injection has no recipe |
