@@ -71,7 +71,7 @@ namespace Emby.Server.Implementations.Library
                     continue;
                 }
 
-                if (collectionFolder is not null && UserView.IsEligibleForGrouping(folder) && user.IsFolderGrouped(folder.Id))
+                if (IsGroupedCollectionFolder(collectionFolder, folder, user))
                 {
                     groupedFolders.Add(collectionFolder);
                     continue;
@@ -124,6 +124,11 @@ namespace Emby.Server.Implementations.Library
                 .ThenBy(sorted.IndexOf)
                 .ThenBy(i => i.SortName)
                 .ToArray();
+        }
+
+        private static bool IsGroupedCollectionFolder(ICollectionFolder collectionFolder, Folder folder, User user)
+        {
+            return collectionFolder is not null && UserView.IsEligibleForGrouping(folder) && user.IsFolderGrouped(folder.Id);
         }
 
         private bool IsLinkedItemLibraryWithoutVisibleItems(CollectionType? folderViewType, IReadOnlyList<Folder> folders, User user)
