@@ -893,20 +893,7 @@ public class StreamInfo
 
         sb.Append(ItemId);
 
-        if (SubProtocol == MediaStreamProtocol.hls)
-        {
-            sb.Append("/master.m3u8");
-        }
-        else
-        {
-            sb.Append("/stream");
-
-            if (!string.IsNullOrEmpty(Container))
-            {
-                sb.Append('.');
-                sb.Append(Container);
-            }
-        }
+        AppendStreamPath(sb);
 
         var queryStart = sb.Length;
 
@@ -994,34 +981,7 @@ public class StreamInfo
             sb.Append(MaxHeight.Value.ToString(CultureInfo.InvariantCulture));
         }
 
-        if (SubProtocol == MediaStreamProtocol.hls)
-        {
-            if (!string.IsNullOrEmpty(Container))
-            {
-                sb.Append("&SegmentContainer=");
-                sb.Append(Container);
-            }
-
-            if (SegmentLength.HasValue)
-            {
-                sb.Append("&SegmentLength=");
-                sb.Append(SegmentLength.Value.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (MinSegments.HasValue)
-            {
-                sb.Append("&MinSegments=");
-                sb.Append(MinSegments.Value.ToString(CultureInfo.InvariantCulture));
-            }
-        }
-        else
-        {
-            if (StartPositionTicks != 0)
-            {
-                sb.Append("&StartTimeTicks=");
-                sb.Append(StartPositionTicks.ToString(CultureInfo.InvariantCulture));
-            }
-        }
+        AppendSegmentParameters(sb);
 
         if (!string.IsNullOrEmpty(PlaySessionId))
         {
@@ -1042,56 +1002,7 @@ public class StreamInfo
             sb.Append(liveStreamId);
         }
 
-        if (!IsDirectStream)
-        {
-            if (RequireNonAnamorphic)
-            {
-                sb.Append("&RequireNonAnamorphic=");
-                sb.Append(RequireNonAnamorphic.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (TranscodingMaxAudioChannels.HasValue)
-            {
-                sb.Append("&TranscodingMaxAudioChannels=");
-                sb.Append(TranscodingMaxAudioChannels.Value.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (EnableSubtitlesInManifest)
-            {
-                sb.Append("&EnableSubtitlesInManifest=");
-                sb.Append(EnableSubtitlesInManifest.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (EnableMpegtsM2TsMode)
-            {
-                sb.Append("&EnableMpegtsM2TsMode=");
-                sb.Append(EnableMpegtsM2TsMode.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (EstimateContentLength)
-            {
-                sb.Append("&EstimateContentLength=");
-                sb.Append(EstimateContentLength.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (TranscodeSeekInfo != TranscodeSeekInfo.Auto)
-            {
-                sb.Append("&TranscodeSeekInfo=");
-                sb.Append(TranscodeSeekInfo.ToString());
-            }
-
-            if (CopyTimestamps)
-            {
-                sb.Append("&CopyTimestamps=");
-                sb.Append(CopyTimestamps.ToString(CultureInfo.InvariantCulture));
-            }
-
-            sb.Append("&RequireAvc=");
-            sb.Append(RequireAvc.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
-
-            sb.Append("&EnableAudioVbrEncoding=");
-            sb.Append(EnableAudioVbrEncoding.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
-        }
+        AppendTranscodingParameters(sb);
 
         var etag = MediaSource?.ETag;
         if (!string.IsNullOrEmpty(etag))
@@ -1140,6 +1051,117 @@ public class StreamInfo
         }
 
         return sb.ToString();
+    }
+
+    private void AppendStreamPath(StringBuilder sb)
+    {
+        if (SubProtocol == MediaStreamProtocol.hls)
+        {
+            sb.Append("/master.m3u8");
+        }
+        else
+        {
+            sb.Append("/stream");
+
+            if (!string.IsNullOrEmpty(Container))
+            {
+                sb.Append('.');
+                sb.Append(Container);
+            }
+        }
+    }
+
+    private void AppendSegmentParameters(StringBuilder sb)
+    {
+        if (SubProtocol == MediaStreamProtocol.hls)
+        {
+            AppendHlsSegmentParameters(sb);
+        }
+        else
+        {
+            if (StartPositionTicks != 0)
+            {
+                sb.Append("&StartTimeTicks=");
+                sb.Append(StartPositionTicks.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+    }
+
+    private void AppendHlsSegmentParameters(StringBuilder sb)
+    {
+        if (!string.IsNullOrEmpty(Container))
+        {
+            sb.Append("&SegmentContainer=");
+            sb.Append(Container);
+        }
+
+        if (SegmentLength.HasValue)
+        {
+            sb.Append("&SegmentLength=");
+            sb.Append(SegmentLength.Value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        if (MinSegments.HasValue)
+        {
+            sb.Append("&MinSegments=");
+            sb.Append(MinSegments.Value.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
+    private void AppendTranscodingParameters(StringBuilder sb)
+    {
+        if (IsDirectStream)
+        {
+            return;
+        }
+
+        if (RequireNonAnamorphic)
+        {
+            sb.Append("&RequireNonAnamorphic=");
+            sb.Append(RequireNonAnamorphic.ToString(CultureInfo.InvariantCulture));
+        }
+
+        if (TranscodingMaxAudioChannels.HasValue)
+        {
+            sb.Append("&TranscodingMaxAudioChannels=");
+            sb.Append(TranscodingMaxAudioChannels.Value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        if (EnableSubtitlesInManifest)
+        {
+            sb.Append("&EnableSubtitlesInManifest=");
+            sb.Append(EnableSubtitlesInManifest.ToString(CultureInfo.InvariantCulture));
+        }
+
+        if (EnableMpegtsM2TsMode)
+        {
+            sb.Append("&EnableMpegtsM2TsMode=");
+            sb.Append(EnableMpegtsM2TsMode.ToString(CultureInfo.InvariantCulture));
+        }
+
+        if (EstimateContentLength)
+        {
+            sb.Append("&EstimateContentLength=");
+            sb.Append(EstimateContentLength.ToString(CultureInfo.InvariantCulture));
+        }
+
+        if (TranscodeSeekInfo != TranscodeSeekInfo.Auto)
+        {
+            sb.Append("&TranscodeSeekInfo=");
+            sb.Append(TranscodeSeekInfo.ToString());
+        }
+
+        if (CopyTimestamps)
+        {
+            sb.Append("&CopyTimestamps=");
+            sb.Append(CopyTimestamps.ToString(CultureInfo.InvariantCulture));
+        }
+
+        sb.Append("&RequireAvc=");
+        sb.Append(RequireAvc.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
+
+        sb.Append("&EnableAudioVbrEncoding=");
+        sb.Append(EnableAudioVbrEncoding.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
     }
 
     /// <summary>
