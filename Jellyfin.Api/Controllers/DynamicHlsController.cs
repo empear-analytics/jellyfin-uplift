@@ -1645,14 +1645,7 @@ public class DynamicHlsController : BaseJellyfinApiController
                 false => " -hls_fmp4_init_filename \"" + outputFileNameWithoutExtension + "-1" + outputExtension + "\""
             };
 
-            var useLegacySegmentOption = _mediaEncoder.EncoderVersion < _minFFmpegHlsSegmentOptions;
-
-            if (state.VideoStream is not null && state.IsOutputVideo)
-            {
-                // fMP4 needs frag_discont to write the audio packet DTS/PTS including the initial delay into MOOF::TRAF::TFDT
-                // HLS does not use SIDX, and skipping it avoids FFmpeg rewriting open-GOP boundary packet PTS
-                hlsArguments += $" {(useLegacySegmentOption ? "-hls_ts_options" : "-hls_segment_options")} movflags=+frag_discont+skip_sidx";
-            }
+            hlsArguments += GetFmp4HlsSegmentOptions(state);
 
             segmentFormat = "fmp4" + outputFmp4HeaderArg;
         }
@@ -1662,18 +1655,9 @@ public class DynamicHlsController : BaseJellyfinApiController
             segmentFormat = "mpegts";
         }
 
-        var maxMuxingQueueSize = _encodingOptions.MaxMuxingQueueSize > 128
-            ? _encodingOptions.MaxMuxingQueueSize.ToString(CultureInfo.InvariantCulture)
-            : "128";
+        var maxMuxingQueueSize = GetMaxMuxingQueueSize();
 
-        var baseUrlParam = string.Empty;
-        if (isEventPlaylist)
-        {
-            baseUrlParam = string.Format(
-                CultureInfo.InvariantCulture,
-                " -hls_base_url \"hls/{0}/\"",
-                Path.GetFileNameWithoutExtension(outputPath));
-        }
+        var baseUrlParam = GetHlsBaseUrlParam(outputPath, isEventPlaylist);
 
         return string.Format(
             CultureInfo.InvariantCulture,
@@ -1692,6 +1676,42 @@ public class DynamicHlsController : BaseJellyfinApiController
             outputTsArg.EscapeProcessArgument(),
             hlsArguments,
             outputPath.EscapeProcessArgument()).Trim();
+    }
+
+    private string GetFmp4HlsSegmentOptions(StreamState state)
+    {
+        var hlsArguments = string.Empty;
+        var useLegacySegmentOption = _mediaEncoder.EncoderVersion < _minFFmpegHlsSegmentOptions;
+
+        if (state.VideoStream is not null && state.IsOutputVideo)
+        {
+            // fMP4 needs frag_discont to write the audio packet DTS/PTS including the initial delay into MOOF::TRAF::TFDT
+            // HLS does not use SIDX, and skipping it avoids FFmpeg rewriting open-GOP boundary packet PTS
+            hlsArguments += $" {(useLegacySegmentOption ? "-hls_ts_options" : "-hls_segment_options")} movflags=+frag_discont+skip_sidx";
+        }
+
+        return hlsArguments;
+    }
+
+    private string GetMaxMuxingQueueSize()
+    {
+        return _encodingOptions.MaxMuxingQueueSize > 128
+            ? _encodingOptions.MaxMuxingQueueSize.ToString(CultureInfo.InvariantCulture)
+            : "128";
+    }
+
+    private static string GetHlsBaseUrlParam(string outputPath, bool isEventPlaylist)
+    {
+        var baseUrlParam = string.Empty;
+        if (isEventPlaylist)
+        {
+            baseUrlParam = string.Format(
+                CultureInfo.InvariantCulture,
+                " -hls_base_url \"hls/{0}/\"",
+                Path.GetFileNameWithoutExtension(outputPath));
+        }
+
+        return baseUrlParam;
     }
 
     /// <summary>
