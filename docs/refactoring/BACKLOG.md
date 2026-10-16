@@ -59,7 +59,7 @@ Update as tasks land.
 | R03 | 2.03 | - | not started |
 | R04 | 2.18 | - | not started |
 | R05 | 2.90 | - | not started |
-| R06 | 4.36 | - | not started |
+| R06 | 4.36 | 6.61 | stopped at 6.61: ApplyParam (34-case switch, cc 56); ApplyVideoOutputSettings conditionals blocked by CS8602 (nullable flow) and one P step reverted as WORSE by a tool bug, since fixed; GetOutputFileExtension early-return branches; Excess Arguments (GetStreamingState 11) |
 | R07 | 4.59 | 7.78 | stopped at 7.78: GetPlaylistAudioCodecs (flat early returns, cc 10); AppendDvString extraction FLAT; Complex Conditionals blocked by CS8629 (null checks before `.Value`); Excess Arguments (incl. new 6- and 7-argument helpers); Constructor Over-Injection (11) |
 | R08 | 4.90 | 7.78 | stopped at 7.78: GetPathProtocol (flat early returns, cc 9); public signatures with 5-6 arguments; Constructor Over-Injection (13); Low Cohesion; Primitive Obsession |
 | R09 | 5.41 | 9.38 | stopped at 9.38: public signatures with too many arguments (5, 19); Constructor Over-Injection |
