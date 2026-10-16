@@ -43,8 +43,7 @@ namespace Emby.Server.Implementations.Library
             }
 
             // Don't ignore top level folders
-            if (fileInfo.IsDirectory
-                && (parent is AggregateFolder || (parent?.IsTopParent ?? false)))
+            if (IsTopLevelFolder(fileInfo, parent))
             {
                 return false;
             }
@@ -64,6 +63,12 @@ namespace Emby.Server.Implementations.Library
             // Don't resolve theme songs
             return Path.GetFileNameWithoutExtension(fileInfo.Name.AsSpan()).Equals(BaseItem.ThemeSongFileName, StringComparison.Ordinal)
                 && AudioFileParser.IsAudioFile(fileInfo.Name, _namingOptions);
+        }
+
+        private static bool IsTopLevelFolder(FileSystemMetadata fileInfo, BaseItem? parent)
+        {
+            return fileInfo.IsDirectory
+                && (parent is AggregateFolder || (parent?.IsTopParent ?? false));
         }
     }
 }
