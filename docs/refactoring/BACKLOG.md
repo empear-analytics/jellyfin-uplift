@@ -84,6 +84,6 @@ Update as tasks land.
 | R28 | 9.51 | - | not started |
 | R29 | 9.63 | - | not started |
 | R30 | 9.68 | 10.00 | done (probe, 9057ab1397) |
-| R31 | 9.68 | - | not started |
+| R31 | 9.68 | 9.68 | stopped: only Constructor Over-Injection, which has no recipe |
 | R32 | 9.68 | 10.00 | done (probe, e41b7c597c) |
 | R33 | 9.84 | 10.00 | done (7abe64773b) |
