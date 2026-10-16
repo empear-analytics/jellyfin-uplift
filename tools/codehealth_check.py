@@ -64,13 +64,18 @@ NUMBER = re.compile(r"(\d+)")
 
 
 def findings(review: dict) -> tuple[set[str], dict[tuple[str, str], int]]:
-    """Smell categories in the file, and the number each method-level finding reports."""
+    """Smell categories in the file, and the largest number each method's findings report.
+
+    A method can have several findings of one category (two complex conditionals, say).
+    Compare the largest, so removing the smaller one does not count as a regression.
+    """
     categories, numbers = set(), {}
     for item in review.get("review", []):
         categories.add(item.get("category"))
         for f in item.get("functions", []):
             m = NUMBER.search(f.get("details") or "")
-            numbers[(item.get("category"), f.get("title", "").split(":")[0])] = int(m.group(1)) if m else 0
+            key = (item.get("category"), f.get("title", "").split(":")[0])
+            numbers[key] = max(numbers.get(key, 0), int(m.group(1)) if m else 0)
     return categories, numbers
 
 
