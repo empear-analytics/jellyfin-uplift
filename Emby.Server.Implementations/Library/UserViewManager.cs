@@ -77,23 +77,12 @@ namespace Emby.Server.Implementations.Library
                     continue;
                 }
 
-                if (query.PresetViews.Contains(folderViewType))
-                {
-                    list.Add(GetUserView(folder, folderViewType, string.Empty));
-                }
-                else
-                {
-                    list.Add(folder);
-                }
+                AddFolderOrPresetView(list, folder, folderViewType, query);
             }
 
             AddGroupedViews(list, groupedFolders, user, query);
 
-            if (_config.Configuration.EnableFolderView)
-            {
-                var name = _localizationManager.GetServerLocalizedString("Folders");
-                list.Add(_libraryManager.GetNamedView(name, CollectionType.folders, string.Empty));
-            }
+            AddFolderViewIfEnabled(list);
 
             if (query.IncludeExternalContent)
             {
@@ -124,6 +113,27 @@ namespace Emby.Server.Implementations.Library
                 .ThenBy(sorted.IndexOf)
                 .ThenBy(i => i.SortName)
                 .ToArray();
+        }
+
+        private void AddFolderOrPresetView(List<Folder> list, Folder folder, CollectionType? folderViewType, UserViewQuery query)
+        {
+            if (query.PresetViews.Contains(folderViewType))
+            {
+                list.Add(GetUserView(folder, folderViewType, string.Empty));
+            }
+            else
+            {
+                list.Add(folder);
+            }
+        }
+
+        private void AddFolderViewIfEnabled(List<Folder> list)
+        {
+            if (_config.Configuration.EnableFolderView)
+            {
+                var name = _localizationManager.GetServerLocalizedString("Folders");
+                list.Add(_libraryManager.GetNamedView(name, CollectionType.folders, string.Empty));
+            }
         }
 
         private static bool IsGroupedCollectionFolder(ICollectionFolder collectionFolder, Folder folder, User user)
