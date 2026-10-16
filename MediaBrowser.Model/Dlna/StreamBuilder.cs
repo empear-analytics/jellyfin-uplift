@@ -1491,9 +1491,7 @@ namespace MediaBrowser.Model.Dlna
             {
                 var subtitleProfile = GetSubtitleProfile(mediaSource, subtitleStream, options.Profile.SubtitleProfiles, PlayMethod.DirectPlay, _transcoderSupport, container, null);
 
-                if (subtitleProfile.Method != SubtitleDeliveryMethod.Drop
-                    && subtitleProfile.Method != SubtitleDeliveryMethod.External
-                    && subtitleProfile.Method != SubtitleDeliveryMethod.Embed)
+                if (IsUnsupportedDirectPlaySubtitleMethod(subtitleProfile))
                 {
                     _logger.LogDebug("Not eligible for {0} due to unsupported subtitles", PlayMethod.DirectPlay);
                     subtitleProfileReasons |= TranscodeReason.SubtitleCodecNotSupported;
@@ -1501,6 +1499,13 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return subtitleProfileReasons;
+        }
+
+        private static bool IsUnsupportedDirectPlaySubtitleMethod(SubtitleProfile subtitleProfile)
+        {
+            return subtitleProfile.Method != SubtitleDeliveryMethod.Drop
+                && subtitleProfile.Method != SubtitleDeliveryMethod.External
+                && subtitleProfile.Method != SubtitleDeliveryMethod.Embed;
         }
 
         private TranscodeReason AggregateFailureConditions(MediaSourceInfo mediaSource, DeviceProfile profile, string type, IEnumerable<ProfileCondition> conditions)
