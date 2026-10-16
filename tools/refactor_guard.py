@@ -17,10 +17,19 @@ split the same way before and after a pure move.
 
 Ported from the 3SX campaign's tools/refactor_guard.py (C) to C#.
 
+Two recipes move or remove literals by design, and have their own mode:
+
+    --together  Recipe S (split file): the original file and the files split off it are
+                compared as one unit, so a literal that moved between them still counts.
+    --dedup     Recipe D (deduplicate): a literal may occur fewer times than before, as long
+                as it still occurs, and no value new to the file may appear.
+
 Usage:
     python tools/refactor_guard.py path/File.cs            # working tree vs HEAD
     python tools/refactor_guard.py --base master path/File.cs
     python tools/refactor_guard.py --all                    # every changed .cs
+    python tools/refactor_guard.py --together path/File.cs path/File.Theme.cs
+    python tools/refactor_guard.py --dedup path/File.cs
 
 Exit codes:
     0  no literal changed
@@ -122,48 +131,59 @@ def changed_files(base: str) -> list[str]:
     return [p.strip() for p in proc.stdout.splitlines() if p.strip()]
 
 
-def check(rel: str, base: str, strict: bool = False) -> bool:
-    """Return True if the file is clean.
+def read_pair(rel: str, base: str, together: bool) -> tuple[str, str] | None:
+    """The file as committed at base and as it is now; None if it cannot be compared."""
+    before = git_show(base, rel)
+    path = REPO / rel
+    after = path.read_text(encoding="utf-8-sig", errors="replace") if path.is_file() else None
+    if before is None and not together:
+        print("SKIP  " + rel + "  (not in " + base + "; new file)")
+        return None
+    if after is None and not together:
+        print("FAIL  " + rel + "  (deleted from working tree)")
+        return ("", "")
+    return ((before or "").lstrip("﻿"), after or "")
+
+
+def check(label: str, a: Counter, b: Counter, strict: bool = False, dedup: bool = False) -> bool:
+    """Return True if the literals are clean.
 
     A *removed* literal is the dangerous signal: a constant was altered
     (removal plus addition of the new value) or code carrying it was deleted.
-    That fails the check.
+    That fails the check. With dedup, a literal may occur fewer times, as long
+    as it still occurs somewhere, and then no value new to the file may appear.
 
     A purely *added* literal is normally benign - a new guard clause brings its
-    own `return null`, an extracted helper its own bounds check - so it is
-    reported as a warning. Use --strict to fail on those too.
+    own value, an extracted helper its own bounds check - so it is reported as a
+    warning. Use --strict to fail on those too.
     """
-    before = git_show(base, rel)
-    if before is None:
-        print("SKIP  " + rel + "  (not in " + base + "; new file)")
-        return True
-
-    path = REPO / rel
-    if not path.is_file():
-        print("FAIL  " + rel + "  (deleted from working tree)")
-        return False
-
-    after = path.read_text(encoding="utf-8-sig", errors="replace")
-    a, b = literals(before.lstrip("﻿")), literals(after)
     removed = a - b
     added = b - a
+    novel = [lit for lit in added if lit not in a]
 
     if not removed and not added:
-        print("OK    " + rel + "  (" + str(sum(a.values())) + " literals unchanged)")
+        print("OK    " + label + "  (" + str(sum(a.values())) + " literals unchanged)")
         return True
 
-    if removed:
-        print("FAIL  " + rel + "  - a constant was removed or altered")
+    gone = [lit for lit in removed if b[lit] == 0] if dedup else list(removed)
+    if gone or (dedup and novel):
+        print("FAIL  " + label + "  - a constant was removed or altered")
         for lit, n in sorted(removed.items()):
-            print("        removed x" + str(n) + "  " + lit)
+            note = "" if lit in gone else "  (still present: fewer copies)"
+            print("        removed x" + str(n) + "  " + lit + note)
         for lit, n in sorted(added.items()):
-            print("        added   x" + str(n) + "  " + lit)
+            print("        added   x" + str(n) + "  " + lit + ("  <-- value is new to this file" if lit in novel else ""))
         return False
 
-    # Additions only.
-    novel = [lit for lit in added if lit not in a]
-    label = "WARN " if not strict else "FAIL "
-    print(label + " " + rel + "  - literals added, none removed")
+    if removed:
+        print("DEDUP " + label + "  - fewer copies of " + str(len(removed)) + " literal(s), every value still present")
+        for lit, n in sorted(removed.items()):
+            print("        fewer   x" + str(n) + "  " + lit)
+        if not added:
+            return True
+
+    label_kind = "WARN " if not strict else "FAIL "
+    print(label_kind + " " + label + "  - literals added, none removed")
     for lit, n in sorted(added.items()):
         tag = "  <-- value is new to this file" if lit in novel else ""
         print("        added   x" + str(n) + "  " + lit + tag)
@@ -180,18 +200,36 @@ def main() -> int:
     ap.add_argument("--all", action="store_true", help="check every changed .cs")
     ap.add_argument("--strict", action="store_true",
                     help="also fail when literals are added (not just removed)")
+    ap.add_argument("--together", action="store_true",
+                    help="Recipe S: compare the given files as one unit (new files start empty)")
+    ap.add_argument("--dedup", action="store_true",
+                    help="Recipe D: allow fewer copies of a literal that is still present")
     args = ap.parse_args()
 
     targets = changed_files(args.base) if args.all else args.files
     if not targets:
         print("nothing to check")
         return 0
+    targets = [rel.replace("\\", "/") for rel in targets]
 
     ok = True
-    for rel in targets:
-        rel = rel.replace("\\", "/")
-        if not check(rel, args.base, args.strict):
-            ok = False
+    if args.together:
+        a, b = Counter(), Counter()
+        for rel in targets:
+            before, after = read_pair(rel, args.base, together=True)
+            a += literals(before)
+            b += literals(after)
+        ok = check(" + ".join(targets), a, b, args.strict, args.dedup)
+    else:
+        for rel in targets:
+            pair = read_pair(rel, args.base, together=False)
+            if pair is None:
+                continue
+            if pair == ("", "") and not (REPO / rel).is_file():
+                ok = False
+                continue
+            if not check(rel, literals(pair[0]), literals(pair[1]), args.strict, args.dedup):
+                ok = False
 
     print()
     if ok:

@@ -27,15 +27,15 @@ allowed transformations.
 | [R17](tasks/R17-EncodingJobInfo.md) | `MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs` | **8.54** | 317 | 85 | 69 / 64 | D | Excess Number of Function Arguments, Primitive Obsession, String Heavy Function Arguments | - |
 | [R18](tasks/R18-DotIgnoreIgnoreRule.md) | `Emby.Server.Implementations/Library/DotIgnoreIgnoreRule.cs` | **8.63** | 154 | 11 | 79 / 76 | E, G, P | Primitive Obsession | `FindIgnoreFileCached` (cc 13) |
 | [R19](tasks/R19-MediaStreamSelector.md) | `Emby.Server.Implementations/Library/MediaStreamSelector.cs` | **8.69** | 101 | 45 | 93 / 100 | E, G, P | - | `GetDefaultSubtitleStreamIndex` (cc 14) |
-| [R20](tasks/R20-LiveStreamHelper.md) | `Emby.Server.Implementations/Library/LiveStreamHelper.cs` | **8.91** | 107 | 29 | 0 / 0 (gate) | E, G, P | Excess Number of Function Arguments | `AddMediaInfoWithProbe` (cc 23) |
+| [R20](tasks/R20-LiveStreamHelper.md) | `Emby.Server.Implementations/Library/LiveStreamHelper.cs` | **8.91** | 107 | 29 | 0 / 0 (low) | E, G, P | Excess Number of Function Arguments | `AddMediaInfoWithProbe` (cc 23) |
 | [R21](tasks/R21-AudioHelper.md) | `Jellyfin.Api/Helpers/AudioHelper.cs` | **9.21** | 95 | 24 | 77 / 83 | E, G, P | Constructor Over-Injection | `GetAudioStream` (cc 12) |
 | [R22](tasks/R22-ResolutionNormalizer.md) | `MediaBrowser.Model/Dlna/ResolutionNormalizer.cs` | **9.36** | 51 | 30 | 94 / 85 | E, G, P | Excess Number of Function Arguments | `Normalize` (cc 12) |
-| [R23](tasks/R23-TranscodingSegmentCleaner.md) | `MediaBrowser.Controller/MediaEncoding/TranscodingSegmentCleaner.cs` | **9.38** | 80 | 5 | 0 / 0 (gate) | P | Constructor Over-Injection | - |
+| [R23](tasks/R23-TranscodingSegmentCleaner.md) | `MediaBrowser.Controller/MediaEncoding/TranscodingSegmentCleaner.cs` | **9.38** | 80 | 5 | 0 / 0 (low) | P | Constructor Over-Injection | - |
 | [R24](tasks/R24-FileStreamResponseHelpers.md) | `Jellyfin.Api/Helpers/FileStreamResponseHelpers.cs` | **9.38** | 76 | 32 | 94 / 60 | E, G, P | Excess Number of Function Arguments | `GetStaticRemoteStreamResult` (cc 9) |
 | [R25](tasks/R25-PathManager.md) | `Emby.Server.Implementations/Library/PathManager.cs` | **9.38** | 72 | 9 | 92 / 92 | D | - | - |
 | [R26](tasks/R26-HlsHelpers.md) | `Jellyfin.Api/Helpers/HlsHelpers.cs` | **9.38** | 59 | 21 | 81 / 75 | G | - | - |
 | [R27](tasks/R27-CoreResolutionIgnoreRule.md) | `Emby.Server.Implementations/Library/CoreResolutionIgnoreRule.cs` | **9.38** | 30 | 74 | 94 / 100 | E, G, P | - | `ShouldIgnore` (cc 11) |
-| [R28](tasks/R28-TranscodingThrottler.md) | `MediaBrowser.Controller/MediaEncoding/TranscodingThrottler.cs` | **9.51** | 97 | 44 | 0 / 0 (gate) | E, G, P | - | `IsThrottleAllowed` (cc 12) |
+| [R28](tasks/R28-TranscodingThrottler.md) | `MediaBrowser.Controller/MediaEncoding/TranscodingThrottler.cs` | **9.51** | 97 | 44 | 0 / 0 (low) | E, G, P | - | `IsThrottleAllowed` (cc 12) |
 | [R29](tasks/R29-DownMixAlgorithmsHelper.md) | `MediaBrowser.Controller/MediaEncoding/DownMixAlgorithmsHelper.cs` | **9.63** | 38 | 5 | 35 / 100 | E, G, P | - | `InferChannelLayout` (cc 13) |
 | [R30](tasks/R30-TranscodingJob.md) | `MediaBrowser.Controller/MediaEncoding/TranscodingJob.cs` | **9.68** | 111 | 19 | 58 / 57 | P | - | - |
 | [R31](tasks/R31-ExternalDataManager.md) | `Emby.Server.Implementations/Library/ExternalDataManager.cs` | **9.68** | 46 | 4 | 88 / 86 | - | Constructor Over-Injection | - |

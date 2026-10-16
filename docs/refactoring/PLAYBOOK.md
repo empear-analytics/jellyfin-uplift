@@ -219,6 +219,10 @@ which side effects run and can introduce null dereferences.
 more places, leave them alone - forcing a shared abstraction over near-miss duplicates is
 how behaviour gets broken.
 
+Removing a copy removes its literals, so check this recipe with
+`python tools/refactor_guard.py --dedup <file>`: a literal may occur fewer times, as long as
+it still occurs, and no value new to the file may appear.
+
 ---
 
 ## Recipe S - Split File
@@ -236,6 +240,8 @@ the file often drops below the limit without needing a split at all.
 3. Move members only; the class, its namespace, its fields and the moved members'
    accessibility stay exactly as they were.
 4. Re-run `dotnet build Jellyfin.sln` and confirm the analyzers accept the new file.
+5. Check the literals of the original and the new files as one unit:
+   `python tools/refactor_guard.py --together <original> <new files>`.
 
 Do not split a file if it would require making a `private` member `internal` or `public`,
 or moving members to another class. Widening accessibility is a behaviour change in the
@@ -262,8 +268,8 @@ before and after your change and compares them. A **removed** literal fails the 
 means a constant was altered, or code carrying it was deleted. **Added** literals are only a
 warning; a new guard clause can legitimately bring its own value.
 
-Recipe D removes a duplicated block, so it trips this guard by design. That recipe needs
-human review before it lands.
+Recipes D and S move or remove literals by design; check them with `--dedup` and
+`--together` (see the recipes).
 
 `codehealth_check.py` measures the file now and as committed, prints the smells that remain,
 and ends with a verdict:
@@ -278,5 +284,6 @@ and ends with a verdict:
 
 The guard checks constants, not control flow, and the tests catch only some behaviour
 changes. An inverted condition with no literal change can pass both - so they reduce risk,
-they do not remove it. That is why files the tests barely cover carry a gate in their task
-file.
+they do not remove it. That is why each task file gives the file's mutation score, and why
+the few files the tests barely cover are marked as such: there, the recipes are the only
+protection.

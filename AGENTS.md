@@ -101,8 +101,10 @@ If the tests or the guard fail, revert immediately:
 git checkout -- <file>
 ```
 
-Recipe D (deduplicate) removes a duplicated block and will therefore trip the guard by
-design. That recipe requires human review before it lands.
+Two recipes move or remove literals by design. Recipe D (deduplicate) removes copies, so
+check it with `--dedup`: a literal may occur fewer times, as long as it still occurs and no
+new value appears. Recipe S (split file) moves code to new files, so check the original and
+the new files as one unit with `--together`.
 
 ## Commits
 

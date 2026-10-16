@@ -51,8 +51,8 @@ Route on that, not on file size:
 | **P** - named predicate | Nothing. Copy an expression into a method, character for character. | Any agent |
 | **G** - guard clauses | What the method returns when it falls through, and the exact complement of nullable comparisons. | Mid capability |
 | **E** - extract method | Which variables cross the boundary, which are written, and `await`. Data flow. | Strongest agent |
-| **D** - deduplicate | Whether two blocks are truly identical. **Trips the guard by design.** | Strongest + human review |
-| **S** - split file | Partial classes, what stays `private`, analyzer rules. | Strongest + human review |
+| **D** - deduplicate | Whether two blocks are truly identical. Checked with `refactor_guard.py --dedup`. | Strongest agent |
+| **S** - split file | Partial classes, what stays `private`, analyzer rules. Checked with `--together`. | Strongest agent |
 
 A useful rule: **Recipe P is safe to hand to the smallest model you have.** It is a
 copy-paste transformation with a mechanical checker behind it. Recipe E is where a weaker
@@ -67,7 +67,7 @@ Do not treat this as settled - calibrate first (next section).
   flagged methods) is the hardest unit in the campaign.
 - **Codex** - Recipe G and E on mid-difficulty files: R06 `StreamingHelpers.cs`, R07
   `DynamicHlsHelper.cs`.
-- **OpenCode / smaller model** - Recipe P only, across any ungated file. There are 193
+- **OpenCode / smaller model** - Recipe P only, across any file. There are 193
   complex-conditional findings to work through, and each one is independently verifiable.
 
 ---
@@ -136,9 +136,10 @@ of instructions, and improvisation is the failure mode that matters here.
 
 ## Reviewing agent work
 
-Before merging any campaign branch:
+Before merging any campaign branch, the coordinating agent checks:
 
-1. `python tools/refactor_guard.py --all --base <start commit>` - no removed literals.
+1. `python tools/refactor_guard.py --all --base <start commit>` - no removed literals
+   (`--together` for split files, `--dedup` for deduplicated ones).
 2. `git log --oneline <start commit>..` - one method per commit, correct message format.
 3. `git diff --stat <start commit> -- tests` - empty.
 4. `git diff <start commit> -- <file>` - scan for anything outside the playbook. Particularly:

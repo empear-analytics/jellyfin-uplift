@@ -206,7 +206,8 @@ python tools/refactor_guard.py Jellyfin.Api/Controllers/DynamicHlsController.cs
 ```
 
 A `FAIL` here means a literal disappeared or changed value - that is not a legal refactor.
-Revert immediately. A `WARN` about *added* literals is normally fine.
+Revert immediately. A `WARN` about *added* literals is normally fine. For Recipe D add
+`--dedup`; for Recipe S add `--together` and list the original file and the new ones.
 
 **4 - the metric improved.**
 
@@ -223,7 +224,7 @@ python tools/codehealth_check.py Jellyfin.Api/Controllers/DynamicHlsController.c
 - [ ] `python tools/codehealth_check.py` reports 10.00, or every remaining smell is one the playbook has no recipe for and is listed in the report
 - [ ] `dotnet build Jellyfin.sln --no-incremental` succeeds with no new warnings (211 on the base)
 - [ ] `dotnet test Jellyfin.sln --no-build` passes in full
-- [ ] `python tools/refactor_guard.py --base <start commit> Jellyfin.Api/Controllers/DynamicHlsController.cs` reports no removed literals
+- [ ] `python tools/refactor_guard.py --base <start commit> --together Jellyfin.Api/Controllers/DynamicHlsController.cs <any files split off it>` reports no removed literals
 - [ ] Each commit covers one method and uses the message format above
 - [ ] Nothing in `tests/` changed: `git diff --stat <start commit> -- tests` is empty
 

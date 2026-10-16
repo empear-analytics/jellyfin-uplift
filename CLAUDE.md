@@ -30,5 +30,6 @@ routed across harnesses.
   catches the one class of mistake that no build error will.
 - Build the whole solution: some analyzer errors only appear in a full build.
 - Never touch `tests/`. A failing test means revert your change.
-- Do not start a gated task (R20, R23, R28) without a human reviewing every commit.
+- R20, R23 and R28 are barely covered by the tests (mutation score 0%). Work them like the
+  others, apply the recipes exactly, and say in the report that the changes are unverified.
 - Stop at a Code Health score of 10.00, or when every remaining smell has no recipe.

@@ -89,8 +89,8 @@ Unlike 3SX, this campaign has a behavioural safety net, built before any refacto
   except three that the tests cannot reasonably reach.
 
 The tests are therefore a backstop, not a proof. The recipes stay strictly behaviour-
-preserving, and the three poorly protected files carry a **gate**: no work on them without
-a human reviewing every commit.
+preserving, and every check is automated. In the three files the tests barely cover, the
+recipes are the only protection; their task files say so, and so must their reports.
 
 Two further constraints come from the safety net itself:
 
@@ -117,13 +117,8 @@ agents you plan to use, on files where being wrong is cheap.
 
 **Phase 2 - The backlog** *(after Phase 1)*
 
-The 30 ungated files, worst first: R01 `EncodingHelper.cs`, R02 `StreamBuilder.cs`, R03
+All 33 files, worst first: R01 `EncodingHelper.cs`, R02 `StreamBuilder.cs`, R03
 `LibraryManager.cs`. After each file lands, re-run the mutation measurement for its part.
-
-**Phase 3 - The gated files** *(human review)*
-
-R20 `LiveStreamHelper.cs`, R23 `TranscodingSegmentCleaner.cs`, R28
-`TranscodingThrottler.cs`. Every commit reviewed by a human before it lands.
 
 ---
 
@@ -148,10 +143,10 @@ R20 `LiveStreamHelper.cs`, R23 `TranscodingSegmentCleaner.cs`, R28
   listed in the report
 - `dotnet build Jellyfin.sln --no-incremental` succeeds with no new warnings (211 on the base)
 - `dotnet test Jellyfin.sln --no-build` passes in full
-- `refactor_guard.py --base <start commit>` reports no removed literals
+- `refactor_guard.py --base <start commit>` reports no removed literals (`--together` with
+  any files split off it)
 - One method per commit, message format `refactor(<File>): simplify <Method>`
 - Nothing under `tests/` changed
-- Gated files only: every commit reviewed by a human
 
 ---
 

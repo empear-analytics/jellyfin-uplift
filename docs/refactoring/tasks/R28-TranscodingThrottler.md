@@ -13,10 +13,10 @@
 | Mutation score (Stryker / Mull) | 0% / 0% |
 
 > [!WARNING]
-> **Gate: the tests barely protect this file** (mutation score below 30%, see
+> **The tests barely protect this file** (mutation score below 30%, see
 > [`../test-harness.md`](../test-harness.md)). A behaviour change here would most likely pass
-> every check. Do not start this task without a human reviewing every commit; if none is
-> available, pick another task and leave this one alone.
+> every check, so the recipes are the only protection: apply them exactly. Work the task
+> like any other, and say in the report that the changes are effectively unverified.
 
 ## 1. Read these first
 
@@ -92,7 +92,8 @@ python tools/refactor_guard.py MediaBrowser.Controller/MediaEncoding/Transcoding
 ```
 
 A `FAIL` here means a literal disappeared or changed value - that is not a legal refactor.
-Revert immediately. A `WARN` about *added* literals is normally fine.
+Revert immediately. A `WARN` about *added* literals is normally fine. For Recipe D add
+`--dedup`; for Recipe S add `--together` and list the original file and the new ones.
 
 **4 - the metric improved.**
 
@@ -109,7 +110,7 @@ python tools/codehealth_check.py MediaBrowser.Controller/MediaEncoding/Transcodi
 - [ ] `python tools/codehealth_check.py` reports 10.00, or every remaining smell is one the playbook has no recipe for and is listed in the report
 - [ ] `dotnet build Jellyfin.sln --no-incremental` succeeds with no new warnings (211 on the base)
 - [ ] `dotnet test Jellyfin.sln --no-build` passes in full
-- [ ] `python tools/refactor_guard.py --base <start commit> MediaBrowser.Controller/MediaEncoding/TranscodingThrottler.cs` reports no removed literals
+- [ ] `python tools/refactor_guard.py --base <start commit> --together MediaBrowser.Controller/MediaEncoding/TranscodingThrottler.cs <any files split off it>` reports no removed literals
 - [ ] Each commit covers one method and uses the message format above
 - [ ] Nothing in `tests/` changed: `git diff --stat <start commit> -- tests` is empty
 
@@ -126,6 +127,7 @@ Steps reverted:  <n>   (list which, and why)
 Smells left without a recipe: <list, or NONE>
 Build: PASS / FAIL
 Tests: PASS / FAIL
+Protection: LOW - the tests barely cover this file; the changes are effectively unverified
 Commits: <sha list>
 Unsure about: <free text, or NONE>
 ```
