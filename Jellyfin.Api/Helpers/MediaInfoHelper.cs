@@ -350,16 +350,7 @@ public class MediaInfoHelper
     {
         if (mediaSource.IsRemote && user.HasPermission(PermissionKind.ForceRemoteSourceTranscoding))
         {
-            mediaSource.SupportsDirectPlay = false;
-            mediaSource.SupportsDirectStream = false;
-
-            mediaSource.TranscodingUrl = streamInfo.ToUrl(null, claimsPrincipal.GetToken(), "&allowVideoStreamCopy=false&allowAudioStreamCopy=false");
-            mediaSource.TranscodingContainer = streamInfo.Container;
-            mediaSource.TranscodingSubProtocol = streamInfo.SubProtocol;
-            if (streamInfo.AlwaysBurnInSubtitleWhenTranscoding)
-            {
-                mediaSource.TranscodingUrl += "&alwaysBurnInSubtitleWhenTranscoding=true";
-            }
+            SetForcedRemoteTranscodingUrl(streamInfo, mediaSource, claimsPrincipal);
         }
         else
         {
@@ -383,6 +374,20 @@ public class MediaInfoHelper
                     mediaSource.TranscodingUrl += "&alwaysBurnInSubtitleWhenTranscoding=true";
                 }
             }
+        }
+    }
+
+    private static void SetForcedRemoteTranscodingUrl(StreamInfo streamInfo, MediaSourceInfo mediaSource, ClaimsPrincipal claimsPrincipal)
+    {
+        mediaSource.SupportsDirectPlay = false;
+        mediaSource.SupportsDirectStream = false;
+
+        mediaSource.TranscodingUrl = streamInfo.ToUrl(null, claimsPrincipal.GetToken(), "&allowVideoStreamCopy=false&allowAudioStreamCopy=false");
+        mediaSource.TranscodingContainer = streamInfo.Container;
+        mediaSource.TranscodingSubProtocol = streamInfo.SubProtocol;
+        if (streamInfo.AlwaysBurnInSubtitleWhenTranscoding)
+        {
+            mediaSource.TranscodingUrl += "&alwaysBurnInSubtitleWhenTranscoding=true";
         }
     }
 
