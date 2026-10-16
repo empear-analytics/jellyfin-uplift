@@ -719,7 +719,7 @@ public class DynamicHlsHelper
             return false;
         }
 
-        if (isLiveStream || string.IsNullOrWhiteSpace(state.MediaPath))
+        if (IsLiveStreamOrHasNoMediaPath(isLiveStream, state))
         {
             // Opening live streams is so slow it's not even worth it
             return false;
@@ -740,6 +740,16 @@ public class DynamicHlsHelper
             return false;
         }
 
+        return HasRequestedVideoBitrate(state);
+    }
+
+    private static bool IsLiveStreamOrHasNoMediaPath(bool isLiveStream, StreamState state)
+    {
+        return isLiveStream || string.IsNullOrWhiteSpace(state.MediaPath);
+    }
+
+    private static bool HasRequestedVideoBitrate(StreamState state)
+    {
         return state.VideoRequest?.VideoBitRate.HasValue ?? false;
     }
 
