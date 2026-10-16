@@ -1435,11 +1435,11 @@ namespace MediaBrowser.Model.Dlna
                     var directStreamFailureReasons = failureReasons & (~DirectStreamReasons);
 
                     PlayMethod? playMethod = null;
-                    if (failureReasons == 0 && isEligibleForDirectPlay && mediaSource.SupportsDirectPlay)
+                    if (CanDirectPlayWith(failureReasons, isEligibleForDirectPlay, mediaSource))
                     {
                         playMethod = PlayMethod.DirectPlay;
                     }
-                    else if (directStreamFailureReasons == 0 && isEligibleForDirectStream && mediaSource.SupportsDirectStream)
+                    else if (CanDirectStreamWith(directStreamFailureReasons, isEligibleForDirectStream, mediaSource))
                     {
                         playMethod = PlayMethod.DirectStream;
                     }
@@ -1472,6 +1472,16 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return (Profile: null, PlayMethod: null, AudioStreamIndex: null, TranscodeReasons: failureReasons);
+        }
+
+        private static bool CanDirectPlayWith(TranscodeReason failureReasons, bool isEligibleForDirectPlay, MediaSourceInfo mediaSource)
+        {
+            return failureReasons == 0 && isEligibleForDirectPlay && mediaSource.SupportsDirectPlay;
+        }
+
+        private static bool CanDirectStreamWith(TranscodeReason directStreamFailureReasons, bool isEligibleForDirectStream, MediaSourceInfo mediaSource)
+        {
+            return directStreamFailureReasons == 0 && isEligibleForDirectStream && mediaSource.SupportsDirectStream;
         }
 
         private TranscodeReason GetDirectPlaySubtitleReasons(MediaOptions options, MediaSourceInfo mediaSource, MediaStream? subtitleStream, string container)
