@@ -76,7 +76,7 @@ Update as tasks land.
 | R20 | 8.91 | - | not started |
 | R21 | 9.21 | - | not started |
 | R22 | 9.36 | 9.68 | stopped: Excess Number of Function Arguments on `Normalize` (no recipe; plugin API) |
-| R23 | 9.38 | - | not started |
+| R23 | 9.38 | 9.38 | stopped: Recipe P was FLAT (the predicate brings Primitive Obsession); Constructor Over-Injection has no recipe |
 | R24 | 9.38 | 9.68 | stopped: Excess Number of Function Arguments on `GetTranscodedFile` (no recipe; callers outside the scope) |
 | R25 | 9.38 | 9.38 | stopped: the duplicates differ in two places, so Recipe D does not apply |
 | R26 | 9.38 | 10.00 | done (8090c985ad) |
