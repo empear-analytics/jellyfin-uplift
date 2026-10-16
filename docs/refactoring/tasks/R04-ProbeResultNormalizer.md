@@ -83,6 +83,7 @@ section 7. Do not batch several methods into one change.
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 12 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 11 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 77): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(ProbeResultNormalizer): simplify GetMediaStream`
 
@@ -91,6 +92,7 @@ Commit message: `refactor(ProbeResultNormalizer): simplify GetMediaStream`
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 6 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity None): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(ProbeResultNormalizer): simplify GetMediaInfo`
@@ -99,6 +101,7 @@ Commit message: `refactor(ProbeResultNormalizer): simplify GetMediaInfo`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 22): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(ProbeResultNormalizer): simplify FetchWtvInfo`
 
@@ -106,42 +109,49 @@ Commit message: `refactor(ProbeResultNormalizer): simplify FetchWtvInfo`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 12): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(ProbeResultNormalizer): simplify NormalizeFormat`
 
 ### Step 5: `SetAudioInfoFromTags` (line 1323)
 
 - **Recipe E (extract function)** - 9 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 36): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(ProbeResultNormalizer): simplify SetAudioInfoFromTags`
 
 ### Step 6: `GetAspectRatio` (line 1102)
 
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 18): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(ProbeResultNormalizer): simplify GetAspectRatio`
 
 ### Step 7: `GetEstimatedAudioBitrate` (line 341)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 14): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(ProbeResultNormalizer): simplify GetEstimatedAudioBitrate`
 
 ### Step 8: `ReadFromDictNode` (line 432)
 
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
+- **Then, while Complex Method remains** (cyclomatic complexity 13): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(ProbeResultNormalizer): simplify ReadFromDictNode`
 
 ### Step 9: `FetchFromItunesInfo` (line 369)
 
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
+- **Then, while Complex Method remains** (cyclomatic complexity 10): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(ProbeResultNormalizer): simplify FetchFromItunesInfo`
 
 ### Step 10: `ReadValueArray` (line 496)
 
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(ProbeResultNormalizer): simplify ReadValueArray`
 

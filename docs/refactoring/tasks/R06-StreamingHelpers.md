@@ -65,6 +65,7 @@ section 7. Do not batch several methods into one change.
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 4 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 10 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity None): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (11 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(StreamingHelpers): simplify GetStreamingState`
@@ -73,6 +74,7 @@ Commit message: `refactor(StreamingHelpers): simplify GetStreamingState`
 
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 63): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(StreamingHelpers): simplify ParseParams`
 
@@ -80,6 +82,7 @@ Commit message: `refactor(StreamingHelpers): simplify ParseParams`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 17): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(StreamingHelpers): simplify GetOutputFileExtension`
 

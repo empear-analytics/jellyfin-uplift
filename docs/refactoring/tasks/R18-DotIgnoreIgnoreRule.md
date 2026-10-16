@@ -57,6 +57,7 @@ section 7. Do not batch several methods into one change.
 ### Step 1: `FindIgnoreFileCached` (line 147)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 13): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(DotIgnoreIgnoreRule): simplify FindIgnoreFileCached`
 

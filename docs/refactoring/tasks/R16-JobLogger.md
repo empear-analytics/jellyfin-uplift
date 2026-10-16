@@ -57,6 +57,7 @@ section 7. Do not batch several methods into one change.
 
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 7 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 22): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(JobLogger): simplify ParseLogLine`
 

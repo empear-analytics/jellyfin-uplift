@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **9.63** / 10 (Green) |
 | Exit target | **10.00** |
-| File size | 74 lines (38 lines of code) |
-| Git churn | 5 commits |
+| File size | 79 lines (40 lines of code) |
+| Git churn | 6 commits |
 | Part | encoding (`MediaBrowser.Controller/MediaEncoding`) |
 | Recipes needed | E, G, P |
 | Smells without a recipe | none |

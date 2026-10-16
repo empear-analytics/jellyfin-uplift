@@ -64,6 +64,7 @@ section 7. Do not batch several methods into one change.
 
 - **Recipe E (extract function)** - 4 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 5 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 49): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(StreamInfo): simplify ToUrl`
 
@@ -71,6 +72,7 @@ Commit message: `refactor(StreamInfo): simplify ToUrl`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 14): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(StreamInfo): simplify GetSubtitleProfiles`
@@ -78,6 +80,7 @@ Commit message: `refactor(StreamInfo): simplify GetSubtitleProfiles`
 ### Step 3: `GetSubtitleStreamInfo` (line 1230)
 
 - **Recipe P (named predicate)** - 6 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 13): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (6 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(StreamInfo): simplify GetSubtitleStreamInfo`

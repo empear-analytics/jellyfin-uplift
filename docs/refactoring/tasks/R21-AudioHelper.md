@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **9.21** / 10 (Green) |
 | Exit target | **10.00** |
-| File size | 157 lines (95 lines of code) |
-| Git churn | 24 commits |
+| File size | 167 lines (99 lines of code) |
+| Git churn | 25 commits |
 | Part | api (`Jellyfin.Api/Helpers`) |
 | Recipes needed | E, G, P |
 | Smells without a recipe | Constructor Over-Injection |
@@ -57,6 +57,7 @@ section 7. Do not batch several methods into one change.
 ### Step 1: `GetAudioStream` (line 74)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 12): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(AudioHelper): simplify GetAudioStream`
 

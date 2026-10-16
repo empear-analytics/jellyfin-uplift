@@ -90,6 +90,7 @@ section 7. Do not batch several methods into one change.
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 7 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 16): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(StreamBuilder): simplify GetDefaultSubtitleStreamIndex`
 
@@ -97,6 +98,7 @@ Commit message: `refactor(StreamBuilder): simplify GetDefaultSubtitleStreamIndex
 
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 5 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 51): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(StreamBuilder): simplify BuildVideoItem`
 
@@ -104,6 +106,7 @@ Commit message: `refactor(StreamBuilder): simplify BuildVideoItem`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 11 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 31): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (6 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(StreamBuilder): simplify GetExternalSubtitleProfile`
@@ -112,6 +115,7 @@ Commit message: `refactor(StreamBuilder): simplify GetExternalSubtitleProfile`
 
 - **Recipe E (extract function)** - 4 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 29): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(StreamBuilder): simplify GetOptimalAudioStream`
 
@@ -119,6 +123,7 @@ Commit message: `refactor(StreamBuilder): simplify GetOptimalAudioStream`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 6 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 24): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (8 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(StreamBuilder): simplify GetVideoDirectPlayProfile`
@@ -127,6 +132,7 @@ Commit message: `refactor(StreamBuilder): simplify GetVideoDirectPlayProfile`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 3 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 16): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(StreamBuilder): simplify GetDefaultAudioBitrate`
 
@@ -134,6 +140,7 @@ Commit message: `refactor(StreamBuilder): simplify GetDefaultAudioBitrate`
 
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 27 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity None): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(StreamBuilder): simplify ApplyTranscodingConditions`
@@ -141,6 +148,7 @@ Commit message: `refactor(StreamBuilder): simplify ApplyTranscodingConditions`
 ### Step 8: `BuildStreamVideoItem` (line 934)
 
 - **Recipe E (extract function)** - 5 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 53): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (9 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(StreamBuilder): simplify BuildStreamVideoItem`
@@ -148,6 +156,7 @@ Commit message: `refactor(StreamBuilder): simplify BuildStreamVideoItem`
 ### Step 9: `GetSubtitleProfile` (line 1465)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 28): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (7 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(StreamBuilder): simplify GetSubtitleProfile`
@@ -155,18 +164,21 @@ Commit message: `refactor(StreamBuilder): simplify GetSubtitleProfile`
 ### Step 10: `GetAudioBitrate` (line 1188)
 
 - **Recipe P (named predicate)** - 8 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 18): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(StreamBuilder): simplify GetAudioBitrate`
 
 ### Step 11: `GetAudioDirectPlayProfile` (line 437)
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 17): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(StreamBuilder): simplify GetAudioDirectPlayProfile`
 
 ### Step 12: `GetVideoTranscodeProfile` (line 847)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 16): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(StreamBuilder): simplify GetVideoTranscodeProfile`
@@ -174,6 +186,7 @@ Commit message: `refactor(StreamBuilder): simplify GetVideoTranscodeProfile`
 ### Step 13: `NormalizeMediaSourceFormatIntoSingleContainer` (line 408)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 10): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(StreamBuilder): simplify NormalizeMediaSourceFormatIntoSingleContainer`
 

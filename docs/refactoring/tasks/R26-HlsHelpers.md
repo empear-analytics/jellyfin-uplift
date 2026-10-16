@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **9.38** / 10 (Green) |
 | Exit target | **10.00** |
-| File size | 132 lines (59 lines of code) |
-| Git churn | 21 commits |
+| File size | 136 lines (61 lines of code) |
+| Git churn | 22 commits |
 | Part | api (`Jellyfin.Api/Helpers`) |
 | Recipes needed | G |
 | Smells without a recipe | none |

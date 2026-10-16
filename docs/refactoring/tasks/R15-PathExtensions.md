@@ -60,12 +60,14 @@ section 7. Do not batch several methods into one change.
 - **Recipe G (guard clauses)** - nesting is 6, target is under 4.
 - **Recipe E (extract function)** - 4 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 3 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 27): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(PathExtensions): simplify GetAttributeValue`
 
 ### Step 2: `TryReplaceSubPath` (line 126)
 
 - **Recipe P (named predicate)** - 5 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 10): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(PathExtensions): simplify TryReplaceSubPath`
 

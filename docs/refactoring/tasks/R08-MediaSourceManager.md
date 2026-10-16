@@ -70,6 +70,7 @@ section 7. Do not batch several methods into one change.
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 3 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 18): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(MediaSourceManager): simplify SetDefaultAudioStreamIndex`
@@ -78,6 +79,7 @@ Commit message: `refactor(MediaSourceManager): simplify SetDefaultAudioStreamInd
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 6 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 15): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(MediaSourceManager): simplify GetPlaybackMediaSources`
@@ -85,6 +87,7 @@ Commit message: `refactor(MediaSourceManager): simplify GetPlaybackMediaSources`
 ### Step 3: `AddMediaInfoWithProbe` (line 793)
 
 - **Recipe E (extract function)** - 4 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 25): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (6 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(MediaSourceManager): simplify AddMediaInfoWithProbe`
@@ -92,12 +95,14 @@ Commit message: `refactor(MediaSourceManager): simplify AddMediaInfoWithProbe`
 ### Step 4: `SetDefaultSubtitleStreamIndex` (line 493)
 
 - **Recipe P (named predicate)** - 7 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 13): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(MediaSourceManager): simplify SetDefaultSubtitleStreamIndex`
 
 ### Step 5: `SetAlternateVersionResumeStates` (line 436)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 10): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(MediaSourceManager): simplify SetAlternateVersionResumeStates`
 

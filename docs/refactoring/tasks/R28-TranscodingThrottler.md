@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **9.51** / 10 (Green) |
 | Exit target | **10.00** |
-| File size | 218 lines (97 lines of code) |
-| Git churn | 44 commits |
+| File size | 228 lines (101 lines of code) |
+| Git churn | 45 commits |
 | Part | encoding (`MediaBrowser.Controller/MediaEncoding`) |
 | Recipes needed | E, G, P |
 | Smells without a recipe | none |
@@ -61,6 +61,7 @@ section 7. Do not batch several methods into one change.
 ### Step 1: `IsThrottleAllowed` (line 148)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 12): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(TranscodingThrottler): simplify IsThrottleAllowed`
 

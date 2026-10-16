@@ -60,6 +60,7 @@ section 7. Do not batch several methods into one change.
 ### Step 1: `GetVp9String` (line 239)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 28): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(HlsCodecStringHelpers): simplify GetVp9String`
@@ -67,12 +68,14 @@ Commit message: `refactor(HlsCodecStringHelpers): simplify GetVp9String`
 ### Step 2: `GetAv1String` (line 300)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(HlsCodecStringHelpers): simplify GetAv1String`
 
 ### Step 3: `GetDTSString` (line 139)
 
 - **Recipe P (named predicate)** - 5 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(HlsCodecStringHelpers): simplify GetDTSString`
 

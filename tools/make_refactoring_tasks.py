@@ -130,8 +130,11 @@ def recipes_for(row: dict) -> list[str]:
         steps.append(f"**Recipe E (extract function)** - {row.get('bumps')} bumps; each bump is a missing method.")
     if "Complex Conditional" in row["smells"]:
         steps.append(f"**Recipe P (named predicate)** - {row.get('conditionals')} complex conditional expression(s).")
-    if row["smells"] & {"Complex Method", "Brain Method"} and not steps:
-        steps.append(f"**Recipes G, E, P** - cyclomatic complexity {row.get('cc')}; reduce it with the recipes above as they apply.")
+    if row["smells"] & {"Complex Method", "Brain Method"}:
+        if steps:
+            steps.append(f"**Then, while Complex Method remains** (cyclomatic complexity {row.get('cc')}): Recipes G, E, P as they apply, one recipe per commit.")
+        else:
+            steps.append(f"**Recipes G, E, P** - cyclomatic complexity {row.get('cc')}; reduce it with the recipes above as they apply.")
     if "Code Duplication" in row["smells"]:
         steps.append("**Recipe D (deduplicate)** - only if the copies are identical or differ by a single value.")
     for smell in sorted(row["smells"] - set(RECIPES)):

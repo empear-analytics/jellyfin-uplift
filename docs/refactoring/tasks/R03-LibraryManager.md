@@ -99,6 +99,7 @@ section 7. Do not batch several methods into one change.
 
 - **Recipe G (guard clauses)** - nesting is 5, target is under 4.
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 19): Recipes G, E, P as they apply, one recipe per commit.
 - **Recipe D (deduplicate)** - only if the copies are identical or differ by a single value.
 
 Commit message: `refactor(LibraryManager): simplify CreateItems`
@@ -107,6 +108,7 @@ Commit message: `refactor(LibraryManager): simplify CreateItems`
 
 - **Recipe G (guard clauses)** - nesting is 5, target is under 4.
 - **Recipe E (extract function)** - 4 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 19): Recipes G, E, P as they apply, one recipe per commit.
 - **Recipe D (deduplicate)** - only if the copies are identical or differ by a single value.
 
 Commit message: `refactor(LibraryManager): simplify UpdateItemsAsync`
@@ -115,6 +117,7 @@ Commit message: `refactor(LibraryManager): simplify UpdateItemsAsync`
 
 - **Recipe E (extract function)** - 6 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 41): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(LibraryManager): simplify DeleteItem`
 
@@ -122,6 +125,7 @@ Commit message: `refactor(LibraryManager): simplify DeleteItem`
 
 - **Recipe E (extract function)** - 8 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 31): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(LibraryManager): simplify FillMissingEpisodeNumbersFromPath`
 
@@ -129,6 +133,7 @@ Commit message: `refactor(LibraryManager): simplify FillMissingEpisodeNumbersFro
 
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 15): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(LibraryManager): simplify FindExtras`
 
@@ -136,6 +141,7 @@ Commit message: `refactor(LibraryManager): simplify FindExtras`
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 3 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 14): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(LibraryManager): simplify GetTopParentIdsForQuery`
 
@@ -150,36 +156,42 @@ Commit message: `refactor(LibraryManager): simplify GetNamedView`
 ### Step 8: `AddUserToQuery` (line 2090)
 
 - **Recipe P (named predicate)** - 7 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 11): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(LibraryManager): simplify AddUserToQuery`
 
 ### Step 9: `SavePeopleMetadataAsync` (line 3882)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 10): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(LibraryManager): simplify SavePeopleMetadataAsync`
 
 ### Step 10: `AddVirtualFolder` (line 3807)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(LibraryManager): simplify AddVirtualFolder`
 
 ### Step 11: `ConvertImageToLocal` (line 3751)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(LibraryManager): simplify ConvertImageToLocal`
 
 ### Step 12: `FindExtras.PrepareExtra` (line 3508)
 
 - **Recipe P (named predicate)** - 3 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(LibraryManager): simplify FindExtras.PrepareExtra`
 
 ### Step 13: `SetTopParentIdsOrAncestors` (line 2043)
 
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(LibraryManager): simplify SetTopParentIdsOrAncestors`
 

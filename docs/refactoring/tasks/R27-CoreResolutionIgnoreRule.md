@@ -55,6 +55,7 @@ section 7. Do not batch several methods into one change.
 ### Step 1: `ShouldIgnore` (line 32)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 11): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(CoreResolutionIgnoreRule): simplify ShouldIgnore`
 

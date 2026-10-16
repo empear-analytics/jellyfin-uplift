@@ -72,6 +72,7 @@ section 7. Do not batch several methods into one change.
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 4 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity None): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (19 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(MediaInfoHelper): simplify SetDeviceSpecificData`
@@ -79,6 +80,7 @@ Commit message: `refactor(MediaInfoHelper): simplify SetDeviceSpecificData`
 ### Step 2: `GetPublishedLiveStreamPath` (line 582)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(MediaInfoHelper): simplify GetPublishedLiveStreamPath`
 

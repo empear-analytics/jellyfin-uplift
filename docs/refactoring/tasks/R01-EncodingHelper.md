@@ -144,6 +144,7 @@ section 7. Do not batch several methods into one change.
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 10 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 6 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 64): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetInputVideoHwaccelArgs`
 
@@ -152,6 +153,7 @@ Commit message: `refactor(EncodingHelper): simplify GetInputVideoHwaccelArgs`
 - **Recipe G (guard clauses)** - nesting is 5, target is under 4.
 - **Recipe E (extract function)** - 8 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 10 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 58): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetAmdVaapiFullVidFiltersPrefered`
 
@@ -160,6 +162,7 @@ Commit message: `refactor(EncodingHelper): simplify GetAmdVaapiFullVidFiltersPre
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 9 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 36): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetHardwareVideoDecoder`
 
@@ -168,6 +171,7 @@ Commit message: `refactor(EncodingHelper): simplify GetHardwareVideoDecoder`
 - **Recipe G (guard clauses)** - nesting is 4, target is under 4.
 - **Recipe E (extract function)** - 5 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 9 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity None): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(EncodingHelper): simplify GetHwaccelType`
@@ -176,6 +180,7 @@ Commit message: `refactor(EncodingHelper): simplify GetHwaccelType`
 
 - **Recipe E (extract function)** - 8 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 19 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 95): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetVideoQualityParam`
 
@@ -183,6 +188,7 @@ Commit message: `refactor(EncodingHelper): simplify GetVideoQualityParam`
 
 - **Recipe E (extract function)** - 6 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 85): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetIntelQsvDx11VidFiltersPrefered`
 
@@ -190,6 +196,7 @@ Commit message: `refactor(EncodingHelper): simplify GetIntelQsvDx11VidFiltersPre
 
 - **Recipe E (extract function)** - 8 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 8 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 80): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(EncodingHelper): simplify GetEncoderParam`
@@ -198,6 +205,7 @@ Commit message: `refactor(EncodingHelper): simplify GetEncoderParam`
 
 - **Recipe E (extract function)** - 7 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 79): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetIntelQsvVaapiVidFiltersPrefered`
 
@@ -205,6 +213,7 @@ Commit message: `refactor(EncodingHelper): simplify GetIntelQsvVaapiVidFiltersPr
 
 - **Recipe E (extract function)** - 10 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 27 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 74): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify CanStreamCopyVideo`
 
@@ -212,6 +221,7 @@ Commit message: `refactor(EncodingHelper): simplify CanStreamCopyVideo`
 
 - **Recipe E (extract function)** - 6 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 11 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 71): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetRkmppVidFiltersPrefered`
 
@@ -219,6 +229,7 @@ Commit message: `refactor(EncodingHelper): simplify GetRkmppVidFiltersPrefered`
 
 - **Recipe E (extract function)** - 6 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 62): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetIntelVaapiFullVidFiltersPrefered`
 
@@ -226,6 +237,7 @@ Commit message: `refactor(EncodingHelper): simplify GetIntelVaapiFullVidFiltersP
 
 - **Recipe E (extract function)** - 7 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 3 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 53): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetVaapiLimitedVidFiltersPrefered`
 
@@ -233,6 +245,7 @@ Commit message: `refactor(EncodingHelper): simplify GetVaapiLimitedVidFiltersPre
 
 - **Recipe E (extract function)** - 5 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 45): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetAmdDx11VidFiltersPrefered`
 
@@ -240,6 +253,7 @@ Commit message: `refactor(EncodingHelper): simplify GetAmdDx11VidFiltersPrefered
 
 - **Recipe E (extract function)** - 5 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 5 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 43): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetNvidiaVidFiltersPrefered`
 
@@ -247,6 +261,7 @@ Commit message: `refactor(EncodingHelper): simplify GetNvidiaVidFiltersPrefered`
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 32): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetQsvHwVidDecoder`
 
@@ -254,6 +269,7 @@ Commit message: `refactor(EncodingHelper): simplify GetQsvHwVidDecoder`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 6 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 26): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetAudioBitrateParam`
 
@@ -261,6 +277,7 @@ Commit message: `refactor(EncodingHelper): simplify GetAudioBitrateParam`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 26): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetVideoProcessingFilterParam`
 
@@ -268,6 +285,7 @@ Commit message: `refactor(EncodingHelper): simplify GetVideoProcessingFilterPara
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 26): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetVideotoolboxVidDecoder`
 
@@ -275,6 +293,7 @@ Commit message: `refactor(EncodingHelper): simplify GetVideotoolboxVidDecoder`
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 24): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetNvdecVidDecoder`
 
@@ -282,6 +301,7 @@ Commit message: `refactor(EncodingHelper): simplify GetNvdecVidDecoder`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 21): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetProgressiveAudioFullCommandLine`
 
@@ -289,6 +309,7 @@ Commit message: `refactor(EncodingHelper): simplify GetProgressiveAudioFullComma
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 20): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetHwTonemapFilter`
 
@@ -296,6 +317,7 @@ Commit message: `refactor(EncodingHelper): simplify GetHwTonemapFilter`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 20): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetProgressiveVideoArguments`
 
@@ -303,6 +325,7 @@ Commit message: `refactor(EncodingHelper): simplify GetProgressiveVideoArguments
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 6 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 20): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetVideoBitrateParam`
 
@@ -310,6 +333,7 @@ Commit message: `refactor(EncodingHelper): simplify GetVideoBitrateParam`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 3 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 17): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetNumAudioChannelsParam`
 
@@ -317,6 +341,7 @@ Commit message: `refactor(EncodingHelper): simplify GetNumAudioChannelsParam`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 15): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify TryStreamCopy`
 
@@ -324,48 +349,56 @@ Commit message: `refactor(EncodingHelper): simplify TryStreamCopy`
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 13): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetVideoBitrateParamValue`
 
 ### Step 27: `GetAppleVidFiltersPreferred` (line 5858)
 
 - **Recipe E (extract function)** - 4 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 32): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetAppleVidFiltersPreferred`
 
 ### Step 28: `GetInputModifier` (line 7362)
 
 - **Recipe P (named predicate)** - 6 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 31): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetInputModifier`
 
 ### Step 29: `GetRkmppVidDecoder` (line 7163)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 29): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetRkmppVidDecoder`
 
 ### Step 30: `GetVaapiVidDecoder` (line 7025)
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 27): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetVaapiVidDecoder`
 
 ### Step 31: `AttachMediaSourceInfo` (line 7495)
 
 - **Recipe P (named predicate)** - 7 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 23): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify AttachMediaSourceInfo`
 
 ### Step 32: `GetAudioVbrModeParam` (line 2907)
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 23): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetAudioVbrModeParam`
 
 ### Step 33: `GetHlsVideoKeyFrameArguments` (line 2031)
 
 - **Recipe P (named predicate)** - 14 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 21): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(EncodingHelper): simplify GetHlsVideoKeyFrameArguments`
@@ -373,18 +406,21 @@ Commit message: `refactor(EncodingHelper): simplify GetHlsVideoKeyFrameArguments
 ### Step 34: `GetBitStreamArgs` (line 1496)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 20): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetBitStreamArgs`
 
 ### Step 35: `GetVaapiVidFilterChain` (line 5076)
 
 - **Recipe P (named predicate)** - 6 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 20): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetVaapiVidFilterChain`
 
 ### Step 36: `GetHwDecoderName` (line 6602)
 
 - **Recipe P (named predicate)** - 6 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 19): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(EncodingHelper): simplify GetHwDecoderName`
@@ -392,42 +428,49 @@ Commit message: `refactor(EncodingHelper): simplify GetHwDecoderName`
 ### Step 37: `GetMapArgs` (line 3129)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 19): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetMapArgs`
 
 ### Step 38: `GetAmfVidDecoder` (line 6969)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 17): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetAmfVidDecoder`
 
 ### Step 39: `GetAudioStreamCopyFailureReasons` (line 2665)
 
 - **Recipe P (named predicate)** - 10 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 17): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetAudioStreamCopyFailureReasons`
 
 ### Step 40: `GetInputArgument` (line 1251)
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 15): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetInputArgument`
 
 ### Step 41: `GetIntelVidFilterChain` (line 4468)
 
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 15): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetIntelVidFilterChain`
 
 ### Step 42: `GetProgressiveVideoAudioArguments` (line 7857)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 15): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetProgressiveVideoAudioArguments`
 
 ### Step 43: `GetHwScaleFilter` (line 3381)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 14): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (10 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(EncodingHelper): simplify GetHwScaleFilter`
@@ -435,6 +478,7 @@ Commit message: `refactor(EncodingHelper): simplify GetHwScaleFilter`
 ### Step 44: `GetSwScaleFilter` (line 3516)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 14): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (10 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(EncodingHelper): simplify GetSwScaleFilter`
@@ -442,30 +486,35 @@ Commit message: `refactor(EncodingHelper): simplify GetSwScaleFilter`
 ### Step 45: `IsHwTonemapAvailable` (line 359)
 
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 14): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify IsHwTonemapAvailable`
 
 ### Step 46: `GetVideoColorBitDepth` (line 6457)
 
 - **Recipe P (named predicate)** - 7 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 13): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetVideoColorBitDepth`
 
 ### Step 47: `GetAudioFilterParam` (line 2961)
 
 - **Recipe P (named predicate)** - 3 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 12): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetAudioFilterParam`
 
 ### Step 48: `NormalizeTranscodingLevel` (line 1894)
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 12): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify NormalizeTranscodingLevel`
 
 ### Step 49: `IsScaleRatioSupported` (line 3339)
 
 - **Recipe P (named predicate)** - 8 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 11): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (7 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(EncodingHelper): simplify IsScaleRatioSupported`
@@ -473,12 +522,14 @@ Commit message: `refactor(EncodingHelper): simplify IsScaleRatioSupported`
 ### Step 50: `GetBitDepthCompensatedBitrate` (line 2715)
 
 - **Recipe P (named predicate)** - 3 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 10): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetBitDepthCompensatedBitrate`
 
 ### Step 51: `GetGraphicalSubPreProcessFilters` (line 3431)
 
 - **Recipe P (named predicate)** - 6 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 10): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (8 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(EncodingHelper): simplify GetGraphicalSubPreProcessFilters`
@@ -486,42 +537,49 @@ Commit message: `refactor(EncodingHelper): simplify GetGraphicalSubPreProcessFil
 ### Step 52: `GetRkmppVidFilterChain` (line 6019)
 
 - **Recipe P (named predicate)** - 3 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 10): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetRkmppVidFilterChain`
 
 ### Step 53: `IsIntelVppTonemapAvailable` (line 407)
 
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 10): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify IsIntelVppTonemapAvailable`
 
 ### Step 54: `GetAmdVidFilterChain` (line 4242)
 
 - **Recipe P (named predicate)** - 3 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetAmdVidFilterChain`
 
 ### Step 55: `GetCopiedAudioTrimBsf` (line 1600)
 
 - **Recipe P (named predicate)** - 5 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetCopiedAudioTrimBsf`
 
 ### Step 56: `GetFixedSwScaleFilter` (line 3627)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetFixedSwScaleFilter`
 
 ### Step 57: `GetGraphicalSubCanvasSize` (line 984)
 
 - **Recipe P (named predicate)** - 6 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify GetGraphicalSubCanvasSize`
 
 ### Step 58: `IsVideoToolboxTonemapAvailable` (line 431)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(EncodingHelper): simplify IsVideoToolboxTonemapAvailable`
 

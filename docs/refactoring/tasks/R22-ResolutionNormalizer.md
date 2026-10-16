@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **9.36** / 10 (Green) |
 | Exit target | **10.00** |
-| File size | 85 lines (51 lines of code) |
-| Git churn | 30 commits |
+| File size | 107 lines (60 lines of code) |
+| Git churn | 32 commits |
 | Part | dlna (`MediaBrowser.Model/Dlna`) |
 | Recipes needed | E, G, P |
 | Smells without a recipe | Excess Number of Function Arguments |

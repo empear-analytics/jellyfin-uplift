@@ -61,12 +61,14 @@ section 7. Do not batch several methods into one change.
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 4 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 26): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(UserViewManager): simplify GetUserViews`
 
 ### Step 2: `GetItemsForLatestItems` (line 262)
 
 - **Recipe E (extract function)** - 4 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 27): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(UserViewManager): simplify GetItemsForLatestItems`
 

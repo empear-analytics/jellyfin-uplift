@@ -62,6 +62,7 @@ section 7. Do not batch several methods into one change.
 ### Step 1: `IsConditionSatisfied` (line 190)
 
 - **Recipe E (extract function)** - 2 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 12): Recipes G, E, P as they apply, one recipe per commit.
 - **Recipe D (deduplicate)** - only if the copies are identical or differ by a single value.
 
 Commit message: `refactor(ConditionProcessor): simplify IsConditionSatisfied`

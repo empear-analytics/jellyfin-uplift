@@ -64,6 +64,7 @@ section 7. Do not batch several methods into one change.
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 23): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(UserDataManager): simplify GetResumeUserDataBatch`
 
@@ -71,18 +72,21 @@ Commit message: `refactor(UserDataManager): simplify GetResumeUserDataBatch`
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
 - **Recipe P (named predicate)** - 5 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 19): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(UserDataManager): simplify UpdatePlayState`
 
 ### Step 3: `GetUserDataBatch` (line 197)
 
 - **Recipe E (extract function)** - 3 bumps; each bump is a missing method.
+- **Then, while Complex Method remains** (cyclomatic complexity 10): Recipes G, E, P as they apply, one recipe per commit.
 
 Commit message: `refactor(UserDataManager): simplify GetUserDataBatch`
 
 ### Step 4: `SaveUserData` (line 50)
 
 - **Recipe P (named predicate)** - 2 complex conditional expression(s).
+- **Then, while Complex Method remains** (cyclomatic complexity 9): Recipes G, E, P as they apply, one recipe per commit.
 - *Excess Number of Function Arguments* (5 arguments) - **no recipe in the playbook.** Leave it and report it.
 
 Commit message: `refactor(UserDataManager): simplify SaveUserData`
