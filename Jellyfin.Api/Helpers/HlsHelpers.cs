@@ -48,15 +48,19 @@ public static class HlsHelpers
                     string? line;
                     while ((line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false)) is not null)
                     {
-                        if (line.Contains("#EXTINF:", StringComparison.OrdinalIgnoreCase))
+                        if (!line.Contains("#EXTINF:", StringComparison.OrdinalIgnoreCase))
                         {
-                            count++;
-                            if (count >= segmentCount)
-                            {
-                                logger.LogDebug("Finished waiting for {0} segments in {1}", segmentCount, playlist);
-                                return;
-                            }
+                            continue;
                         }
+
+                        count++;
+                        if (!(count >= segmentCount))
+                        {
+                            continue;
+                        }
+
+                        logger.LogDebug("Finished waiting for {0} segments in {1}", segmentCount, playlist);
+                        return;
                     }
                 }
 
