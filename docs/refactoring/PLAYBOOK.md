@@ -208,6 +208,32 @@ Copy the expression **character for character**. Do not "simplify" the boolean a
 and do not reorder the operands - `&&` and `?.` short-circuit, so reordering can change
 which side effects run and can introduce null dereferences.
 
+**An `out` variable the expression already declares** becomes an `out` parameter of the
+predicate, when the code after the condition uses it. This is not the invented `out`
+parameter Recipe E forbids: the expression had it already. Declare it as an `out` parameter
+of the predicate and pass it with `out var` at the call site. Inside the predicate, the
+declaration `out var x` becomes `out x`, because it now assigns the parameter; every other
+character of the expression stays as it was:
+
+```csharp
+// Before
+if (tags.TryGetValue(key, out var val) && (DateTime.TryParse(val, out var dateTime) || DateTime.TryParseExact(val, "yyyy", null, DateTimeStyles.None, out dateTime)))
+{
+    return dateTime;
+}
+
+// After
+if (tags.TryGetValue(key, out var val) && IsParsableDate(val, out var dateTime))
+{
+    return dateTime;
+}
+
+private static bool IsParsableDate(string val, out DateTime dateTime)
+{
+    return DateTime.TryParse(val, out dateTime) || DateTime.TryParseExact(val, "yyyy", null, DateTimeStyles.None, out dateTime);
+}
+```
+
 ---
 
 ## Recipe D - Deduplicate
@@ -287,3 +313,14 @@ changes. An inverted condition with no literal change can pass both - so they re
 they do not remove it. That is why each task file gives the file's mutation score, and why
 the few files the tests barely cover are marked as such: there, the recipes are the only
 protection.
+
+---
+
+## Changes to this playbook
+
+The founding version restated the five founding recipes of the 3SX campaign (3sx commit
+`fea568087`) for C#. Every change since is listed here with the evidence behind it.
+
+| Date | Change | Evidence |
+| --- | --- | --- |
+| 2026-10-16 | Recipe P: an `out` variable the expression already declares becomes an `out` parameter of the predicate. | Calibration probe, R32 `FFProbeHelpers.GetDictionaryDateTime`: all three agents (Claude Haiku, Sonnet and Opus) needed it, applied it, and asked independently whether P allows it. Decided by the campaign owner. |
