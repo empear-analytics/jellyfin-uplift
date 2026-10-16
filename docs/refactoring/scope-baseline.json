@@ -1,0 +1,4921 @@
+{
+ "commit": "d926869d7ba4666285dfe35a599a8e38de4f8a01",
+ "dirty": false,
+ "cs_version": "1.0.46",
+ "measured": "2026-10-16",
+ "seconds": 11,
+ "total_candidates": 75,
+ "scored": 47,
+ "unscorable": 28,
+ "summary": {
+  "production": {
+   "scored": 47,
+   "unscorable": 28,
+   "bands": {
+    "red": 5,
+    "yellow": 15,
+    "green": 13,
+    "optimal": 14
+   },
+   "mean": 8.022
+  },
+  "test": {
+   "scored": 0,
+   "unscorable": 0,
+   "bands": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "optimal": 0
+   },
+   "mean": null
+  },
+  "generated": {
+   "scored": 0,
+   "unscorable": 0,
+   "bands": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "optimal": 0
+   },
+   "mean": null
+  },
+  "fuzz": {
+   "scored": 0,
+   "unscorable": 0,
+   "bands": {
+    "red": 0,
+    "yellow": 0,
+    "green": 0,
+    "optimal": 0
+   },
+   "mean": null
+  }
+ },
+ "files": [
+  {
+   "path": "MediaBrowser.Controller/MediaEncoding/EncodingHelper.cs",
+   "score": 1.0,
+   "raw_score": 1.004356454215819,
+   "category": "production",
+   "band": "red",
+   "smells": [
+    {
+     "category": "Low Cohesion",
+     "indication": 3,
+     "functions": []
+    },
+    {
+     "category": "Brain Method",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetHwaccelType",
+       "start-line": 6660,
+       "end-line": 6811
+      }
+     ]
+    },
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetInputVideoHwaccelArgs",
+       "details": "bumps = 10",
+       "start-line": 1017,
+       "end-line": 1242
+      },
+      {
+       "title": "CanStreamCopyVideo",
+       "details": "bumps = 10",
+       "start-line": 2426,
+       "end-line": 2639
+      },
+      {
+       "title": "GetEncoderParam",
+       "details": "bumps = 8",
+       "start-line": 1726,
+       "end-line": 1892
+      },
+      {
+       "title": "GetVideoQualityParam",
+       "details": "bumps = 8",
+       "start-line": 2116,
+       "end-line": 2424
+      },
+      {
+       "title": "GetAmdVaapiFullVidFiltersPrefered",
+       "details": "bumps = 8",
+       "start-line": 5373,
+       "end-line": 5620
+      },
+      {
+       "title": "GetIntelQsvVaapiVidFiltersPrefered",
+       "details": "bumps = 7",
+       "start-line": 4806,
+       "end-line": 5067
+      },
+      {
+       "title": "GetVaapiLimitedVidFiltersPrefered",
+       "details": "bumps = 7",
+       "start-line": 5622,
+       "end-line": 5820
+      },
+      {
+       "title": "GetIntelQsvDx11VidFiltersPrefered",
+       "details": "bumps = 6",
+       "start-line": 4514,
+       "end-line": 4804
+      },
+      {
+       "title": "GetIntelVaapiFullVidFiltersPrefered",
+       "details": "bumps = 6",
+       "start-line": 5137,
+       "end-line": 5371
+      },
+      {
+       "title": "GetRkmppVidFiltersPrefered",
+       "details": "bumps = 6",
+       "start-line": 6051,
+       "end-line": 6295
+      },
+      {
+       "title": "GetNvidiaVidFiltersPrefered",
+       "details": "bumps = 5",
+       "start-line": 4060,
+       "end-line": 4233
+      },
+      {
+       "title": "GetAmdDx11VidFiltersPrefered",
+       "details": "bumps = 5",
+       "start-line": 4270,
+       "end-line": 4459
+      },
+      {
+       "title": "GetHwaccelType",
+       "details": "bumps = 5",
+       "start-line": 6660,
+       "end-line": 6811
+      },
+      {
+       "title": "GetAppleVidFiltersPreferred",
+       "details": "bumps = 4",
+       "start-line": 5858,
+       "end-line": 6010
+      },
+      {
+       "title": "GetInputArgument",
+       "details": "bumps = 3",
+       "start-line": 1251,
+       "end-line": 1350
+      },
+      {
+       "title": "NormalizeTranscodingLevel",
+       "details": "bumps = 3",
+       "start-line": 1894,
+       "end-line": 1934
+      },
+      {
+       "title": "GetAudioVbrModeParam",
+       "details": "bumps = 3",
+       "start-line": 2907,
+       "end-line": 2959
+      },
+      {
+       "title": "GetQsvHwVidDecoder",
+       "details": "bumps = 3",
+       "start-line": 6813,
+       "end-line": 6894
+      },
+      {
+       "title": "GetNvdecVidDecoder",
+       "details": "bumps = 3",
+       "start-line": 6896,
+       "end-line": 6967
+      },
+      {
+       "title": "GetVaapiVidDecoder",
+       "details": "bumps = 3",
+       "start-line": 7025,
+       "end-line": 7096
+      },
+      {
+       "title": "GetVideotoolboxVidDecoder",
+       "details": "bumps = 3",
+       "start-line": 7098,
+       "end-line": 7161
+      },
+      {
+       "title": "GetBitStreamArgs",
+       "details": "bumps = 2",
+       "start-line": 1496,
+       "end-line": 1564
+      },
+      {
+       "title": "GetVideoBitrateParam",
+       "details": "bumps = 2",
+       "start-line": 1635,
+       "end-line": 1724
+      },
+      {
+       "title": "GetVideoBitrateParamValue",
+       "details": "bumps = 2",
+       "start-line": 2737,
+       "end-line": 2780
+      },
+      {
+       "title": "GetAudioBitrateParam",
+       "details": "bumps = 2",
+       "start-line": 2857,
+       "end-line": 2905
+      },
+      {
+       "title": "GetNumAudioChannelsParam",
+       "details": "bumps = 2",
+       "start-line": 3008,
+       "end-line": 3070
+      },
+      {
+       "title": "GetMapArgs",
+       "details": "bumps = 2",
+       "start-line": 3129,
+       "end-line": 3239
+      },
+      {
+       "title": "GetSwScaleFilter",
+       "details": "bumps = 2",
+       "start-line": 3516,
+       "end-line": 3625
+      },
+      {
+       "title": "GetFixedSwScaleFilter",
+       "details": "bumps = 2",
+       "start-line": 3627,
+       "end-line": 3673
+      },
+      {
+       "title": "GetHwTonemapFilter",
+       "details": "bumps = 2",
+       "start-line": 3741,
+       "end-line": 3820
+      },
+      {
+       "title": "GetVideoProcessingFilterParam",
+       "details": "bumps = 2",
+       "start-line": 6304,
+       "end-line": 6417
+      },
+      {
+       "title": "GetHardwareVideoDecoder",
+       "details": "bumps = 2",
+       "start-line": 6501,
+       "end-line": 6591
+      },
+      {
+       "title": "GetAmfVidDecoder",
+       "details": "bumps = 2",
+       "start-line": 6969,
+       "end-line": 7023
+      },
+      {
+       "title": "GetRkmppVidDecoder",
+       "details": "bumps = 2",
+       "start-line": 7163,
+       "end-line": 7258
+      },
+      {
+       "title": "TryStreamCopy",
+       "details": "bumps = 2",
+       "start-line": 7281,
+       "end-line": 7328
+      },
+      {
+       "title": "GetProgressiveVideoArguments",
+       "details": "bumps = 2",
+       "start-line": 7770,
+       "end-line": 7855
+      },
+      {
+       "title": "GetProgressiveAudioFullCommandLine",
+       "details": "bumps = 2",
+       "start-line": 7911,
+       "end-line": 8004
+      }
+     ]
+    },
+    {
+     "category": "Deep, Nested Complexity",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetAmdVaapiFullVidFiltersPrefered",
+       "details": "Nesting depth = 5 conditionals",
+       "start-line": 5373,
+       "end-line": 5620
+      },
+      {
+       "title": "GetInputVideoHwaccelArgs",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 1017,
+       "end-line": 1242
+      },
+      {
+       "title": "GetHardwareVideoDecoder",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 6501,
+       "end-line": 6591
+      },
+      {
+       "title": "GetHwaccelType",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 6660,
+       "end-line": 6811
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetVideoQualityParam",
+       "details": "cc = 95",
+       "start-line": 2116,
+       "end-line": 2424
+      },
+      {
+       "title": "GetIntelQsvDx11VidFiltersPrefered",
+       "details": "cc = 85",
+       "start-line": 4514,
+       "end-line": 4804
+      },
+      {
+       "title": "GetEncoderParam",
+       "details": "cc = 80",
+       "start-line": 1726,
+       "end-line": 1892
+      },
+      {
+       "title": "GetIntelQsvVaapiVidFiltersPrefered",
+       "details": "cc = 79",
+       "start-line": 4806,
+       "end-line": 5067
+      },
+      {
+       "title": "CanStreamCopyVideo",
+       "details": "cc = 74",
+       "start-line": 2426,
+       "end-line": 2639
+      },
+      {
+       "title": "GetRkmppVidFiltersPrefered",
+       "details": "cc = 71",
+       "start-line": 6051,
+       "end-line": 6295
+      },
+      {
+       "title": "GetInputVideoHwaccelArgs",
+       "details": "cc = 64",
+       "start-line": 1017,
+       "end-line": 1242
+      },
+      {
+       "title": "GetIntelVaapiFullVidFiltersPrefered",
+       "details": "cc = 62",
+       "start-line": 5137,
+       "end-line": 5371
+      },
+      {
+       "title": "GetAmdVaapiFullVidFiltersPrefered",
+       "details": "cc = 58",
+       "start-line": 5373,
+       "end-line": 5620
+      },
+      {
+       "title": "GetVaapiLimitedVidFiltersPrefered",
+       "details": "cc = 53",
+       "start-line": 5622,
+       "end-line": 5820
+      },
+      {
+       "title": "GetAmdDx11VidFiltersPrefered",
+       "details": "cc = 45",
+       "start-line": 4270,
+       "end-line": 4459
+      },
+      {
+       "title": "GetNvidiaVidFiltersPrefered",
+       "details": "cc = 43",
+       "start-line": 4060,
+       "end-line": 4233
+      },
+      {
+       "title": "GetHardwareVideoDecoder",
+       "details": "cc = 36",
+       "start-line": 6501,
+       "end-line": 6591
+      },
+      {
+       "title": "GetQsvHwVidDecoder",
+       "details": "cc = 32",
+       "start-line": 6813,
+       "end-line": 6894
+      },
+      {
+       "title": "GetAppleVidFiltersPreferred",
+       "details": "cc = 32",
+       "start-line": 5858,
+       "end-line": 6010
+      },
+      {
+       "title": "GetInputModifier",
+       "details": "cc = 31",
+       "start-line": 7362,
+       "end-line": 7493
+      },
+      {
+       "title": "GetRkmppVidDecoder",
+       "details": "cc = 29",
+       "start-line": 7163,
+       "end-line": 7258
+      },
+      {
+       "title": "GetVaapiVidDecoder",
+       "details": "cc = 27",
+       "start-line": 7025,
+       "end-line": 7096
+      },
+      {
+       "title": "GetVideotoolboxVidDecoder",
+       "details": "cc = 26",
+       "start-line": 7098,
+       "end-line": 7161
+      },
+      {
+       "title": "GetVideoProcessingFilterParam",
+       "details": "cc = 26",
+       "start-line": 6304,
+       "end-line": 6417
+      },
+      {
+       "title": "GetAudioBitrateParam",
+       "details": "cc = 26",
+       "start-line": 2857,
+       "end-line": 2905
+      },
+      {
+       "title": "GetNvdecVidDecoder",
+       "details": "cc = 24",
+       "start-line": 6896,
+       "end-line": 6967
+      },
+      {
+       "title": "AttachMediaSourceInfo",
+       "details": "cc = 23",
+       "start-line": 7495,
+       "end-line": 7608
+      },
+      {
+       "title": "GetAudioVbrModeParam",
+       "details": "cc = 23",
+       "start-line": 2907,
+       "end-line": 2959
+      },
+      {
+       "title": "GetProgressiveAudioFullCommandLine",
+       "details": "cc = 21",
+       "start-line": 7911,
+       "end-line": 8004
+      },
+      {
+       "title": "GetHlsVideoKeyFrameArguments",
+       "details": "cc = 21",
+       "start-line": 2031,
+       "end-line": 2106
+      },
+      {
+       "title": "GetProgressiveVideoArguments",
+       "details": "cc = 20",
+       "start-line": 7770,
+       "end-line": 7855
+      },
+      {
+       "title": "GetVaapiVidFilterChain",
+       "details": "cc = 20",
+       "start-line": 5076,
+       "end-line": 5135
+      },
+      {
+       "title": "GetSwVidFilterChain",
+       "details": "cc = 20",
+       "start-line": 3912,
+       "end-line": 4025
+      },
+      {
+       "title": "GetHwTonemapFilter",
+       "details": "cc = 20",
+       "start-line": 3741,
+       "end-line": 3820
+      },
+      {
+       "title": "GetVideoBitrateParam",
+       "details": "cc = 20",
+       "start-line": 1635,
+       "end-line": 1724
+      },
+      {
+       "title": "GetBitStreamArgs",
+       "details": "cc = 20",
+       "start-line": 1496,
+       "end-line": 1564
+      },
+      {
+       "title": "GetInputFormat",
+       "details": "cc = 20",
+       "start-line": 548,
+       "end-line": 647
+      },
+      {
+       "title": "GetHwDecoderName",
+       "details": "cc = 19",
+       "start-line": 6602,
+       "end-line": 6649
+      },
+      {
+       "title": "GetHwDeinterlaceFilter",
+       "details": "cc = 19",
+       "start-line": 3685,
+       "end-line": 3739
+      },
+      {
+       "title": "GetMapArgs",
+       "details": "cc = 19",
+       "start-line": 3129,
+       "end-line": 3239
+      },
+      {
+       "title": "GetAmfVidDecoder",
+       "details": "cc = 17",
+       "start-line": 6969,
+       "end-line": 7023
+      },
+      {
+       "title": "GetLibplaceboFilter",
+       "details": "cc = 17",
+       "start-line": 3822,
+       "end-line": 3891
+      },
+      {
+       "title": "GetNumAudioChannelsParam",
+       "details": "cc = 17",
+       "start-line": 3008,
+       "end-line": 3070
+      },
+      {
+       "title": "GetAudioStreamCopyFailureReasons",
+       "details": "cc = 17",
+       "start-line": 2665,
+       "end-line": 2713
+      },
+      {
+       "title": "GetProgressiveVideoAudioArguments",
+       "details": "cc = 15",
+       "start-line": 7857,
+       "end-line": 7909
+      },
+      {
+       "title": "TryStreamCopy",
+       "details": "cc = 15",
+       "start-line": 7281,
+       "end-line": 7328
+      },
+      {
+       "title": "GetIntelVidFilterChain",
+       "details": "cc = 15",
+       "start-line": 4468,
+       "end-line": 4512
+      },
+      {
+       "title": "ShouldRemoveDynamicHdrMetadata",
+       "details": "cc = 15",
+       "start-line": 1424,
+       "end-line": 1469
+      },
+      {
+       "title": "GetInputArgument",
+       "details": "cc = 15",
+       "start-line": 1251,
+       "end-line": 1350
+      },
+      {
+       "title": "GetSwScaleFilter",
+       "details": "cc = 14",
+       "start-line": 3516,
+       "end-line": 3625
+      },
+      {
+       "title": "GetHwScaleFilter",
+       "details": "cc = 14",
+       "start-line": 3381,
+       "end-line": 3429
+      },
+      {
+       "title": "IsHwTonemapAvailable",
+       "details": "cc = 14",
+       "start-line": 359,
+       "end-line": 392
+      },
+      {
+       "title": "GetVideoColorBitDepth",
+       "details": "cc = 13",
+       "start-line": 6457,
+       "end-line": 6493
+      },
+      {
+       "title": "GetFixedOutputSize",
+       "details": "cc = 13",
+       "start-line": 3297,
+       "end-line": 3337
+      },
+      {
+       "title": "GetVideoBitrateParamValue",
+       "details": "cc = 13",
+       "start-line": 2737,
+       "end-line": 2780
+      },
+      {
+       "title": "GetAudioFilterParam",
+       "details": "cc = 12",
+       "start-line": 2961,
+       "end-line": 2999
+      },
+      {
+       "title": "NormalizeTranscodingLevel",
+       "details": "cc = 12",
+       "start-line": 1894,
+       "end-line": 1934
+      },
+      {
+       "title": "IsScaleRatioSupported",
+       "details": "cc = 11",
+       "start-line": 3339,
+       "end-line": 3379
+      },
+      {
+       "title": "GetAudioEncoder",
+       "details": "cc = 11",
+       "start-line": 768,
+       "end-line": 829
+      },
+      {
+       "title": "GetVideoSyncOption",
+       "details": "cc = 10",
+       "start-line": 8065,
+       "end-line": 8091
+      },
+      {
+       "title": "GetRkmppVidFilterChain",
+       "details": "cc = 10",
+       "start-line": 6019,
+       "end-line": 6049
+      },
+      {
+       "title": "GetGraphicalSubPreProcessFilters",
+       "details": "cc = 10",
+       "start-line": 3431,
+       "end-line": 3480
+      },
+      {
+       "title": "GetBitDepthCompensatedBitrate",
+       "details": "cc = 10",
+       "start-line": 2715,
+       "end-line": 2735
+      },
+      {
+       "title": "GetTextSubtitlesFilter",
+       "details": "cc = 10",
+       "start-line": 1943,
+       "end-line": 2005
+      },
+      {
+       "title": "IsVideoStreamHevcRext",
+       "details": "cc = 10",
+       "start-line": 457,
+       "end-line": 474
+      },
+      {
+       "title": "IsIntelVppTonemapAvailable",
+       "details": "cc = 10",
+       "start-line": 407,
+       "end-line": 429
+      },
+      {
+       "title": "GetAmdVidFilterChain",
+       "details": "cc = 9",
+       "start-line": 4242,
+       "end-line": 4268
+      },
+      {
+       "title": "GetFixedSwScaleFilter",
+       "details": "cc = 9",
+       "start-line": 3627,
+       "end-line": 3673
+      },
+      {
+       "title": "GetCopiedAudioTrimBsf",
+       "details": "cc = 9",
+       "start-line": 1600,
+       "end-line": 1623
+      },
+      {
+       "title": "GetGraphicalSubCanvasSize",
+       "details": "cc = 9",
+       "start-line": 984,
+       "end-line": 1009
+      },
+      {
+       "title": "IsVideoToolboxTonemapAvailable",
+       "details": "cc = 9",
+       "start-line": 431,
+       "end-line": 448
+      },
+      {
+       "title": "IsVaapiFullSupported",
+       "details": "cc = 9",
+       "start-line": 283,
+       "end-line": 294
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetHlsVideoKeyFrameArguments:2061",
+       "details": "10 complex conditional expressions",
+       "start-line": 2061,
+       "end-line": 2071
+      },
+      {
+       "title": "CanStreamCopyVideo:2525",
+       "details": "8 complex conditional expressions",
+       "start-line": 2525,
+       "end-line": 2529
+      },
+      {
+       "title": "GetAudioBitrateParam:2868",
+       "details": "6 complex conditional expressions",
+       "start-line": 2868,
+       "end-line": 2874
+      },
+      {
+       "title": "GetCopiedAudioTrimBsf:1602",
+       "details": "5 complex conditional expressions",
+       "start-line": 1602,
+       "end-line": 1607
+      },
+      {
+       "title": "GetVideoQualityParam:2281",
+       "details": "5 complex conditional expressions",
+       "start-line": 2281,
+       "end-line": 2286
+      },
+      {
+       "title": "IsScaleRatioSupported:3356",
+       "details": "5 complex conditional expressions",
+       "start-line": 3356,
+       "end-line": 3361
+      },
+      {
+       "title": "GetAudioBitStreamArguments:1579",
+       "details": "4 complex conditional expressions",
+       "start-line": 1579,
+       "end-line": 1583
+      },
+      {
+       "title": "GetHlsVideoKeyFrameArguments:2075",
+       "details": "4 complex conditional expressions",
+       "start-line": 2075,
+       "end-line": 2079
+      },
+      {
+       "title": "GetVideoQualityParam:2271",
+       "details": "4 complex conditional expressions",
+       "start-line": 2271,
+       "end-line": 2275
+      },
+      {
+       "title": "GetIntelVidFilterChain:4492",
+       "details": "4 complex conditional expressions",
+       "start-line": 4492,
+       "end-line": 4494
+      },
+      {
+       "title": "GetRkmppVidFiltersPrefered:6165",
+       "details": "4 complex conditional expressions",
+       "start-line": 6165,
+       "end-line": 6165
+      },
+      {
+       "title": "GetHardwareVideoDecoder:6532",
+       "details": "4 complex conditional expressions",
+       "start-line": 6532,
+       "end-line": 6536
+      },
+      {
+       "title": "GetInputModifier:7425",
+       "details": "4 complex conditional expressions",
+       "start-line": 7425,
+       "end-line": 7429
+      },
+      {
+       "title": "GetH26xOrAv1Encoder:233",
+       "details": "3 complex conditional expressions",
+       "start-line": 233,
+       "end-line": 236
+      },
+      {
+       "title": "GetMjpegEncoder:259",
+       "details": "3 complex conditional expressions",
+       "start-line": 259,
+       "end-line": 262
+      },
+      {
+       "title": "GetGraphicalSubCanvasSize:987",
+       "details": "3 complex conditional expressions",
+       "start-line": 987,
+       "end-line": 990
+      },
+      {
+       "title": "GetGraphicalSubCanvasSize:995",
+       "details": "3 complex conditional expressions",
+       "start-line": 995,
+       "end-line": 998
+      },
+      {
+       "title": "CanStreamCopyVideo:2457",
+       "details": "3 complex conditional expressions",
+       "start-line": 2457,
+       "end-line": 2460
+      },
+      {
+       "title": "GetAudioStreamCopyFailureReasons:2687",
+       "details": "3 complex conditional expressions",
+       "start-line": 2687,
+       "end-line": 2690
+      },
+      {
+       "title": "GetAudioStreamCopyFailureReasons:2696",
+       "details": "3 complex conditional expressions",
+       "start-line": 2696,
+       "end-line": 2699
+      },
+      {
+       "title": "GetBitDepthCompensatedBitrate:2717",
+       "details": "3 complex conditional expressions",
+       "start-line": 2717,
+       "end-line": 2719
+      },
+      {
+       "title": "GetAudioFilterParam:2982",
+       "details": "3 complex conditional expressions",
+       "start-line": 2982,
+       "end-line": 2982
+      },
+      {
+       "title": "GetNumAudioChannelsParam:3049",
+       "details": "3 complex conditional expressions",
+       "start-line": 3049,
+       "end-line": 3050
+      },
+      {
+       "title": "IsScaleRatioSupported:3370",
+       "details": "3 complex conditional expressions",
+       "start-line": 3370,
+       "end-line": 3373
+      },
+      {
+       "title": "GetGraphicalSubPreProcessFilters:3449",
+       "details": "3 complex conditional expressions",
+       "start-line": 3449,
+       "end-line": 3452
+      },
+      {
+       "title": "GetGraphicalSubPreProcessFilters:3460",
+       "details": "3 complex conditional expressions",
+       "start-line": 3460,
+       "end-line": 3463
+      },
+      {
+       "title": "GetNvidiaVidFilterChain:4049",
+       "details": "3 complex conditional expressions",
+       "start-line": 4049,
+       "end-line": 4051
+      },
+      {
+       "title": "GetNvidiaVidFiltersPrefered:4161",
+       "details": "3 complex conditional expressions",
+       "start-line": 4161,
+       "end-line": 4161
+      },
+      {
+       "title": "GetAmdVidFilterChain:4259",
+       "details": "3 complex conditional expressions",
+       "start-line": 4259,
+       "end-line": 4261
+      },
+      {
+       "title": "GetVaapiVidFilterChain:5095",
+       "details": "3 complex conditional expressions",
+       "start-line": 5095,
+       "end-line": 5097
+      },
+      {
+       "title": "GetVaapiVidFilterChain:5124",
+       "details": "3 complex conditional expressions",
+       "start-line": 5124,
+       "end-line": 5127
+      },
+      {
+       "title": "GetVaapiLimitedVidFiltersPrefered:5760",
+       "details": "3 complex conditional expressions",
+       "start-line": 5760,
+       "end-line": 5760
+      },
+      {
+       "title": "GetAppleVidFilterChain:5847",
+       "details": "3 complex conditional expressions",
+       "start-line": 5847,
+       "end-line": 5849
+      },
+      {
+       "title": "GetRkmppVidFilterChain:6035",
+       "details": "3 complex conditional expressions",
+       "start-line": 6035,
+       "end-line": 6037
+      },
+      {
+       "title": "GetRkmppVidFiltersPrefered:6144",
+       "details": "3 complex conditional expressions",
+       "start-line": 6144,
+       "end-line": 6147
+      },
+      {
+       "title": "GetVideoColorBitDepth:6467",
+       "details": "3 complex conditional expressions",
+       "start-line": 6467,
+       "end-line": 6470
+      },
+      {
+       "title": "GetHardwareVideoDecoder:6512",
+       "details": "3 complex conditional expressions",
+       "start-line": 6512,
+       "end-line": 6515
+      },
+      {
+       "title": "GetHwaccelType:6723",
+       "details": "3 complex conditional expressions",
+       "start-line": 6723,
+       "end-line": 6726
+      },
+      {
+       "title": "AttachMediaSourceInfo:7531",
+       "details": "3 complex conditional expressions",
+       "start-line": 7531,
+       "end-line": 7533
+      },
+      {
+       "title": "IsSwTonemapAvailable:349",
+       "details": "2 complex conditional expressions",
+       "start-line": 349,
+       "end-line": 351
+      },
+      {
+       "title": "IsHwTonemapAvailable:361",
+       "details": "2 complex conditional expressions",
+       "start-line": 361,
+       "end-line": 363
+      },
+      {
+       "title": "IsHwTonemapAvailable:375",
+       "details": "2 complex conditional expressions",
+       "start-line": 375,
+       "end-line": 377
+      },
+      {
+       "title": "IsIntelVppTonemapAvailable:409",
+       "details": "2 complex conditional expressions",
+       "start-line": 409,
+       "end-line": 411
+      },
+      {
+       "title": "IsIntelVppTonemapAvailable:418",
+       "details": "2 complex conditional expressions",
+       "start-line": 418,
+       "end-line": 420
+      },
+      {
+       "title": "IsVideoToolboxTonemapAvailable:433",
+       "details": "2 complex conditional expressions",
+       "start-line": 433,
+       "end-line": 435
+      },
+      {
+       "title": "GetInputVideoHwaccelArgs:1080",
+       "details": "2 complex conditional expressions",
+       "start-line": 1080,
+       "end-line": 1082
+      },
+      {
+       "title": "GetInputVideoHwaccelArgs:1114",
+       "details": "2 complex conditional expressions",
+       "start-line": 1114,
+       "end-line": 1114
+      },
+      {
+       "title": "GetInputVideoHwaccelArgs:1149",
+       "details": "2 complex conditional expressions",
+       "start-line": 1149,
+       "end-line": 1149
+      },
+      {
+       "title": "GetVideoBitrateParam:1665",
+       "details": "2 complex conditional expressions",
+       "start-line": 1665,
+       "end-line": 1667
+      },
+      {
+       "title": "GetVideoBitrateParam:1677",
+       "details": "2 complex conditional expressions",
+       "start-line": 1677,
+       "end-line": 1679
+      },
+      {
+       "title": "GetVideoBitrateParam:1702",
+       "details": "2 complex conditional expressions",
+       "start-line": 1702,
+       "end-line": 1704
+      },
+      {
+       "title": "GetEncoderParam:1780",
+       "details": "2 complex conditional expressions",
+       "start-line": 1780,
+       "end-line": 1782
+      },
+      {
+       "title": "GetEncoderParam:1802",
+       "details": "2 complex conditional expressions",
+       "start-line": 1802,
+       "end-line": 1804
+      },
+      {
+       "title": "GetEncoderParam:1817",
+       "details": "2 complex conditional expressions",
+       "start-line": 1817,
+       "end-line": 1819
+      },
+      {
+       "title": "GetEncoderParam:1840",
+       "details": "2 complex conditional expressions",
+       "start-line": 1840,
+       "end-line": 1842
+      },
+      {
+       "title": "GetVideoQualityParam:2255",
+       "details": "2 complex conditional expressions",
+       "start-line": 2255,
+       "end-line": 2257
+      },
+      {
+       "title": "GetVideoQualityParam:2356",
+       "details": "2 complex conditional expressions",
+       "start-line": 2356,
+       "end-line": 2358
+      },
+      {
+       "title": "GetVideoQualityParam:2362",
+       "details": "2 complex conditional expressions",
+       "start-line": 2362,
+       "end-line": 2364
+      },
+      {
+       "title": "GetVideoQualityParam:2369",
+       "details": "2 complex conditional expressions",
+       "start-line": 2369,
+       "end-line": 2371
+      },
+      {
+       "title": "GetVideoQualityParam:2416",
+       "details": "2 complex conditional expressions",
+       "start-line": 2416,
+       "end-line": 2417
+      },
+      {
+       "title": "CanStreamCopyVideo:2450",
+       "details": "2 complex conditional expressions",
+       "start-line": 2450,
+       "end-line": 2452
+      },
+      {
+       "title": "CanStreamCopyVideo:2466",
+       "details": "2 complex conditional expressions",
+       "start-line": 2466,
+       "end-line": 2468
+      },
+      {
+       "title": "CanStreamCopyVideo:2514",
+       "details": "2 complex conditional expressions",
+       "start-line": 2514,
+       "end-line": 2514
+      },
+      {
+       "title": "CanStreamCopyVideo:2560",
+       "details": "2 complex conditional expressions",
+       "start-line": 2560,
+       "end-line": 2561
+      },
+      {
+       "title": "CanStreamCopyVideo:2567",
+       "details": "2 complex conditional expressions",
+       "start-line": 2567,
+       "end-line": 2568
+      },
+      {
+       "title": "CanStreamCopyVideo:2589",
+       "details": "2 complex conditional expressions",
+       "start-line": 2589,
+       "end-line": 2590
+      },
+      {
+       "title": "CanStreamCopyVideo:2609",
+       "details": "2 complex conditional expressions",
+       "start-line": 2609,
+       "end-line": 2610
+      },
+      {
+       "title": "CanStreamCopyVideo:2630",
+       "details": "2 complex conditional expressions",
+       "start-line": 2630,
+       "end-line": 2632
+      },
+      {
+       "title": "GetAudioStreamCopyFailureReasons:2671",
+       "details": "2 complex conditional expressions",
+       "start-line": 2671,
+       "end-line": 2673
+      },
+      {
+       "title": "GetAudioStreamCopyFailureReasons:2705",
+       "details": "2 complex conditional expressions",
+       "start-line": 2705,
+       "end-line": 2707
+      },
+      {
+       "title": "GetVideoBitrateParamValue:2751",
+       "details": "2 complex conditional expressions",
+       "start-line": 2751,
+       "end-line": 2751
+      },
+      {
+       "title": "GetVideoBitrateScaleFactor:2802",
+       "details": "2 complex conditional expressions",
+       "start-line": 2802,
+       "end-line": 2804
+      },
+      {
+       "title": "GetHwScaleFilter:3417",
+       "details": "2 complex conditional expressions",
+       "start-line": 3417,
+       "end-line": 3417
+      },
+      {
+       "title": "GetHwTonemapFilter:3758",
+       "details": "2 complex conditional expressions",
+       "start-line": 3758,
+       "end-line": 3760
+      },
+      {
+       "title": "GetNvidiaVidFiltersPrefered:4171",
+       "details": "2 complex conditional expressions",
+       "start-line": 4171,
+       "end-line": 4171
+      },
+      {
+       "title": "GetAmdDx11VidFiltersPrefered:4389",
+       "details": "2 complex conditional expressions",
+       "start-line": 4389,
+       "end-line": 4389
+      },
+      {
+       "title": "GetAmdDx11VidFiltersPrefered:4404",
+       "details": "2 complex conditional expressions",
+       "start-line": 4404,
+       "end-line": 4404
+      },
+      {
+       "title": "GetIntelQsvDx11VidFiltersPrefered:4612",
+       "details": "2 complex conditional expressions",
+       "start-line": 4612,
+       "end-line": 4614
+      },
+      {
+       "title": "GetIntelQsvDx11VidFiltersPrefered:4716",
+       "details": "2 complex conditional expressions",
+       "start-line": 4716,
+       "end-line": 4716
+      },
+      {
+       "title": "GetIntelQsvVaapiVidFiltersPrefered:4913",
+       "details": "2 complex conditional expressions",
+       "start-line": 4913,
+       "end-line": 4913
+      },
+      {
+       "title": "GetIntelQsvVaapiVidFiltersPrefered:4971",
+       "details": "2 complex conditional expressions",
+       "start-line": 4971,
+       "end-line": 4971
+      },
+      {
+       "title": "GetIntelVaapiFullVidFiltersPrefered:5282",
+       "details": "2 complex conditional expressions",
+       "start-line": 5282,
+       "end-line": 5282
+      },
+      {
+       "title": "GetAmdVaapiFullVidFiltersPrefered:5442",
+       "details": "2 complex conditional expressions",
+       "start-line": 5442,
+       "end-line": 5442
+      },
+      {
+       "title": "GetAmdVaapiFullVidFiltersPrefered:5486",
+       "details": "2 complex conditional expressions",
+       "start-line": 5486,
+       "end-line": 5486
+      },
+      {
+       "title": "GetAmdVaapiFullVidFiltersPrefered:5544",
+       "details": "2 complex conditional expressions",
+       "start-line": 5544,
+       "end-line": 5544
+      },
+      {
+       "title": "GetAmdVaapiFullVidFiltersPrefered:5550",
+       "details": "2 complex conditional expressions",
+       "start-line": 5550,
+       "end-line": 5550
+      },
+      {
+       "title": "GetAmdVaapiFullVidFiltersPrefered:5603",
+       "details": "2 complex conditional expressions",
+       "start-line": 5603,
+       "end-line": 5603
+      },
+      {
+       "title": "GetRkmppVidFiltersPrefered:6202",
+       "details": "2 complex conditional expressions",
+       "start-line": 6202,
+       "end-line": 6202
+      },
+      {
+       "title": "GetRkmppVidFiltersPrefered:6269",
+       "details": "2 complex conditional expressions",
+       "start-line": 6269,
+       "end-line": 6269
+      },
+      {
+       "title": "GetVideoProcessingFilterParam:6371",
+       "details": "2 complex conditional expressions",
+       "start-line": 6371,
+       "end-line": 6373
+      },
+      {
+       "title": "GetVideoColorBitDepth:6475",
+       "details": "2 complex conditional expressions",
+       "start-line": 6475,
+       "end-line": 6477
+      },
+      {
+       "title": "GetVideoColorBitDepth:6482",
+       "details": "2 complex conditional expressions",
+       "start-line": 6482,
+       "end-line": 6484
+      },
+      {
+       "title": "GetHardwareVideoDecoder:6560",
+       "details": "2 complex conditional expressions",
+       "start-line": 6560,
+       "end-line": 6562
+      },
+      {
+       "title": "GetHwDecoderName:6614",
+       "details": "2 complex conditional expressions",
+       "start-line": 6614,
+       "end-line": 6616
+      },
+      {
+       "title": "GetHwDecoderName:6618",
+       "details": "2 complex conditional expressions",
+       "start-line": 6618,
+       "end-line": 6620
+      },
+      {
+       "title": "GetHwDecoderName:6625",
+       "details": "2 complex conditional expressions",
+       "start-line": 6625,
+       "end-line": 6627
+      },
+      {
+       "title": "GetHwaccelType:6786",
+       "details": "2 complex conditional expressions",
+       "start-line": 6786,
+       "end-line": 6788
+      },
+      {
+       "title": "GetHwaccelType:6795",
+       "details": "2 complex conditional expressions",
+       "start-line": 6795,
+       "end-line": 6797
+      },
+      {
+       "title": "GetHwaccelType:6803",
+       "details": "2 complex conditional expressions",
+       "start-line": 6803,
+       "end-line": 6805
+      },
+      {
+       "title": "GetQsvHwVidDecoder:6818",
+       "details": "2 complex conditional expressions",
+       "start-line": 6818,
+       "end-line": 6819
+      },
+      {
+       "title": "GetNvdecVidDecoder:6898",
+       "details": "2 complex conditional expressions",
+       "start-line": 6898,
+       "end-line": 6899
+      },
+      {
+       "title": "GetVideotoolboxVidDecoder:7152",
+       "details": "2 complex conditional expressions",
+       "start-line": 7152,
+       "end-line": 7154
+      },
+      {
+       "title": "TryStreamCopy:7305",
+       "details": "2 complex conditional expressions",
+       "start-line": 7305,
+       "end-line": 7307
+      },
+      {
+       "title": "GetInputModifier:7477",
+       "details": "2 complex conditional expressions",
+       "start-line": 7477,
+       "end-line": 7477
+      },
+      {
+       "title": "AttachMediaSourceInfo:7585",
+       "details": "2 complex conditional expressions",
+       "start-line": 7585,
+       "end-line": 7585
+      },
+      {
+       "title": "AttachMediaSourceInfo:7598",
+       "details": "2 complex conditional expressions",
+       "start-line": 7598,
+       "end-line": 7598
+      },
+      {
+       "title": "GetProgressiveVideoArguments:7781",
+       "details": "2 complex conditional expressions",
+       "start-line": 7781,
+       "end-line": 7783
+      },
+      {
+       "title": "GetProgressiveVideoArguments:7833",
+       "details": "2 complex conditional expressions",
+       "start-line": 7833,
+       "end-line": 7833
+      },
+      {
+       "title": "GetProgressiveVideoAudioArguments:7891",
+       "details": "2 complex conditional expressions",
+       "start-line": 7891,
+       "end-line": 7891
+      },
+      {
+       "title": "GetProgressiveAudioFullCommandLine:7922",
+       "details": "2 complex conditional expressions",
+       "start-line": 7922,
+       "end-line": 7922
+      },
+      {
+       "title": "GetSubtitleStreamIndexForFfmpeg:8031",
+       "details": "2 complex conditional expressions",
+       "start-line": 8031,
+       "end-line": 8031
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetVaapiDeviceArgs",
+       "details": "Arguments = 6",
+       "start-line": 916,
+       "end-line": 939
+      },
+      {
+       "title": "GetEncoderParam",
+       "details": "Arguments = 5",
+       "start-line": 1726,
+       "end-line": 1892
+      },
+      {
+       "title": "GetHlsVideoKeyFrameArguments",
+       "details": "Arguments = 5",
+       "start-line": 2031,
+       "end-line": 2106
+      },
+      {
+       "title": "GetFixedOutputSize",
+       "details": "Arguments = 6",
+       "start-line": 3297,
+       "end-line": 3337
+      },
+      {
+       "title": "IsScaleRatioSupported",
+       "details": "Arguments = 7",
+       "start-line": 3339,
+       "end-line": 3379
+      },
+      {
+       "title": "GetHwScaleFilter",
+       "details": "Arguments = 10",
+       "start-line": 3381,
+       "end-line": 3429
+      },
+      {
+       "title": "GetGraphicalSubPreProcessFilters",
+       "details": "Arguments = 8",
+       "start-line": 3431,
+       "end-line": 3480
+      },
+      {
+       "title": "GetAlphaSrcFilter",
+       "details": "Arguments = 8",
+       "start-line": 3482,
+       "end-line": 3514
+      },
+      {
+       "title": "GetSwScaleFilter",
+       "details": "Arguments = 10",
+       "start-line": 3516,
+       "end-line": 3625
+      },
+      {
+       "title": "GetLibplaceboFilter",
+       "details": "Arguments = 10",
+       "start-line": 3822,
+       "end-line": 3891
+      },
+      {
+       "title": "GetHwDecoderName",
+       "details": "Arguments = 5",
+       "start-line": 6602,
+       "end-line": 6649
+      },
+      {
+       "title": "GetHwaccelType",
+       "details": "Arguments = 5",
+       "start-line": 6660,
+       "end-line": 6811
+      }
+     ]
+    },
+    {
+     "category": "Constructor Over-Injection",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "EncodingHelper",
+       "details": "Arguments = 6",
+       "start-line": 162,
+       "end-line": 176
+      }
+     ]
+    },
+    {
+     "category": "Primitive Obsession",
+     "indication": 2,
+     "functions": []
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/StreamBuilder.cs",
+   "score": 1.65,
+   "raw_score": 1.65,
+   "category": "production",
+   "band": "red",
+   "smells": [
+    {
+     "category": "Lines of Code in a Single File",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Brain Method",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "ApplyTranscodingConditions",
+       "start-line": 1755,
+       "end-line": 2289
+      }
+     ]
+    },
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "ApplyTranscodingConditions",
+       "details": "bumps = 27",
+       "start-line": 1755,
+       "end-line": 2289
+      },
+      {
+       "title": "BuildVideoItem",
+       "details": "bumps = 5",
+       "start-line": 648,
+       "end-line": 845
+      },
+      {
+       "title": "BuildStreamVideoItem",
+       "details": "bumps = 5",
+       "start-line": 934,
+       "end-line": 1153
+      },
+      {
+       "title": "GetOptimalAudioStream",
+       "details": "bumps = 4",
+       "start-line": 78,
+       "end-line": 225
+      },
+      {
+       "title": "GetAudioDirectPlayProfile",
+       "details": "bumps = 3",
+       "start-line": 437,
+       "end-line": 504
+      },
+      {
+       "title": "GetDefaultSubtitleStreamIndex",
+       "details": "bumps = 3",
+       "start-line": 551,
+       "end-line": 592
+      },
+      {
+       "title": "GetDefaultAudioBitrate",
+       "details": "bumps = 2",
+       "start-line": 1155,
+       "end-line": 1186
+      },
+      {
+       "title": "GetVideoDirectPlayProfile",
+       "details": "bumps = 2",
+       "start-line": 1288,
+       "end-line": 1429
+      },
+      {
+       "title": "GetSubtitleProfile",
+       "details": "bumps = 2",
+       "start-line": 1465,
+       "end-line": 1543
+      },
+      {
+       "title": "GetExternalSubtitleProfile",
+       "details": "bumps = 2",
+       "start-line": 1576,
+       "end-line": 1638
+      }
+     ]
+    },
+    {
+     "category": "Deep, Nested Complexity",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetDefaultSubtitleStreamIndex",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 551,
+       "end-line": 592
+      },
+      {
+       "title": "BuildVideoItem",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 648,
+       "end-line": 845
+      },
+      {
+       "title": "ApplyTranscodingConditions",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 1755,
+       "end-line": 2289
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "BuildStreamVideoItem",
+       "details": "cc = 53",
+       "start-line": 934,
+       "end-line": 1153
+      },
+      {
+       "title": "BuildVideoItem",
+       "details": "cc = 51",
+       "start-line": 648,
+       "end-line": 845
+      },
+      {
+       "title": "GetExternalSubtitleProfile",
+       "details": "cc = 31",
+       "start-line": 1576,
+       "end-line": 1638
+      },
+      {
+       "title": "GetOptimalAudioStream",
+       "details": "cc = 29",
+       "start-line": 78,
+       "end-line": 225
+      },
+      {
+       "title": "GetSubtitleProfile",
+       "details": "cc = 28",
+       "start-line": 1465,
+       "end-line": 1543
+      },
+      {
+       "title": "GetTranscodeReasonForFailedCondition",
+       "details": "cc = 28",
+       "start-line": 307,
+       "end-line": 398
+      },
+      {
+       "title": "GetVideoDirectPlayProfile",
+       "details": "cc = 24",
+       "start-line": 1288,
+       "end-line": 1429
+      },
+      {
+       "title": "GetAudioBitrate",
+       "details": "cc = 18",
+       "start-line": 1188,
+       "end-line": 1241
+      },
+      {
+       "title": "GetAudioDirectPlayProfile",
+       "details": "cc = 17",
+       "start-line": 437,
+       "end-line": 504
+      },
+      {
+       "title": "GetDefaultAudioBitrate",
+       "details": "cc = 16",
+       "start-line": 1155,
+       "end-line": 1186
+      },
+      {
+       "title": "GetVideoTranscodeProfile",
+       "details": "cc = 16",
+       "start-line": 847,
+       "end-line": 932
+      },
+      {
+       "title": "GetDefaultSubtitleStreamIndex",
+       "details": "cc = 16",
+       "start-line": 551,
+       "end-line": 592
+      },
+      {
+       "title": "GetTranscodeReasonsFromDirectPlayProfile",
+       "details": "cc = 12",
+       "start-line": 506,
+       "end-line": 549
+      },
+      {
+       "title": "NormalizeMediaSourceFormatIntoSingleContainer",
+       "details": "cc = 10",
+       "start-line": 408,
+       "end-line": 435
+      },
+      {
+       "title": "SortMediaSources",
+       "details": "cc = 10",
+       "start-line": 262,
+       "end-line": 305
+      },
+      {
+       "title": "ValidateMediaOptions",
+       "details": "cc = 9",
+       "start-line": 1681,
+       "end-line": 1710
+      },
+      {
+       "title": "GetMaxAudioBitrateForTotalBitrate",
+       "details": "cc = 9",
+       "start-line": 1243,
+       "end-line": 1286
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetAudioBitrate:1210",
+       "details": "6 complex conditional expressions",
+       "start-line": 1210,
+       "end-line": 1216
+      },
+      {
+       "title": "GetExternalSubtitleProfile:1606",
+       "details": "5 complex conditional expressions",
+       "start-line": 1606,
+       "end-line": 1609
+      },
+      {
+       "title": "GetExternalSubtitleProfile:1595",
+       "details": "4 complex conditional expressions",
+       "start-line": 1595,
+       "end-line": 1599
+      },
+      {
+       "title": "GetDefaultSubtitleStreamIndex:580",
+       "details": "3 complex conditional expressions",
+       "start-line": 580,
+       "end-line": 582
+      },
+      {
+       "title": "GetDefaultAudioBitrate:1160",
+       "details": "3 complex conditional expressions",
+       "start-line": 1160,
+       "end-line": 1163
+      },
+      {
+       "title": "GetOptimalAudioStream:170",
+       "details": "2 complex conditional expressions",
+       "start-line": 170,
+       "end-line": 172
+      },
+      {
+       "title": "NormalizeMediaSourceFormatIntoSingleContainer:411",
+       "details": "2 complex conditional expressions",
+       "start-line": 411,
+       "end-line": 411
+      },
+      {
+       "title": "GetDefaultSubtitleStreamIndex:556",
+       "details": "2 complex conditional expressions",
+       "start-line": 556,
+       "end-line": 558
+      },
+      {
+       "title": "GetDefaultSubtitleStreamIndex:567",
+       "details": "2 complex conditional expressions",
+       "start-line": 567,
+       "end-line": 567
+      },
+      {
+       "title": "GetVideoTranscodeProfile:881",
+       "details": "2 complex conditional expressions",
+       "start-line": 881,
+       "end-line": 883
+      },
+      {
+       "title": "GetAudioBitrate:1203",
+       "details": "2 complex conditional expressions",
+       "start-line": 1203,
+       "end-line": 1205
+      },
+      {
+       "title": "GetVideoDirectPlayProfile:1325",
+       "details": "2 complex conditional expressions",
+       "start-line": 1325,
+       "end-line": 1327
+      },
+      {
+       "title": "GetVideoDirectPlayProfile:1392",
+       "details": "2 complex conditional expressions",
+       "start-line": 1392,
+       "end-line": 1392
+      },
+      {
+       "title": "GetVideoDirectPlayProfile:1396",
+       "details": "2 complex conditional expressions",
+       "start-line": 1396,
+       "end-line": 1396
+      },
+      {
+       "title": "GetExternalSubtitleProfile:1630",
+       "details": "2 complex conditional expressions",
+       "start-line": 1630,
+       "end-line": 1630
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetVideoTranscodeProfile",
+       "details": "Arguments = 5",
+       "start-line": 847,
+       "end-line": 932
+      },
+      {
+       "title": "BuildStreamVideoItem",
+       "details": "Arguments = 9",
+       "start-line": 934,
+       "end-line": 1153
+      },
+      {
+       "title": "GetVideoDirectPlayProfile",
+       "details": "Arguments = 8",
+       "start-line": 1288,
+       "end-line": 1429
+      },
+      {
+       "title": "GetSubtitleProfile",
+       "details": "Arguments = 7",
+       "start-line": 1465,
+       "end-line": 1543
+      },
+      {
+       "title": "GetExternalSubtitleProfile",
+       "details": "Arguments = 6",
+       "start-line": 1576,
+       "end-line": 1638
+      },
+      {
+       "title": "GetProfileConditionsForVideoAudio",
+       "details": "Arguments = 9",
+       "start-line": 1712,
+       "end-line": 1729
+      },
+      {
+       "title": "GetProfileConditionsForAudio",
+       "details": "Arguments = 8",
+       "start-line": 1731,
+       "end-line": 1753
+      },
+      {
+       "title": "ApplyTranscodingConditions",
+       "details": "Arguments = 5",
+       "start-line": 1755,
+       "end-line": 2289
+      },
+      {
+       "title": "GetCompatibilityAudioCodec",
+       "details": "Arguments = 7",
+       "start-line": 2451,
+       "end-line": 2469
+      },
+      {
+       "title": "GetCompatibilityAudioCodecDirect",
+       "details": "Arguments = 6",
+       "start-line": 2481,
+       "end-line": 2491
+      }
+     ]
+    },
+    {
+     "category": "Primitive Obsession",
+     "indication": 2,
+     "functions": []
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/LibraryManager.cs",
+   "score": 2.03,
+   "raw_score": 2.03,
+   "category": "production",
+   "band": "red",
+   "smells": [
+    {
+     "category": "Number of Functions in a Single Module",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "FillMissingEpisodeNumbersFromPath",
+       "details": "bumps = 8",
+       "start-line": 3305,
+       "end-line": 3428
+      },
+      {
+       "title": "DeleteItem",
+       "details": "bumps = 6",
+       "start-line": 421,
+       "end-line": 625
+      },
+      {
+       "title": "UpdateItemsAsync",
+       "details": "bumps = 4",
+       "start-line": 2660,
+       "end-line": 2759
+      },
+      {
+       "title": "GetTopParentIdsForQuery",
+       "details": "bumps = 3",
+       "start-line": 2132,
+       "end-line": 2191
+      },
+      {
+       "title": "ResolveIntro",
+       "details": "bumps = 3",
+       "start-line": 2243,
+       "end-line": 2294
+      },
+      {
+       "title": "CreateItems",
+       "details": "bumps = 3",
+       "start-line": 2446,
+       "end-line": 2530
+      },
+      {
+       "title": "RegisterItem",
+       "details": "bumps = 2",
+       "start-line": 325,
+       "end-line": 345
+      },
+      {
+       "title": "ResolveAlternateVersion",
+       "details": "bumps = 2",
+       "start-line": 865,
+       "end-line": 924
+      },
+      {
+       "title": "GetCollectionFolders",
+       "details": "bumps = 2",
+       "start-line": 2846,
+       "end-line": 2880
+      },
+      {
+       "title": "FindExtras",
+       "details": "bumps = 2",
+       "start-line": 3442,
+       "end-line": 3573
+      },
+      {
+       "title": "AddVirtualFolder",
+       "details": "bumps = 2",
+       "start-line": 3807,
+       "end-line": 3880
+      },
+      {
+       "title": "SavePeopleMetadataAsync",
+       "details": "bumps = 2",
+       "start-line": 3882,
+       "end-line": 3937
+      }
+     ]
+    },
+    {
+     "category": "Deep, Nested Complexity",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "CreateItems",
+       "details": "Nesting depth = 5 conditionals",
+       "start-line": 2446,
+       "end-line": 2530
+      },
+      {
+       "title": "UpdateItemsAsync",
+       "details": "Nesting depth = 5 conditionals",
+       "start-line": 2660,
+       "end-line": 2759
+      },
+      {
+       "title": "FindExtras",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 3442,
+       "end-line": 3573
+      },
+      {
+       "title": "RerouteLinkedChildReferencesAsync",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 4168,
+       "end-line": 4188
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "DeleteItem",
+       "details": "cc = 41",
+       "start-line": 421,
+       "end-line": 625
+      },
+      {
+       "title": "FillMissingEpisodeNumbersFromPath",
+       "details": "cc = 31",
+       "start-line": 3305,
+       "end-line": 3428
+      },
+      {
+       "title": "UpdateImagesAsync",
+       "details": "cc = 20",
+       "start-line": 2556,
+       "end-line": 2657
+      },
+      {
+       "title": "UpdateItemsAsync",
+       "details": "cc = 19",
+       "start-line": 2660,
+       "end-line": 2759
+      },
+      {
+       "title": "CreateItems",
+       "details": "cc = 19",
+       "start-line": 2446,
+       "end-line": 2530
+      },
+      {
+       "title": "FindExtras",
+       "details": "cc = 15",
+       "start-line": 3442,
+       "end-line": 3573
+      },
+      {
+       "title": "GetExtraTypeNameKey",
+       "details": "cc = 14",
+       "start-line": 3621,
+       "end-line": 3635
+      },
+      {
+       "title": "GetTopParentIdsForQuery",
+       "details": "cc = 14",
+       "start-line": 2132,
+       "end-line": 2191
+      },
+      {
+       "title": "GetNamedView",
+       "details": "cc = 13",
+       "start-line": 3199,
+       "end-line": 3274
+      },
+      {
+       "title": "ResolvePath",
+       "details": "cc = 13",
+       "start-line": 926,
+       "end-line": 1004
+      },
+      {
+       "title": "DeleteItemPath",
+       "details": "cc = 13",
+       "start-line": 627,
+       "end-line": 682
+      },
+      {
+       "title": "DeleteItemsUnsafeFast",
+       "details": "cc = 13",
+       "start-line": 361,
+       "end-line": 419
+      },
+      {
+       "title": "IsInternalItem",
+       "details": "cc = 12",
+       "start-line": 684,
+       "end-line": 712
+      },
+      {
+       "title": "AddUserToQuery",
+       "details": "cc = 11",
+       "start-line": 2090,
+       "end-line": 2121
+      },
+      {
+       "title": "SavePeopleMetadataAsync",
+       "details": "cc = 10",
+       "start-line": 3882,
+       "end-line": 3937
+      },
+      {
+       "title": "AddVirtualFolder",
+       "details": "cc = 9",
+       "start-line": 3807,
+       "end-line": 3880
+      },
+      {
+       "title": "ConvertImageToLocal",
+       "details": "cc = 9",
+       "start-line": 3751,
+       "end-line": 3805
+      },
+      {
+       "title": "FindExtras.PrepareExtra",
+       "details": "cc = 9",
+       "start-line": 3508,
+       "end-line": 3547
+      },
+      {
+       "title": "Sort",
+       "details": "cc = 9",
+       "start-line": 2373,
+       "end-line": 2408
+      },
+      {
+       "title": "SetTopParentIdsOrAncestors",
+       "details": "cc = 9",
+       "start-line": 2043,
+       "end-line": 2076
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "AddUserToQuery:2097",
+       "details": "7 complex conditional expressions",
+       "start-line": 2097,
+       "end-line": 2103
+      },
+      {
+       "title": "SetTopParentIdsOrAncestors:2059",
+       "details": "4 complex conditional expressions",
+       "start-line": 2059,
+       "end-line": 2061
+      },
+      {
+       "title": "GetTopParentIdsForQuery:2165",
+       "details": "3 complex conditional expressions",
+       "start-line": 2165,
+       "end-line": 2166
+      },
+      {
+       "title": "FindExtras.PrepareExtra:3524",
+       "details": "3 complex conditional expressions",
+       "start-line": 3524,
+       "end-line": 3526
+      },
+      {
+       "title": "DeleteItem:463",
+       "details": "2 complex conditional expressions",
+       "start-line": 463,
+       "end-line": 463
+      },
+      {
+       "title": "DeleteItem:582",
+       "details": "2 complex conditional expressions",
+       "start-line": 582,
+       "end-line": 582
+      },
+      {
+       "title": "ImageNeedsRefresh:2536",
+       "details": "2 complex conditional expressions",
+       "start-line": 2536,
+       "end-line": 2536
+      },
+      {
+       "title": "FillMissingEpisodeNumbersFromPath:3358",
+       "details": "2 complex conditional expressions",
+       "start-line": 3358,
+       "end-line": 3358
+      },
+      {
+       "title": "ConvertImageToLocal:3780",
+       "details": "2 complex conditional expressions",
+       "start-line": 3780,
+       "end-line": 3781
+      },
+      {
+       "title": "RemoveContentTypeOverrides:4081",
+       "details": "2 complex conditional expressions",
+       "start-line": 4081,
+       "end-line": 4083
+      }
+     ]
+    },
+    {
+     "category": "Code Duplication",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetItemList",
+       "details": null,
+       "start-line": 1740,
+       "end-line": 1757
+      },
+      {
+       "title": "GetCount",
+       "details": null,
+       "start-line": 1764,
+       "end-line": 1781
+      },
+      {
+       "title": "GetItemCounts",
+       "details": null,
+       "start-line": 1783,
+       "end-line": 1800
+      },
+      {
+       "title": "GetItemList",
+       "details": null,
+       "start-line": 1837,
+       "end-line": 1850
+      },
+      {
+       "title": "GetLatestItemList",
+       "details": null,
+       "start-line": 1852,
+       "end-line": 1865
+      },
+      {
+       "title": "GetNextUpSeriesKeys",
+       "details": null,
+       "start-line": 1867,
+       "end-line": 1880
+      },
+      {
+       "title": "Sort",
+       "details": null,
+       "start-line": 2341,
+       "end-line": 2370
+      },
+      {
+       "title": "Sort",
+       "details": null,
+       "start-line": 2373,
+       "end-line": 2408
+      },
+      {
+       "title": "CreateItems",
+       "details": null,
+       "start-line": 2446,
+       "end-line": 2530
+      },
+      {
+       "title": "UpdateItemsAsync",
+       "details": null,
+       "start-line": 2660,
+       "end-line": 2759
+      },
+      {
+       "title": "GetNamedView",
+       "details": null,
+       "start-line": 3054,
+       "end-line": 3117
+      },
+      {
+       "title": "GetShadowView",
+       "details": null,
+       "start-line": 3131,
+       "end-line": 3190
+      },
+      {
+       "title": "GetNamedView",
+       "details": null,
+       "start-line": 3199,
+       "end-line": 3274
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "AddParts",
+       "details": "Arguments = 5",
+       "start-line": 282,
+       "end-line": 295
+      },
+      {
+       "title": "ResolvePath",
+       "details": "Arguments = 6",
+       "start-line": 926,
+       "end-line": 1004
+      },
+      {
+       "title": "ResolvePaths",
+       "details": "Arguments = 5",
+       "start-line": 1031,
+       "end-line": 1034
+      },
+      {
+       "title": "ResolvePaths",
+       "details": "Arguments = 6",
+       "start-line": 1036,
+       "end-line": 1065
+      },
+      {
+       "title": "ResolveFileList",
+       "details": "Arguments = 6",
+       "start-line": 1067,
+       "end-line": 1094
+      },
+      {
+       "title": "GetNamedView",
+       "details": "Arguments = 5",
+       "start-line": 3054,
+       "end-line": 3117
+      },
+      {
+       "title": "GetNamedView",
+       "details": "Arguments = 5",
+       "start-line": 3199,
+       "end-line": 3274
+      }
+     ]
+    },
+    {
+     "category": "Constructor Over-Injection",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "LibraryManager",
+       "details": "Arguments = 24",
+       "start-line": 138,
+       "end-line": 197
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.cs",
+   "score": 2.18,
+   "raw_score": 2.18,
+   "category": "production",
+   "band": "red",
+   "smells": [
+    {
+     "category": "Lines of Code in a Single File",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Brain Method",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetMediaInfo",
+       "start-line": 98,
+       "end-line": 292
+      }
+     ]
+    },
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetMediaStream",
+       "details": "bumps = 12",
+       "start-line": 700,
+       "end-line": 1063
+      },
+      {
+       "title": "SetAudioInfoFromTags",
+       "details": "bumps = 9",
+       "start-line": 1323,
+       "end-line": 1456
+      },
+      {
+       "title": "GetMediaInfo",
+       "details": "bumps = 6",
+       "start-line": 98,
+       "end-line": 292
+      },
+      {
+       "title": "ProcessPairs",
+       "details": "bumps = 3",
+       "start-line": 542,
+       "end-line": 589
+      },
+      {
+       "title": "NormalizeFormat",
+       "details": "bumps = 2",
+       "start-line": 294,
+       "end-line": 339
+      },
+      {
+       "title": "FetchWtvInfo",
+       "details": "bumps = 2",
+       "start-line": 1619,
+       "end-line": 1727
+      }
+     ]
+    },
+    {
+     "category": "Deep, Nested Complexity",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetMediaInfo",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 98,
+       "end-line": 292
+      },
+      {
+       "title": "FetchFromItunesInfo",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 369,
+       "end-line": 430
+      },
+      {
+       "title": "ReadFromDictNode",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 432,
+       "end-line": 494
+      },
+      {
+       "title": "ReadValueArray",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 496,
+       "end-line": 540
+      },
+      {
+       "title": "GetMediaStream",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 700,
+       "end-line": 1063
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetMediaStream",
+       "details": "cc = 77",
+       "start-line": 700,
+       "end-line": 1063
+      },
+      {
+       "title": "SetAudioInfoFromTags",
+       "details": "cc = 36",
+       "start-line": 1323,
+       "end-line": 1456
+      },
+      {
+       "title": "FetchWtvInfo",
+       "details": "cc = 22",
+       "start-line": 1619,
+       "end-line": 1727
+      },
+      {
+       "title": "GetAspectRatio",
+       "details": "cc = 18",
+       "start-line": 1102,
+       "end-line": 1169
+      },
+      {
+       "title": "GetEstimatedAudioBitrate",
+       "details": "cc = 14",
+       "start-line": 341,
+       "end-line": 364
+      },
+      {
+       "title": "ReadFromDictNode",
+       "details": "cc = 13",
+       "start-line": 432,
+       "end-line": 494
+      },
+      {
+       "title": "NormalizeFormat",
+       "details": "cc = 12",
+       "start-line": 294,
+       "end-line": 339
+      },
+      {
+       "title": "FetchFromItunesInfo",
+       "details": "cc = 10",
+       "start-line": 369,
+       "end-line": 430
+      },
+      {
+       "title": "GetNameValuePair",
+       "details": "cc = 9",
+       "start-line": 591,
+       "end-line": 634
+      },
+      {
+       "title": "ReadValueArray",
+       "details": "cc = 9",
+       "start-line": 496,
+       "end-line": 540
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "NormalizeFormat:329",
+       "details": "4 complex conditional expressions",
+       "start-line": 329,
+       "end-line": 331
+      },
+      {
+       "title": "GetMediaStream:813",
+       "details": "4 complex conditional expressions",
+       "start-line": 813,
+       "end-line": 817
+      },
+      {
+       "title": "GetAspectRatio:1107",
+       "details": "4 complex conditional expressions",
+       "start-line": 1107,
+       "end-line": 1111
+      },
+      {
+       "title": "GetMediaStream:994",
+       "details": "3 complex conditional expressions",
+       "start-line": 994,
+       "end-line": 996
+      },
+      {
+       "title": "IsNearSquarePixelSar:1193",
+       "details": "3 complex conditional expressions",
+       "start-line": 1193,
+       "end-line": 1196
+      },
+      {
+       "title": "GetMpegTimestamp:1782",
+       "details": "3 complex conditional expressions",
+       "start-line": 1782,
+       "end-line": 1782
+      },
+      {
+       "title": "GetMediaInfo:264",
+       "details": "2 complex conditional expressions",
+       "start-line": 264,
+       "end-line": 266
+      },
+      {
+       "title": "GetEstimatedAudioBitrate:343",
+       "details": "2 complex conditional expressions",
+       "start-line": 343,
+       "end-line": 343
+      },
+      {
+       "title": "GetMediaStream:1011",
+       "details": "2 complex conditional expressions",
+       "start-line": 1011,
+       "end-line": 1013
+      },
+      {
+       "title": "GetMediaStream:1025",
+       "details": "2 complex conditional expressions",
+       "start-line": 1025,
+       "end-line": 1025
+      },
+      {
+       "title": "FetchWtvInfo:1674",
+       "details": "2 complex conditional expressions",
+       "start-line": 1674,
+       "end-line": 1676
+      },
+      {
+       "title": "ExtractTimestamp:1743",
+       "details": "2 complex conditional expressions",
+       "start-line": 1743,
+       "end-line": 1745
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetMediaInfo",
+       "details": "Arguments = 5",
+       "start-line": 98,
+       "end-line": 292
+      }
+     ]
+    },
+    {
+     "category": "Primitive Obsession",
+     "indication": 2,
+     "functions": []
+    }
+   ]
+  },
+  {
+   "path": "Jellyfin.Api/Controllers/DynamicHlsController.cs",
+   "score": 2.9,
+   "raw_score": 2.9,
+   "category": "production",
+   "band": "red",
+   "smells": [
+    {
+     "category": "Lines of Code in a Single File",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetVideoArguments",
+       "details": "bumps = 4",
+       "start-line": 1798,
+       "end-line": 1914
+      },
+      {
+       "title": "GetAudioArguments",
+       "details": "bumps = 3",
+       "start-line": 1664,
+       "end-line": 1778
+      },
+      {
+       "title": "GetSegmentResult",
+       "details": "bumps = 3",
+       "start-line": 1924,
+       "end-line": 1997
+      },
+      {
+       "title": "GetDynamicSegment",
+       "details": "bumps = 2",
+       "start-line": 1427,
+       "end-line": 1544
+      }
+     ]
+    },
+    {
+     "category": "Deep, Nested Complexity",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetSegmentResult",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 1924,
+       "end-line": 1997
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetAudioArguments",
+       "details": "cc = 31",
+       "start-line": 1664,
+       "end-line": 1778
+      },
+      {
+       "title": "GetVideoArguments",
+       "details": "cc = 26",
+       "start-line": 1798,
+       "end-line": 1914
+      },
+      {
+       "title": "GetLiveHlsStream",
+       "details": "cc = 18",
+       "start-line": 165,
+       "end-line": 344
+      },
+      {
+       "title": "GetSegmentResult",
+       "details": "cc = 14",
+       "start-line": 1924,
+       "end-line": 1997
+      },
+      {
+       "title": "GetHlsAudioSegment",
+       "details": "cc = 13",
+       "start-line": 1271,
+       "end-line": 1385
+      },
+      {
+       "title": "GetVariantHlsAudioPlaylist",
+       "details": "cc = 13",
+       "start-line": 915,
+       "end-line": 1023
+      },
+      {
+       "title": "GetMasterHlsAudioPlaylist",
+       "details": "cc = 13",
+       "start-line": 579,
+       "end-line": 687
+      },
+      {
+       "title": "GetCommandLineArguments",
+       "details": "cc = 12",
+       "start-line": 1578,
+       "end-line": 1657
+      },
+      {
+       "title": "GetHlsVideoSegment",
+       "details": "cc = 12",
+       "start-line": 1089,
+       "end-line": 1207
+      },
+      {
+       "title": "GetVariantHlsVideoPlaylist",
+       "details": "cc = 12",
+       "start-line": 746,
+       "end-line": 858
+      },
+      {
+       "title": "GetMasterHlsVideoPlaylist",
+       "details": "cc = 12",
+       "start-line": 406,
+       "end-line": 520
+      },
+      {
+       "title": "GetDynamicSegment",
+       "details": "cc = 10",
+       "start-line": 1427,
+       "end-line": 1544
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetAudioArguments:1677",
+       "details": "4 complex conditional expressions",
+       "start-line": 1677,
+       "end-line": 1681
+      },
+      {
+       "title": "GetAudioArguments:1743",
+       "details": "3 complex conditional expressions",
+       "start-line": 1743,
+       "end-line": 1745
+      },
+      {
+       "title": "GetVideoArguments:1826",
+       "details": "3 complex conditional expressions",
+       "start-line": 1826,
+       "end-line": 1828
+      },
+      {
+       "title": "GetAudioArguments:1706",
+       "details": "2 complex conditional expressions",
+       "start-line": 1706,
+       "end-line": 1706
+      },
+      {
+       "title": "GetAudioArguments:1754",
+       "details": "2 complex conditional expressions",
+       "start-line": 1754,
+       "end-line": 1754
+      }
+     ]
+    },
+    {
+     "category": "Code Duplication",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetMasterHlsVideoPlaylist",
+       "details": null,
+       "start-line": 406,
+       "end-line": 520
+      },
+      {
+       "title": "GetMasterHlsAudioPlaylist",
+       "details": null,
+       "start-line": 579,
+       "end-line": 687
+      },
+      {
+       "title": "GetVariantHlsVideoPlaylist",
+       "details": null,
+       "start-line": 746,
+       "end-line": 858
+      },
+      {
+       "title": "GetVariantHlsAudioPlaylist",
+       "details": null,
+       "start-line": 915,
+       "end-line": 1023
+      },
+      {
+       "title": "GetHlsVideoSegment",
+       "details": null,
+       "start-line": 1089,
+       "end-line": 1207
+      },
+      {
+       "title": "GetHlsAudioSegment",
+       "details": null,
+       "start-line": 1271,
+       "end-line": 1385
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetLiveHlsStream",
+       "details": "Arguments = 51",
+       "start-line": 165,
+       "end-line": 344
+      },
+      {
+       "title": "GetMasterHlsVideoPlaylist",
+       "details": "Arguments = 51",
+       "start-line": 406,
+       "end-line": 520
+      },
+      {
+       "title": "GetMasterHlsAudioPlaylist",
+       "details": "Arguments = 48",
+       "start-line": 579,
+       "end-line": 687
+      },
+      {
+       "title": "GetVariantHlsVideoPlaylist",
+       "details": "Arguments = 49",
+       "start-line": 746,
+       "end-line": 858
+      },
+      {
+       "title": "GetVariantHlsAudioPlaylist",
+       "details": "Arguments = 47",
+       "start-line": 915,
+       "end-line": 1023
+      },
+      {
+       "title": "GetHlsVideoSegment",
+       "details": "Arguments = 54",
+       "start-line": 1089,
+       "end-line": 1207
+      },
+      {
+       "title": "GetHlsAudioSegment",
+       "details": "Arguments = 52",
+       "start-line": 1271,
+       "end-line": 1385
+      },
+      {
+       "title": "GetSegmentResult",
+       "details": "Arguments = 7",
+       "start-line": 1924,
+       "end-line": 1997
+      }
+     ]
+    },
+    {
+     "category": "Constructor Over-Injection",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "DynamicHlsController",
+       "details": "Arguments = 11",
+       "start-line": 78,
+       "end-line": 104
+      }
+     ]
+    },
+    {
+     "category": "Primitive Obsession",
+     "indication": 2,
+     "functions": []
+    }
+   ]
+  },
+  {
+   "path": "Jellyfin.Api/Helpers/StreamingHelpers.cs",
+   "score": 4.36,
+   "raw_score": 4.36,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Brain Method",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetStreamingState",
+       "start-line": 45,
+       "end-line": 261
+      }
+     ]
+    },
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetStreamingState",
+       "details": "bumps = 4",
+       "start-line": 45,
+       "end-line": 261
+      },
+      {
+       "title": "ParseParams",
+       "details": "bumps = 3",
+       "start-line": 392,
+       "end-line": 597
+      },
+      {
+       "title": "GetOutputFileExtension",
+       "details": "bumps = 2",
+       "start-line": 291,
+       "end-line": 366
+      }
+     ]
+    },
+    {
+     "category": "Deep, Nested Complexity",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetStreamingState",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 45,
+       "end-line": 261
+      },
+      {
+       "title": "ParseParams",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 392,
+       "end-line": 597
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "ParseParams",
+       "details": "cc = 63",
+       "start-line": 392,
+       "end-line": 597
+      },
+      {
+       "title": "GetOutputFileExtension",
+       "details": "cc = 17",
+       "start-line": 291,
+       "end-line": 366
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetStreamingState:215",
+       "details": "4 complex conditional expressions",
+       "start-line": 215,
+       "end-line": 219
+      },
+      {
+       "title": "GetStreamingState:169",
+       "details": "3 complex conditional expressions",
+       "start-line": 169,
+       "end-line": 171
+      },
+      {
+       "title": "GetStreamingState:248",
+       "details": "3 complex conditional expressions",
+       "start-line": 248,
+       "end-line": 248
+      },
+      {
+       "title": "GetOutputFileExtension:320",
+       "details": "2 complex conditional expressions",
+       "start-line": 320,
+       "end-line": 322
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetStreamingState",
+       "details": "Arguments = 11",
+       "start-line": 45,
+       "end-line": 261
+      },
+      {
+       "title": "GetOutputFilePath",
+       "details": "Arguments = 5",
+       "start-line": 377,
+       "end-line": 386
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Jellyfin.Api/Helpers/DynamicHlsHelper.cs",
+   "score": 4.59,
+   "raw_score": 4.59,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "AppendPlaylistVideoRangeField",
+       "details": "bumps = 2",
+       "start-line": 442,
+       "end-line": 476
+      }
+     ]
+    },
+    {
+     "category": "Deep, Nested Complexity",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "AppendPlaylistVideoRangeField",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 442,
+       "end-line": 476
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetMasterPlaylistInternal",
+       "details": "cc = 54",
+       "start-line": 112,
+       "end-line": 343
+      },
+      {
+       "title": "GetPlaylistVideoCodecs",
+       "details": "cc = 14",
+       "start-line": 897,
+       "end-line": 952
+      },
+      {
+       "title": "GetOutputVideoCodecLevel",
+       "details": "cc = 13",
+       "start-line": 753,
+       "end-line": 790
+      },
+      {
+       "title": "GetPlaylistAudioCodecs",
+       "details": "cc = 12",
+       "start-line": 832,
+       "end-line": 886
+      },
+      {
+       "title": "GetOutputVideoCodecProfile",
+       "details": "cc = 11",
+       "start-line": 798,
+       "end-line": 823
+      },
+      {
+       "title": "AppendPlaylistSupplementalCodecsField.AppendDvString",
+       "details": "cc = 10",
+       "start-line": 550,
+       "end-line": 577
+      },
+      {
+       "title": "AppendPlaylistVideoRangeField",
+       "details": "cc = 10",
+       "start-line": 442,
+       "end-line": 476
+      },
+      {
+       "title": "AddSubtitles",
+       "details": "cc = 9",
+       "start-line": 675,
+       "end-line": 711
+      },
+      {
+       "title": "EnableAdaptiveBitrateStreaming",
+       "details": "cc = 9",
+       "start-line": 638,
+       "end-line": 673
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetMasterPlaylistInternal:219",
+       "details": "6 complex conditional expressions",
+       "start-line": 219,
+       "end-line": 225
+      },
+      {
+       "title": "GetMasterPlaylistInternal:177",
+       "details": "5 complex conditional expressions",
+       "start-line": 177,
+       "end-line": 182
+      },
+      {
+       "title": "GetMasterPlaylistInternal:293",
+       "details": "4 complex conditional expressions",
+       "start-line": 293,
+       "end-line": 297
+      },
+      {
+       "title": "GetMasterPlaylistInternal:248",
+       "details": "2 complex conditional expressions",
+       "start-line": 248,
+       "end-line": 250
+      },
+      {
+       "title": "AppendPlaylistSupplementalCodecsField.AppendDvString:562",
+       "details": "2 complex conditional expressions",
+       "start-line": 562,
+       "end-line": 562
+      },
+      {
+       "title": "GetOutputVideoCodecLevel:756",
+       "details": "2 complex conditional expressions",
+       "start-line": 756,
+       "end-line": 758
+      },
+      {
+       "title": "GetOutputVideoCodecProfile:814",
+       "details": "2 complex conditional expressions",
+       "start-line": 814,
+       "end-line": 816
+      },
+      {
+       "title": "GetPlaylistVideoCodecs:926",
+       "details": "2 complex conditional expressions",
+       "start-line": 926,
+       "end-line": 928
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetMasterPlaylistInternal",
+       "details": "Arguments = 5",
+       "start-line": 112,
+       "end-line": 343
+      },
+      {
+       "title": "AppendPlaylist",
+       "details": "Arguments = 5",
+       "start-line": 345,
+       "end-line": 375
+      },
+      {
+       "title": "AppendDoviPlaylist",
+       "details": "Arguments = 5",
+       "start-line": 387,
+       "end-line": 434
+      }
+     ]
+    },
+    {
+     "category": "Constructor Over-Injection",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "DynamicHlsHelper",
+       "details": "Arguments = 11",
+       "start-line": 63,
+       "end-line": 87
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/MediaSourceManager.cs",
+   "score": 4.9,
+   "raw_score": 4.9,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Low Cohesion",
+     "indication": 3,
+     "functions": []
+    },
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "AddMediaInfoWithProbe",
+       "details": "bumps = 4",
+       "start-line": 793,
+       "end-line": 942
+      },
+      {
+       "title": "SetDefaultAudioStreamIndex",
+       "details": "bumps = 3",
+       "start-line": 531,
+       "end-line": 588
+      },
+      {
+       "title": "GetPlaybackMediaSources",
+       "details": "bumps = 2",
+       "start-line": 177,
+       "end-line": 237
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "AddMediaInfoWithProbe",
+       "details": "cc = 25",
+       "start-line": 793,
+       "end-line": 942
+      },
+      {
+       "title": "SetDefaultAudioStreamIndex",
+       "details": "cc = 18",
+       "start-line": 531,
+       "end-line": 588
+      },
+      {
+       "title": "GetPlaybackMediaSources",
+       "details": "cc = 15",
+       "start-line": 177,
+       "end-line": 237
+      },
+      {
+       "title": "SetDefaultSubtitleStreamIndex",
+       "details": "cc = 13",
+       "start-line": 493,
+       "end-line": 529
+      },
+      {
+       "title": "AddMediaInfo",
+       "details": "cc = 11",
+       "start-line": 710,
+       "end-line": 759
+      },
+      {
+       "title": "SetAlternateVersionResumeStates",
+       "details": "cc = 10",
+       "start-line": 436,
+       "end-line": 475
+      },
+      {
+       "title": "GetPathProtocol",
+       "details": "cc = 9",
+       "start-line": 240,
+       "end-line": 278
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetPlaybackMediaSources:183",
+       "details": "6 complex conditional expressions",
+       "start-line": 183,
+       "end-line": 186
+      },
+      {
+       "title": "SetDefaultSubtitleStreamIndex:495",
+       "details": "4 complex conditional expressions",
+       "start-line": 495,
+       "end-line": 499
+      },
+      {
+       "title": "SetDefaultSubtitleStreamIndex:506",
+       "details": "3 complex conditional expressions",
+       "start-line": 506,
+       "end-line": 508
+      },
+      {
+       "title": "SetDefaultAudioStreamIndex:533",
+       "details": "3 complex conditional expressions",
+       "start-line": 533,
+       "end-line": 533
+      },
+      {
+       "title": "SetAlternateVersionResumeStates:467",
+       "details": "2 complex conditional expressions",
+       "start-line": 467,
+       "end-line": 467
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetPlaybackMediaSources",
+       "details": "Arguments = 5",
+       "start-line": 177,
+       "end-line": 237
+      },
+      {
+       "title": "GetMediaSource",
+       "details": "Arguments = 5",
+       "start-line": 371,
+       "end-line": 381
+      },
+      {
+       "title": "SetDefaultAudioStreamIndex",
+       "details": "Arguments = 5",
+       "start-line": 531,
+       "end-line": 588
+      },
+      {
+       "title": "AddMediaInfoWithProbe",
+       "details": "Arguments = 6",
+       "start-line": 793,
+       "end-line": 942
+      }
+     ]
+    },
+    {
+     "category": "Constructor Over-Injection",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "MediaSourceManager",
+       "details": "Arguments = 13",
+       "start-line": 67,
+       "end-line": 95
+      }
+     ]
+    },
+    {
+     "category": "Primitive Obsession",
+     "indication": 2,
+     "functions": []
+    }
+   ]
+  },
+  {
+   "path": "Jellyfin.Api/Helpers/MediaInfoHelper.cs",
+   "score": 5.41,
+   "raw_score": 5.41,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Brain Method",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "SetDeviceSpecificData",
+       "start-line": 182,
+       "end-line": 359
+      }
+     ]
+    },
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "SetDeviceSpecificData",
+       "details": "bumps = 4",
+       "start-line": 182,
+       "end-line": 359
+      },
+      {
+       "title": "OpenMediaSource",
+       "details": "bumps = 2",
+       "start-line": 426,
+       "end-line": 480
+      },
+      {
+       "title": "GetPublishedLiveStreamPath",
+       "details": "bumps = 2",
+       "start-line": 582,
+       "end-line": 626
+      }
+     ]
+    },
+    {
+     "category": "Deep, Nested Complexity",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "SetDeviceSpecificData",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 182,
+       "end-line": 359
+      },
+      {
+       "title": "SetDeviceSpecificSubtitleInfo",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 493,
+       "end-line": 516
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "SortMediaSources",
+       "details": "cc = 13",
+       "start-line": 367,
+       "end-line": 418
+      },
+      {
+       "title": "GetPublishedLiveStreamPath",
+       "details": "cc = 9",
+       "start-line": 582,
+       "end-line": 626
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "SetDeviceSpecificData:299",
+       "details": "2 complex conditional expressions",
+       "start-line": 299,
+       "end-line": 301
+      },
+      {
+       "title": "SetDeviceSpecificData:322",
+       "details": "2 complex conditional expressions",
+       "start-line": 322,
+       "end-line": 322
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetPlaybackInfo",
+       "details": "Arguments = 5",
+       "start-line": 93,
+       "end-line": 136
+      },
+      {
+       "title": "SetDeviceSpecificData",
+       "details": "Arguments = 19",
+       "start-line": 182,
+       "end-line": 359
+      }
+     ]
+    },
+    {
+     "category": "Constructor Over-Injection",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "MediaInfoHelper",
+       "details": "Arguments = 9",
+       "start-line": 62,
+       "end-line": 82
+      }
+     ]
+    },
+    {
+     "category": "Primitive Obsession",
+     "indication": 2,
+     "functions": []
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/StreamInfo.cs",
+   "score": 5.89,
+   "raw_score": 5.89,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "ToUrl",
+       "details": "bumps = 4",
+       "start-line": 877,
+       "end-line": 1143
+      },
+      {
+       "title": "GetSubtitleProfiles",
+       "details": "bumps = 2",
+       "start-line": 1167,
+       "end-line": 1205
+      },
+      {
+       "title": "AddSubtitleProfiles",
+       "details": "bumps = 2",
+       "start-line": 1207,
+       "end-line": 1228
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "ToUrl",
+       "details": "cc = 49",
+       "start-line": 877,
+       "end-line": 1143
+      },
+      {
+       "title": "GetSubtitleProfiles",
+       "details": "cc = 14",
+       "start-line": 1167,
+       "end-line": 1205
+      },
+      {
+       "title": "GetSubtitleStreamInfo",
+       "details": "cc = 13",
+       "start-line": 1230,
+       "end-line": 1285
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetSubtitleStreamInfo:1264",
+       "details": "6 complex conditional expressions",
+       "start-line": 1264,
+       "end-line": 1269
+      },
+      {
+       "title": "ToUrl:955",
+       "details": "3 complex conditional expressions",
+       "start-line": 955,
+       "end-line": 955
+      },
+      {
+       "title": "ToUrl:1109",
+       "details": "2 complex conditional expressions",
+       "start-line": 1109,
+       "end-line": 1109
+      },
+      {
+       "title": "GetSubtitleProfiles:1197",
+       "details": "2 complex conditional expressions",
+       "start-line": 1197,
+       "end-line": 1197
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetSubtitleProfiles",
+       "details": "Arguments = 5",
+       "start-line": 1167,
+       "end-line": 1205
+      },
+      {
+       "title": "AddSubtitleProfiles",
+       "details": "Arguments = 7",
+       "start-line": 1207,
+       "end-line": 1228
+      },
+      {
+       "title": "GetSubtitleStreamInfo",
+       "details": "Arguments = 6",
+       "start-line": 1230,
+       "end-line": 1285
+      }
+     ]
+    },
+    {
+     "category": "Primitive Obsession",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "String Heavy Function Arguments",
+     "indication": 2,
+     "functions": []
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/ConditionProcessor.cs",
+   "score": 6.53,
+   "raw_score": 6.53,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "IsConditionSatisfied",
+       "details": "bumps = 3",
+       "start-line": 344,
+       "end-line": 387
+      },
+      {
+       "title": "IsConditionSatisfied",
+       "details": "bumps = 2",
+       "start-line": 190,
+       "end-line": 231
+      },
+      {
+       "title": "IsConditionSatisfied",
+       "details": "bumps = 2",
+       "start-line": 280,
+       "end-line": 321
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "IsVideoConditionSatisfied",
+       "details": "cc = 21",
+       "start-line": 38,
+       "end-line": 103
+      },
+      {
+       "title": "IsConditionSatisfied",
+       "details": "cc = 14",
+       "start-line": 344,
+       "end-line": 387
+      },
+      {
+       "title": "IsConditionSatisfied",
+       "details": "cc = 12",
+       "start-line": 280,
+       "end-line": 321
+      },
+      {
+       "title": "IsConditionSatisfied",
+       "details": "cc = 12",
+       "start-line": 190,
+       "end-line": 231
+      }
+     ]
+    },
+    {
+     "category": "Code Duplication",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "IsConditionSatisfied",
+       "details": null,
+       "start-line": 190,
+       "end-line": 231
+      },
+      {
+       "title": "IsConditionSatisfied",
+       "details": null,
+       "start-line": 256,
+       "end-line": 278
+      },
+      {
+       "title": "IsConditionSatisfied",
+       "details": null,
+       "start-line": 280,
+       "end-line": 321
+      },
+      {
+       "title": "IsConditionSatisfied",
+       "details": null,
+       "start-line": 323,
+       "end-line": 342
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "IsVideoConditionSatisfied",
+       "details": "Arguments = 20",
+       "start-line": 38,
+       "end-line": 103
+      },
+      {
+       "title": "IsAudioConditionSatisfied",
+       "details": "Arguments = 5",
+       "start-line": 134,
+       "end-line": 149
+      },
+      {
+       "title": "IsVideoAudioConditionSatisfied",
+       "details": "Arguments = 7",
+       "start-line": 162,
+       "end-line": 188
+      }
+     ]
+    },
+    {
+     "category": "Primitive Obsession",
+     "indication": 2,
+     "functions": []
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/UserDataManager.cs",
+   "score": 6.69,
+   "raw_score": 6.69,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetUserDataBatch",
+       "details": "bumps = 3",
+       "start-line": 197,
+       "end-line": 260
+      },
+      {
+       "title": "GetResumeUserDataBatch",
+       "details": "bumps = 3",
+       "start-line": 269,
+       "end-line": 357
+      },
+      {
+       "title": "UpdatePlayState",
+       "details": "bumps = 3",
+       "start-line": 455,
+       "end-line": 529
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetResumeUserDataBatch",
+       "details": "cc = 23",
+       "start-line": 269,
+       "end-line": 357
+      },
+      {
+       "title": "UpdatePlayState",
+       "details": "cc = 19",
+       "start-line": 455,
+       "end-line": 529
+      },
+      {
+       "title": "GetUserDataBatch",
+       "details": "cc = 10",
+       "start-line": 197,
+       "end-line": 260
+      },
+      {
+       "title": "SaveUserData",
+       "details": "cc = 9",
+       "start-line": 112,
+       "end-line": 156
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "UpdatePlayState:465",
+       "details": "3 complex conditional expressions",
+       "start-line": 465,
+       "end-line": 465
+      },
+      {
+       "title": "SaveUserData:67",
+       "details": "2 complex conditional expressions",
+       "start-line": 67,
+       "end-line": 67
+      },
+      {
+       "title": "GetResumeUserDataBatch:319",
+       "details": "2 complex conditional expressions",
+       "start-line": 319,
+       "end-line": 320
+      },
+      {
+       "title": "UpdatePlayState:491",
+       "details": "2 complex conditional expressions",
+       "start-line": 491,
+       "end-line": 491
+      }
+     ]
+    },
+    {
+     "category": "Code Duplication",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "Map",
+       "details": null,
+       "start-line": 158,
+       "end-line": 177
+      },
+      {
+       "title": "Map",
+       "details": null,
+       "start-line": 179,
+       "end-line": 194
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "SaveUserData",
+       "details": "Arguments = 5",
+       "start-line": 50,
+       "end-line": 109
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/UserViewManager.cs",
+   "score": 7.23,
+   "raw_score": 7.23,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetItemsForLatestItems",
+       "details": "bumps = 4",
+       "start-line": 262,
+       "end-line": 433
+      },
+      {
+       "title": "GetUserViews",
+       "details": "bumps = 3",
+       "start-line": 45,
+       "end-line": 159
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetItemsForLatestItems",
+       "details": "cc = 27",
+       "start-line": 262,
+       "end-line": 433
+      },
+      {
+       "title": "GetUserViews",
+       "details": "cc = 26",
+       "start-line": 45,
+       "end-line": 159
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetUserViews:81",
+       "details": "2 complex conditional expressions",
+       "start-line": 81,
+       "end-line": 81
+      },
+      {
+       "title": "GetUserViews:147",
+       "details": "2 complex conditional expressions",
+       "start-line": 147,
+       "end-line": 149
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetUserView",
+       "details": "Arguments = 6",
+       "start-line": 201,
+       "end-line": 221
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs",
+   "score": 7.32,
+   "raw_score": 7.32,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetVp9String",
+       "details": "cc = 28",
+       "start-line": 239,
+       "end-line": 290
+      },
+      {
+       "title": "GetAv1String",
+       "details": "cc = 9",
+       "start-line": 300,
+       "end-line": 348
+      },
+      {
+       "title": "GetDTSString",
+       "details": "cc = 9",
+       "start-line": 139,
+       "end-line": 163
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetDTSString:148",
+       "details": "3 complex conditional expressions",
+       "start-line": 148,
+       "end-line": 151
+      },
+      {
+       "title": "GetDTSString:141",
+       "details": "2 complex conditional expressions",
+       "start-line": 141,
+       "end-line": 143
+      },
+      {
+       "title": "GetVp9String:276",
+       "details": "2 complex conditional expressions",
+       "start-line": 276,
+       "end-line": 278
+      },
+      {
+       "title": "GetAv1String:330",
+       "details": "2 complex conditional expressions",
+       "start-line": 330,
+       "end-line": 332
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetVp9String",
+       "details": "Arguments = 5",
+       "start-line": 239,
+       "end-line": 290
+      }
+     ]
+    },
+    {
+     "category": "Primitive Obsession",
+     "indication": 2,
+     "functions": []
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/PathExtensions.cs",
+   "score": 7.83,
+   "raw_score": 7.83,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetAttributeValue",
+       "details": "bumps = 4",
+       "start-line": 20,
+       "end-line": 115
+      }
+     ]
+    },
+    {
+     "category": "Deep, Nested Complexity",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetAttributeValue",
+       "details": "Nesting depth = 6 conditionals",
+       "start-line": 20,
+       "end-line": 115
+      }
+     ]
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetAttributeValue",
+       "details": "cc = 27",
+       "start-line": 20,
+       "end-line": 115
+      },
+      {
+       "title": "TryReplaceSubPath",
+       "details": "cc = 10",
+       "start-line": 126,
+       "end-line": 166
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetAttributeValue:77",
+       "details": "3 complex conditional expressions",
+       "start-line": 77,
+       "end-line": 80
+      },
+      {
+       "title": "TryReplaceSubPath:134",
+       "details": "3 complex conditional expressions",
+       "start-line": 134,
+       "end-line": 137
+      },
+      {
+       "title": "TryReplaceSubPath:153",
+       "details": "2 complex conditional expressions",
+       "start-line": 153,
+       "end-line": 155
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.Controller/MediaEncoding/JobLogger.cs",
+   "score": 8.28,
+   "raw_score": 8.28,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "ParseLogLine",
+       "details": "bumps = 7",
+       "start-line": 62,
+       "end-line": 161
+      }
+     ]
+    },
+    {
+     "category": "Deep, Nested Complexity",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "ParseLogLine",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 62,
+       "end-line": 161
+      }
+     ]
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "ParseLogLine",
+       "details": "cc = 22",
+       "start-line": 62,
+       "end-line": 161
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs",
+   "score": 8.54,
+   "raw_score": 8.54,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Code Duplication",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetRequestedMaxRefFrames",
+       "details": null,
+       "start-line": 644,
+       "end-line": 661
+      },
+      {
+       "title": "GetRequestedVideoBitDepth",
+       "details": null,
+       "start-line": 663,
+       "end-line": 680
+      },
+      {
+       "title": "GetRequestedAudioBitDepth",
+       "details": null,
+       "start-line": 682,
+       "end-line": 699
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "ReportTranscodingProgress",
+       "details": "Arguments = 5",
+       "start-line": 730,
+       "end-line": 733
+      }
+     ]
+    },
+    {
+     "category": "Primitive Obsession",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "String Heavy Function Arguments",
+     "indication": 2,
+     "functions": []
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/DotIgnoreIgnoreRule.cs",
+   "score": 8.63,
+   "raw_score": 8.63,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "FindIgnoreFileCached",
+       "details": "bumps = 2",
+       "start-line": 147,
+       "end-line": 216
+      }
+     ]
+    },
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "FindIgnoreFileCached",
+       "details": "cc = 13",
+       "start-line": 147,
+       "end-line": 216
+      }
+     ]
+    },
+    {
+     "category": "Primitive Obsession",
+     "indication": 2,
+     "functions": []
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/MediaStreamSelector.cs",
+   "score": 8.69,
+   "raw_score": 8.69,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Overall Code Complexity",
+     "indication": 2,
+     "functions": []
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetDefaultSubtitleStreamIndex",
+       "details": "cc = 14",
+       "start-line": 31,
+       "end-line": 87
+      },
+      {
+       "title": "SetSubtitleStreamScores",
+       "details": "cc = 13",
+       "start-line": 97,
+       "end-line": 152
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/LiveStreamHelper.cs",
+   "score": 8.91,
+   "raw_score": 8.91,
+   "category": "production",
+   "band": "yellow",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "AddMediaInfoWithProbe",
+       "details": "bumps = 3",
+       "start-line": 38,
+       "end-line": 184
+      }
+     ]
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "AddMediaInfoWithProbe",
+       "details": "cc = 23",
+       "start-line": 38,
+       "end-line": 184
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "AddMediaInfoWithProbe",
+       "details": "Arguments = 5",
+       "start-line": 38,
+       "end-line": 184
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Jellyfin.Api/Helpers/AudioHelper.cs",
+   "score": 9.21,
+   "raw_score": 9.21,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "GetAudioStream",
+       "details": "bumps = 2",
+       "start-line": 74,
+       "end-line": 156
+      }
+     ]
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetAudioStream",
+       "details": "cc = 12",
+       "start-line": 74,
+       "end-line": 156
+      }
+     ]
+    },
+    {
+     "category": "Constructor Over-Injection",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "AudioHelper",
+       "details": "Arguments = 9",
+       "start-line": 46,
+       "end-line": 66
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/ResolutionNormalizer.cs",
+   "score": 9.36,
+   "raw_score": 9.36,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "Normalize",
+       "details": "cc = 12",
+       "start-line": 24,
+       "end-line": 78
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "Normalize",
+       "details": "Arguments = 7",
+       "start-line": 24,
+       "end-line": 78
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/CoreResolutionIgnoreRule.cs",
+   "score": 9.38,
+   "raw_score": 9.38,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "ShouldIgnore",
+       "details": "cc = 11",
+       "start-line": 32,
+       "end-line": 67
+      }
+     ]
+    },
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "ShouldIgnore:46",
+       "details": "2 complex conditional expressions",
+       "start-line": 46,
+       "end-line": 47
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/PathManager.cs",
+   "score": 9.38,
+   "raw_score": 9.38,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Code Duplication",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetAttachmentFolderPath",
+       "details": null,
+       "start-line": 63,
+       "end-line": 73
+      },
+      {
+       "title": "GetSubtitleFolderPath",
+       "details": null,
+       "start-line": 76,
+       "end-line": 86
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Jellyfin.Api/Helpers/FileStreamResponseHelpers.cs",
+   "score": 9.38,
+   "raw_score": 9.38,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetStaticRemoteStreamResult",
+       "details": "cc = 9",
+       "start-line": 29,
+       "end-line": 97
+      }
+     ]
+    },
+    {
+     "category": "Excess Number of Function Arguments",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetTranscodedFile",
+       "details": "Arguments = 7",
+       "start-line": 123,
+       "end-line": 168
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Jellyfin.Api/Helpers/HlsHelpers.cs",
+   "score": 9.38,
+   "raw_score": 9.38,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Deep, Nested Complexity",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "WaitForMinimumSegmentCount",
+       "details": "Nesting depth = 4 conditionals",
+       "start-line": 27,
+       "end-line": 72
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.Controller/MediaEncoding/TranscodingSegmentCleaner.cs",
+   "score": 9.38,
+   "raw_score": 9.38,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "TimerCallback:103",
+       "details": "2 complex conditional expressions",
+       "start-line": 103,
+       "end-line": 103
+      }
+     ]
+    },
+    {
+     "category": "Constructor Over-Injection",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "TranscodingSegmentCleaner",
+       "details": "Arguments = 6",
+       "start-line": 35,
+       "end-line": 42
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.Controller/MediaEncoding/TranscodingThrottler.cs",
+   "score": 9.51,
+   "raw_score": 9.51,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "IsThrottleAllowed",
+       "details": "bumps = 2",
+       "start-line": 148,
+       "end-line": 208
+      }
+     ]
+    },
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "IsThrottleAllowed",
+       "details": "cc = 12",
+       "start-line": 148,
+       "end-line": 208
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.Controller/MediaEncoding/DownMixAlgorithmsHelper.cs",
+   "score": 9.63,
+   "raw_score": 9.63,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Complex Method",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "InferChannelLayout",
+       "details": "cc = 13",
+       "start-line": 42,
+       "end-line": 73
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/ExternalDataManager.cs",
+   "score": 9.68,
+   "raw_score": 9.68,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Constructor Over-Injection",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "ExternalDataManager",
+       "details": "Arguments = 6",
+       "start-line": 35,
+       "end-line": 49
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.Controller/MediaEncoding/TranscodingJob.cs",
+   "score": 9.68,
+   "raw_score": 9.68,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetHighestServedSegmentIndexEndingAtOrBefore:186",
+       "details": "2 complex conditional expressions",
+       "start-line": 186,
+       "end-line": 186
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "MediaBrowser.MediaEncoding/Probing/FFProbeHelpers.cs",
+   "score": 9.68,
+   "raw_score": 9.68,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Complex Conditional",
+     "indication": 2,
+     "functions": [
+      {
+       "title": "GetDictionaryDateTime:62",
+       "details": "2 complex conditional expressions",
+       "start-line": 62,
+       "end-line": 64
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/ResolverHelper.cs",
+   "score": 9.84,
+   "raw_score": 9.84,
+   "category": "production",
+   "band": "green",
+   "smells": [
+    {
+     "category": "Bumpy Road Ahead",
+     "indication": 3,
+     "functions": [
+      {
+       "title": "EnsureDates",
+       "details": "bumps = 2",
+       "start-line": 106,
+       "end-line": 131
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/IgnorePatterns.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/KeyframeManager.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/MusicManager.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "Emby.Server.Implementations/Library/SplashscreenPostScanTask.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "Jellyfin.Api/Helpers/RequestHelpers.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "MediaBrowser.Controller/MediaEncoding/BaseEncodingJobOptions.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/CodecProfile.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/ContainerProfile.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/DirectPlayProfile.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/MediaOptions.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/ProfileCondition.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/ResolutionConfiguration.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/SubtitleProfile.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  },
+  {
+   "path": "MediaBrowser.Model/Dlna/TranscodingProfile.cs",
+   "score": 10.0,
+   "raw_score": 10.0,
+   "category": "production",
+   "band": "optimal",
+   "smells": []
+  }
+ ],
+ "unscorable_files": [
+  "MediaBrowser.Controller/MediaEncoding/BitStreamFilterOptionType.cs",
+  "MediaBrowser.Controller/MediaEncoding/FilterOptionType.cs",
+  "MediaBrowser.Controller/MediaEncoding/IAttachmentExtractor.cs",
+  "MediaBrowser.Controller/MediaEncoding/IMediaEncoder.cs",
+  "MediaBrowser.Controller/MediaEncoding/ISubtitleEncoder.cs",
+  "MediaBrowser.Controller/MediaEncoding/ITranscodeManager.cs",
+  "MediaBrowser.Controller/MediaEncoding/MediaInfoRequest.cs",
+  "MediaBrowser.Controller/MediaEncoding/TranscodingJobType.cs",
+  "MediaBrowser.MediaEncoding/Probing/CodecType.cs",
+  "MediaBrowser.MediaEncoding/Probing/InternalMediaInfoResult.cs",
+  "MediaBrowser.MediaEncoding/Probing/MediaChapter.cs",
+  "MediaBrowser.MediaEncoding/Probing/MediaFormatInfo.cs",
+  "MediaBrowser.MediaEncoding/Probing/MediaFrameInfo.cs",
+  "MediaBrowser.MediaEncoding/Probing/MediaFrameSideDataInfo.cs",
+  "MediaBrowser.MediaEncoding/Probing/MediaStreamInfo.cs",
+  "MediaBrowser.MediaEncoding/Probing/MediaStreamInfoSideData.cs",
+  "MediaBrowser.Model/Dlna/CodecType.cs",
+  "MediaBrowser.Model/Dlna/DeviceProfile.cs",
+  "MediaBrowser.Model/Dlna/DlnaProfileType.cs",
+  "MediaBrowser.Model/Dlna/EncodingContext.cs",
+  "MediaBrowser.Model/Dlna/ITranscoderSupport.cs",
+  "MediaBrowser.Model/Dlna/PlaybackErrorCode.cs",
+  "MediaBrowser.Model/Dlna/ProfileConditionType.cs",
+  "MediaBrowser.Model/Dlna/ProfileConditionValue.cs",
+  "MediaBrowser.Model/Dlna/ResolutionOptions.cs",
+  "MediaBrowser.Model/Dlna/SubtitleDeliveryMethod.cs",
+  "MediaBrowser.Model/Dlna/SubtitleStreamInfo.cs",
+  "MediaBrowser.Model/Dlna/TranscodeSeekInfo.cs"
+ ]
+}
