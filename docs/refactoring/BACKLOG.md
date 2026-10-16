@@ -82,7 +82,7 @@ Update as tasks land.
 | R26 | 9.38 | 10.00 | done (8090c985ad) |
 | R27 | 9.38 | 10.00 | done (pilot, e94a7a323a) |
 | R28 | 9.51 | 9.68 | stopped at 9.68: Recipe P on `IsThrottleAllowed` brings Primitive Obsession (FLAT); low protection |
-| R29 | 9.63 | - | not started |
+| R29 | 9.63 | 9.68 | stopped at 9.68: the remaining Complex Method is a flat 9-arm switch; only a lookup table would lower it |
 | R30 | 9.68 | 10.00 | done (probe, 9057ab1397) |
 | R31 | 9.68 | 9.68 | stopped: only Constructor Over-Injection, which has no recipe |
 | R32 | 9.68 | 10.00 | done (probe, e41b7c597c) |
