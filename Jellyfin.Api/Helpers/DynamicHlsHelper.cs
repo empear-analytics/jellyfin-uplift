@@ -19,6 +19,7 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Controller.Trickplay;
+using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Net;
@@ -149,35 +150,7 @@ public class DynamicHlsHelper
 
         var isLiveStream = state.IsSegmentedLiveStream;
 
-        var queryString = _httpContextAccessor.HttpContext.Request.QueryString.ToString();
-
-        // from universal audio service, need to override the AudioCodec when the actual request differs from original query
-        if (!string.Equals(state.OutputAudioCodec, _httpContextAccessor.HttpContext.Request.Query["AudioCodec"].ToString(), StringComparison.OrdinalIgnoreCase))
-        {
-            var newQuery = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(queryString);
-            newQuery["AudioCodec"] = state.OutputAudioCodec;
-            queryString = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(string.Empty, newQuery);
-        }
-
-        // from universal audio service
-        if (!string.IsNullOrWhiteSpace(state.Request.SegmentContainer)
-            && !queryString.Contains("SegmentContainer", StringComparison.OrdinalIgnoreCase))
-        {
-            queryString += "&SegmentContainer=" + state.Request.SegmentContainer;
-        }
-
-        // from universal audio service
-        if (!string.IsNullOrWhiteSpace(state.Request.TranscodeReasons)
-            && !queryString.Contains("TranscodeReasons=", StringComparison.OrdinalIgnoreCase))
-        {
-            queryString += "&TranscodeReasons=" + state.Request.TranscodeReasons;
-        }
-
-        // Video rotation metadata is only supported in fMP4 remuxing
-        if (IsRotatedVideoCopiedToNonMp4Container(state))
-        {
-            queryString += "&AllowVideoStreamCopy=false";
-        }
+        var queryString = GetPlaylistQueryString(state, _httpContextAccessor.HttpContext.Request);
 
         // Main stream
         var baseUrl = isLiveStream ? "live.m3u8" : "main.m3u8";
@@ -189,15 +162,7 @@ public class DynamicHlsHelper
             .Where(i => i.IsTextSubtitleStream)
             .ToList();
 
-        var subtitleGroup = subtitleStreams.Count > 0 && (state.SubtitleDeliveryMethod == SubtitleDeliveryMethod.Hls || state.VideoRequest!.EnableSubtitlesInManifest)
-            ? "subs"
-            : null;
-
-        // If we're burning in subtitles then don't add additional subs to the manifest
-        if (state.SubtitleStream is not null && state.SubtitleDeliveryMethod == SubtitleDeliveryMethod.Encode)
-        {
-            subtitleGroup = null;
-        }
+        var subtitleGroup = GetSubtitleGroup(state, subtitleStreams);
 
         if (!string.IsNullOrWhiteSpace(subtitleGroup))
         {
@@ -225,13 +190,7 @@ public class DynamicHlsHelper
             // Provide AV1 and HEVC SDR entrances for backward compatibility.
             foreach (var sdrVideoCodec in new[] { "av1", "hevc" })
             {
-                var isAv1EncodingAllowed = encodingOptions.AllowAv1Encoding
-                    && string.Equals(sdrVideoCodec, "av1", StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(state.ActualOutputVideoCodec, "av1", StringComparison.OrdinalIgnoreCase);
-                var isHevcEncodingAllowed = encodingOptions.AllowHevcEncoding
-                    && string.Equals(sdrVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase);
-                var isEncodingAllowed = isAv1EncodingAllowed || isHevcEncodingAllowed;
+                var isEncodingAllowed = IsSdrEncodingAllowed(encodingOptions, sdrVideoCodec, state);
 
                 if (IsHdrCopyWithEncodingAllowed(isEncodingAllowed, state))
                 {
@@ -273,25 +232,7 @@ public class DynamicHlsHelper
                 state.OutputVideoCodec = "copy";
             }
 
-            // Provide Level 5.0 entrance for backward compatibility.
-            // e.g. Apple A10 chips refuse the master playlist containing SDR HEVC Main Level 5.1 video,
-            // but in fact it is capable of playing videos up to Level 6.1.
-            if (IsSdrHevcCopyAboveLevel150(state))
-            {
-                var playlistCodecsField = new StringBuilder();
-                AppendPlaylistCodecsField(playlistCodecsField, state);
-
-                // Force the video level to 5.0.
-                var originalLevel = state.VideoStream.Level;
-                state.VideoStream.Level = 150;
-                var newPlaylistCodecsField = new StringBuilder();
-                AppendPlaylistCodecsField(newPlaylistCodecsField, state);
-
-                // Restore the video level.
-                state.VideoStream.Level = originalLevel;
-                var newPlaylist = ReplacePlaylistCodecsField(basicPlaylist, playlistCodecsField, newPlaylistCodecsField);
-                builder.Append(newPlaylist);
-            }
+            AppendLevel150CompatibilityPlaylist(builder, state, basicPlaylist);
         }
 
         if (EnableAdaptiveBitrateStreaming(state, isLiveStream, enableAdaptiveBitrateStreaming, _httpContextAccessor.HttpContext.GetNormalizedRemoteIP()))
@@ -314,14 +255,103 @@ public class DynamicHlsHelper
             AppendPlaylist(builder, state, variantUrl, newBitrate, subtitleGroup);
         }
 
+        await AddTrickplayIfEnabled(state, isLiveStream, builder, _httpContextAccessor.HttpContext.User).ConfigureAwait(false);
+
+        return new FileContentResult(Encoding.UTF8.GetBytes(builder.ToString()), MimeTypes.GetMimeType("playlist.m3u8"));
+    }
+
+    private static bool IsSdrEncodingAllowed(EncodingOptions encodingOptions, string sdrVideoCodec, StreamState state)
+    {
+        var isAv1EncodingAllowed = encodingOptions.AllowAv1Encoding
+            && string.Equals(sdrVideoCodec, "av1", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(state.ActualOutputVideoCodec, "av1", StringComparison.OrdinalIgnoreCase);
+        var isHevcEncodingAllowed = encodingOptions.AllowHevcEncoding
+            && string.Equals(sdrVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase);
+        return isAv1EncodingAllowed || isHevcEncodingAllowed;
+    }
+
+    private async Task AddTrickplayIfEnabled(StreamState state, bool isLiveStream, StringBuilder builder, ClaimsPrincipal user)
+    {
         if (!isLiveStream && (state.VideoRequest?.EnableTrickplay ?? false))
         {
             var sourceId = Guid.Parse(state.Request.MediaSourceId);
             var trickplayResolutions = await _trickplayManager.GetTrickplayResolutions(sourceId).ConfigureAwait(false);
-            AddTrickplay(state, trickplayResolutions, builder, _httpContextAccessor.HttpContext.User);
+            AddTrickplay(state, trickplayResolutions, builder, user);
+        }
+    }
+
+    private static string GetPlaylistQueryString(StreamState state, HttpRequest request)
+    {
+        var queryString = request.QueryString.ToString();
+
+        // from universal audio service, need to override the AudioCodec when the actual request differs from original query
+        if (!string.Equals(state.OutputAudioCodec, request.Query["AudioCodec"].ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            var newQuery = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(queryString);
+            newQuery["AudioCodec"] = state.OutputAudioCodec;
+            queryString = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(string.Empty, newQuery);
         }
 
-        return new FileContentResult(Encoding.UTF8.GetBytes(builder.ToString()), MimeTypes.GetMimeType("playlist.m3u8"));
+        // from universal audio service
+        if (!string.IsNullOrWhiteSpace(state.Request.SegmentContainer)
+            && !queryString.Contains("SegmentContainer", StringComparison.OrdinalIgnoreCase))
+        {
+            queryString += "&SegmentContainer=" + state.Request.SegmentContainer;
+        }
+
+        // from universal audio service
+        if (!string.IsNullOrWhiteSpace(state.Request.TranscodeReasons)
+            && !queryString.Contains("TranscodeReasons=", StringComparison.OrdinalIgnoreCase))
+        {
+            queryString += "&TranscodeReasons=" + state.Request.TranscodeReasons;
+        }
+
+        // Video rotation metadata is only supported in fMP4 remuxing
+        if (IsRotatedVideoCopiedToNonMp4Container(state))
+        {
+            queryString += "&AllowVideoStreamCopy=false";
+        }
+
+        return queryString;
+    }
+
+    private static string? GetSubtitleGroup(StreamState state, List<MediaStream> subtitleStreams)
+    {
+        var subtitleGroup = subtitleStreams.Count > 0 && (state.SubtitleDeliveryMethod == SubtitleDeliveryMethod.Hls || state.VideoRequest!.EnableSubtitlesInManifest)
+            ? "subs"
+            : null;
+
+        // If we're burning in subtitles then don't add additional subs to the manifest
+        if (state.SubtitleStream is not null && state.SubtitleDeliveryMethod == SubtitleDeliveryMethod.Encode)
+        {
+            subtitleGroup = null;
+        }
+
+        return subtitleGroup;
+    }
+
+    private void AppendLevel150CompatibilityPlaylist(StringBuilder builder, StreamState state, StringBuilder basicPlaylist)
+    {
+        // Provide Level 5.0 entrance for backward compatibility.
+        // e.g. Apple A10 chips refuse the master playlist containing SDR HEVC Main Level 5.1 video,
+        // but in fact it is capable of playing videos up to Level 6.1.
+        if (IsSdrHevcCopyAboveLevel150(state))
+        {
+            var playlistCodecsField = new StringBuilder();
+            AppendPlaylistCodecsField(playlistCodecsField, state);
+
+            // Force the video level to 5.0.
+            var originalLevel = state.VideoStream.Level;
+            state.VideoStream.Level = 150;
+            var newPlaylistCodecsField = new StringBuilder();
+            AppendPlaylistCodecsField(newPlaylistCodecsField, state);
+
+            // Restore the video level.
+            state.VideoStream.Level = originalLevel;
+            var newPlaylist = ReplacePlaylistCodecsField(basicPlaylist, playlistCodecsField, newPlaylistCodecsField);
+            builder.Append(newPlaylist);
+        }
     }
 
     private static bool IsRotatedVideoCopiedToNonMp4Container(StreamState state)
