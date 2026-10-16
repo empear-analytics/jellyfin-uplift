@@ -61,46 +61,54 @@ namespace Emby.Server.Implementations.Library
                 // If attributeIndex < 0, the loop will end and strIndex won't be used again.
                 strIndex += attributeEnd;
 
-                if (attributeIndex > 0)
+                if (attributeIndex <= 0)
                 {
-                    var attributeOpener = subStr[attributeIndex - 1];
-                    var attributeCloser = attributeOpener switch
-                    {
-                        '[' => ']',
-                        '(' => ')',
-                        '{' => '}',
-                        _ => '\0'
-                    };
+                    continue;
+                }
 
-                    if (attributeCloser != '\0')
-                    {
-                        if (shortAttr.Length > 0
-                            && attributeEnd + 1 < subStr.Length
-                            && (subStr[attributeEnd] is 'i' or 'I')
-                            && (subStr[attributeEnd + 1] is 'd' or 'D'))
-                        {
-                            // We were searching for a shortened attribute, but it's followed by "id" - let's skip it.
-                            attributeEnd += 2;
-                        }
+                var attributeOpener = subStr[attributeIndex - 1];
+                var attributeCloser = attributeOpener switch
+                {
+                    '[' => ']',
+                    '(' => ')',
+                    '{' => '}',
+                    _ => '\0'
+                };
 
-                        // attributeEnd points at '='.
-                        // We need at least 1 more character and the closing bracket after that.
-                        if (attributeEnd + 2 < subStr.Length && (subStr[attributeEnd] is '=' or '-'))
-                        {
-                            var closingIndex = subStr[attributeEnd..].IndexOf(attributeCloser);
+                if (attributeCloser == '\0')
+                {
+                    continue;
+                }
 
-                            // Must be at least 1 character before the closing bracket.
-                            if (closingIndex > 1)
-                            {
-                                var trimmed = subStr[(attributeEnd + 1)..(attributeEnd + closingIndex)].Trim();
+                if (shortAttr.Length > 0
+                    && attributeEnd + 1 < subStr.Length
+                    && (subStr[attributeEnd] is 'i' or 'I')
+                    && (subStr[attributeEnd + 1] is 'd' or 'D'))
+                {
+                    // We were searching for a shortened attribute, but it's followed by "id" - let's skip it.
+                    attributeEnd += 2;
+                }
 
-                                if (trimmed.Length > 0)
-                                {
-                                    return trimmed.ToString();
-                                }
-                            }
-                        }
-                    }
+                // attributeEnd points at '='.
+                // We need at least 1 more character and the closing bracket after that.
+                if (!(attributeEnd + 2 < subStr.Length && (subStr[attributeEnd] is '=' or '-')))
+                {
+                    continue;
+                }
+
+                var closingIndex = subStr[attributeEnd..].IndexOf(attributeCloser);
+
+                // Must be at least 1 character before the closing bracket.
+                if (closingIndex <= 1)
+                {
+                    continue;
+                }
+
+                var trimmed = subStr[(attributeEnd + 1)..(attributeEnd + closingIndex)].Trim();
+
+                if (trimmed.Length > 0)
+                {
+                    return trimmed.ToString();
                 }
             }
 
