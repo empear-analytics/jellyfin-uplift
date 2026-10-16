@@ -1495,52 +1495,77 @@ public class DynamicHlsController : BaseJellyfinApiController
 
             if (startTranscoding)
             {
-                // If the playlist doesn't already exist, startup ffmpeg
-                try
-                {
-                    var currentJob = _transcodeManager.GetTranscodingJob(playlistPath, TranscodingJobType);
-                    await WaitForActiveTranscodingRequests(currentJob, cancellationToken).ConfigureAwait(false);
-
-                    await _transcodeManager.KillTranscodingJobs(streamingRequest.DeviceId, streamingRequest.PlaySessionId, p => false)
-                        .ConfigureAwait(false);
-
-                    if (currentTranscodingIndex.HasValue)
-                    {
-                        await DeleteLastFile(playlistPath, segmentExtension, 0).ConfigureAwait(false);
-                    }
-
-                    streamingRequest.StartTimeTicks = streamingRequest.CurrentRuntimeTicks;
-
-                    state.WaitForPath = segmentPath;
-                    job = await _transcodeManager.StartFfMpeg(
-                        state,
-                        playlistPath,
-                        GetCommandLineArguments(playlistPath, state, false, segmentId),
-                        Request.HttpContext.User.GetUserId(),
-                        TranscodingJobType,
-                        cancellationTokenSource).ConfigureAwait(false);
-                }
-                catch
-                {
-                    state.Dispose();
-                    throw;
-                }
+                job = await StartTranscodingForSegment(streamingRequest, state, playlistPath, segmentPath, segmentExtension, segmentId, currentTranscodingIndex, cancellationTokenSource, cancellationToken).ConfigureAwait(false);
 
                 // await WaitForMinimumSegmentCount(playlistPath, 1, cancellationTokenSource.Token).ConfigureAwait(false);
             }
             else
             {
-                job = _transcodeManager.OnTranscodeBeginRequest(playlistPath, TranscodingJobType);
-                if (job?.TranscodingThrottler is not null)
-                {
-                    await job.TranscodingThrottler.UnpauseTranscoding().ConfigureAwait(false);
-                }
+                job = await ResumeTranscodingJob(playlistPath).ConfigureAwait(false);
             }
 
             _logger.LogDebug("returning {0} [general case]", segmentPath);
             job ??= _transcodeManager.OnTranscodeBeginRequest(playlistPath, TranscodingJobType);
             return await GetSegmentResult(state, playlistPath, segmentPath, segmentExtension, segmentId, job, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private async Task<TranscodingJob> StartTranscodingForSegment(
+        StreamingRequestDto streamingRequest,
+        StreamState state,
+        string playlistPath,
+        string segmentPath,
+        string segmentExtension,
+        int segmentId,
+        int? currentTranscodingIndex,
+        CancellationTokenSource cancellationTokenSource,
+        CancellationToken cancellationToken)
+    {
+        TranscodingJob job;
+
+        // If the playlist doesn't already exist, startup ffmpeg
+        try
+        {
+            var currentJob = _transcodeManager.GetTranscodingJob(playlistPath, TranscodingJobType);
+            await WaitForActiveTranscodingRequests(currentJob, cancellationToken).ConfigureAwait(false);
+
+            await _transcodeManager.KillTranscodingJobs(streamingRequest.DeviceId, streamingRequest.PlaySessionId, p => false)
+                .ConfigureAwait(false);
+
+            if (currentTranscodingIndex.HasValue)
+            {
+                await DeleteLastFile(playlistPath, segmentExtension, 0).ConfigureAwait(false);
+            }
+
+            streamingRequest.StartTimeTicks = streamingRequest.CurrentRuntimeTicks;
+
+            state.WaitForPath = segmentPath;
+            job = await _transcodeManager.StartFfMpeg(
+                state,
+                playlistPath,
+                GetCommandLineArguments(playlistPath, state, false, segmentId),
+                Request.HttpContext.User.GetUserId(),
+                TranscodingJobType,
+                cancellationTokenSource).ConfigureAwait(false);
+        }
+        catch
+        {
+            state.Dispose();
+            throw;
+        }
+
+        return job;
+    }
+
+    private async Task<TranscodingJob?> ResumeTranscodingJob(string playlistPath)
+    {
+        var job = _transcodeManager.OnTranscodeBeginRequest(playlistPath, TranscodingJobType);
+        if (job?.TranscodingThrottler is not null)
+        {
+            await job.TranscodingThrottler.UnpauseTranscoding().ConfigureAwait(false);
+        }
+
+        return job;
     }
 
     internal static async Task WaitForActiveTranscodingRequests(TranscodingJob? job, CancellationToken cancellationToken)
