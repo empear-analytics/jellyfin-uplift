@@ -23,7 +23,7 @@ The checks run from the shell, so no harness needs an MCP server:
 | Need | How |
 | --- | --- |
 | .NET SDK 10 | `dotnet --version` reports 10.0.x (`global.json` pins the major version) |
-| Python 3.10+ | for the tools in `tools/` |
+| Python 3.7 or later | for the tools in `tools/` (`python` on this machine is 3.7; that works) |
 | The CodeScene CLI | `tools/codehealth_check.py` finds the `cs` binary bundled with the CodeScene MCP server (`%LOCALAPPDATA%/codehealth-mcp/MCP-<version>/cs.exe`); set `CS_CLI` to point elsewhere |
 | `CS_ACCESS_TOKEN` | in the environment, for the CLI |
 
