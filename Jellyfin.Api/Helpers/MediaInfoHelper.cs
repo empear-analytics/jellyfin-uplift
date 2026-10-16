@@ -577,15 +577,17 @@ public class MediaInfoHelper
         {
             foreach (var stream in mediaSource.MediaStreams)
             {
-                if (stream.Type == MediaStreamType.Subtitle && stream.Index == profile.Index)
+                if (!(stream.Type == MediaStreamType.Subtitle && stream.Index == profile.Index))
                 {
-                    stream.DeliveryMethod = profile.DeliveryMethod;
+                    continue;
+                }
 
-                    if (profile.DeliveryMethod == SubtitleDeliveryMethod.External)
-                    {
-                        stream.DeliveryUrl = profile.Url.TrimStart('-');
-                        stream.IsExternalUrl = profile.IsExternalUrl;
-                    }
+                stream.DeliveryMethod = profile.DeliveryMethod;
+
+                if (profile.DeliveryMethod == SubtitleDeliveryMethod.External)
+                {
+                    stream.DeliveryUrl = profile.Url.TrimStart('-');
+                    stream.IsExternalUrl = profile.IsExternalUrl;
                 }
             }
         }
