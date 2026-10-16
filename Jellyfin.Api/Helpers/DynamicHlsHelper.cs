@@ -932,10 +932,7 @@ public class DynamicHlsHelper
     {
         if (string.Equals(state.ActualOutputAudioCodec, "aac", StringComparison.OrdinalIgnoreCase))
         {
-            string? profile = EncodingHelper.IsCopyCodec(state.OutputAudioCodec)
-                ? state.AudioStream?.Profile : state.GetRequestedProfiles("aac").FirstOrDefault();
-
-            return HlsCodecStringHelpers.GetAACString(profile);
+            return GetAacCodecString(state);
         }
 
         if (string.Equals(state.ActualOutputAudioCodec, "mp3", StringComparison.OrdinalIgnoreCase))
@@ -975,13 +972,26 @@ public class DynamicHlsHelper
 
         if (string.Equals(state.ActualOutputAudioCodec, "dts", StringComparison.OrdinalIgnoreCase))
         {
-            // lavc only support encoding DTS core profile
-            string? profile = EncodingHelper.IsCopyCodec(state.OutputAudioCodec) ? state.AudioStream?.Profile : "DTS";
-
-            return HlsCodecStringHelpers.GetDTSString(profile);
+            return GetDtsCodecString(state);
         }
 
         return string.Empty;
+    }
+
+    private static string GetAacCodecString(StreamState state)
+    {
+        string? profile = EncodingHelper.IsCopyCodec(state.OutputAudioCodec)
+            ? state.AudioStream?.Profile : state.GetRequestedProfiles("aac").FirstOrDefault();
+
+        return HlsCodecStringHelpers.GetAACString(profile);
+    }
+
+    private static string GetDtsCodecString(StreamState state)
+    {
+        // lavc only support encoding DTS core profile
+        string? profile = EncodingHelper.IsCopyCodec(state.OutputAudioCodec) ? state.AudioStream?.Profile : "DTS";
+
+        return HlsCodecStringHelpers.GetDTSString(profile);
     }
 
     /// <summary>
