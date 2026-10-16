@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **7.83** / 10 (Yellow) |
 | Exit target | **10.00** |
-| File size | 245 lines (99 lines of code) |
-| Git churn | 40 commits |
+| File size | 253 lines (103 lines of code) |
+| Git churn | 41 commits |
 | Part | library (`Emby.Server.Implementations/Library`) |
 | Recipes needed | E, G, P |
 | Smells without a recipe | none |
@@ -112,7 +112,7 @@ python tools/codehealth_check.py Emby.Server.Implementations/Library/PathExtensi
 ```
 
 - `UP`, build passed, tests passed, guard passed: commit and continue.
-- `FLAT` or `DOWN`: revert that step with `git checkout -- Emby.Server.Implementations/Library/PathExtensions.cs` and move to the next method.
+- `WORSE`, `FLAT` or `DOWN`: revert that step with `git checkout -- Emby.Server.Implementations/Library/PathExtensions.cs` and move to the next method.
 - Tests or guard **failed**: revert that step, no exceptions.
 
 ## 8. Definition of done

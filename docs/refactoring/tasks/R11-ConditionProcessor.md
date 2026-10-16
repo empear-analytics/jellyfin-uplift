@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **6.53** / 10 (Yellow) |
 | Exit target | **10.00** |
-| File size | 389 lines (214 lines of code) |
-| Git churn | 53 commits |
+| File size | 414 lines (224 lines of code) |
+| Git churn | 56 commits |
 | Part | dlna (`MediaBrowser.Model/Dlna`) |
 | Recipes needed | D, E, G, P |
 | Smells without a recipe | Excess Number of Function Arguments, Primitive Obsession |
@@ -132,7 +132,7 @@ python tools/codehealth_check.py MediaBrowser.Model/Dlna/ConditionProcessor.cs
 ```
 
 - `UP`, build passed, tests passed, guard passed: commit and continue.
-- `FLAT` or `DOWN`: revert that step with `git checkout -- MediaBrowser.Model/Dlna/ConditionProcessor.cs` and move to the next method.
+- `WORSE`, `FLAT` or `DOWN`: revert that step with `git checkout -- MediaBrowser.Model/Dlna/ConditionProcessor.cs` and move to the next method.
 - Tests or guard **failed**: revert that step, no exceptions.
 
 ## 8. Definition of done

@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **6.69** / 10 (Yellow) |
 | Exit target | **10.00** |
-| File size | 567 lines (296 lines of code) |
-| Git churn | 110 commits |
+| File size | 642 lines (328 lines of code) |
+| Git churn | 119 commits |
 | Part | library (`Emby.Server.Implementations/Library`) |
 | Recipes needed | D, E, G, P |
 | Smells without a recipe | Excess Number of Function Arguments |
@@ -142,7 +142,7 @@ python tools/codehealth_check.py Emby.Server.Implementations/Library/UserDataMan
 ```
 
 - `UP`, build passed, tests passed, guard passed: commit and continue.
-- `FLAT` or `DOWN`: revert that step with `git checkout -- Emby.Server.Implementations/Library/UserDataManager.cs` and move to the next method.
+- `WORSE`, `FLAT` or `DOWN`: revert that step with `git checkout -- Emby.Server.Implementations/Library/UserDataManager.cs` and move to the next method.
 - Tests or guard **failed**: revert that step, no exceptions.
 
 ## 8. Definition of done

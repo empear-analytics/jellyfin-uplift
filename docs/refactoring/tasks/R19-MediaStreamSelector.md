@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **8.69** / 10 (Yellow) |
 | Exit target | **10.00** |
-| File size | 193 lines (101 lines of code) |
-| Git churn | 45 commits |
+| File size | 236 lines (123 lines of code) |
+| Git churn | 47 commits |
 | Part | library (`Emby.Server.Implementations/Library`) |
 | Recipes needed | E, G, P |
 | Smells without a recipe | none |
@@ -110,7 +110,7 @@ python tools/codehealth_check.py Emby.Server.Implementations/Library/MediaStream
 ```
 
 - `UP`, build passed, tests passed, guard passed: commit and continue.
-- `FLAT` or `DOWN`: revert that step with `git checkout -- Emby.Server.Implementations/Library/MediaStreamSelector.cs` and move to the next method.
+- `WORSE`, `FLAT` or `DOWN`: revert that step with `git checkout -- Emby.Server.Implementations/Library/MediaStreamSelector.cs` and move to the next method.
 - Tests or guard **failed**: revert that step, no exceptions.
 
 ## 8. Definition of done

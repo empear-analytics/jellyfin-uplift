@@ -17,18 +17,18 @@ allowed transformations.
 | [R07](tasks/R07-DynamicHlsHelper.md) | `Jellyfin.Api/Helpers/DynamicHlsHelper.cs` | **4.59** | 515 | 67 | 77 / 70 | E, G, P | Constructor Over-Injection, Excess Number of Function Arguments | `GetMasterPlaylistInternal` (cc 54) |
 | [R08](tasks/R08-MediaSourceManager.md) | `Emby.Server.Implementations/Library/MediaSourceManager.cs` | **4.90** | 552 | 178 | 45 / 40 | E, G, P | Constructor Over-Injection, Excess Number of Function Arguments, Low Cohesion, Primitive Obsession | `AddMediaInfoWithProbe` (cc 25) |
 | [R09](tasks/R09-MediaInfoHelper.md) | `Jellyfin.Api/Helpers/MediaInfoHelper.cs` | **5.41** | 325 | 162 | 70 / 74 | E, G, P | Constructor Over-Injection, Excess Number of Function Arguments, Primitive Obsession | `SortMediaSources` (cc 13) |
-| [R10](tasks/R10-StreamInfo.md) | `MediaBrowser.Model/Dlna/StreamInfo.cs` | **5.89** | 499 | 174 | 52 / 74 | E, G, P | Excess Number of Function Arguments, Primitive Obsession, String Heavy Function Arguments | `ToUrl` (cc 49) |
-| [R11](tasks/R11-ConditionProcessor.md) | `MediaBrowser.Model/Dlna/ConditionProcessor.cs` | **6.53** | 214 | 53 | 37 / 59 | D, E, G, P | Excess Number of Function Arguments, Primitive Obsession | `IsVideoConditionSatisfied` (cc 21) |
-| [R12](tasks/R12-UserDataManager.md) | `Emby.Server.Implementations/Library/UserDataManager.cs` | **6.69** | 296 | 110 | 85 / 87 | D, E, G, P | Excess Number of Function Arguments | `GetResumeUserDataBatch` (cc 23) |
-| [R13](tasks/R13-UserViewManager.md) | `Emby.Server.Implementations/Library/UserViewManager.cs` | **7.23** | 257 | 145 | 81 / 83 | E, G, P | Excess Number of Function Arguments | `GetItemsForLatestItems` (cc 27) |
-| [R14](tasks/R14-HlsCodecStringHelpers.md) | `Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs` | **7.32** | 140 | 18 | 68 / 72 | E, G, P | Excess Number of Function Arguments, Primitive Obsession | `GetVp9String` (cc 28) |
-| [R15](tasks/R15-PathExtensions.md) | `Emby.Server.Implementations/Library/PathExtensions.cs` | **7.83** | 99 | 40 | 86 / 84 | E, G, P | - | `GetAttributeValue` (cc 27) |
-| [R16](tasks/R16-JobLogger.md) | `MediaBrowser.Controller/MediaEncoding/JobLogger.cs` | **8.28** | 81 | 35 | 75 / 78 | E, G, P | - | `ParseLogLine` (cc 22) |
-| [R17](tasks/R17-EncodingJobInfo.md) | `MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs` | **8.54** | 317 | 85 | 69 / 64 | D | Excess Number of Function Arguments, Primitive Obsession, String Heavy Function Arguments | - |
-| [R18](tasks/R18-DotIgnoreIgnoreRule.md) | `Emby.Server.Implementations/Library/DotIgnoreIgnoreRule.cs` | **8.63** | 154 | 11 | 79 / 76 | E, G, P | Primitive Obsession | `FindIgnoreFileCached` (cc 13) |
-| [R19](tasks/R19-MediaStreamSelector.md) | `Emby.Server.Implementations/Library/MediaStreamSelector.cs` | **8.69** | 101 | 45 | 93 / 100 | E, G, P | - | `GetDefaultSubtitleStreamIndex` (cc 14) |
-| [R20](tasks/R20-LiveStreamHelper.md) | `Emby.Server.Implementations/Library/LiveStreamHelper.cs` | **8.91** | 107 | 29 | 0 / 0 (low) | E, G, P | Excess Number of Function Arguments | `AddMediaInfoWithProbe` (cc 23) |
-| [R21](tasks/R21-AudioHelper.md) | `Jellyfin.Api/Helpers/AudioHelper.cs` | **9.21** | 99 | 25 | 77 / 83 | E, G, P | Constructor Over-Injection | `GetAudioStream` (cc 12) |
+| [R10](tasks/R10-StreamInfo.md) | `MediaBrowser.Model/Dlna/StreamInfo.cs` | **5.89** | 540 | 182 | 52 / 74 | E, G, P | Excess Number of Function Arguments, Primitive Obsession, String Heavy Function Arguments | `ToUrl` (cc 49) |
+| [R11](tasks/R11-ConditionProcessor.md) | `MediaBrowser.Model/Dlna/ConditionProcessor.cs` | **6.53** | 224 | 56 | 37 / 59 | D, E, G, P | Excess Number of Function Arguments, Primitive Obsession | `IsVideoConditionSatisfied` (cc 21) |
+| [R12](tasks/R12-UserDataManager.md) | `Emby.Server.Implementations/Library/UserDataManager.cs` | **6.69** | 328 | 119 | 85 / 87 | D, E, G, P | Excess Number of Function Arguments | `GetResumeUserDataBatch` (cc 23) |
+| [R13](tasks/R13-UserViewManager.md) | `Emby.Server.Implementations/Library/UserViewManager.cs` | **7.23** | 293 | 151 | 81 / 83 | E, G, P | Excess Number of Function Arguments | `GetItemsForLatestItems` (cc 27) |
+| [R14](tasks/R14-HlsCodecStringHelpers.md) | `Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs` | **7.32** | 148 | 21 | 68 / 72 | E, G, P | Excess Number of Function Arguments, Primitive Obsession | `GetVp9String` (cc 28) |
+| [R15](tasks/R15-PathExtensions.md) | `Emby.Server.Implementations/Library/PathExtensions.cs` | **7.83** | 103 | 41 | 86 / 84 | E, G, P | - | `GetAttributeValue` (cc 27) |
+| [R16](tasks/R16-JobLogger.md) | `MediaBrowser.Controller/MediaEncoding/JobLogger.cs` | **8.28** | 89 | 36 | 75 / 78 | E, G, P | - | `ParseLogLine` (cc 22) |
+| [R17](tasks/R17-EncodingJobInfo.md) | `MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs` | **8.54** | 311 | 86 | 69 / 64 | D | Excess Number of Function Arguments, Primitive Obsession, String Heavy Function Arguments | - |
+| [R18](tasks/R18-DotIgnoreIgnoreRule.md) | `Emby.Server.Implementations/Library/DotIgnoreIgnoreRule.cs` | **8.63** | 154 | 14 | 79 / 76 | E, G, P | Primitive Obsession | `FindIgnoreFileCached` (cc 13) |
+| [R19](tasks/R19-MediaStreamSelector.md) | `Emby.Server.Implementations/Library/MediaStreamSelector.cs` | **8.69** | 123 | 47 | 93 / 100 | E, G, P | - | `GetDefaultSubtitleStreamIndex` (cc 14) |
+| [R20](tasks/R20-LiveStreamHelper.md) | `Emby.Server.Implementations/Library/LiveStreamHelper.cs` | **8.91** | 118 | 30 | 0 / 0 (low) | E, G, P | Excess Number of Function Arguments | `AddMediaInfoWithProbe` (cc 23) |
+| [R21](tasks/R21-AudioHelper.md) | `Jellyfin.Api/Helpers/AudioHelper.cs` | **9.21** | 101 | 26 | 77 / 83 | E, G, P | Constructor Over-Injection | `GetAudioStream` (cc 12) |
 | [R22](tasks/R22-ResolutionNormalizer.md) | `MediaBrowser.Model/Dlna/ResolutionNormalizer.cs` | **9.36** | 60 | 32 | 94 / 85 | E, G, P | Excess Number of Function Arguments | `Normalize` (cc 12) |
 | [R23](tasks/R23-TranscodingSegmentCleaner.md) | `MediaBrowser.Controller/MediaEncoding/TranscodingSegmentCleaner.cs` | **9.38** | 80 | 5 | 0 / 0 (low) | P | Constructor Over-Injection | - |
 | [R24](tasks/R24-FileStreamResponseHelpers.md) | `Jellyfin.Api/Helpers/FileStreamResponseHelpers.cs` | **9.38** | 78 | 33 | 94 / 60 | E, G, P | Excess Number of Function Arguments | `GetStaticRemoteStreamResult` (cc 9) |
@@ -44,7 +44,7 @@ allowed transformations.
 
 ## Aggregate
 
-- **33 files** below 10.00, 14,512 lines of code
+- **33 files** below 10.00, 14,680 lines of code
 - 246 flagged methods
 - The other 14 scored scope files are already at 10.00; 28 scope files have no methods to score
 

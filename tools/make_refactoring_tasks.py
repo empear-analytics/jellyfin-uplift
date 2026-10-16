@@ -248,7 +248,7 @@ def task_text(task_id: str, entry: dict) -> str:
     out += ["`--dedup`; for Recipe S add `--together` and list the original file and the new ones.", ""]
     out += ["**4 - the metric improved.**", "", "```bash", f"python tools/codehealth_check.py {rel}", "```", ""]
     out += ["- `UP`, build passed, tests passed, guard passed: commit and continue."]
-    out += [f"- `FLAT` or `DOWN`: revert that step with `git checkout -- {rel}` and move to the next method."]
+    out += [f"- `WORSE`, `FLAT` or `DOWN`: revert that step with `git checkout -- {rel}` and move to the next method."]
     out += ["- Tests or guard **failed**: revert that step, no exceptions.", ""]
 
     out += ["## 8. Definition of done", ""]
