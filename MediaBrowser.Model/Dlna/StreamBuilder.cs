@@ -408,7 +408,7 @@ namespace MediaBrowser.Model.Dlna
         public static string? NormalizeMediaSourceFormatIntoSingleContainer(string inputContainer, DeviceProfile? profile, DlnaProfileType type, DirectPlayProfile? playProfile = null)
         {
             // If the source is Live TV the inputContainer will be null until the mediasource is probed on first access
-            if (profile is null || string.IsNullOrEmpty(inputContainer) || !inputContainer.Contains(',', StringComparison.OrdinalIgnoreCase))
+            if (profile is null || IsSingleOrEmptyContainer(inputContainer))
             {
                 return inputContainer;
             }
@@ -432,6 +432,11 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return inputContainer;
+        }
+
+        private static bool IsSingleOrEmptyContainer(string inputContainer)
+        {
+            return string.IsNullOrEmpty(inputContainer) || !inputContainer.Contains(',', StringComparison.OrdinalIgnoreCase);
         }
 
         private (DirectPlayProfile? Profile, PlayMethod? PlayMethod, TranscodeReason TranscodeReasons) GetAudioDirectPlayProfile(MediaSourceInfo item, MediaStream audioStream, MediaOptions options)
