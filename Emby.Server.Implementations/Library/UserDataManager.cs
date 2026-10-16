@@ -233,29 +233,34 @@ namespace Emby.Server.Implementations.Library
 
             foreach (var item in items)
             {
-                var cacheKey = GetCacheKey(user.InternalId, item.Id);
-                if (_cache.TryGet(cacheKey, out var cachedData))
-                {
-                    result[item.Id] = cachedData;
-                }
-                else
-                {
-                    var userDataRow = ResolveUserDataRow(item, item.UserData?.Where(e => e.UserId.Equals(user.Id)));
-                    var userData = userDataRow is not null ? Map(userDataRow) : null;
-                    if (userData is not null)
-                    {
-                        result[item.Id] = userData;
-                        _cache.AddOrUpdate(cacheKey, userData);
-                    }
-                    else
-                    {
-                        var keys = item.GetUserDataKeys();
-                        itemsNeedingQuery.Add((item, keys));
-                    }
-                }
+                AddKnownItemUserData(item, user, result, itemsNeedingQuery);
             }
 
             return itemsNeedingQuery;
+        }
+
+        private void AddKnownItemUserData(BaseItem item, User user, Dictionary<Guid, UserItemData> result, List<(BaseItem Item, List<string> Keys)> itemsNeedingQuery)
+        {
+            var cacheKey = GetCacheKey(user.InternalId, item.Id);
+            if (_cache.TryGet(cacheKey, out var cachedData))
+            {
+                result[item.Id] = cachedData;
+            }
+            else
+            {
+                var userDataRow = ResolveUserDataRow(item, item.UserData?.Where(e => e.UserId.Equals(user.Id)));
+                var userData = userDataRow is not null ? Map(userDataRow) : null;
+                if (userData is not null)
+                {
+                    result[item.Id] = userData;
+                    _cache.AddOrUpdate(cacheKey, userData);
+                }
+                else
+                {
+                    var keys = item.GetUserDataKeys();
+                    itemsNeedingQuery.Add((item, keys));
+                }
+            }
         }
 
         private static UserItemData ResolveQueriedUserData(BaseItem item, List<string> keys, Dictionary<Guid, UserData[]> userDataByItem)
