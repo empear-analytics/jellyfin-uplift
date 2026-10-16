@@ -479,190 +479,195 @@ public static class StreamingHelpers
                 continue;
             }
 
-            switch (i)
-            {
-                case 0:
-                    // DeviceProfileId
-                    break;
-                case 1:
-                    request.DeviceId = val;
-                    break;
-                case 2:
-                    request.MediaSourceId = val;
-                    break;
-                case 3:
-                    request.Static = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
-                    break;
-                case 4:
-                    if (videoRequest is not null && IsValidCodecName(val))
-                    {
-                        videoRequest.VideoCodec = val;
-                    }
+            ApplyParam(request, videoRequest, i, val);
+        }
+    }
 
-                    break;
-                case 5:
-                    if (IsValidCodecName(val))
-                    {
-                        request.AudioCodec = val;
-                    }
+    private static void ApplyParam(StreamingRequestDto request, VideoRequestDto? videoRequest, int i, string val)
+    {
+        switch (i)
+        {
+            case 0:
+                // DeviceProfileId
+                break;
+            case 1:
+                request.DeviceId = val;
+                break;
+            case 2:
+                request.MediaSourceId = val;
+                break;
+            case 3:
+                request.Static = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
+                break;
+            case 4:
+                if (videoRequest is not null && IsValidCodecName(val))
+                {
+                    videoRequest.VideoCodec = val;
+                }
 
-                    break;
-                case 6:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.AudioStreamIndex = int.Parse(val, CultureInfo.InvariantCulture);
-                    }
+                break;
+            case 5:
+                if (IsValidCodecName(val))
+                {
+                    request.AudioCodec = val;
+                }
 
-                    break;
-                case 7:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.SubtitleStreamIndex = int.Parse(val, CultureInfo.InvariantCulture);
-                    }
+                break;
+            case 6:
+                if (videoRequest is not null)
+                {
+                    videoRequest.AudioStreamIndex = int.Parse(val, CultureInfo.InvariantCulture);
+                }
 
-                    break;
-                case 8:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.VideoBitRate = int.Parse(val, CultureInfo.InvariantCulture);
-                    }
+                break;
+            case 7:
+                if (videoRequest is not null)
+                {
+                    videoRequest.SubtitleStreamIndex = int.Parse(val, CultureInfo.InvariantCulture);
+                }
 
-                    break;
-                case 9:
-                    request.AudioBitRate = int.Parse(val, CultureInfo.InvariantCulture);
-                    break;
-                case 10:
-                    request.MaxAudioChannels = int.Parse(val, CultureInfo.InvariantCulture);
-                    break;
-                case 11:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.MaxFramerate = float.Parse(val, CultureInfo.InvariantCulture);
-                    }
+                break;
+            case 8:
+                if (videoRequest is not null)
+                {
+                    videoRequest.VideoBitRate = int.Parse(val, CultureInfo.InvariantCulture);
+                }
 
-                    break;
-                case 12:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.MaxWidth = int.Parse(val, CultureInfo.InvariantCulture);
-                    }
+                break;
+            case 9:
+                request.AudioBitRate = int.Parse(val, CultureInfo.InvariantCulture);
+                break;
+            case 10:
+                request.MaxAudioChannels = int.Parse(val, CultureInfo.InvariantCulture);
+                break;
+            case 11:
+                if (videoRequest is not null)
+                {
+                    videoRequest.MaxFramerate = float.Parse(val, CultureInfo.InvariantCulture);
+                }
 
-                    break;
-                case 13:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.MaxHeight = int.Parse(val, CultureInfo.InvariantCulture);
-                    }
+                break;
+            case 12:
+                if (videoRequest is not null)
+                {
+                    videoRequest.MaxWidth = int.Parse(val, CultureInfo.InvariantCulture);
+                }
 
-                    break;
-                case 14:
-                    request.StartTimeTicks = long.Parse(val, CultureInfo.InvariantCulture);
-                    break;
-                case 15:
-                    if (videoRequest is not null && EncodingHelper.LevelValidationRegex().IsMatch(val))
-                    {
-                        videoRequest.Level = val;
-                    }
+                break;
+            case 13:
+                if (videoRequest is not null)
+                {
+                    videoRequest.MaxHeight = int.Parse(val, CultureInfo.InvariantCulture);
+                }
 
-                    break;
-                case 16:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.MaxRefFrames = int.Parse(val, CultureInfo.InvariantCulture);
-                    }
+                break;
+            case 14:
+                request.StartTimeTicks = long.Parse(val, CultureInfo.InvariantCulture);
+                break;
+            case 15:
+                if (videoRequest is not null && EncodingHelper.LevelValidationRegex().IsMatch(val))
+                {
+                    videoRequest.Level = val;
+                }
 
-                    break;
-                case 17:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.MaxVideoBitDepth = int.Parse(val, CultureInfo.InvariantCulture);
-                    }
+                break;
+            case 16:
+                if (videoRequest is not null)
+                {
+                    videoRequest.MaxRefFrames = int.Parse(val, CultureInfo.InvariantCulture);
+                }
 
-                    break;
-                case 18:
-                    if (videoRequest is not null && IsValidCodecName(val))
-                    {
-                        videoRequest.Profile = val;
-                    }
+                break;
+            case 17:
+                if (videoRequest is not null)
+                {
+                    videoRequest.MaxVideoBitDepth = int.Parse(val, CultureInfo.InvariantCulture);
+                }
 
-                    break;
-                case 19:
-                    // cabac no longer used
-                    break;
-                case 20:
-                    request.PlaySessionId = val;
-                    break;
-                case 21:
-                    // api_key
-                    break;
-                case 22:
-                    request.LiveStreamId = val;
-                    break;
-                case 23:
-                    // Duplicating ItemId because of MediaMonkey
-                    break;
-                case 24:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.CopyTimestamps = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
-                    }
+                break;
+            case 18:
+                if (videoRequest is not null && IsValidCodecName(val))
+                {
+                    videoRequest.Profile = val;
+                }
 
-                    break;
-                case 25:
-                    if (!string.IsNullOrWhiteSpace(val) && videoRequest is not null)
-                    {
-                        if (Enum.TryParse(val, out SubtitleDeliveryMethod method))
-                        {
-                            videoRequest.SubtitleMethod = method;
-                        }
-                    }
+                break;
+            case 19:
+                // cabac no longer used
+                break;
+            case 20:
+                request.PlaySessionId = val;
+                break;
+            case 21:
+                // api_key
+                break;
+            case 22:
+                request.LiveStreamId = val;
+                break;
+            case 23:
+                // Duplicating ItemId because of MediaMonkey
+                break;
+            case 24:
+                if (videoRequest is not null)
+                {
+                    videoRequest.CopyTimestamps = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
+                }
 
-                    break;
-                case 26:
-                    request.TranscodingMaxAudioChannels = int.Parse(val, CultureInfo.InvariantCulture);
-                    break;
-                case 27:
-                    if (videoRequest is not null)
+                break;
+            case 25:
+                if (!string.IsNullOrWhiteSpace(val) && videoRequest is not null)
+                {
+                    if (Enum.TryParse(val, out SubtitleDeliveryMethod method))
                     {
-                        videoRequest.EnableSubtitlesInManifest = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
+                        videoRequest.SubtitleMethod = method;
                     }
+                }
 
-                    break;
-                case 28:
-                    request.Tag = val;
-                    break;
-                case 29:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.RequireAvc = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
-                    }
+                break;
+            case 26:
+                request.TranscodingMaxAudioChannels = int.Parse(val, CultureInfo.InvariantCulture);
+                break;
+            case 27:
+                if (videoRequest is not null)
+                {
+                    videoRequest.EnableSubtitlesInManifest = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
+                }
 
-                    break;
-                case 30:
-                    if (IsValidCodecName(val))
-                    {
-                        request.SubtitleCodec = val;
-                    }
+                break;
+            case 28:
+                request.Tag = val;
+                break;
+            case 29:
+                if (videoRequest is not null)
+                {
+                    videoRequest.RequireAvc = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
+                }
 
-                    break;
-                case 31:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.RequireNonAnamorphic = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
-                    }
+                break;
+            case 30:
+                if (IsValidCodecName(val))
+                {
+                    request.SubtitleCodec = val;
+                }
 
-                    break;
-                case 32:
-                    if (videoRequest is not null)
-                    {
-                        videoRequest.DeInterlace = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
-                    }
+                break;
+            case 31:
+                if (videoRequest is not null)
+                {
+                    videoRequest.RequireNonAnamorphic = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
+                }
 
-                    break;
-                case 33:
-                    request.TranscodeReasons = val;
-                    break;
-            }
+                break;
+            case 32:
+                if (videoRequest is not null)
+                {
+                    videoRequest.DeInterlace = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
+                }
+
+                break;
+            case 33:
+                request.TranscodeReasons = val;
+                break;
         }
     }
 
