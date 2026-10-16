@@ -67,7 +67,7 @@ Update as tasks land.
 | R11 | 6.53 | - | not started |
 | R12 | 6.69 | - | not started |
 | R13 | 7.23 | - | not started |
-| R14 | 7.32 | - | not started |
+| R14 | 7.32 | 8.45 | stopped at 8.45: GetVp9String (cc 26) is two mapping switches; extracting either alone scores DOWN; public 5-argument signature |
 | R15 | 7.83 | 8.44 | stopped at 8.44: Recipe P helpers score DOWN (string/primitive parameters trigger Primitive Obsession, String Heavy Function Arguments, Overall Code Complexity) |
 | R16 | 8.28 | 9.45 | stopped at 9.45: further P/G/E steps score DOWN (new helpers trigger Code Duplication between two near-duplicate parsers, which differ in more than one place) |
 | R17 | 8.54 | - | not started |
