@@ -1914,9 +1914,7 @@ public class DynamicHlsController : BaseJellyfinApiController
             var clientSupportsDoVi = requestedRange.Contains(VideoRangeType.DOVI.ToString(), StringComparison.OrdinalIgnoreCase);
             var videoIsDoVi = EncodingHelper.IsDovi(state.VideoStream);
 
-            if (EncodingHelper.IsCopyCodec(codec)
-                && (videoIsDoVi && clientSupportsDoVi)
-                && !_encodingHelper.IsDoviRemoved(state))
+            if (IsDolbyVisionRemux(state, codec, videoIsDoVi, clientSupportsDoVi))
             {
                 if (isActualOutputVideoCodecHevc)
                 {
@@ -1936,6 +1934,13 @@ public class DynamicHlsController : BaseJellyfinApiController
         }
 
         return args;
+    }
+
+    private bool IsDolbyVisionRemux(StreamState state, string codec, bool videoIsDoVi, bool clientSupportsDoVi)
+    {
+        return EncodingHelper.IsCopyCodec(codec)
+            && (videoIsDoVi && clientSupportsDoVi)
+            && !_encodingHelper.IsDoviRemoved(state);
     }
 
     private string GetVideoCopyArguments(StreamState state)
