@@ -1300,18 +1300,23 @@ public class StreamInfo
     {
         if (enableAllProfiles)
         {
-            foreach (var profile in DeviceProfile.SubtitleProfiles)
-            {
-                var info = GetSubtitleStreamInfo(stream, baseUrl, accessToken, startPositionTicks, new[] { profile }, transcoderSupport);
-                if (info is not null)
-                {
-                    list.Add(info);
-                }
-            }
+            AddSubtitleStreamInfoPerProfile(list, stream, transcoderSupport, baseUrl, accessToken, startPositionTicks);
         }
         else
         {
             var info = GetSubtitleStreamInfo(stream, baseUrl, accessToken, startPositionTicks, DeviceProfile.SubtitleProfiles, transcoderSupport);
+            if (info is not null)
+            {
+                list.Add(info);
+            }
+        }
+    }
+
+    private void AddSubtitleStreamInfoPerProfile(List<SubtitleStreamInfo> list, MediaStream stream, ITranscoderSupport transcoderSupport, string baseUrl, string? accessToken, long startPositionTicks)
+    {
+        foreach (var profile in DeviceProfile.SubtitleProfiles)
+        {
+            var info = GetSubtitleStreamInfo(stream, baseUrl, accessToken, startPositionTicks, new[] { profile }, transcoderSupport);
             if (info is not null)
             {
                 list.Add(info);
