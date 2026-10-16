@@ -387,9 +387,7 @@ public static class StreamingHelpers
                 return ".ogv";
             }
 
-            if (string.Equals(videoCodec, "vp8", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoCodec, "vp9", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoCodec, "vpx", StringComparison.OrdinalIgnoreCase))
+            if (IsVpxCodec(videoCodec))
             {
                 return ".webm";
             }
@@ -433,6 +431,13 @@ public static class StreamingHelpers
         }
 
         throw new InvalidOperationException("Failed to find an appropriate file extension");
+    }
+
+    private static bool IsVpxCodec(string? videoCodec)
+    {
+        return string.Equals(videoCodec, "vp8", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(videoCodec, "vp9", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(videoCodec, "vpx", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
