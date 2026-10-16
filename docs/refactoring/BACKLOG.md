@@ -73,8 +73,8 @@ Update as tasks land.
 | R17 | 8.54 | - | not started |
 | R18 | 8.63 | - | not started |
 | R19 | 8.69 | 10.00 | done |
-| R20 | 8.91 | - | not started |
-| R21 | 9.21 | 9.38 | partly done: Recipe E; Complex Method left (the step listed only E); Constructor Over-Injection has no recipe |
+| R20 | 8.91 | 9.68 | stopped at 9.68: Excess Number of Function Arguments on public `AddMediaInfoWithProbe` (no recipe); low protection |
+| R21 | 9.21 | 9.68 | stopped at 9.68: Constructor Over-Injection has no recipe |
 | R22 | 9.36 | 9.68 | stopped: Excess Number of Function Arguments on `Normalize` (no recipe; plugin API) |
 | R23 | 9.38 | 9.38 | stopped: Recipe P was FLAT (the predicate brings Primitive Obsession); Constructor Over-Injection has no recipe |
 | R24 | 9.38 | 9.68 | stopped: Excess Number of Function Arguments on `GetTranscodedFile` (no recipe; callers outside the scope) |
