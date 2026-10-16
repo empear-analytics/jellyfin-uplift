@@ -3862,14 +3862,7 @@ namespace Emby.Server.Implementations.Library
             }
 
             var mediaPathInfos = options.PathInfos;
-            if (mediaPathInfos is not null)
-            {
-                var invalidpath = mediaPathInfos.FirstOrDefault(i => !Directory.Exists(i.Path));
-                if (invalidpath is not null)
-                {
-                    throw new ArgumentException("The specified path does not exist: " + invalidpath.Path + ".");
-                }
-            }
+            ValidateMediaPathsExist(mediaPathInfos);
 
             LibraryMonitor.Stop();
 
@@ -3886,13 +3879,7 @@ namespace Emby.Server.Implementations.Library
 
                 CollectionFolder.SaveLibraryOptions(virtualFolderPath, options);
 
-                if (mediaPathInfos is not null)
-                {
-                    foreach (var path in mediaPathInfos)
-                    {
-                        AddMediaPathInternal(name, path, false);
-                    }
-                }
+                AddMediaPaths(name, mediaPathInfos);
 
                 // The libraries root was listed before this folder existed, so drop that listing:
                 // anything still reading it resolves the library set without the new folder.
@@ -3911,6 +3898,29 @@ namespace Emby.Server.Implementations.Library
                     // Need to add a delay here or directory watchers may still pick up the changes
                     await Task.Delay(1000).ConfigureAwait(false);
                     LibraryMonitor.Start();
+                }
+            }
+        }
+
+        private void AddMediaPaths(string name, MediaPathInfo[] mediaPathInfos)
+        {
+            if (mediaPathInfos is not null)
+            {
+                foreach (var path in mediaPathInfos)
+                {
+                    AddMediaPathInternal(name, path, false);
+                }
+            }
+        }
+
+        private static void ValidateMediaPathsExist(MediaPathInfo[] mediaPathInfos)
+        {
+            if (mediaPathInfos is not null)
+            {
+                var invalidpath = mediaPathInfos.FirstOrDefault(i => !Directory.Exists(i.Path));
+                if (invalidpath is not null)
+                {
+                    throw new ArgumentException("The specified path does not exist: " + invalidpath.Path + ".");
                 }
             }
         }
