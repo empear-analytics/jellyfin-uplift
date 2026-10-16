@@ -332,13 +332,18 @@ public class MediaInfoHelper
         }
         else if (item is Video)
         {
-            if (!user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding)
-                && !user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding)
-                && !user.HasPermission(PermissionKind.EnablePlaybackRemuxing))
+            if (LacksVideoPlaybackPermissions(user))
             {
                 mediaSource.SupportsTranscoding = false;
             }
         }
+    }
+
+    private static bool LacksVideoPlaybackPermissions(User user)
+    {
+        return !user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding)
+            && !user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding)
+            && !user.HasPermission(PermissionKind.EnablePlaybackRemuxing);
     }
 
     private static void SetTranscodingUrl(StreamInfo streamInfo, MediaSourceInfo mediaSource, User user, ClaimsPrincipal claimsPrincipal, bool allowVideoStreamCopy, bool allowAudioStreamCopy)
