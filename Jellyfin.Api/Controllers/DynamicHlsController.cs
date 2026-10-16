@@ -1720,16 +1720,21 @@ public class DynamicHlsController : BaseJellyfinApiController
     private string GetAudioStrictArguments(string actualOutputAudioCodec)
     {
         var strictArgs = string.Empty;
-        if (string.Equals(actualOutputAudioCodec, "opus", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(actualOutputAudioCodec, "dts", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(actualOutputAudioCodec, "truehd", StringComparison.OrdinalIgnoreCase)
-            || (string.Equals(actualOutputAudioCodec, "flac", StringComparison.OrdinalIgnoreCase)
-                && _mediaEncoder.EncoderVersion < _minFFmpegFlacInMp4))
+        if (IsExperimentalInMp4(actualOutputAudioCodec))
         {
             strictArgs = " -strict -2";
         }
 
         return strictArgs;
+    }
+
+    private bool IsExperimentalInMp4(string actualOutputAudioCodec)
+    {
+        return string.Equals(actualOutputAudioCodec, "opus", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(actualOutputAudioCodec, "dts", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(actualOutputAudioCodec, "truehd", StringComparison.OrdinalIgnoreCase)
+            || (string.Equals(actualOutputAudioCodec, "flac", StringComparison.OrdinalIgnoreCase)
+                && _mediaEncoder.EncoderVersion < _minFFmpegFlacInMp4);
     }
 
     private string GetAudioOnlyArguments(StreamState state, string audioCodec, string bitStreamArgs, string strictArgs)
