@@ -913,23 +913,38 @@ namespace MediaBrowser.MediaEncoding.Probing
             {
                 if (!string.IsNullOrEmpty(streamInfo.PixelFormat))
                 {
-                    if (string.Equals(streamInfo.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(streamInfo.PixelFormat, "yuv444p", StringComparison.OrdinalIgnoreCase))
+                    if (Is8BitPixelFormat(streamInfo))
                     {
                         stream.BitDepth = 8;
                     }
-                    else if (string.Equals(streamInfo.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase)
-                             || string.Equals(streamInfo.PixelFormat, "yuv444p10le", StringComparison.OrdinalIgnoreCase))
+                    else if (Is10BitPixelFormat(streamInfo))
                     {
                         stream.BitDepth = 10;
                     }
-                    else if (string.Equals(streamInfo.PixelFormat, "yuv420p12le", StringComparison.OrdinalIgnoreCase)
-                             || string.Equals(streamInfo.PixelFormat, "yuv444p12le", StringComparison.OrdinalIgnoreCase))
+                    else if (Is12BitPixelFormat(streamInfo))
                     {
                         stream.BitDepth = 12;
                     }
                 }
             }
+        }
+
+        private static bool Is8BitPixelFormat(MediaStreamInfo streamInfo)
+        {
+            return string.Equals(streamInfo.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(streamInfo.PixelFormat, "yuv444p", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool Is10BitPixelFormat(MediaStreamInfo streamInfo)
+        {
+            return string.Equals(streamInfo.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(streamInfo.PixelFormat, "yuv444p10le", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool Is12BitPixelFormat(MediaStreamInfo streamInfo)
+        {
+            return string.Equals(streamInfo.PixelFormat, "yuv420p12le", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(streamInfo.PixelFormat, "yuv444p12le", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void SetIsAnamorphic(MediaStream stream, MediaStreamInfo streamInfo)
