@@ -126,28 +126,7 @@ namespace MediaBrowser.MediaEncoding.Probing
 
             FetchGenres(info, tags);
 
-            info.Name = tags.GetFirstNotNullNorWhiteSpaceValue("title", "title-eng");
-            info.ForcedSortName = tags.GetFirstNotNullNorWhiteSpaceValue("sort_name", "title-sort", "titlesort");
-            info.Overview = tags.GetFirstNotNullNorWhiteSpaceValue("synopsis", "description", "desc", "comment");
-
-            info.ParentIndexNumber = FFProbeHelpers.GetDictionaryNumericValue(tags, "season_number");
-            info.IndexNumber = FFProbeHelpers.GetDictionaryNumericValue(tags, "episode_sort") ??
-                               FFProbeHelpers.GetDictionaryNumericValue(tags, "episode_id");
-            info.ShowName = tags.GetValueOrDefault("show_name", "show");
-            info.ProductionYear = FFProbeHelpers.GetDictionaryNumericValue(tags, "date");
-
-            // Several different forms of retail/premiere date
-            info.PremiereDate =
-                FFProbeHelpers.GetDictionaryDateTime(tags, "originaldate") ??
-                FFProbeHelpers.GetDictionaryDateTime(tags, "retaildate") ??
-                FFProbeHelpers.GetDictionaryDateTime(tags, "retail date") ??
-                FFProbeHelpers.GetDictionaryDateTime(tags, "retail_date") ??
-                FFProbeHelpers.GetDictionaryDateTime(tags, "date_released") ??
-                FFProbeHelpers.GetDictionaryDateTime(tags, "date") ??
-                FFProbeHelpers.GetDictionaryDateTime(tags, "creation_time");
-
-            // Set common metadata for music (audio) and music videos (video)
-            info.Album = tags.GetValueOrDefault("album");
+            SetMetadataFromTags(info, tags);
 
             SetArtists(info, tags);
 
@@ -178,6 +157,32 @@ namespace MediaBrowser.MediaEncoding.Probing
             }
 
             return info;
+        }
+
+        private static void SetMetadataFromTags(MediaInfo info, Dictionary<string, string> tags)
+        {
+            info.Name = tags.GetFirstNotNullNorWhiteSpaceValue("title", "title-eng");
+            info.ForcedSortName = tags.GetFirstNotNullNorWhiteSpaceValue("sort_name", "title-sort", "titlesort");
+            info.Overview = tags.GetFirstNotNullNorWhiteSpaceValue("synopsis", "description", "desc", "comment");
+
+            info.ParentIndexNumber = FFProbeHelpers.GetDictionaryNumericValue(tags, "season_number");
+            info.IndexNumber = FFProbeHelpers.GetDictionaryNumericValue(tags, "episode_sort") ??
+                               FFProbeHelpers.GetDictionaryNumericValue(tags, "episode_id");
+            info.ShowName = tags.GetValueOrDefault("show_name", "show");
+            info.ProductionYear = FFProbeHelpers.GetDictionaryNumericValue(tags, "date");
+
+            // Several different forms of retail/premiere date
+            info.PremiereDate =
+                FFProbeHelpers.GetDictionaryDateTime(tags, "originaldate") ??
+                FFProbeHelpers.GetDictionaryDateTime(tags, "retaildate") ??
+                FFProbeHelpers.GetDictionaryDateTime(tags, "retail date") ??
+                FFProbeHelpers.GetDictionaryDateTime(tags, "retail_date") ??
+                FFProbeHelpers.GetDictionaryDateTime(tags, "date_released") ??
+                FFProbeHelpers.GetDictionaryDateTime(tags, "date") ??
+                FFProbeHelpers.GetDictionaryDateTime(tags, "creation_time");
+
+            // Set common metadata for music (audio) and music videos (video)
+            info.Album = tags.GetValueOrDefault("album");
         }
 
         private void SetContainerAndBitrate(MediaInfo info, InternalMediaInfoResult data)
