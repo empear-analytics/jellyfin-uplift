@@ -106,6 +106,22 @@ check it with `--dedup`: a literal may occur fewer times, as long as it still oc
 new value appears. Recipe S (split file) moves code to new files, so check the original and
 the new files as one unit with `--together`.
 
+**Never use `git stash`.** The stash is shared by every worktree of this repository, so
+another agent's `git stash pop` can take your change, and yours can take theirs. To check
+whether a failing test also fails without your change, commit your change first, then put
+the start commit's version of the file back, rebuild and rerun, and restore your version:
+
+```bash
+git commit -am "refactor(<File>): simplify <Method>"
+git checkout <start commit> -- <file>
+dotnet build Jellyfin.sln && dotnet test tests/<project> --no-build
+git checkout HEAD -- <file>
+```
+
+Then revert your commit either way (`git revert --no-edit HEAD`): if the test passes without
+your change, your change broke it; if it fails there too, your change cannot be verified.
+In the second case, stop and report.
+
 ## Commits
 
 - One recipe, one method, one commit.
@@ -120,6 +136,7 @@ Stop and report, rather than pressing on, whenever:
 - The baseline score in your task file does not match what you measure.
 - The build fails and the fix is not obvious.
 - A test fails and you do not understand why.
+- A test fails on the start commit as well, without your change.
 - The guard fails and you do not understand why.
 - A method's control flow is too tangled to transform confidently.
 - You want to make a change the playbook does not cover.

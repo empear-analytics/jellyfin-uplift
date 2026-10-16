@@ -43,11 +43,14 @@ namespace Jellyfin.Server.Integration.Tests.Acceptance;
 /// </remarks>
 public sealed class LibraryServicesAcceptanceTests : IClassFixture<AcceptanceApplicationFactory>
 {
+    private const string UserDataUser = "acceptance-user-data";
+
     private static readonly DateTime _epoch = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     private readonly AcceptanceApplicationFactory _factory;
     // xUnit creates a test class instance per test, so the libraries are kept per server.
     private static readonly SemaphoreSlim _setupLock = new(1, 1);
+
     private static readonly Dictionary<AcceptanceApplicationFactory, Library> _libraries = [];
 
     public LibraryServicesAcceptanceTests(AcceptanceApplicationFactory factory)
@@ -72,7 +75,7 @@ public sealed class LibraryServicesAcceptanceTests : IClassFixture<AcceptanceApp
         };
         foreach (var (name, apply) in preferenceVariants)
         {
-            var user = users.GetUsers().First();
+            var user = SharedUser(users);
             foreach (var kind in new[] { PreferenceKind.OrderedViews, PreferenceKind.MyMediaExcludes, PreferenceKind.GroupedFolders })
             {
                 user.SetPreference(kind, Array.Empty<string>());
@@ -87,7 +90,7 @@ public sealed class LibraryServicesAcceptanceTests : IClassFixture<AcceptanceApp
                 {
                     var result = views.GetUserViews(new UserViewQuery
                     {
-                        User = users.GetUsers().First(),
+                        User = SharedUser(users),
                         IncludeExternalContent = external,
                         IncludeHidden = hidden,
                         PresetViews = presets
@@ -107,7 +110,7 @@ public sealed class LibraryServicesAcceptanceTests : IClassFixture<AcceptanceApp
     {
         var library = await GetLibraryAsync();
         var views = Service<IUserViewManager>();
-        var user = Service<IUserManager>().GetUsers().First();
+        var user = SharedUser(Service<IUserManager>());
         var output = new StringBuilder();
 
         var parents = new (string Name, Guid Id)[] { ("all", Guid.Empty), ("movies", library.Folders["movies"].Id), ("tvshows", library.Folders["tvshows"].Id), ("music", library.Folders["music"].Id) };
@@ -138,7 +141,7 @@ public sealed class LibraryServicesAcceptanceTests : IClassFixture<AcceptanceApp
     {
         var library = await GetLibraryAsync();
         var music = Service<IMusicManager>();
-        var user = Service<IUserManager>().GetUsers().First();
+        var user = SharedUser(Service<IUserManager>());
         var options = new DtoOptions(true);
 
         // Instant mixes are ordered randomly, so the recording lists them sorted.
@@ -164,7 +167,11 @@ public sealed class LibraryServicesAcceptanceTests : IClassFixture<AcceptanceApp
     {
         var library = await GetLibraryAsync();
         var data = Service<IUserDataManager>();
-        var user = Service<IUserManager>().GetUsers().First();
+
+        // A user of its own: what this test plays and marks must not show up in the other
+        // tests of this class, which share the library and may run before or after it.
+        var users = Service<IUserManager>();
+        var user = users.GetUserByName(UserDataUser) ?? await users.CreateUserAsync(UserDataUser);
         var movie = library.Movies[1];
         var output = new StringBuilder();
 
@@ -254,6 +261,11 @@ public sealed class LibraryServicesAcceptanceTests : IClassFixture<AcceptanceApp
 
         RecordedOutput.Verify("LibraryServices", "paths-keyframes-deletion", _factory.Mask(string.Join('\n', lines)));
     }
+
+    // The server's administrator, the user every test but UserData works as. GetUsers() has no
+    // fixed order, so the user UserData creates must be skipped by name.
+    private static User SharedUser(IUserManager users)
+        => users.GetUsers().First(u => !string.Equals(u.Username, UserDataUser, StringComparison.Ordinal));
 
     private static string Describe(BaseItem? item)
         => item switch
