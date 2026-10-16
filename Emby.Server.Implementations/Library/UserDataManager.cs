@@ -197,6 +197,38 @@ namespace Emby.Server.Implementations.Library
         public Dictionary<Guid, UserItemData> GetUserDataBatch(IReadOnlyList<BaseItem> items, User user)
         {
             var result = new Dictionary<Guid, UserItemData>(items.Count);
+            var itemsNeedingQuery = AddKnownUserData(items, user, result);
+
+            if (itemsNeedingQuery.Count == 0)
+            {
+                return result;
+            }
+
+            // Build a single query for all missing items. Fetch rows by item alone so rows kept
+            // under keys from older metadata resolve the same way as the in-memory path.
+            var allItemIds = itemsNeedingQuery.Select(x => x.Item.Id).ToList();
+            using var context = _repository.CreateDbContext();
+            var userDataArray = context.UserData
+                .AsNoTracking()
+                .Where(e => e.UserId.Equals(user.Id))
+                .WhereOneOrMany(allItemIds, e => e.ItemId)
+                .ToArray();
+
+            var userDataByItem = userDataArray.GroupBy(e => e.ItemId).ToDictionary(g => g.Key, g => g.ToArray());
+            foreach (var (item, keys) in itemsNeedingQuery)
+            {
+                UserItemData userData = ResolveQueriedUserData(item, keys, userDataByItem);
+
+                result[item.Id] = userData;
+                var cacheKey = GetCacheKey(user.InternalId, item.Id);
+                _cache.AddOrUpdate(cacheKey, userData);
+            }
+
+            return result;
+        }
+
+        private List<(BaseItem Item, List<string> Keys)> AddKnownUserData(IReadOnlyList<BaseItem> items, User user, Dictionary<Guid, UserItemData> result)
+        {
             var itemsNeedingQuery = new List<(BaseItem Item, List<string> Keys)>();
 
             foreach (var item in items)
@@ -223,40 +255,22 @@ namespace Emby.Server.Implementations.Library
                 }
             }
 
-            if (itemsNeedingQuery.Count == 0)
+            return itemsNeedingQuery;
+        }
+
+        private static UserItemData ResolveQueriedUserData(BaseItem item, List<string> keys, Dictionary<Guid, UserData[]> userDataByItem)
+        {
+            UserItemData userData;
+            if (userDataByItem.TryGetValue(item.Id, out var itemUserData) && itemUserData.Length > 0)
             {
-                return result;
+                userData = Map(ResolveUserDataRow(item, itemUserData)!);
+            }
+            else
+            {
+                userData = new UserItemData { Key = keys.Count > 0 ? keys[0] : string.Empty };
             }
 
-            // Build a single query for all missing items. Fetch rows by item alone so rows kept
-            // under keys from older metadata resolve the same way as the in-memory path.
-            var allItemIds = itemsNeedingQuery.Select(x => x.Item.Id).ToList();
-            using var context = _repository.CreateDbContext();
-            var userDataArray = context.UserData
-                .AsNoTracking()
-                .Where(e => e.UserId.Equals(user.Id))
-                .WhereOneOrMany(allItemIds, e => e.ItemId)
-                .ToArray();
-
-            var userDataByItem = userDataArray.GroupBy(e => e.ItemId).ToDictionary(g => g.Key, g => g.ToArray());
-            foreach (var (item, keys) in itemsNeedingQuery)
-            {
-                UserItemData userData;
-                if (userDataByItem.TryGetValue(item.Id, out var itemUserData) && itemUserData.Length > 0)
-                {
-                    userData = Map(ResolveUserDataRow(item, itemUserData)!);
-                }
-                else
-                {
-                    userData = new UserItemData { Key = keys.Count > 0 ? keys[0] : string.Empty };
-                }
-
-                result[item.Id] = userData;
-                var cacheKey = GetCacheKey(user.InternalId, item.Id);
-                _cache.AddOrUpdate(cacheKey, userData);
-            }
-
-            return result;
+            return userData;
         }
 
         /// <inheritdoc />
