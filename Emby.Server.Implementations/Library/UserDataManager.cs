@@ -64,7 +64,7 @@ namespace Emby.Server.Implementations.Library
             {
                 userData.Key = key;
                 var userDataEntry = Map(userData, user.Id, item.Id);
-                if (dbContext.UserData.Any(f => f.ItemId == userDataEntry.ItemId && f.UserId == userDataEntry.UserId && f.CustomDataKey == userDataEntry.CustomDataKey))
+                if (UserDataExists(dbContext, userDataEntry))
                 {
                     dbContext.UserData.Attach(userDataEntry).State = EntityState.Modified;
                 }
@@ -106,6 +106,11 @@ namespace Emby.Server.Implementations.Library
                 UserId = user.Id,
                 Item = item
             });
+        }
+
+        private static bool UserDataExists(JellyfinDbContext dbContext, UserData userDataEntry)
+        {
+            return dbContext.UserData.Any(f => f.ItemId == userDataEntry.ItemId && f.UserId == userDataEntry.UserId && f.CustomDataKey == userDataEntry.CustomDataKey);
         }
 
         /// <inheritdoc />
