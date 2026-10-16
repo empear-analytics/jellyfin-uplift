@@ -1855,9 +1855,7 @@ namespace MediaBrowser.MediaEncoding.Probing
 
         private string ParseDescriptionFromSubtitle(MediaInfo video, string subTitle, string description)
         {
-            if (string.IsNullOrWhiteSpace(subTitle)
-                && !string.IsNullOrWhiteSpace(description)
-                && description.AsSpan()[..Math.Min(description.Length, MaxSubtitleDescriptionExtractionLength)].Contains(':')) // Check within the Subtitle size limit, otherwise from description it can get too long creating an invalid filename
+            if (DescriptionContainsSubtitle(subTitle, description)) // Check within the Subtitle size limit, otherwise from description it can get too long creating an invalid filename
             {
                 string[] descriptionParts = description.Split(':');
                 if (descriptionParts.Length > 0)
@@ -1905,6 +1903,13 @@ namespace MediaBrowser.MediaEncoding.Probing
             }
 
             return description;
+        }
+
+        private static bool DescriptionContainsSubtitle(string subTitle, string description)
+        {
+            return string.IsNullOrWhiteSpace(subTitle)
+                && !string.IsNullOrWhiteSpace(description)
+                && description.AsSpan()[..Math.Min(description.Length, MaxSubtitleDescriptionExtractionLength)].Contains(':');
         }
 
         private void ExtractTimestamp(MediaInfo video)
