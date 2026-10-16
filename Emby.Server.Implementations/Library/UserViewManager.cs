@@ -60,16 +60,9 @@ namespace Emby.Server.Implementations.Library
                 var folderViewType = collectionFolder?.CollectionType;
 
                 // Playlist and BoxSet libraries require special handling because the folder only references linked items
-                if (folderViewType == CollectionType.playlists || folderViewType == CollectionType.boxsets)
+                if (IsLinkedItemLibraryWithoutVisibleItems(folderViewType, folders, user))
                 {
-                    var itemKind = folderViewType == CollectionType.playlists
-                        ? BaseItemKind.Playlist
-                        : BaseItemKind.BoxSet;
-
-                    if (!HasVisibleItem(itemKind, folders, user))
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 if (UserView.IsUserSpecific(folder))
@@ -94,20 +87,7 @@ namespace Emby.Server.Implementations.Library
                 }
             }
 
-            foreach (var viewType in new[] { CollectionType.movies, CollectionType.tvshows })
-            {
-                var parents = groupedFolders.Where(i => i.CollectionType == viewType || i.CollectionType is null)
-                    .ToList();
-
-                if (parents.Count > 0)
-                {
-                    var localizationKey = viewType == CollectionType.tvshows
-                        ? "TvShows"
-                        : "Movies";
-
-                    list.Add(GetUserView(parents, viewType, localizationKey, string.Empty, user, query.PresetViews));
-                }
-            }
+            AddGroupedViews(list, groupedFolders, user, query);
 
             if (_config.Configuration.EnableFolderView)
             {
@@ -117,19 +97,7 @@ namespace Emby.Server.Implementations.Library
 
             if (query.IncludeExternalContent)
             {
-                var channelResult = _channelManager.GetChannelsInternalAsync(new ChannelQuery
-                {
-                    UserId = user.Id
-                }).GetAwaiter().GetResult();
-
-                var channels = channelResult.Items;
-
-                list.AddRange(channels);
-
-                if (_liveTvManager.IsEnabledForUser(user))
-                {
-                    list.Add(_liveTvManager.GetInternalLiveTvFolder(CancellationToken.None));
-                }
+                AddExternalContent(list, user);
             }
 
             if (!query.IncludeHidden)
@@ -156,6 +124,58 @@ namespace Emby.Server.Implementations.Library
                 .ThenBy(sorted.IndexOf)
                 .ThenBy(i => i.SortName)
                 .ToArray();
+        }
+
+        private bool IsLinkedItemLibraryWithoutVisibleItems(CollectionType? folderViewType, IReadOnlyList<Folder> folders, User user)
+        {
+            if (folderViewType == CollectionType.playlists || folderViewType == CollectionType.boxsets)
+            {
+                var itemKind = folderViewType == CollectionType.playlists
+                    ? BaseItemKind.Playlist
+                    : BaseItemKind.BoxSet;
+
+                if (!HasVisibleItem(itemKind, folders, user))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void AddGroupedViews(List<Folder> list, List<ICollectionFolder> groupedFolders, User user, UserViewQuery query)
+        {
+            foreach (var viewType in new[] { CollectionType.movies, CollectionType.tvshows })
+            {
+                var parents = groupedFolders.Where(i => i.CollectionType == viewType || i.CollectionType is null)
+                    .ToList();
+
+                if (parents.Count > 0)
+                {
+                    var localizationKey = viewType == CollectionType.tvshows
+                        ? "TvShows"
+                        : "Movies";
+
+                    list.Add(GetUserView(parents, viewType, localizationKey, string.Empty, user, query.PresetViews));
+                }
+            }
+        }
+
+        private void AddExternalContent(List<Folder> list, User user)
+        {
+            var channelResult = _channelManager.GetChannelsInternalAsync(new ChannelQuery
+            {
+                UserId = user.Id
+            }).GetAwaiter().GetResult();
+
+            var channels = channelResult.Items;
+
+            list.AddRange(channels);
+
+            if (_liveTvManager.IsEnabledForUser(user))
+            {
+                list.Add(_liveTvManager.GetInternalLiveTvFolder(CancellationToken.None));
+            }
         }
 
         private bool HasVisibleItem(BaseItemKind itemKind, IReadOnlyList<Folder> folders, User user)
