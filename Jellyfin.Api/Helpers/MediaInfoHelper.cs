@@ -262,15 +262,9 @@ public class MediaInfoHelper
             mediaSource.SupportsDirectPlay = streamInfo.PlayMethod == PlayMethod.DirectPlay;
 
             // Players do not handle this being set according to PlayMethod
-            mediaSource.SupportsDirectStream =
-                options.EnableDirectStream
-                    ? streamInfo.PlayMethod == PlayMethod.DirectPlay || streamInfo.PlayMethod == PlayMethod.DirectStream
-                    : streamInfo.PlayMethod == PlayMethod.DirectPlay;
+            mediaSource.SupportsDirectStream = IsDirectStreamSupported(options, streamInfo);
 
-            mediaSource.SupportsTranscoding =
-                streamInfo.PlayMethod == PlayMethod.DirectStream
-                || mediaSource.TranscodingContainer is not null
-                || profile.TranscodingProfiles.Any(i => i.Type == streamInfo.MediaType && i.Context == options.Context);
+            mediaSource.SupportsTranscoding = IsTranscodingSupported(streamInfo, mediaSource, profile, options);
 
             ApplyUserTranscodingPermission(item, user, mediaSource);
 
@@ -291,6 +285,20 @@ public class MediaInfoHelper
                 mediaSource.Id,
                 attachment.Index);
         }
+    }
+
+    private static bool IsDirectStreamSupported(MediaOptions options, StreamInfo streamInfo)
+    {
+        return options.EnableDirectStream
+            ? streamInfo.PlayMethod == PlayMethod.DirectPlay || streamInfo.PlayMethod == PlayMethod.DirectStream
+            : streamInfo.PlayMethod == PlayMethod.DirectPlay;
+    }
+
+    private static bool IsTranscodingSupported(StreamInfo streamInfo, MediaSourceInfo mediaSource, DeviceProfile profile, MediaOptions options)
+    {
+        return streamInfo.PlayMethod == PlayMethod.DirectStream
+            || mediaSource.TranscodingContainer is not null
+            || profile.TranscodingProfiles.Any(i => i.Type == streamInfo.MediaType && i.Context == options.Context);
     }
 
     private void LogUserPolicy(BaseItem item, User user)
