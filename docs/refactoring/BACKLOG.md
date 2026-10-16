@@ -72,7 +72,7 @@ Update as tasks land.
 | R16 | 8.28 | - | not started |
 | R17 | 8.54 | - | not started |
 | R18 | 8.63 | - | not started |
-| R19 | 8.69 | - | not started |
+| R19 | 8.69 | 10.00 | done |
 | R20 | 8.91 | - | not started |
 | R21 | 9.21 | 9.38 | partly done: Recipe E; Complex Method left (the step listed only E); Constructor Over-Injection has no recipe |
 | R22 | 9.36 | 9.68 | stopped: Excess Number of Function Arguments on `Normalize` (no recipe; plugin API) |
