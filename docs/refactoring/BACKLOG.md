@@ -71,7 +71,7 @@ Update as tasks land.
 | R15 | 7.83 | - | not started |
 | R16 | 8.28 | - | not started |
 | R17 | 8.54 | - | not started |
-| R18 | 8.63 | - | not started |
+| R18 | 8.63 | 9.38 | stopped at 9.38: Complex Method (cc 10) only reducible by reusing helpers for identical copies (Recipe D without a duplication report); Primitive Obsession has no recipe |
 | R19 | 8.69 | 10.00 | done |
 | R20 | 8.91 | 9.68 | stopped at 9.68: Excess Number of Function Arguments on public `AddMediaInfoWithProbe` (no recipe); low protection |
 | R21 | 9.21 | 9.68 | stopped at 9.68: Constructor Over-Injection has no recipe |
