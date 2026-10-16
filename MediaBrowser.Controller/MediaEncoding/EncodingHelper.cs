@@ -4968,7 +4968,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 var hwScalePrefix = isQsvDecoder ? "vpp" : "scale";
                 var hwScaleFilter = GetHwScaleFilter(hwScalePrefix, hwFilterSuffix, outFormat, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
 
-                if (!string.IsNullOrEmpty(hwScaleFilter) && isQsvDecoder && doVppTranspose)
+                if (ShouldAppendQsvVppTranspose(hwScaleFilter, isQsvDecoder, doVppTranspose))
                 {
                     hwScaleFilter += $":transpose={transposeDir}";
                 }
@@ -5026,7 +5026,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var memoryOutput = false;
             var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
             var isHwmapUsable = isSwEncoder && (doOclTonemap || isVaapiDecoder);
-            if ((isHwDecoder && isSwEncoder) || isUploadForOclTonemap)
+            if (NeedsMemoryOutput(isHwDecoder, isSwEncoder, isUploadForOclTonemap))
             {
                 memoryOutput = true;
 
@@ -5122,6 +5122,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool ShouldAppendQsvVppTranspose(string hwScaleFilter, bool isQsvDecoder, bool doVppTranspose)
+        {
+            return !string.IsNullOrEmpty(hwScaleFilter) && isQsvDecoder && doVppTranspose;
         }
 
         /// <summary>
