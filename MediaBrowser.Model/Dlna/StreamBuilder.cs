@@ -571,18 +571,20 @@ namespace MediaBrowser.Model.Dlna
             }
 
             // If multiple streams have an equal score, try to pick the most efficient one
-            if (topStreams.Count > 1)
+            if (topStreams.Count <= 1)
             {
-                foreach (var stream in topStreams)
+                return item.DefaultSubtitleStreamIndex;
+            }
+
+            foreach (var stream in topStreams)
+            {
+                foreach (var profile in subtitleProfiles)
                 {
-                    foreach (var profile in subtitleProfiles)
+                    if (profile.Method == SubtitleDeliveryMethod.External
+                        && (IsVobSubMksProfile(profile, stream)
+                            || (!IsVobSubMksDeliveryProfile(profile) && string.Equals(profile.Format, stream.Codec, StringComparison.OrdinalIgnoreCase))))
                     {
-                        if (profile.Method == SubtitleDeliveryMethod.External
-                            && (IsVobSubMksProfile(profile, stream)
-                                || (!IsVobSubMksDeliveryProfile(profile) && string.Equals(profile.Format, stream.Codec, StringComparison.OrdinalIgnoreCase))))
-                        {
-                            return stream.Index;
-                        }
+                        return stream.Index;
                     }
                 }
             }
