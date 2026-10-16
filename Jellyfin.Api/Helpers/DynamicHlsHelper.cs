@@ -750,7 +750,7 @@ public class DynamicHlsHelper
             return;
         }
 
-        var selectedIndex = state.SubtitleStream is null || state.SubtitleDeliveryMethod != SubtitleDeliveryMethod.Hls ? (int?)null : state.SubtitleStream.Index;
+        var selectedIndex = GetSelectedSubtitleIndex(state);
         const string Format = "#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID=\"subs\",NAME=\"{0}\",DEFAULT={1},FORCED={2},AUTOSELECT=YES,URI=\"{3}\",LANGUAGE=\"{4}\"";
 
         foreach (var stream in subtitles)
@@ -779,6 +779,11 @@ public class DynamicHlsHelper
 
             builder.AppendLine(line);
         }
+    }
+
+    private static int? GetSelectedSubtitleIndex(StreamState state)
+    {
+        return state.SubtitleStream is null || state.SubtitleDeliveryMethod != SubtitleDeliveryMethod.Hls ? (int?)null : state.SubtitleStream.Index;
     }
 
     /// <summary>
