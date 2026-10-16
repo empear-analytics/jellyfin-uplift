@@ -4639,9 +4639,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                         twoPassVppTonemap = true;
                     }
 
-                    if (options.VppTonemappingBrightness != 0
-                        && options.VppTonemappingBrightness >= -100
-                        && options.VppTonemappingBrightness <= 100)
+                    if (IsVppTonemappingBrightnessInRange(options))
                     {
                         procampParamsString += ":brightness={0}";
                         twoPassVppTonemap = doVppProcamp = true;
@@ -4743,7 +4741,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var memoryOutput = false;
             var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
             var isHwmapUsable = isSwEncoder && doOclTonemap;
-            if ((isHwDecoder && isSwEncoder) || isUploadForOclTonemap)
+            if (NeedsMemoryOutput(isHwDecoder, isSwEncoder, isUploadForOclTonemap))
             {
                 memoryOutput = true;
 
@@ -4831,6 +4829,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool IsVppTonemappingBrightnessInRange(EncodingOptions options)
+        {
+            return options.VppTonemappingBrightness != 0
+                && options.VppTonemappingBrightness >= -100
+                && options.VppTonemappingBrightness <= 100;
+        }
+
+        private static bool NeedsMemoryOutput(bool isHwDecoder, bool isSwEncoder, bool isUploadForOclTonemap)
+        {
+            return (isHwDecoder && isSwEncoder) || isUploadForOclTonemap;
         }
 
         public (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetIntelQsvVaapiVidFiltersPrefered(
