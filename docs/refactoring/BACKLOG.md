@@ -69,7 +69,7 @@ Update as tasks land.
 | R13 | 7.23 | - | not started |
 | R14 | 7.32 | - | not started |
 | R15 | 7.83 | - | not started |
-| R16 | 8.28 | - | not started |
+| R16 | 8.28 | 9.45 | stopped at 9.45: further P/G/E steps score DOWN (new helpers trigger Code Duplication between two near-duplicate parsers, which differ in more than one place) |
 | R17 | 8.54 | - | not started |
 | R18 | 8.63 | 9.38 | stopped at 9.38: Complex Method (cc 10) only reducible by reusing helpers for identical copies (Recipe D without a duplication report); Primitive Obsession has no recipe |
 | R19 | 8.69 | 10.00 | done |
