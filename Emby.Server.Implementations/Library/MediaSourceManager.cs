@@ -772,6 +772,14 @@ namespace Emby.Server.Implementations.Library
             SetProbedDefaultAudioStreamIndex(mediaSource, mediaSource.MediaStreams);
 
             var videoStream = mediaSource.MediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Video);
+            EstimateVideoBitrate(videoStream);
+
+            // Try to estimate this
+            mediaSource.InferTotalBitrate();
+        }
+
+        private static void EstimateVideoBitrate(MediaStream videoStream)
+        {
             if (videoStream is not null)
             {
                 if (!videoStream.BitRate.HasValue)
@@ -796,9 +804,6 @@ namespace Emby.Server.Implementations.Library
                     }
                 }
             }
-
-            // Try to estimate this
-            mediaSource.InferTotalBitrate();
         }
 
         public async Task<LiveStreamResponse> OpenLiveStream(LiveStreamRequest request, CancellationToken cancellationToken)
