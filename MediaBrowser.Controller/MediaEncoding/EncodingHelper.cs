@@ -4261,7 +4261,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var memoryOutput = false;
             var isUploadForCuTonemap = isSwDecoder && doCuTonemap;
-            if ((isNvDecoder && isSwEncoder) || (isUploadForCuTonemap && hasSubs))
+            if (NeedsCudaMemoryOutput(isNvDecoder, isSwEncoder, isUploadForCuTonemap, hasSubs))
             {
                 memoryOutput = true;
 
@@ -4271,7 +4271,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT yuv420p surface(memory)
-            if (isSwDecoder && isNvencEncoder && !isUploadForCuTonemap)
+            if (NeedsNvencHwUpload(isSwDecoder, isNvencEncoder, isUploadForCuTonemap))
             {
                 memoryOutput = true;
             }
@@ -4333,6 +4333,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool NeedsCudaMemoryOutput(bool isNvDecoder, bool isSwEncoder, bool isUploadForCuTonemap, bool hasSubs)
+        {
+            return (isNvDecoder && isSwEncoder) || (isUploadForCuTonemap && hasSubs);
+        }
+
+        private static bool NeedsNvencHwUpload(bool isSwDecoder, bool isNvencEncoder, bool isUploadForCuTonemap)
+        {
+            return isSwDecoder && isNvencEncoder && !isUploadForCuTonemap;
         }
 
         /// <summary>
