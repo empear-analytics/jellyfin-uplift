@@ -427,45 +427,11 @@ namespace Emby.Server.Implementations.Library
                 PrepareChannelItemDeletion(item, options);
             }
 
-            if (item is LiveTvProgram)
-            {
-                _logger.LogDebug(
-                    "Removing item, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
-                    item.GetType().Name,
-                    item.Name ?? "Unknown name",
-                    item.Path ?? string.Empty,
-                    item.Id);
-            }
-            else
-            {
-                _logger.LogInformation(
-                    "Removing item, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
-                    item.GetType().Name,
-                    item.Name ?? "Unknown name",
-                    item.Path ?? string.Empty,
-                    item.Id);
-            }
+            LogItemRemoval(item);
 
             // If deleting a primary version video, clear PrimaryVersionId from alternate versions
             // OwnerId check: items with OwnerId set are alternate versions or extras, not primaries
-            if (item is Video video && IsPrimaryVersion(video))
-            {
-                PromoteAlternateVersionOfDeletedPrimary(item, video);
-            }
-            else if (item is Video alternateVideo && alternateVideo.PrimaryVersionId.HasValue)
-            {
-                // If deleting an alternate version, re-route references to its primary
-                RerouteLinkedChildReferencesAsync(alternateVideo.Id, alternateVideo.PrimaryVersionId.Value).GetAwaiter().GetResult();
-
-                // Remove deleted alternate from primary's LinkedAlternateVersions
-                if (GetItemById(alternateVideo.PrimaryVersionId.Value) is Video primaryVideo)
-                {
-                    primaryVideo.LinkedAlternateVersions = primaryVideo.LinkedAlternateVersions
-                        .Where(lc => !lc.ItemId.HasValue || !lc.ItemId.Value.Equals(alternateVideo.Id))
-                        .ToArray();
-                    primaryVideo.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
-                }
-            }
+            UpdateVersionsOfDeletedVideo(item);
 
             var children = item.IsFolder
                 ? ((Folder)item).GetRecursiveChildren(false)
@@ -507,6 +473,50 @@ namespace Emby.Server.Implementations.Library
             }
 
             ReportItemRemoved(item, parent);
+        }
+
+        private void UpdateVersionsOfDeletedVideo(BaseItem item)
+        {
+            if (item is Video video && IsPrimaryVersion(video))
+            {
+                PromoteAlternateVersionOfDeletedPrimary(item, video);
+            }
+            else if (item is Video alternateVideo && alternateVideo.PrimaryVersionId.HasValue)
+            {
+                // If deleting an alternate version, re-route references to its primary
+                RerouteLinkedChildReferencesAsync(alternateVideo.Id, alternateVideo.PrimaryVersionId.Value).GetAwaiter().GetResult();
+
+                // Remove deleted alternate from primary's LinkedAlternateVersions
+                if (GetItemById(alternateVideo.PrimaryVersionId.Value) is Video primaryVideo)
+                {
+                    primaryVideo.LinkedAlternateVersions = primaryVideo.LinkedAlternateVersions
+                        .Where(lc => !lc.ItemId.HasValue || !lc.ItemId.Value.Equals(alternateVideo.Id))
+                        .ToArray();
+                    primaryVideo.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
+                }
+            }
+        }
+
+        private void LogItemRemoval(BaseItem item)
+        {
+            if (item is LiveTvProgram)
+            {
+                _logger.LogDebug(
+                    "Removing item, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
+                    item.GetType().Name,
+                    item.Name ?? "Unknown name",
+                    item.Path ?? string.Empty,
+                    item.Id);
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "Removing item, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
+                    item.GetType().Name,
+                    item.Name ?? "Unknown name",
+                    item.Path ?? string.Empty,
+                    item.Id);
+            }
         }
 
         private static bool IsPrimaryVersion(Video video)
