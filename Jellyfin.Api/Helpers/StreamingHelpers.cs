@@ -615,14 +615,7 @@ public static class StreamingHelpers
 
                 break;
             case 25:
-                if (!string.IsNullOrWhiteSpace(val) && videoRequest is not null)
-                {
-                    if (Enum.TryParse(val, out SubtitleDeliveryMethod method))
-                    {
-                        videoRequest.SubtitleMethod = method;
-                    }
-                }
-
+                ApplySubtitleMethod(videoRequest, val);
                 break;
             case 26:
                 request.TranscodingMaxAudioChannels = int.Parse(val, CultureInfo.InvariantCulture);
@@ -668,6 +661,17 @@ public static class StreamingHelpers
             case 33:
                 request.TranscodeReasons = val;
                 break;
+        }
+    }
+
+    private static void ApplySubtitleMethod(VideoRequestDto? videoRequest, string val)
+    {
+        if (!string.IsNullOrWhiteSpace(val) && videoRequest is not null)
+        {
+            if (Enum.TryParse(val, out SubtitleDeliveryMethod method))
+            {
+                videoRequest.SubtitleMethod = method;
+            }
         }
     }
 
