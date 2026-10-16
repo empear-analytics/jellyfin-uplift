@@ -2968,13 +2968,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var outputChannels = outputAudioChannels ?? 0;
             var bitrate = audioBitRate ?? int.MaxValue;
 
-            if (string.IsNullOrEmpty(audioCodec)
-                || string.Equals(audioCodec, "aac", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "mp3", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "opus", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "vorbis", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "ac3", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "eac3", StringComparison.OrdinalIgnoreCase))
+            if (IsDefaultOrCommonLossyAudioCodec(audioCodec))
             {
 #pragma warning disable SA1008
                 return (inputChannels, outputChannels) switch
@@ -3005,6 +2999,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             // Default audio bitrate to 128K per channel if we don't have codec specific defaults
             // https://ffmpeg.org/ffmpeg-codecs.html#toc-Codec-Options
             return 128000 * (outputAudioChannels ?? audioStream.Channels ?? 2);
+        }
+
+        private static bool IsDefaultOrCommonLossyAudioCodec(string audioCodec)
+        {
+            return string.IsNullOrEmpty(audioCodec)
+                || string.Equals(audioCodec, "aac", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "mp3", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "opus", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "vorbis", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "ac3", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "eac3", StringComparison.OrdinalIgnoreCase);
         }
 
         public string GetAudioVbrModeParam(string encoder, int bitrate, int channels)
