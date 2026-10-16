@@ -208,20 +208,7 @@ namespace Emby.Server.Implementations.Library
                     source.SupportsDirectStream = SupportsDirectStream(source.Path, source.Protocol);
                 }
 
-                if (user is not null)
-                {
-                    SetDefaultAudioAndSubtitleStreamIndices(item, source, user);
-
-                    if (item.MediaType == MediaType.Audio)
-                    {
-                        source.SupportsTranscoding = user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding);
-                    }
-                    else if (item.MediaType == MediaType.Video)
-                    {
-                        source.SupportsTranscoding = user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding);
-                        source.SupportsDirectStream = user.HasPermission(PermissionKind.EnablePlaybackRemuxing);
-                    }
-                }
+                ApplyUserPlaybackSettings(item, source, user);
 
                 list.Add(source);
             }
@@ -231,6 +218,24 @@ namespace Emby.Server.Implementations.Library
                 : item.Id;
 
             return SortMediaSources(list, preferredId).ToArray();
+        }
+
+        private void ApplyUserPlaybackSettings(BaseItem item, MediaSourceInfo source, User user)
+        {
+            if (user is not null)
+            {
+                SetDefaultAudioAndSubtitleStreamIndices(item, source, user);
+
+                if (item.MediaType == MediaType.Audio)
+                {
+                    source.SupportsTranscoding = user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding);
+                }
+                else if (item.MediaType == MediaType.Video)
+                {
+                    source.SupportsTranscoding = user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding);
+                    source.SupportsDirectStream = user.HasPermission(PermissionKind.EnablePlaybackRemuxing);
+                }
+            }
         }
 
         private static bool NeedsRemoteProbe(BaseItem item, IReadOnlyList<MediaSourceInfo> mediaSources, bool allowMediaProbe)
