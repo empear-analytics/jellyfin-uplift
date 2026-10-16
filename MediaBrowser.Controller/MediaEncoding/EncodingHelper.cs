@@ -5469,7 +5469,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             else if (isVaapiDecoder)
             {
                 // INPUT vaapi surface(vram)
-                if (doVkTranspose || doVkTonemap || hasSubs)
+                if (NeedsVulkanInterop(doVkTranspose, doVkTonemap, hasSubs))
                 {
                     AddAmdVaapiToVulkanMapFilters(mainFilters, doVkTranspose, doVkTonemap, hasSubs);
                 }
@@ -5485,7 +5485,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     // hw scale
                     var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", "nv12", false, inW, inH, reqW, reqH, reqMaxW, reqMaxH);
 
-                    if (!string.IsNullOrEmpty(hwScaleFilter) && isMjpegEncoder && !doVkTonemap)
+                    if (ShouldUseFullRangeMjpegScale(hwScaleFilter, isMjpegEncoder, doVkTonemap))
                     {
                         hwScaleFilter += ":out_range=pc:mode=hq";
                     }
@@ -5536,13 +5536,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (!hasSubs)
             {
                 // OUTPUT nv12 surface(memory)
-                if (isSwEncoder && (doVkTonemap || isVaapiDecoder))
+                if (NeedsVulkanHwDownload(isSwEncoder, doVkTonemap, isVaapiDecoder))
                 {
                     mainFilters.Add("hwdownload");
                     mainFilters.Add("format=nv12");
                 }
 
-                if (isSwDecoder && isVaapiEncoder && !doVkTonemap)
+                if (NeedsVaapiHwUpload(isSwDecoder, isVaapiEncoder, doVkTonemap))
                 {
                     mainFilters.Add("hwupload_vaapi");
                 }
@@ -5595,7 +5595,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     // clear the surf->meta_offset and output nv12
                     var hwCscFilter = "scale_vaapi=format=nv12";
 
-                    if (!doVkTonemap || (doVkTonemap && options.TonemappingRange != TonemappingRange.pc))
+                    if (ShouldOutputTvRange(doVkTonemap, options))
                     {
                         hwCscFilter += ":out_range=tv";
                     }
@@ -5612,6 +5612,31 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool NeedsVulkanInterop(bool doVkTranspose, bool doVkTonemap, bool hasSubs)
+        {
+            return doVkTranspose || doVkTonemap || hasSubs;
+        }
+
+        private static bool ShouldUseFullRangeMjpegScale(string hwScaleFilter, bool isMjpegEncoder, bool doVkTonemap)
+        {
+            return !string.IsNullOrEmpty(hwScaleFilter) && isMjpegEncoder && !doVkTonemap;
+        }
+
+        private static bool NeedsVulkanHwDownload(bool isSwEncoder, bool doVkTonemap, bool isVaapiDecoder)
+        {
+            return isSwEncoder && (doVkTonemap || isVaapiDecoder);
+        }
+
+        private static bool NeedsVaapiHwUpload(bool isSwDecoder, bool isVaapiEncoder, bool doVkTonemap)
+        {
+            return isSwDecoder && isVaapiEncoder && !doVkTonemap;
+        }
+
+        private static bool ShouldOutputTvRange(bool doVkTonemap, EncodingOptions options)
+        {
+            return !doVkTonemap || (doVkTonemap && options.TonemappingRange != TonemappingRange.pc);
         }
 
         private void AddAmdVaapiToVulkanMapFilters(List<string> mainFilters, bool doVkTranspose, bool doVkTonemap, bool hasSubs)
