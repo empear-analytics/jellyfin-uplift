@@ -424,19 +424,7 @@ namespace Emby.Server.Implementations.Library
 
             if (item.SourceType == SourceType.Channel)
             {
-                if (options.DeleteFromExternalProvider)
-                {
-                    try
-                    {
-                        BaseItem.ChannelManager.DeleteItem(item).GetAwaiter().GetResult();
-                    }
-                    catch (ArgumentException)
-                    {
-                        // channel no longer installed
-                    }
-                }
-
-                options.DeleteFileLocation = false;
+                PrepareChannelItemDeletion(item, options);
             }
 
             if (item is LiveTvProgram)
@@ -462,79 +450,7 @@ namespace Emby.Server.Implementations.Library
             // OwnerId check: items with OwnerId set are alternate versions or extras, not primaries
             if (item is Video video && !video.PrimaryVersionId.HasValue && video.OwnerId.IsEmpty())
             {
-                var localAlternateIds = GetLocalAlternateVersionIds(video).ToHashSet();
-                var allAlternateVersions = localAlternateIds
-                    .Concat(GetLinkedAlternateVersions(video).Select(v => v.Id))
-                    .Distinct()
-                    .Select(id => GetItemById(id))
-                    .OfType<Video>()
-                    .ToList();
-
-                // Partition alternates by whether their files still exist on disk
-                var alternateVersions = new List<Video>();
-                var missingAlternates = new List<Video>();
-                foreach (var alt in allAlternateVersions)
-                {
-                    if (!string.IsNullOrEmpty(alt.Path) && !_fileSystem.FileExists(alt.Path))
-                    {
-                        missingAlternates.Add(alt);
-                    }
-                    else
-                    {
-                        alternateVersions.Add(alt);
-                    }
-                }
-
-                // Delete alternates whose files no longer exist to avoid ghost items.
-                // Clear PrimaryVersionId first so DeleteItem doesn't try to update the primary being deleted.
-                foreach (var missing in missingAlternates)
-                {
-                    _logger.LogInformation(
-                        "Deleting missing alternate version {Name} ({Path})",
-                        missing.Name ?? "Unknown name",
-                        missing.Path ?? string.Empty);
-                    missing.SetPrimaryVersionId(null);
-                    missing.OwnerId = Guid.Empty;
-                    missing.LocalAlternateVersions = [];
-                    missing.LinkedAlternateVersions = [];
-                    DeleteItem(missing, new DeleteOptions { DeleteFileLocation = false }, false);
-                }
-
-                if (alternateVersions.Count > 0)
-                {
-                    _logger.LogInformation(
-                        "Clearing PrimaryVersionId from {Count} alternate versions of {Name}",
-                        alternateVersions.Count,
-                        item.Name ?? "Unknown name");
-
-                    // Promote the first alternate version to be the new primary
-                    var newPrimary = alternateVersions[0];
-                    newPrimary.SetPrimaryVersionId(null);
-                    newPrimary.OwnerId = Guid.Empty;
-
-                    // Transfer alternate version arrays from old primary to new primary
-                    // so UpdateToRepositoryAsync creates correct LinkedChildren entries
-                    newPrimary.LocalAlternateVersions = video.LocalAlternateVersions
-                        .Where(p => !string.Equals(p, newPrimary.Path, StringComparison.OrdinalIgnoreCase))
-                        .ToArray();
-                    newPrimary.LinkedAlternateVersions = video.LinkedAlternateVersions
-                        .Where(lc => !lc.ItemId.HasValue || !lc.ItemId.Value.Equals(newPrimary.Id))
-                        .ToArray();
-
-                    newPrimary.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
-
-                    // Re-route playlist/collection references from deleted primary to new primary
-                    RerouteLinkedChildReferencesAsync(video.Id, newPrimary.Id).GetAwaiter().GetResult();
-
-                    // Update remaining alternates to point to new primary
-                    foreach (var alternate in alternateVersions.Skip(1))
-                    {
-                        alternate.SetPrimaryVersionId(newPrimary.Id);
-                        // Only set OwnerId for local alternates; linked alternates are independent items
-                        alternate.OwnerId = localAlternateIds.Contains(alternate.Id) ? newPrimary.Id : Guid.Empty;
-                        alternate.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
-                    }
-                }
+                PromoteAlternateVersionOfDeletedPrimary(item, video);
             }
             else if (item is Video alternateVideo && alternateVideo.PrimaryVersionId.HasValue)
             {
@@ -555,42 +471,11 @@ namespace Emby.Server.Implementations.Library
                 ? ((Folder)item).GetRecursiveChildren(false)
                 : [];
 
-            foreach (var metadataPath in GetMetadataPaths(item, children))
-            {
-                if (!Directory.Exists(metadataPath))
-                {
-                    continue;
-                }
-
-                _logger.LogDebug(
-                    "Deleting metadata path, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
-                    item.GetType().Name,
-                    item.Name ?? "Unknown name",
-                    metadataPath,
-                    item.Id);
-
-                try
-                {
-                    Directory.Delete(metadataPath, true);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error deleting {MetadataPath}", metadataPath);
-                }
-            }
+            DeleteMetadataPaths(item, GetMetadataPaths(item, children));
 
             if ((options.DeleteFileLocation && item.IsFileProtocol) || IsInternalItem(item))
             {
-                // Assume only the first is required
-                // Add this flag to GetDeletePaths if required in the future
-                var isRequiredForDelete = true;
-
-                foreach (var fileSystemInfo in item.GetDeletePaths())
-                {
-                    DeleteItemPath(item, isRequiredForDelete, fileSystemInfo);
-
-                    isRequiredForDelete = false;
-                }
+                DeleteItemPaths(item);
             }
 
             item.SetParent(null);
@@ -622,6 +507,141 @@ namespace Emby.Server.Implementations.Library
             }
 
             ReportItemRemoved(item, parent);
+        }
+
+        private void DeleteMetadataPaths(BaseItem item, IEnumerable<string> metadataPaths)
+        {
+            foreach (var metadataPath in metadataPaths)
+            {
+                if (!Directory.Exists(metadataPath))
+                {
+                    continue;
+                }
+
+                _logger.LogDebug(
+                    "Deleting metadata path, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
+                    item.GetType().Name,
+                    item.Name ?? "Unknown name",
+                    metadataPath,
+                    item.Id);
+
+                try
+                {
+                    Directory.Delete(metadataPath, true);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error deleting {MetadataPath}", metadataPath);
+                }
+            }
+        }
+
+        private void DeleteItemPaths(BaseItem item)
+        {
+            // Assume only the first is required
+            // Add this flag to GetDeletePaths if required in the future
+            var isRequiredForDelete = true;
+
+            foreach (var fileSystemInfo in item.GetDeletePaths())
+            {
+                DeleteItemPath(item, isRequiredForDelete, fileSystemInfo);
+
+                isRequiredForDelete = false;
+            }
+        }
+
+        private void PromoteAlternateVersionOfDeletedPrimary(BaseItem item, Video video)
+        {
+            var localAlternateIds = GetLocalAlternateVersionIds(video).ToHashSet();
+            var allAlternateVersions = localAlternateIds
+                .Concat(GetLinkedAlternateVersions(video).Select(v => v.Id))
+                .Distinct()
+                .Select(id => GetItemById(id))
+                .OfType<Video>()
+                .ToList();
+
+            // Partition alternates by whether their files still exist on disk
+            var alternateVersions = new List<Video>();
+            var missingAlternates = new List<Video>();
+            foreach (var alt in allAlternateVersions)
+            {
+                if (!string.IsNullOrEmpty(alt.Path) && !_fileSystem.FileExists(alt.Path))
+                {
+                    missingAlternates.Add(alt);
+                }
+                else
+                {
+                    alternateVersions.Add(alt);
+                }
+            }
+
+            // Delete alternates whose files no longer exist to avoid ghost items.
+            // Clear PrimaryVersionId first so DeleteItem doesn't try to update the primary being deleted.
+            foreach (var missing in missingAlternates)
+            {
+                _logger.LogInformation(
+                    "Deleting missing alternate version {Name} ({Path})",
+                    missing.Name ?? "Unknown name",
+                    missing.Path ?? string.Empty);
+                missing.SetPrimaryVersionId(null);
+                missing.OwnerId = Guid.Empty;
+                missing.LocalAlternateVersions = [];
+                missing.LinkedAlternateVersions = [];
+                DeleteItem(missing, new DeleteOptions { DeleteFileLocation = false }, false);
+            }
+
+            if (alternateVersions.Count > 0)
+            {
+                _logger.LogInformation(
+                    "Clearing PrimaryVersionId from {Count} alternate versions of {Name}",
+                    alternateVersions.Count,
+                    item.Name ?? "Unknown name");
+
+                // Promote the first alternate version to be the new primary
+                var newPrimary = alternateVersions[0];
+                newPrimary.SetPrimaryVersionId(null);
+                newPrimary.OwnerId = Guid.Empty;
+
+                // Transfer alternate version arrays from old primary to new primary
+                // so UpdateToRepositoryAsync creates correct LinkedChildren entries
+                newPrimary.LocalAlternateVersions = video.LocalAlternateVersions
+                    .Where(p => !string.Equals(p, newPrimary.Path, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+                newPrimary.LinkedAlternateVersions = video.LinkedAlternateVersions
+                    .Where(lc => !lc.ItemId.HasValue || !lc.ItemId.Value.Equals(newPrimary.Id))
+                    .ToArray();
+
+                newPrimary.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
+
+                // Re-route playlist/collection references from deleted primary to new primary
+                RerouteLinkedChildReferencesAsync(video.Id, newPrimary.Id).GetAwaiter().GetResult();
+
+                // Update remaining alternates to point to new primary
+                foreach (var alternate in alternateVersions.Skip(1))
+                {
+                    alternate.SetPrimaryVersionId(newPrimary.Id);
+                    // Only set OwnerId for local alternates; linked alternates are independent items
+                    alternate.OwnerId = localAlternateIds.Contains(alternate.Id) ? newPrimary.Id : Guid.Empty;
+                    alternate.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
+                }
+            }
+        }
+
+        private static void PrepareChannelItemDeletion(BaseItem item, DeleteOptions options)
+        {
+            if (options.DeleteFromExternalProvider)
+            {
+                try
+                {
+                    BaseItem.ChannelManager.DeleteItem(item).GetAwaiter().GetResult();
+                }
+                catch (ArgumentException)
+                {
+                    // channel no longer installed
+                }
+            }
+
+            options.DeleteFileLocation = false;
         }
 
         private void DeleteItemPath(BaseItem item, bool isRequiredForDelete, FileSystemMetadata fileSystemInfo)
