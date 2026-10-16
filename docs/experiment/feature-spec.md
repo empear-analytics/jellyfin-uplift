@@ -50,8 +50,8 @@ When Jellyfin picks a default audio track automatically, it first narrows the ca
    - If the user's `PreferAudioDescription` is `false`, audio-description tracks are removed from
      the remaining candidates, unless every remaining track is one.
    - If it is `true`, and at least one remaining audio-description track matches the user's
-     preferred audio language, the candidates become the audio-description tracks. When the user
-     has no preferred language, any audio-description track counts as matching.
+     preferred audio language, the candidates become the matching audio-description tracks. When
+     the user has no preferred language, every audio-description track matches.
    - If it is `true` but no audio-description track matches, the audio-description tracks are
      removed as if the setting were `false`.
 3. **The existing rules then pick from the candidates, unchanged:** preferred or original
@@ -61,13 +61,20 @@ This applies wherever the default audio track is chosen automatically, including
 "original language" preference. A track the user chose themselves and Jellyfin remembered is
 kept as it is.
 
-### R3: the playback decision avoids commentary and audio description when no track was chosen
+### R3: the playback decision doesn't switch to commentary or audio description on its own
 
-When the playback decision has to pick the audio track itself, it uses the first audio track
-flagged as default, otherwise the first audio track. That happens when neither the request nor the
-media source's `DefaultAudioStreamIndex` names a track, and always for audio-only items. Change this fallback so that it skips commentary and
-audio-description tracks. If every audio track is one of those, use the old rule. When an index
-is given, it is used as before.
+The playback decision (`StreamBuilder`) chooses an audio track in two situations, and both change.
+
+1. **Fallback.** When no audio track is named, it uses the first audio track flagged as default,
+   otherwise the first audio track. No track is named when neither the request nor the media
+   source's `DefaultAudioStreamIndex` names one, and always for audio-only items. The fallback must
+   skip commentary and audio-description tracks, unless every audio track is one of those.
+2. **Re-selection.** To play a file directly, the decision may switch from the chosen audio track to
+   another one the client can play, for example another track in the same language. It may only
+   switch to a track with the same `IsCommentary` and `IsAudioDescription` values as the track it
+   started from.
+
+When the request names an audio track, that track is used as before.
 
 ### R4: keep the marks when transcoding
 
