@@ -1353,12 +1353,7 @@ public class StreamInfo
             info.IsExternalUrl = false;
 
             // Check conditions for potentially using the direct path
-            if (stream.IsExternal // Must be external
-                && stream.SupportsExternalStream
-                && string.Equals(stream.Codec, subtitleProfile.Format, StringComparison.OrdinalIgnoreCase) // Format must match (no conversion needed)
-                && !string.IsNullOrEmpty(stream.Path) // Path must exist
-                && Uri.TryCreate(stream.Path, UriKind.Absolute, out Uri? uriResult) // Path must be an absolute URI
-                && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps)) // Scheme must be HTTP or HTTPS
+            if (CanUseDirectSubtitlePath(stream, subtitleProfile))
             {
                 // All conditions met, override with the direct path
                 info.Url = stream.Path;
@@ -1374,6 +1369,16 @@ public class StreamInfo
         }
 
         return info;
+    }
+
+    private static bool CanUseDirectSubtitlePath(MediaStream stream, SubtitleProfile subtitleProfile)
+    {
+        return stream.IsExternal // Must be external
+            && stream.SupportsExternalStream
+            && string.Equals(stream.Codec, subtitleProfile.Format, StringComparison.OrdinalIgnoreCase) // Format must match (no conversion needed)
+            && !string.IsNullOrEmpty(stream.Path) // Path must exist
+            && Uri.TryCreate(stream.Path, UriKind.Absolute, out Uri? uriResult) // Path must be an absolute URI
+            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps); // Scheme must be HTTP or HTTPS
     }
 
     /// <summary>
