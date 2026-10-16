@@ -2173,34 +2173,7 @@ namespace Emby.Server.Implementations.Library
         {
             if (item is UserView view)
             {
-                if (view.ViewType == CollectionType.livetv)
-                {
-                    return [view.Id];
-                }
-
-                // Translate view into folders
-                if (!view.DisplayParentId.IsEmpty())
-                {
-                    return GetTopParentIdsForParent(view.DisplayParentId, user);
-                }
-
-                if (!view.ParentId.IsEmpty())
-                {
-                    return GetTopParentIdsForParent(view.ParentId, user);
-                }
-
-                // Handle grouping
-                if (user is not null && IsGroupedView(view, user))
-                {
-                    return GetUserRootFolder()
-                        .GetChildren(user, true)
-                        .OfType<CollectionFolder>()
-                        .Where(i => i.CollectionType is null || i.CollectionType == view.ViewType)
-                        .Where(i => user.IsFolderGrouped(i.Id))
-                        .SelectMany(i => GetTopParentIdsForQuery(i, user));
-                }
-
-                return [];
+                return GetTopParentIdsForView(view, user);
             }
 
             if (item is CollectionFolder collectionFolder)
@@ -2212,6 +2185,38 @@ namespace Emby.Server.Implementations.Library
             if (topParent is not null)
             {
                 return [topParent.Id];
+            }
+
+            return [];
+        }
+
+        private IEnumerable<Guid> GetTopParentIdsForView(UserView view, User? user)
+        {
+            if (view.ViewType == CollectionType.livetv)
+            {
+                return [view.Id];
+            }
+
+            // Translate view into folders
+            if (!view.DisplayParentId.IsEmpty())
+            {
+                return GetTopParentIdsForParent(view.DisplayParentId, user);
+            }
+
+            if (!view.ParentId.IsEmpty())
+            {
+                return GetTopParentIdsForParent(view.ParentId, user);
+            }
+
+            // Handle grouping
+            if (user is not null && IsGroupedView(view, user))
+            {
+                return GetUserRootFolder()
+                    .GetChildren(user, true)
+                    .OfType<CollectionFolder>()
+                    .Where(i => i.CollectionType is null || i.CollectionType == view.ViewType)
+                    .Where(i => user.IsFolderGrouped(i.Id))
+                    .SelectMany(i => GetTopParentIdsForQuery(i, user));
             }
 
             return [];
