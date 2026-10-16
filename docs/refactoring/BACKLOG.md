@@ -67,7 +67,7 @@ Update as tasks land.
 | R11 | 6.53 | - | not started |
 | R12 | 6.69 | - | not started |
 | R13 | 7.23 | 9.38 | stopped at 9.38: Excess Number of Function Arguments (GetUserView, 6); Complex Conditional with a pattern variable that Recipe P cannot move |
-| R14 | 7.32 | 8.45 | stopped at 8.45: GetVp9String (cc 26) is two mapping switches; extracting either alone scores DOWN; public 5-argument signature |
+| R14 | 7.32 | 8.45 | stopped at 8.45: GetVp9String (cc 26) is two mapping switches; extracted alone or together they stay Complex Methods (rerun: FLAT); public 5-argument signature |
 | R15 | 7.83 | 8.44 | stopped at 8.44: Recipe P helpers score DOWN (string/primitive parameters trigger Primitive Obsession, String Heavy Function Arguments, Overall Code Complexity) |
 | R16 | 8.28 | 9.45 | stopped at 9.45: further P/G/E steps score DOWN (new helpers trigger Code Duplication between two near-duplicate parsers, which differ in more than one place) |
 | R17 | 8.54 | 8.54 | stopped: the duplicate spans three methods; Recipe D one method per commit is FLAT, all three at once is UP (8.54 to 9.09) but breaks one method per commit |
