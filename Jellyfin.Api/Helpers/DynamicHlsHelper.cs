@@ -462,17 +462,22 @@ public class DynamicHlsHelper
 
         if (videoRange == VideoRange.HDR)
         {
-            switch (videoRangeType)
-            {
-                case VideoRangeType.HLG:
-                case VideoRangeType.DOVIWithHLG:
-                case VideoRangeType.DOVIInvalid when string.Equals(state.VideoStream.ColorTransfer, "arib-std-b67", StringComparison.OrdinalIgnoreCase):
-                    builder.Append(",VIDEO-RANGE=HLG");
-                    break;
-                default:
-                    builder.Append(",VIDEO-RANGE=PQ");
-                    break;
-            }
+            AppendHdrVideoRangeField(builder, videoRangeType, state.VideoStream);
+        }
+    }
+
+    private static void AppendHdrVideoRangeField(StringBuilder builder, VideoRangeType videoRangeType, MediaStream videoStream)
+    {
+        switch (videoRangeType)
+        {
+            case VideoRangeType.HLG:
+            case VideoRangeType.DOVIWithHLG:
+            case VideoRangeType.DOVIInvalid when string.Equals(videoStream.ColorTransfer, "arib-std-b67", StringComparison.OrdinalIgnoreCase):
+                builder.Append(",VIDEO-RANGE=HLG");
+                break;
+            default:
+                builder.Append(",VIDEO-RANGE=PQ");
+                break;
         }
     }
 
