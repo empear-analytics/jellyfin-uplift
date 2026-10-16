@@ -348,55 +348,13 @@ namespace Emby.Server.Implementations.Library
                 return Array.Empty<BaseItem>();
             }
 
-            if (includeItemTypes.Length == 0)
-            {
-                // Handle situations with the grouping setting, e.g. movies showing up in tv, etc.
-                // Thanks to mixed content libraries included in the UserView
-                var hasCollectionType = parents.OfType<UserView>().ToList();
-                if (hasCollectionType.Count > 0)
-                {
-                    if (hasCollectionType.All(i => i.CollectionType == CollectionType.movies))
-                    {
-                        includeItemTypes = [BaseItemKind.Movie];
-                    }
-                    else if (hasCollectionType.All(i => i.CollectionType == CollectionType.tvshows))
-                    {
-                        includeItemTypes = [BaseItemKind.Episode];
-                    }
-                }
-            }
+            includeItemTypes = ResolveIncludeItemTypes(includeItemTypes, parents);
 
             MediaType[] mediaTypes = [];
 
             if (includeItemTypes.Length == 0)
             {
-                HashSet<MediaType> tmpMediaTypes = [];
-                foreach (var parent in parents.OfType<ICollectionFolder>())
-                {
-                    switch (parent.CollectionType)
-                    {
-                        case CollectionType.books:
-                            tmpMediaTypes.Add(MediaType.Book);
-                            tmpMediaTypes.Add(MediaType.Audio);
-                            break;
-                        case CollectionType.music:
-                            tmpMediaTypes.Add(MediaType.Audio);
-                            break;
-                        case CollectionType.photos:
-                            tmpMediaTypes.Add(MediaType.Photo);
-                            tmpMediaTypes.Add(MediaType.Video);
-                            break;
-                        case CollectionType.homevideos:
-                            tmpMediaTypes.Add(MediaType.Photo);
-                            tmpMediaTypes.Add(MediaType.Video);
-                            break;
-                        default:
-                            tmpMediaTypes.Add(MediaType.Video);
-                            break;
-                    }
-                }
-
-                mediaTypes = tmpMediaTypes.ToArray();
+                mediaTypes = GetMediaTypes(parents);
             }
 
             var excludeItemTypes = includeItemTypes.Length == 0 && mediaTypes.Length == 0
@@ -428,6 +386,65 @@ namespace Emby.Server.Implementations.Library
                 MediaTypes = mediaTypes
             };
 
+            return GetLatestOrAllItems(request, query, parents, limit);
+        }
+
+        private static BaseItemKind[] ResolveIncludeItemTypes(BaseItemKind[] includeItemTypes, List<BaseItem> parents)
+        {
+            if (includeItemTypes.Length == 0)
+            {
+                // Handle situations with the grouping setting, e.g. movies showing up in tv, etc.
+                // Thanks to mixed content libraries included in the UserView
+                var hasCollectionType = parents.OfType<UserView>().ToList();
+                if (hasCollectionType.Count > 0)
+                {
+                    if (hasCollectionType.All(i => i.CollectionType == CollectionType.movies))
+                    {
+                        includeItemTypes = [BaseItemKind.Movie];
+                    }
+                    else if (hasCollectionType.All(i => i.CollectionType == CollectionType.tvshows))
+                    {
+                        includeItemTypes = [BaseItemKind.Episode];
+                    }
+                }
+            }
+
+            return includeItemTypes;
+        }
+
+        private static MediaType[] GetMediaTypes(List<BaseItem> parents)
+        {
+            HashSet<MediaType> tmpMediaTypes = [];
+            foreach (var parent in parents.OfType<ICollectionFolder>())
+            {
+                switch (parent.CollectionType)
+                {
+                    case CollectionType.books:
+                        tmpMediaTypes.Add(MediaType.Book);
+                        tmpMediaTypes.Add(MediaType.Audio);
+                        break;
+                    case CollectionType.music:
+                        tmpMediaTypes.Add(MediaType.Audio);
+                        break;
+                    case CollectionType.photos:
+                        tmpMediaTypes.Add(MediaType.Photo);
+                        tmpMediaTypes.Add(MediaType.Video);
+                        break;
+                    case CollectionType.homevideos:
+                        tmpMediaTypes.Add(MediaType.Photo);
+                        tmpMediaTypes.Add(MediaType.Video);
+                        break;
+                    default:
+                        tmpMediaTypes.Add(MediaType.Video);
+                        break;
+                }
+            }
+
+            return tmpMediaTypes.ToArray();
+        }
+
+        private IReadOnlyList<BaseItem> GetLatestOrAllItems(LatestItemsQuery request, InternalItemsQuery query, List<BaseItem> parents, int limit)
+        {
             if (request.GroupItems)
             {
                 var collectionType = parents
