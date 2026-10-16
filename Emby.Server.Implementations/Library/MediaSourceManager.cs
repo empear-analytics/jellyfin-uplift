@@ -474,7 +474,7 @@ namespace Emby.Server.Implementations.Library
                 source => source.Id is not null ? dataBySourceId.GetValueOrDefault(source.Id) : null,
                 data => data.PlaybackPositionTicks > 0);
 
-            if (resumeSource is not null && !video.PrimaryVersionId.HasValue && !ReferenceEquals(sources[0], resumeSource))
+            if (ShouldMoveResumeSourceToFront(resumeSource, video, sources))
             {
                 var reordered = new List<MediaSourceInfo>(sources.Count) { resumeSource };
                 reordered.AddRange(sources.Where(s => !ReferenceEquals(s, resumeSource)));
@@ -482,6 +482,11 @@ namespace Emby.Server.Implementations.Library
             }
 
             return sources;
+        }
+
+        private static bool ShouldMoveResumeSourceToFront(MediaSourceInfo resumeSource, Video video, IReadOnlyList<MediaSourceInfo> sources)
+        {
+            return resumeSource is not null && !video.PrimaryVersionId.HasValue && !ReferenceEquals(sources[0], resumeSource);
         }
 
         private IReadOnlyList<string> NormalizeLanguage(string language)
