@@ -5397,7 +5397,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var memoryOutput = false;
             var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
             var isHwmapNotUsable = isUploadForOclTonemap && isVaapiEncoder;
-            if ((isVaapiDecoder && isSwEncoder) || isUploadForOclTonemap)
+            if (NeedsMemoryOutput(isVaapiDecoder, isSwEncoder, isUploadForOclTonemap))
             {
                 memoryOutput = true;
 
