@@ -2017,7 +2017,7 @@ public class DynamicHlsController : BaseJellyfinApiController
         var segmentExists = System.IO.File.Exists(segmentPath);
         if (segmentExists)
         {
-            if (transcodingJob is not null && transcodingJob.HasExited)
+            if (HasTranscodingJobExited(transcodingJob))
             {
                 // Transcoding job is over, so assume all existing files are ready
                 _logger.LogDebug("serving up {0} as transcode is over", segmentPath);
@@ -2041,13 +2041,13 @@ public class DynamicHlsController : BaseJellyfinApiController
             return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
         }
 
-        while (!cancellationToken.IsCancellationRequested && !transcodingJob.HasExited)
+        while (IsTranscodingInProgress(transcodingJob, cancellationToken))
         {
             // To be considered ready, the segment file has to exist AND
             // either the transcoding job should be done or next segment should also exist
             if (segmentExists)
             {
-                if (transcodingJob.HasExited || System.IO.File.Exists(nextSegmentPath))
+                if (IsSegmentReady(transcodingJob, nextSegmentPath))
                 {
                     _logger.LogDebug("Serving up {SegmentPath} as it deemed ready", segmentPath);
                     return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
@@ -2070,6 +2070,21 @@ public class DynamicHlsController : BaseJellyfinApiController
         cancellationToken.ThrowIfCancellationRequested();
 
         return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
+    }
+
+    private static bool HasTranscodingJobExited(TranscodingJob? transcodingJob)
+    {
+        return transcodingJob is not null && transcodingJob.HasExited;
+    }
+
+    private static bool IsTranscodingInProgress(TranscodingJob transcodingJob, CancellationToken cancellationToken)
+    {
+        return !cancellationToken.IsCancellationRequested && !transcodingJob.HasExited;
+    }
+
+    private static bool IsSegmentReady(TranscodingJob transcodingJob, string nextSegmentPath)
+    {
+        return transcodingJob.HasExited || System.IO.File.Exists(nextSegmentPath);
     }
 
     private void LogSegmentStateAfterTranscodingStopped(string segmentPath)
