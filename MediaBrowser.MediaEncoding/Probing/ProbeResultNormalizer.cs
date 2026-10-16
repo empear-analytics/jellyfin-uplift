@@ -787,6 +787,11 @@ namespace MediaBrowser.MediaEncoding.Probing
                 stream.BitDepth = streamInfo.BitsPerRawSample;
             }
 
+            SetAudioTitleFromTags(stream, streamInfo);
+        }
+
+        private static void SetAudioTitleFromTags(MediaStream stream, MediaStreamInfo streamInfo)
+        {
             if (string.IsNullOrEmpty(stream.Title))
             {
                 // FFprobe exposes MP4 track names via the name tag rather than title
