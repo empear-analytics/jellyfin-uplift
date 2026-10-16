@@ -2097,8 +2097,7 @@ namespace Emby.Server.Implementations.Library
                 }
             }
             else if (parents.Count == 1 && parents.First() is Folder folder
-                && (folder is Playlist || folder is BoxSet)
-                && folder.LinkedChildren.Length > 0)
+                && IsLinkedChildrenContainer(folder))
             {
                 // Playlists and BoxSets store their contents in LinkedChildren and never
                 // populate AncestorIds for those items, so a recursive AncestorIds query
@@ -2113,6 +2112,12 @@ namespace Emby.Server.Implementations.Library
             }
 
             query.Parent = null;
+        }
+
+        private static bool IsLinkedChildrenContainer(Folder folder)
+        {
+            return (folder is Playlist || folder is BoxSet)
+                && folder.LinkedChildren.Length > 0;
         }
 
         private static void SetAncestorIds(InternalItemsQuery query, IReadOnlyCollection<BaseItem> parents)
