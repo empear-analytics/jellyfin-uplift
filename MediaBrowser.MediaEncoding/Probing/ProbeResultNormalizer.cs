@@ -1793,17 +1793,7 @@ namespace MediaBrowser.MediaEncoding.Probing
                     i => new BaseItemPerson { Name = i, Type = PersonKind.Actor });
             }
 
-            if (tags.TryGetValue("WM/OriginalReleaseTime", out var year) && int.TryParse(year, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedYear))
-            {
-                video.ProductionYear = parsedYear;
-            }
-
-            // Credit to MCEBuddy: https://mcebuddy2x.codeplex.com/
-            // DateTime is reported along with timezone info (typically Z i.e. UTC hence assume None)
-            if (tags.TryGetValue("WM/MediaOriginalBroadcastDateTime", out var premiereDateString) && DateTime.TryParse(year, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var parsedDate))
-            {
-                video.PremiereDate = parsedDate;
-            }
+            SetWtvDates(video, tags);
 
             var description = tags.GetValueOrDefault("WM/SubTitleDescription");
 
@@ -1832,6 +1822,21 @@ namespace MediaBrowser.MediaEncoding.Probing
         private static bool TryGetMediaCredits(IReadOnlyDictionary<string, string> tags, out string people)
         {
             return tags.TryGetValue("WM/MediaCredits", out people) && !string.IsNullOrEmpty(people);
+        }
+
+        private static void SetWtvDates(MediaInfo video, IReadOnlyDictionary<string, string> tags)
+        {
+            if (tags.TryGetValue("WM/OriginalReleaseTime", out var year) && int.TryParse(year, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedYear))
+            {
+                video.ProductionYear = parsedYear;
+            }
+
+            // Credit to MCEBuddy: https://mcebuddy2x.codeplex.com/
+            // DateTime is reported along with timezone info (typically Z i.e. UTC hence assume None)
+            if (tags.TryGetValue("WM/MediaOriginalBroadcastDateTime", out var premiereDateString) && DateTime.TryParse(year, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out var parsedDate))
+            {
+                video.PremiereDate = parsedDate;
+            }
         }
 
         private static void SetWtvGenres(MediaInfo video, IReadOnlyDictionary<string, string> tags)
