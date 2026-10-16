@@ -180,10 +180,7 @@ namespace Emby.Server.Implementations.Library
             ResolveSymlinkPaths(mediaSources, enablePathSubstitution);
 
             // If file is strm or main media stream is missing, force a metadata refresh with remote probing
-            if (allowMediaProbe && mediaSources[0].Type != MediaSourceType.Placeholder
-                && (item.Path.EndsWith(".strm", StringComparison.OrdinalIgnoreCase)
-                    || (item.MediaType == MediaType.Video && mediaSources[0].MediaStreams.All(i => i.Type != MediaStreamType.Video))
-                    || (item.MediaType == MediaType.Audio && mediaSources[0].MediaStreams.All(i => i.Type != MediaStreamType.Audio))))
+            if (NeedsRemoteProbe(item, mediaSources, allowMediaProbe))
             {
                 await item.RefreshMetadata(
                     new MetadataRefreshOptions(_directoryService)
@@ -234,6 +231,14 @@ namespace Emby.Server.Implementations.Library
                 : item.Id;
 
             return SortMediaSources(list, preferredId).ToArray();
+        }
+
+        private static bool NeedsRemoteProbe(BaseItem item, IReadOnlyList<MediaSourceInfo> mediaSources, bool allowMediaProbe)
+        {
+            return allowMediaProbe && mediaSources[0].Type != MediaSourceType.Placeholder
+                && (item.Path.EndsWith(".strm", StringComparison.OrdinalIgnoreCase)
+                    || (item.MediaType == MediaType.Video && mediaSources[0].MediaStreams.All(i => i.Type != MediaStreamType.Video))
+                    || (item.MediaType == MediaType.Audio && mediaSources[0].MediaStreams.All(i => i.Type != MediaStreamType.Audio)));
         }
 
         /// <inheritdoc />>
