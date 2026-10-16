@@ -1781,12 +1781,12 @@ namespace MediaBrowser.MediaEncoding.Probing
 
             SetWtvGenres(video, tags);
 
-            if (tags.TryGetValue("WM/ParentalRating", out var officialRating) && !string.IsNullOrWhiteSpace(officialRating))
+            if (TryGetParentalRating(tags, out var officialRating))
             {
                 video.OfficialRating = officialRating;
             }
 
-            if (tags.TryGetValue("WM/MediaCredits", out var people) && !string.IsNullOrEmpty(people))
+            if (TryGetMediaCredits(tags, out var people))
             {
                 video.People = Array.ConvertAll(
                     people.Split(_basicDelimiters, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
@@ -1822,6 +1822,16 @@ namespace MediaBrowser.MediaEncoding.Probing
             {
                 video.Overview = description;
             }
+        }
+
+        private static bool TryGetParentalRating(IReadOnlyDictionary<string, string> tags, out string officialRating)
+        {
+            return tags.TryGetValue("WM/ParentalRating", out officialRating) && !string.IsNullOrWhiteSpace(officialRating);
+        }
+
+        private static bool TryGetMediaCredits(IReadOnlyDictionary<string, string> tags, out string people)
+        {
+            return tags.TryGetValue("WM/MediaCredits", out people) && !string.IsNullOrEmpty(people);
         }
 
         private static void SetWtvGenres(MediaInfo video, IReadOnlyDictionary<string, string> tags)
