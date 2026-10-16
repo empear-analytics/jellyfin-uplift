@@ -1865,6 +1865,43 @@ public class DynamicHlsController : BaseJellyfinApiController
 
         var args = "-codec:v:0 " + codec;
 
+        args += GetVideoCodecTagArguments(state, codec);
+
+        // if  (state.EnableMpegtsM2TsMode)
+        // {
+        //     args += " -mpegts_m2ts_mode 1";
+        // }
+
+        // See if we can save come cpu cycles by avoiding encoding.
+        if (EncodingHelper.IsCopyCodec(codec))
+        {
+            args += GetVideoCopyArguments(state);
+        }
+        else
+        {
+            args = GetVideoEncodingArguments(state, codec, args, startNumber, isEventPlaylist);
+        }
+
+        // TODO why was this not enabled for VOD?
+        if (isEventPlaylist && string.Equals(segmentContainer, "ts", StringComparison.OrdinalIgnoreCase))
+        {
+            args += " -flags -global_header";
+        }
+
+        if (!string.IsNullOrEmpty(state.OutputVideoSync))
+        {
+            args += EncodingHelper.GetVideoSyncOption(state.OutputVideoSync, _mediaEncoder.EncoderVersion);
+        }
+
+        args += _encodingHelper.GetOutputFFlags(state);
+
+        return args;
+    }
+
+    private string GetVideoCodecTagArguments(StreamState state, string codec)
+    {
+        var args = string.Empty;
+
         var isActualOutputVideoCodecAv1 = string.Equals(state.ActualOutputVideoCodec, "av1", StringComparison.OrdinalIgnoreCase);
         var isActualOutputVideoCodecHevc = string.Equals(state.ActualOutputVideoCodec, "h265", StringComparison.OrdinalIgnoreCase)
                                            || string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase);
@@ -1898,71 +1935,59 @@ public class DynamicHlsController : BaseJellyfinApiController
             }
         }
 
-        // if  (state.EnableMpegtsM2TsMode)
-        // {
-        //     args += " -mpegts_m2ts_mode 1";
-        // }
+        return args;
+    }
 
-        // See if we can save come cpu cycles by avoiding encoding.
-        if (EncodingHelper.IsCopyCodec(codec))
+    private string GetVideoCopyArguments(StreamState state)
+    {
+        var args = string.Empty;
+
+        // If h264_mp4toannexb is ever added, do not use it for live tv.
+        if (state.VideoStream is not null && !string.Equals(state.VideoStream.NalLengthSize, "0", StringComparison.OrdinalIgnoreCase))
         {
-            // If h264_mp4toannexb is ever added, do not use it for live tv.
-            if (state.VideoStream is not null && !string.Equals(state.VideoStream.NalLengthSize, "0", StringComparison.OrdinalIgnoreCase))
+            string bitStreamArgs = _encodingHelper.GetBitStreamArgs(state, MediaStreamType.Video);
+            if (!string.IsNullOrEmpty(bitStreamArgs))
             {
-                string bitStreamArgs = _encodingHelper.GetBitStreamArgs(state, MediaStreamType.Video);
-                if (!string.IsNullOrEmpty(bitStreamArgs))
-                {
-                    args += " " + bitStreamArgs;
-                }
-            }
-
-            args += " -start_at_zero";
-        }
-        else
-        {
-            args += _encodingHelper.GetVideoQualityParam(state, codec, _encodingOptions, isEventPlaylist ? DefaultEventEncoderPreset : DefaultVodEncoderPreset);
-
-            // Set the key frame params for video encoding to match the hls segment time.
-            args += _encodingHelper.GetHlsVideoKeyFrameArguments(state, codec, state.SegmentLength, isEventPlaylist, startNumber);
-
-            // Currently b-frames in libx265 breaks the FMP4-HLS playback on iOS, disable it for now.
-            if (string.Equals(codec, "libx265", StringComparison.OrdinalIgnoreCase)
-                && _mediaEncoder.EncoderVersion < _minFFmpegX265BframeInFmp4)
-            {
-                args += " -bf 0";
-            }
-
-            // video processing filters.
-            var videoProcessParam = _encodingHelper.GetVideoProcessingFilterParam(state, _encodingOptions, codec);
-
-            var negativeMapArgs = _encodingHelper.GetNegativeMapArgsByFilters(state, videoProcessParam);
-
-            args = negativeMapArgs + args + videoProcessParam;
-
-            // -start_at_zero is necessary to use with -ss when seeking,
-            // otherwise the target position cannot be determined.
-            if (state.SubtitleStream is not null)
-            {
-                // Disable start_at_zero for external graphical subs
-                if (!(state.SubtitleStream.IsExternal && !state.SubtitleStream.IsTextSubtitleStream))
-                {
-                    args += " -start_at_zero";
-                }
+                args += " " + bitStreamArgs;
             }
         }
 
-        // TODO why was this not enabled for VOD?
-        if (isEventPlaylist && string.Equals(segmentContainer, "ts", StringComparison.OrdinalIgnoreCase))
+        args += " -start_at_zero";
+
+        return args;
+    }
+
+    private string GetVideoEncodingArguments(StreamState state, string codec, string args, int startNumber, bool isEventPlaylist)
+    {
+        args += _encodingHelper.GetVideoQualityParam(state, codec, _encodingOptions, isEventPlaylist ? DefaultEventEncoderPreset : DefaultVodEncoderPreset);
+
+        // Set the key frame params for video encoding to match the hls segment time.
+        args += _encodingHelper.GetHlsVideoKeyFrameArguments(state, codec, state.SegmentLength, isEventPlaylist, startNumber);
+
+        // Currently b-frames in libx265 breaks the FMP4-HLS playback on iOS, disable it for now.
+        if (string.Equals(codec, "libx265", StringComparison.OrdinalIgnoreCase)
+            && _mediaEncoder.EncoderVersion < _minFFmpegX265BframeInFmp4)
         {
-            args += " -flags -global_header";
+            args += " -bf 0";
         }
 
-        if (!string.IsNullOrEmpty(state.OutputVideoSync))
-        {
-            args += EncodingHelper.GetVideoSyncOption(state.OutputVideoSync, _mediaEncoder.EncoderVersion);
-        }
+        // video processing filters.
+        var videoProcessParam = _encodingHelper.GetVideoProcessingFilterParam(state, _encodingOptions, codec);
 
-        args += _encodingHelper.GetOutputFFlags(state);
+        var negativeMapArgs = _encodingHelper.GetNegativeMapArgsByFilters(state, videoProcessParam);
+
+        args = negativeMapArgs + args + videoProcessParam;
+
+        // -start_at_zero is necessary to use with -ss when seeking,
+        // otherwise the target position cannot be determined.
+        if (state.SubtitleStream is not null)
+        {
+            // Disable start_at_zero for external graphical subs
+            if (!(state.SubtitleStream.IsExternal && !state.SubtitleStream.IsTextSubtitleStream))
+            {
+                args += " -start_at_zero";
+            }
+        }
 
         return args;
     }
