@@ -86,6 +86,32 @@ boundary is not reasonable:
 - Mutants of log-message strings and of log calls survive by design: logs are not part of the
   boundary.
 
+## What the tests freeze
+
+- **The acceptance tests use no internals.** Compiling them without the source projects'
+  `InternalsVisibleTo` gives no errors. They depend only on the public API of the plugin-facing
+  packages and on HTTP, so everything below those boundaries is free to change.
+- **Recorded output is byte-exact.** A refactoring must reproduce ffmpeg command lines, playlists
+  and JSON exactly, including whitespace and argument order.
+- **The existing upstream unit tests call nine internal members in scope.** The strict rule (existing
+  tests are not modified) freezes their names, signatures and owning classes. A refactoring may move
+  the body but must keep each member as an entry point:
+
+  | Class | Internal members |
+  |---|---|
+  | ProbeResultNormalizer | `GetEstimatedAudioBitrate`, `GetFrameRate`, `IsNearSquarePixelSar` |
+  | StreamBuilder | `ContainerReasons` |
+  | DynamicHlsController | `GetDolbyVisionHevcCodecTag`, `GetSegmentLengthsInternal`, `WaitForActiveTranscodingRequests` |
+  | MediaInfoHelper | `GetPublishedLiveStreamPath` |
+  | RequestHelpers | `GetUserId` |
+
+  Some upstream tests for LibraryManager and MediaSourceManager also check how many times
+  collaborators are called.
+- **Decision (2026-10-16): a block is reported, not worked around.** A Code Health issue that can only
+  be fixed by changing the frozen public API or a frozen member stays, and the campaign reports why.
+  The known case is *Constructor Over-Injection* on `EncodingHelper`: its six-argument public
+  constructor belongs to the plugin-facing MediaBrowser.Controller package.
+
 ## Upstream-bug candidates
 
 These were found while recording. The tests record the current behaviour, and none of them is fixed.
