@@ -239,22 +239,7 @@ public class MediaInfoHelper
             mediaSource.SupportsTranscoding = false;
         }
 
-        if (item is Audio)
-        {
-            _logger.LogInformation(
-                "User policy for {0}. EnableAudioPlaybackTranscoding: {1}",
-                user.Username,
-                user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding));
-        }
-        else
-        {
-            _logger.LogInformation(
-                "User policy for {0}. EnablePlaybackRemuxing: {1} EnableVideoPlaybackTranscoding: {2} EnableAudioPlaybackTranscoding: {3}",
-                user.Username,
-                user.HasPermission(PermissionKind.EnablePlaybackRemuxing),
-                user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding),
-                user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding));
-        }
+        LogUserPolicy(item, user);
 
         options.MaxBitrate = GetMaxBitrate(maxBitrate, user, ipAddress);
 
@@ -287,59 +272,9 @@ public class MediaInfoHelper
                 || mediaSource.TranscodingContainer is not null
                 || profile.TranscodingProfiles.Any(i => i.Type == streamInfo.MediaType && i.Context == options.Context);
 
-            if (item is Audio)
-            {
-                if (!user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding))
-                {
-                    mediaSource.SupportsTranscoding = false;
-                }
-            }
-            else if (item is Video)
-            {
-                if (!user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding)
-                    && !user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding)
-                    && !user.HasPermission(PermissionKind.EnablePlaybackRemuxing))
-                {
-                    mediaSource.SupportsTranscoding = false;
-                }
-            }
+            ApplyUserTranscodingPermission(item, user, mediaSource);
 
-            if (mediaSource.IsRemote && user.HasPermission(PermissionKind.ForceRemoteSourceTranscoding))
-            {
-                mediaSource.SupportsDirectPlay = false;
-                mediaSource.SupportsDirectStream = false;
-
-                mediaSource.TranscodingUrl = streamInfo.ToUrl(null, claimsPrincipal.GetToken(), "&allowVideoStreamCopy=false&allowAudioStreamCopy=false");
-                mediaSource.TranscodingContainer = streamInfo.Container;
-                mediaSource.TranscodingSubProtocol = streamInfo.SubProtocol;
-                if (streamInfo.AlwaysBurnInSubtitleWhenTranscoding)
-                {
-                    mediaSource.TranscodingUrl += "&alwaysBurnInSubtitleWhenTranscoding=true";
-                }
-            }
-            else
-            {
-                if (!mediaSource.SupportsDirectPlay && (mediaSource.SupportsTranscoding || mediaSource.SupportsDirectStream))
-                {
-                    streamInfo.PlayMethod = PlayMethod.Transcode;
-                    mediaSource.TranscodingUrl = streamInfo.ToUrl(null, claimsPrincipal.GetToken(), null);
-
-                    if (!allowVideoStreamCopy)
-                    {
-                        mediaSource.TranscodingUrl += "&allowVideoStreamCopy=false";
-                    }
-
-                    if (!allowAudioStreamCopy)
-                    {
-                        mediaSource.TranscodingUrl += "&allowAudioStreamCopy=false";
-                    }
-
-                    if (streamInfo.AlwaysBurnInSubtitleWhenTranscoding)
-                    {
-                        mediaSource.TranscodingUrl += "&alwaysBurnInSubtitleWhenTranscoding=true";
-                    }
-                }
-            }
+            SetTranscodingUrl(streamInfo, mediaSource, user, claimsPrincipal, allowVideoStreamCopy, allowAudioStreamCopy);
 
             // Do this after the above so that StartPositionTicks is set
             // The token must not be null
@@ -355,6 +290,86 @@ public class MediaInfoHelper
                 item.Id,
                 mediaSource.Id,
                 attachment.Index);
+        }
+    }
+
+    private void LogUserPolicy(BaseItem item, User user)
+    {
+        if (item is Audio)
+        {
+            _logger.LogInformation(
+                "User policy for {0}. EnableAudioPlaybackTranscoding: {1}",
+                user.Username,
+                user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding));
+        }
+        else
+        {
+            _logger.LogInformation(
+                "User policy for {0}. EnablePlaybackRemuxing: {1} EnableVideoPlaybackTranscoding: {2} EnableAudioPlaybackTranscoding: {3}",
+                user.Username,
+                user.HasPermission(PermissionKind.EnablePlaybackRemuxing),
+                user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding),
+                user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding));
+        }
+    }
+
+    private static void ApplyUserTranscodingPermission(BaseItem item, User user, MediaSourceInfo mediaSource)
+    {
+        if (item is Audio)
+        {
+            if (!user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding))
+            {
+                mediaSource.SupportsTranscoding = false;
+            }
+        }
+        else if (item is Video)
+        {
+            if (!user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding)
+                && !user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding)
+                && !user.HasPermission(PermissionKind.EnablePlaybackRemuxing))
+            {
+                mediaSource.SupportsTranscoding = false;
+            }
+        }
+    }
+
+    private static void SetTranscodingUrl(StreamInfo streamInfo, MediaSourceInfo mediaSource, User user, ClaimsPrincipal claimsPrincipal, bool allowVideoStreamCopy, bool allowAudioStreamCopy)
+    {
+        if (mediaSource.IsRemote && user.HasPermission(PermissionKind.ForceRemoteSourceTranscoding))
+        {
+            mediaSource.SupportsDirectPlay = false;
+            mediaSource.SupportsDirectStream = false;
+
+            mediaSource.TranscodingUrl = streamInfo.ToUrl(null, claimsPrincipal.GetToken(), "&allowVideoStreamCopy=false&allowAudioStreamCopy=false");
+            mediaSource.TranscodingContainer = streamInfo.Container;
+            mediaSource.TranscodingSubProtocol = streamInfo.SubProtocol;
+            if (streamInfo.AlwaysBurnInSubtitleWhenTranscoding)
+            {
+                mediaSource.TranscodingUrl += "&alwaysBurnInSubtitleWhenTranscoding=true";
+            }
+        }
+        else
+        {
+            if (!mediaSource.SupportsDirectPlay && (mediaSource.SupportsTranscoding || mediaSource.SupportsDirectStream))
+            {
+                streamInfo.PlayMethod = PlayMethod.Transcode;
+                mediaSource.TranscodingUrl = streamInfo.ToUrl(null, claimsPrincipal.GetToken(), null);
+
+                if (!allowVideoStreamCopy)
+                {
+                    mediaSource.TranscodingUrl += "&allowVideoStreamCopy=false";
+                }
+
+                if (!allowAudioStreamCopy)
+                {
+                    mediaSource.TranscodingUrl += "&allowAudioStreamCopy=false";
+                }
+
+                if (streamInfo.AlwaysBurnInSubtitleWhenTranscoding)
+                {
+                    mediaSource.TranscodingUrl += "&alwaysBurnInSubtitleWhenTranscoding=true";
+                }
+            }
         }
     }
 
