@@ -293,10 +293,15 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static bool IsIncompatibleRangeType(string[] requestedRangeTypes, MediaStream videoStream, bool requestHasHDR10, bool requestHasHLG, bool requestHasSDR)
         {
             return !requestedRangeTypes.Contains(videoStream.VideoRangeType.ToString(), StringComparison.OrdinalIgnoreCase)
-                && !((requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.DOVIWithHDR10)
-                    || (requestHasHLG && videoStream.VideoRangeType == VideoRangeType.DOVIWithHLG)
-                    || (requestHasSDR && videoStream.VideoRangeType == VideoRangeType.DOVIWithSDR)
-                    || (requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.HDR10Plus));
+                && !IsRangeTypeCompatibleByFallback(videoStream, requestHasHDR10, requestHasHLG, requestHasSDR);
+        }
+
+        private static bool IsRangeTypeCompatibleByFallback(MediaStream videoStream, bool requestHasHDR10, bool requestHasHLG, bool requestHasSDR)
+        {
+            return (requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.DOVIWithHDR10)
+                || (requestHasHLG && videoStream.VideoRangeType == VideoRangeType.DOVIWithHLG)
+                || (requestHasSDR && videoStream.VideoRangeType == VideoRangeType.DOVIWithSDR)
+                || (requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.HDR10Plus);
         }
 
         private static bool IsUnrequestedRotation(int rotation, string[] requestedRotations)
