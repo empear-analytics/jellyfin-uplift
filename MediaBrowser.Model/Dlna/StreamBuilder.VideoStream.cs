@@ -64,11 +64,7 @@ namespace MediaBrowser.Model.Dlna
                 audioCodecs = [audioStream.Codec];
                 playlistItem.AudioCodecs = audioCodecs;
 
-                // Copy matching audio codec options
-                playlistItem.AudioSampleRate = audioStream.SampleRate;
-                playlistItem.SetOption(qualifier, "audiochannels", audioStream.Channels?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
-
-                CopyAudioProfileAndLevel(playlistItem, audioStream);
+                CopyDirectAudioOptions(playlistItem, audioStream, qualifier);
             }
 
             int? width = videoStream?.Width;
@@ -129,6 +125,15 @@ namespace MediaBrowser.Model.Dlna
             ApplyMaxVideoBitrate(playlistItem, maxBitrateSetting);
 
             LogTranscodeResult(options, item, playlistItem, audioStream);
+        }
+
+        private static void CopyDirectAudioOptions(StreamInfo playlistItem, MediaStream audioStream, string? qualifier)
+        {
+            // Copy matching audio codec options
+            playlistItem.AudioSampleRate = audioStream.SampleRate;
+            playlistItem.SetOption(qualifier, "audiochannels", audioStream.Channels?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
+
+            CopyAudioProfileAndLevel(playlistItem, audioStream);
         }
 
         private void LogTranscodeResult(MediaOptions options, MediaSourceInfo item, StreamInfo playlistItem, MediaStream? audioStream)
