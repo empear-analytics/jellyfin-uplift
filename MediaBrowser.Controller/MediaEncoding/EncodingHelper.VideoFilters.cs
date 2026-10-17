@@ -235,9 +235,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var tonemapArg = string.Empty;
 
             // libplacebo only support full range RGB
-            forceFullRange = forceFullRange
-                || (videoFormat ?? string.Empty).Contains("rgb", StringComparison.OrdinalIgnoreCase)
-                || (videoFormat ?? string.Empty).Contains("bgr", StringComparison.OrdinalIgnoreCase);
+            forceFullRange = IsLibplaceboFullRangeRequired(videoFormat, forceFullRange);
 
             if (doTonemap)
             {
@@ -254,6 +252,13 @@ namespace MediaBrowser.Controller.MediaEncoding
                 sizeArg,
                 formatArg,
                 tonemapArg);
+        }
+
+        private static bool IsLibplaceboFullRangeRequired(string videoFormat, bool forceFullRange)
+        {
+            return forceFullRange
+                || (videoFormat ?? string.Empty).Contains("rgb", StringComparison.OrdinalIgnoreCase)
+                || (videoFormat ?? string.Empty).Contains("bgr", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetLibplaceboTonemapArg(EncodingOptions options, bool forceFullRange, string tonemapArg)
