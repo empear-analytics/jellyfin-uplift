@@ -98,5 +98,27 @@ namespace MediaBrowser.Controller.MediaEncoding
             return !string.IsNullOrEmpty(transposeDir)
                 && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.TransposeOpenclReversal);
         }
+
+        private string GetAmdOverlayAlphaFormatOption()
+        {
+            return _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayOpenclAlphaFormat)
+                ? ":alpha_format=premultiplied" : string.Empty;
+        }
+
+        private static float GetAmdSubtitleFramerate(EncodingJobInfo state, bool hasAssSubs)
+        {
+            var framerate = state.VideoStream?.RealFrameRate;
+            return GetSubtitleFramerate(hasAssSubs, framerate);
+        }
+
+        private static string GetAmdSwOutputFormat(bool doOclTonemap)
+        {
+            return doOclTonemap ? "yuv420p10le" : "yuv420p";
+        }
+
+        private static string GetAmdOclScaleOutputFormat(bool doOclTonemap)
+        {
+            return doOclTonemap ? string.Empty : "nv12";
+        }
     }
 }

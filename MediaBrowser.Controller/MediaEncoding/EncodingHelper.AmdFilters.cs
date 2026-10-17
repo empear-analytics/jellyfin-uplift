@@ -113,7 +113,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // sw deint
                 AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
-                var outFormat = doOclTonemap ? "yuv420p10le" : "yuv420p";
+                var outFormat = GetAmdSwOutputFormat(doOclTonemap);
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
                 // sw scale
                 mainFilters.Add(swScaleFilter);
@@ -137,7 +137,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // hw transpose
                 AddAmdOclTransposeFilter(mainFilters, doOclTranspose, transposeDir);
 
-                var outFormat = doOclTonemap ? string.Empty : "nv12";
+                var outFormat = GetAmdOclScaleOutputFormat(doOclTonemap);
                 var hwScaleFilter = GetHwScaleFilter("scale", "opencl", outFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
                 // hw scale
                 mainFilters.Add(hwScaleFilter);
@@ -180,8 +180,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     }
                     else if (hasTextSubs)
                     {
-                        var framerate = state.VideoStream?.RealFrameRate;
-                        var subFramerate = GetSubtitleFramerate(hasAssSubs, framerate);
+                        var subFramerate = GetAmdSubtitleFramerate(state, hasAssSubs);
 
                         // alphasrc=s=1280x720:r=10:start=0,format=yuva420p,subtitles,hwupload
                         var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH, subFramerate);
@@ -190,8 +189,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                         subFilters.Add("format=yuva420p");
                         subFilters.Add(subTextSubtitlesFilter);
 
-                        alphaFormatOpt = _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayOpenclAlphaFormat)
-                            ? ":alpha_format=premultiplied" : string.Empty;
+                        alphaFormatOpt = GetAmdOverlayAlphaFormatOption();
                     }
 
                     subFilters.Add("hwupload=derive_device=opencl");
