@@ -2688,40 +2688,11 @@ namespace Emby.Server.Implementations.Library
                 }
 
                 ImageDimensions size;
-                try
-                {
-                    size = _imageProcessor.GetImageDimensions(item, image);
-                    image.Width = size.Width;
-                    image.Height = size.Height;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Cannot get image dimensions for {ImagePath}", image.Path);
-                    size = default;
-                    image.Width = 0;
-                    image.Height = 0;
-                }
+                size = UpdateImageDimensions(item, image);
 
-                try
-                {
-                    var blurhash = _imageProcessor.GetImageBlurHash(image.Path, size);
-                    image.BlurHash = blurhash;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Cannot compute blurhash for {ImagePath}", image.Path);
-                    image.BlurHash = string.Empty;
-                }
+                UpdateImageBlurHash(image, size);
 
-                try
-                {
-                    var modifiedDate = _fileSystem.GetLastWriteTimeUtc(image.Path);
-                    image.DateModified = modifiedDate;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Cannot update DateModified for {ImagePath}", image.Path);
-                }
+                UpdateImageDateModified(image);
             }
 
             item.ValidateImages();
@@ -2729,6 +2700,53 @@ namespace Emby.Server.Implementations.Library
             await _persistenceService.SaveImagesAsync(item).ConfigureAwait(false);
 
             RegisterItem(item);
+        }
+
+        private ImageDimensions UpdateImageDimensions(BaseItem item, ItemImageInfo image)
+        {
+            ImageDimensions size;
+            try
+            {
+                size = _imageProcessor.GetImageDimensions(item, image);
+                image.Width = size.Width;
+                image.Height = size.Height;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Cannot get image dimensions for {ImagePath}", image.Path);
+                size = default;
+                image.Width = 0;
+                image.Height = 0;
+            }
+
+            return size;
+        }
+
+        private void UpdateImageBlurHash(ItemImageInfo image, ImageDimensions size)
+        {
+            try
+            {
+                var blurhash = _imageProcessor.GetImageBlurHash(image.Path, size);
+                image.BlurHash = blurhash;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Cannot compute blurhash for {ImagePath}", image.Path);
+                image.BlurHash = string.Empty;
+            }
+        }
+
+        private void UpdateImageDateModified(ItemImageInfo image)
+        {
+            try
+            {
+                var modifiedDate = _fileSystem.GetLastWriteTimeUtc(image.Path);
+                image.DateModified = modifiedDate;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Cannot update DateModified for {ImagePath}", image.Path);
+            }
         }
 
         /// <inheritdoc />
