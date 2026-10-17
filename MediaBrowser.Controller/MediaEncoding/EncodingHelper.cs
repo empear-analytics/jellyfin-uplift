@@ -6561,9 +6561,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return string.IsNullOrEmpty(mainStr) ? string.Empty : " -vf \"" + mainStr + "\"";
             }
 
-            if (overlayFilters?.Count > 0
-                && subFilters?.Count > 0
-                && state.SubtitleStream is not null)
+            if (HasSubtitleOverlay(state, subFilters, overlayFilters))
             {
                 // overlay graphical/text subtitles
                 var subStr = string.Format(
@@ -6607,6 +6605,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static bool HasSubtitleOverlay(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters)
+        {
+            return overlayFilters?.Count > 0
+                && subFilters?.Count > 0
+                && state.SubtitleStream is not null;
         }
 
         public string GetOverwriteColorPropertiesParam(EncodingJobInfo state, bool isTonemapAvailable)
