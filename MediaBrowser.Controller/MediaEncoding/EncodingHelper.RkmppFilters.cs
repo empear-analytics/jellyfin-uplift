@@ -234,13 +234,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (isDrmInDrmOut)
             {
-                if (doOclTonemap)
-                {
-                    // OUTPUT drm(nv12) surface(gem/dma-heap)
-                    // reverse-mapping via drm-opencl interop.
-                    mainFilters.Add("hwmap=derive_device=rkmpp:reverse=1");
-                    mainFilters.Add("format=drm_prime");
-                }
+                AddDrmReverseMapping(mainFilters, doOclTonemap);
             }
 
             /* Make sub and overlay filters for subtitle stream */
@@ -300,6 +294,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static void AddDrmReverseMapping(List<string> mainFilters, bool doOclTonemap)
+        {
+            if (doOclTonemap)
+            {
+                // OUTPUT drm(nv12) surface(gem/dma-heap)
+                // reverse-mapping via drm-opencl interop.
+                mainFilters.Add("hwmap=derive_device=rkmpp:reverse=1");
+                mainFilters.Add("format=drm_prime");
+            }
         }
 
         private static bool NeedsRkrgaScaleFilters(bool hasSubs, bool doRkVppTranspose, bool isFullAfbcPipeline, bool doScaling)
