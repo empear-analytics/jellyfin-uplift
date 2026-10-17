@@ -386,6 +386,11 @@ public static class StreamingHelpers
             return ext;
         }
 
+        return GetCodecExtension(state, mediaSource);
+    }
+
+    private static string GetCodecExtension(StreamState state, MediaSourceInfo? mediaSource)
+    {
         // Try to infer based on the desired video codec
         if (state.IsVideoRequest)
         {
