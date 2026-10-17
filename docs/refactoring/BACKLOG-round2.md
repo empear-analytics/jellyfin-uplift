@@ -69,7 +69,7 @@ Update as tasks land.
 | R2-08 | 7.78 | 7.78 | no step applies: GetPathProtocol is a trailing if-chain of early returns (candidate: extend Recipe E rule 7 to if-chains); public argument lists; Constructor Over-Injection (13); Low Cohesion; Primitive Obsession |
 | R2-09 | 7.78 | 8.03 | stopped at 8.03: AppendDvString cleared with Recipe P and [NotNullWhen(false)]; GetOutputVideoCodecLevel and GetOutputAv1BitDepth conditionals blocked (null checks on property paths inside the expression, no nullable rule covers them); GetPlaylistAudioCodecs flat return chain, no recipe; Excess Arguments; Constructor Over-Injection (11) |
 | R2-10 | 7.98 | - | not started |
-| R2-11 | 7.98 | - | not started |
+| R2-11 | 7.98 | 8.00 | stopped at 8.00: the file has room for one more method before Overall Code Complexity appears, after which every E or P step is DOWN; G WORSE (each `continue` adds 1 to cc); step order cost score (step 4 P alone would give 8.18, but step 1 used the slot); ProcessPairs loops differ only in PersonKind, but no duplication is reported |
 | R2-12 | 8.01 | - | not started |
 | R2-13 | 8.04 | - | not started |
 | R2-14 | 8.15 | - | not started |
