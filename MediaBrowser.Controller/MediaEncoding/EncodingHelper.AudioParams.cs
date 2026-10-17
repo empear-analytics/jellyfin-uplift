@@ -163,16 +163,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (channels is 2 && state.AudioStream?.Channels is > 2)
             {
-                var hasDownMixFilter = DownMixAlgorithmsHelper.AlgorithmFilterStrings.TryGetValue((encodingOptions.DownMixStereoAlgorithm, DownMixAlgorithmsHelper.InferChannelLayout(state.AudioStream)), out var downMixFilterString);
-                if (hasDownMixFilter)
-                {
-                    filters.Add(downMixFilterString);
-                }
-
-                if (!encodingOptions.DownMixAudioBoost.Equals(1))
-                {
-                    filters.Add("volume=" + encodingOptions.DownMixAudioBoost.ToString(CultureInfo.InvariantCulture));
-                }
+                AddStereoDownMixFilters(state, encodingOptions, filters);
             }
 
             var isCopyingTimestamps = state.CopyTimestamps || state.TranscodingType != TranscodingJobType.Progressive;
@@ -193,6 +184,20 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static void AddStereoDownMixFilters(EncodingJobInfo state, EncodingOptions encodingOptions, List<string> filters)
+        {
+            var hasDownMixFilter = DownMixAlgorithmsHelper.AlgorithmFilterStrings.TryGetValue((encodingOptions.DownMixStereoAlgorithm, DownMixAlgorithmsHelper.InferChannelLayout(state.AudioStream)), out var downMixFilterString);
+            if (hasDownMixFilter)
+            {
+                filters.Add(downMixFilterString);
+            }
+
+            if (!encodingOptions.DownMixAudioBoost.Equals(1))
+            {
+                filters.Add("volume=" + encodingOptions.DownMixAudioBoost.ToString(CultureInfo.InvariantCulture));
+            }
         }
 
         private static bool NeedsSubtitleAudioTimestampShift(EncodingJobInfo state, bool isCopyingTimestamps)
