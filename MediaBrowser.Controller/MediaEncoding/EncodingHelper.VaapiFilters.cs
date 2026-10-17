@@ -138,9 +138,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasSubs = HasSubtitlesToEncode(state);
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
-            var hasAssSubs = hasSubs
-                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+            var hasAssSubs = HasAssSubtitles(state, hasSubs);
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
@@ -414,9 +412,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasSubs = HasSubtitlesToEncode(state);
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
-            var hasAssSubs = hasSubs
-                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+            var hasAssSubs = HasAssSubtitles(state, hasSubs);
 
             var rotation = state.VideoStream?.Rotation ?? 0;
             var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
