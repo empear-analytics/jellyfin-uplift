@@ -295,34 +295,5 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             return (mainFilters, subFilters, overlayFilters);
         }
-
-        private static void AddDrmReverseMapping(List<string> mainFilters, bool doOclTonemap)
-        {
-            if (doOclTonemap)
-            {
-                // OUTPUT drm(nv12) surface(gem/dma-heap)
-                // reverse-mapping via drm-opencl interop.
-                mainFilters.Add("hwmap=derive_device=rkmpp:reverse=1");
-                mainFilters.Add("format=drm_prime");
-            }
-        }
-
-        private static bool NeedsRkrgaScaleFilters(bool hasSubs, bool doRkVppTranspose, bool isFullAfbcPipeline, bool doScaling)
-        {
-            return !hasSubs
-                || doRkVppTranspose
-                || !isFullAfbcPipeline
-                || doScaling;
-        }
-
-        private static bool NeedsRkrgaMjpegFirstPass(bool isMjpegEncoder, bool doOclTonemap, bool doScaling, bool isScaleRatioSupported)
-        {
-            return isMjpegEncoder && !doOclTonemap && ((doScaling && isScaleRatioSupported) || !doScaling);
-        }
-
-        private static bool IsOverlayTallerThan(int? overlayW, int? overlayH, int subMaxH)
-        {
-            return overlayW.HasValue && overlayH.HasValue && overlayH.Value > subMaxH;
-        }
     }
 }
