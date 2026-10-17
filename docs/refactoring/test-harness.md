@@ -125,3 +125,11 @@ These were found while recording. The tests record the current behaviour, and no
   refactoring campaign.)
 - In the Default subtitle mode, an external Swedish subtitle is selected in a case where the
   preferences point elsewhere. This needs checking against the intended rules.
+- `DynamicHlsHelper.GetMasterPlaylistInternal`: `sdrPlaylistQuery` and `variantQuery` are the same
+  dictionary as `playlistQuery`, so the SDR and H.264 compatibility edits leak into the
+  adaptive-bitrate variant URLs. (Reported by the R07 agent.)
+- `DynamicHlsHelper.GetOutputVideoCodecProfile`: the defaults `profileString ??= "high"` and
+  `??= "main"` never apply. (Reported by the R07 agent.)
+- `ProbeResultNormalizer.FetchWtvInfo` (now `SetWtvDates` in `ProbeResultNormalizer.Video.cs`):
+  `PremiereDate` is parsed from `year`; `premiereDateString` is read and never used. (Reported by
+  the R04 agent.)

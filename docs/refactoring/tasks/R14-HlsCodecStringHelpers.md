@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **7.32** / 10 (Yellow) |
 | Exit target | **10.00** |
-| File size | 370 lines (140 lines of code) |
-| Git churn | 18 commits |
+| File size | 390 lines (148 lines of code) |
+| Git churn | 21 commits |
 | Part | api (`Jellyfin.Api/Helpers`) |
 | Recipes needed | E, G, P |
 | Smells without a recipe | Excess Number of Function Arguments, Primitive Obsession |
@@ -125,7 +125,7 @@ python tools/codehealth_check.py Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs
 ```
 
 - `UP`, build passed, tests passed, guard passed: commit and continue.
-- `FLAT` or `DOWN`: revert that step with `git checkout -- Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs` and move to the next method.
+- `WORSE`, `FLAT` or `DOWN`: revert that step with `git checkout -- Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs` and move to the next method.
 - Tests or guard **failed**: revert that step, no exceptions.
 
 ## 8. Definition of done

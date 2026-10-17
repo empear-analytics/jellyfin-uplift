@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **8.54** / 10 (Yellow) |
 | Exit target | **10.00** |
-| File size | 735 lines (317 lines of code) |
-| Git churn | 85 commits |
+| File size | 722 lines (311 lines of code) |
+| Git churn | 86 commits |
 | Part | encoding (`MediaBrowser.Controller/MediaEncoding`) |
 | Recipes needed | D |
 | Smells without a recipe | Excess Number of Function Arguments, Primitive Obsession, String Heavy Function Arguments |
@@ -127,7 +127,7 @@ python tools/codehealth_check.py MediaBrowser.Controller/MediaEncoding/EncodingJ
 ```
 
 - `UP`, build passed, tests passed, guard passed: commit and continue.
-- `FLAT` or `DOWN`: revert that step with `git checkout -- MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs` and move to the next method.
+- `WORSE`, `FLAT` or `DOWN`: revert that step with `git checkout -- MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs` and move to the next method.
 - Tests or guard **failed**: revert that step, no exceptions.
 
 ## 8. Definition of done
@@ -135,7 +135,7 @@ python tools/codehealth_check.py MediaBrowser.Controller/MediaEncoding/EncodingJ
 - [ ] `python tools/codehealth_check.py` reports 10.00, or every remaining smell is one the playbook has no recipe for and is listed in the report
 - [ ] `dotnet build Jellyfin.sln --no-incremental` succeeds with no new warnings (211 on the base)
 - [ ] `dotnet test Jellyfin.sln --no-build` passes in full
-- [ ] `python tools/refactor_guard.py --base <start commit> --together MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs <any files split off it>` reports no removed literals
+- [ ] `python tools/refactor_guard.py --base <start commit> --dedup --together MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs <any files split off it>` reports no removed literals
 - [ ] Each commit covers one method and uses the message format above
 - [ ] Nothing in `tests/` changed: `git diff --stat <start commit> -- tests` is empty
 

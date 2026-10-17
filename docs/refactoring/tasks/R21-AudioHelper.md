@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **9.21** / 10 (Green) |
 | Exit target | **10.00** |
-| File size | 167 lines (99 lines of code) |
-| Git churn | 25 commits |
+| File size | 172 lines (101 lines of code) |
+| Git churn | 26 commits |
 | Part | api (`Jellyfin.Api/Helpers`) |
 | Recipes needed | E, G, P |
 | Smells without a recipe | Constructor Over-Injection |
@@ -108,7 +108,7 @@ python tools/codehealth_check.py Jellyfin.Api/Helpers/AudioHelper.cs
 ```
 
 - `UP`, build passed, tests passed, guard passed: commit and continue.
-- `FLAT` or `DOWN`: revert that step with `git checkout -- Jellyfin.Api/Helpers/AudioHelper.cs` and move to the next method.
+- `WORSE`, `FLAT` or `DOWN`: revert that step with `git checkout -- Jellyfin.Api/Helpers/AudioHelper.cs` and move to the next method.
 - Tests or guard **failed**: revert that step, no exceptions.
 
 ## 8. Definition of done

@@ -17,18 +17,18 @@ allowed transformations.
 | [R07](tasks/R07-DynamicHlsHelper.md) | `Jellyfin.Api/Helpers/DynamicHlsHelper.cs` | **4.59** | 515 | 67 | 77 / 70 | E, G, P | Constructor Over-Injection, Excess Number of Function Arguments | `GetMasterPlaylistInternal` (cc 54) |
 | [R08](tasks/R08-MediaSourceManager.md) | `Emby.Server.Implementations/Library/MediaSourceManager.cs` | **4.90** | 552 | 178 | 45 / 40 | E, G, P | Constructor Over-Injection, Excess Number of Function Arguments, Low Cohesion, Primitive Obsession | `AddMediaInfoWithProbe` (cc 25) |
 | [R09](tasks/R09-MediaInfoHelper.md) | `Jellyfin.Api/Helpers/MediaInfoHelper.cs` | **5.41** | 325 | 162 | 70 / 74 | E, G, P | Constructor Over-Injection, Excess Number of Function Arguments, Primitive Obsession | `SortMediaSources` (cc 13) |
-| [R10](tasks/R10-StreamInfo.md) | `MediaBrowser.Model/Dlna/StreamInfo.cs` | **5.89** | 499 | 174 | 52 / 74 | E, G, P | Excess Number of Function Arguments, Primitive Obsession, String Heavy Function Arguments | `ToUrl` (cc 49) |
-| [R11](tasks/R11-ConditionProcessor.md) | `MediaBrowser.Model/Dlna/ConditionProcessor.cs` | **6.53** | 214 | 53 | 37 / 59 | D, E, G, P | Excess Number of Function Arguments, Primitive Obsession | `IsVideoConditionSatisfied` (cc 21) |
-| [R12](tasks/R12-UserDataManager.md) | `Emby.Server.Implementations/Library/UserDataManager.cs` | **6.69** | 296 | 110 | 85 / 87 | D, E, G, P | Excess Number of Function Arguments | `GetResumeUserDataBatch` (cc 23) |
-| [R13](tasks/R13-UserViewManager.md) | `Emby.Server.Implementations/Library/UserViewManager.cs` | **7.23** | 257 | 145 | 81 / 83 | E, G, P | Excess Number of Function Arguments | `GetItemsForLatestItems` (cc 27) |
-| [R14](tasks/R14-HlsCodecStringHelpers.md) | `Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs` | **7.32** | 140 | 18 | 68 / 72 | E, G, P | Excess Number of Function Arguments, Primitive Obsession | `GetVp9String` (cc 28) |
-| [R15](tasks/R15-PathExtensions.md) | `Emby.Server.Implementations/Library/PathExtensions.cs` | **7.83** | 99 | 40 | 86 / 84 | E, G, P | - | `GetAttributeValue` (cc 27) |
-| [R16](tasks/R16-JobLogger.md) | `MediaBrowser.Controller/MediaEncoding/JobLogger.cs` | **8.28** | 81 | 35 | 75 / 78 | E, G, P | - | `ParseLogLine` (cc 22) |
-| [R17](tasks/R17-EncodingJobInfo.md) | `MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs` | **8.54** | 317 | 85 | 69 / 64 | D | Excess Number of Function Arguments, Primitive Obsession, String Heavy Function Arguments | - |
-| [R18](tasks/R18-DotIgnoreIgnoreRule.md) | `Emby.Server.Implementations/Library/DotIgnoreIgnoreRule.cs` | **8.63** | 154 | 11 | 79 / 76 | E, G, P | Primitive Obsession | `FindIgnoreFileCached` (cc 13) |
-| [R19](tasks/R19-MediaStreamSelector.md) | `Emby.Server.Implementations/Library/MediaStreamSelector.cs` | **8.69** | 101 | 45 | 93 / 100 | E, G, P | - | `GetDefaultSubtitleStreamIndex` (cc 14) |
-| [R20](tasks/R20-LiveStreamHelper.md) | `Emby.Server.Implementations/Library/LiveStreamHelper.cs` | **8.91** | 107 | 29 | 0 / 0 (low) | E, G, P | Excess Number of Function Arguments | `AddMediaInfoWithProbe` (cc 23) |
-| [R21](tasks/R21-AudioHelper.md) | `Jellyfin.Api/Helpers/AudioHelper.cs` | **9.21** | 99 | 25 | 77 / 83 | E, G, P | Constructor Over-Injection | `GetAudioStream` (cc 12) |
+| [R10](tasks/R10-StreamInfo.md) | `MediaBrowser.Model/Dlna/StreamInfo.cs` | **5.89** | 540 | 182 | 52 / 74 | E, G, P | Excess Number of Function Arguments, Primitive Obsession, String Heavy Function Arguments | `ToUrl` (cc 49) |
+| [R11](tasks/R11-ConditionProcessor.md) | `MediaBrowser.Model/Dlna/ConditionProcessor.cs` | **6.53** | 224 | 56 | 37 / 59 | D, E, G, P | Excess Number of Function Arguments, Primitive Obsession | `IsVideoConditionSatisfied` (cc 21) |
+| [R12](tasks/R12-UserDataManager.md) | `Emby.Server.Implementations/Library/UserDataManager.cs` | **6.69** | 328 | 119 | 85 / 87 | D, E, G, P | Excess Number of Function Arguments | `GetResumeUserDataBatch` (cc 23) |
+| [R13](tasks/R13-UserViewManager.md) | `Emby.Server.Implementations/Library/UserViewManager.cs` | **7.23** | 293 | 151 | 81 / 83 | E, G, P | Excess Number of Function Arguments | `GetItemsForLatestItems` (cc 27) |
+| [R14](tasks/R14-HlsCodecStringHelpers.md) | `Jellyfin.Api/Helpers/HlsCodecStringHelpers.cs` | **7.32** | 148 | 21 | 68 / 72 | E, G, P | Excess Number of Function Arguments, Primitive Obsession | `GetVp9String` (cc 28) |
+| [R15](tasks/R15-PathExtensions.md) | `Emby.Server.Implementations/Library/PathExtensions.cs` | **7.83** | 103 | 41 | 86 / 84 | E, G, P | - | `GetAttributeValue` (cc 27) |
+| [R16](tasks/R16-JobLogger.md) | `MediaBrowser.Controller/MediaEncoding/JobLogger.cs` | **8.28** | 89 | 36 | 75 / 78 | E, G, P | - | `ParseLogLine` (cc 22) |
+| [R17](tasks/R17-EncodingJobInfo.md) | `MediaBrowser.Controller/MediaEncoding/EncodingJobInfo.cs` | **8.54** | 311 | 86 | 69 / 64 | D | Excess Number of Function Arguments, Primitive Obsession, String Heavy Function Arguments | - |
+| [R18](tasks/R18-DotIgnoreIgnoreRule.md) | `Emby.Server.Implementations/Library/DotIgnoreIgnoreRule.cs` | **8.63** | 154 | 14 | 79 / 76 | E, G, P | Primitive Obsession | `FindIgnoreFileCached` (cc 13) |
+| [R19](tasks/R19-MediaStreamSelector.md) | `Emby.Server.Implementations/Library/MediaStreamSelector.cs` | **8.69** | 123 | 47 | 93 / 100 | E, G, P | - | `GetDefaultSubtitleStreamIndex` (cc 14) |
+| [R20](tasks/R20-LiveStreamHelper.md) | `Emby.Server.Implementations/Library/LiveStreamHelper.cs` | **8.91** | 118 | 30 | 0 / 0 (low) | E, G, P | Excess Number of Function Arguments | `AddMediaInfoWithProbe` (cc 23) |
+| [R21](tasks/R21-AudioHelper.md) | `Jellyfin.Api/Helpers/AudioHelper.cs` | **9.21** | 101 | 26 | 77 / 83 | E, G, P | Constructor Over-Injection | `GetAudioStream` (cc 12) |
 | [R22](tasks/R22-ResolutionNormalizer.md) | `MediaBrowser.Model/Dlna/ResolutionNormalizer.cs` | **9.36** | 60 | 32 | 94 / 85 | E, G, P | Excess Number of Function Arguments | `Normalize` (cc 12) |
 | [R23](tasks/R23-TranscodingSegmentCleaner.md) | `MediaBrowser.Controller/MediaEncoding/TranscodingSegmentCleaner.cs` | **9.38** | 80 | 5 | 0 / 0 (low) | P | Constructor Over-Injection | - |
 | [R24](tasks/R24-FileStreamResponseHelpers.md) | `Jellyfin.Api/Helpers/FileStreamResponseHelpers.cs` | **9.38** | 78 | 33 | 94 / 60 | E, G, P | Excess Number of Function Arguments | `GetStaticRemoteStreamResult` (cc 9) |
@@ -44,7 +44,7 @@ allowed transformations.
 
 ## Aggregate
 
-- **33 files** below 10.00, 14,512 lines of code
+- **33 files** below 10.00, 14,680 lines of code
 - 246 flagged methods
 - The other 14 scored scope files are already at 10.00; 28 scope files have no methods to score
 
@@ -54,15 +54,15 @@ Update as tasks land.
 
 | Task | Baseline | Current | Status |
 | --- | --- | --- | --- |
-| R01 | 1.00 | - | not started |
-| R02 | 1.65 | - | not started |
-| R03 | 2.03 | - | not started |
-| R04 | 2.18 | - | not started |
-| R05 | 2.90 | - | not started |
-| R06 | 4.36 | - | not started |
-| R07 | 4.59 | - | not started |
-| R08 | 4.90 | - | not started |
-| R09 | 5.41 | - | not started |
+| R01 | 1.00 | 1.73 | stopped at 1.73 (51 of 80 steps; 49 UP steps were Recipe P or predicate reuse, Recipe E FLAT unless it removed deep nesting): GetHwaccelType E WORSE on "Number of Functions in a Single Module" (needs a split); early-return branches; P blocked by CS0177, `out` to an existing variable, pattern variables; Low Cohesion, Constructor Over-Injection (frozen), Primitive Obsession, Excess Arguments |
+| R02 | 1.65 | 6.46 | split into five files: TranscodingConditions 4.14 (ApplyTranscodingConditions, 27 bumps, every attempt DOWN or FLAT), Subtitles 7.47, AudioBitrate 8.28, VideoStream 8.62, Compatibility 9.09; seven FLAT steps scored UP after the split; GetTranscodeReasonForFailedCondition (flat switch, cc 28) and threshold chains, no recipe; conditionals blocked by CS8629; Excess Arguments throughout |
+| R03 | 2.03 | 5.26 | stopped at 5.26 (28 of 37 steps): remaining blocks call local functions, end in catch/continue or `throw;`, or differ in two values (UpdateEpisodeNumbers); mapping switches (GetExtraTypeNameKey); CS8629 blocks P; Constructor Over-Injection (24); Excess Arguments; Number of Functions in a Single Module (grows with every helper, not split) |
+| R04 | 2.18 | 8.41 | split early (Recipe S) once every E/P step scored DOWN on "Number of Functions in a Single Module"; split files .Itunes 7.98, .MediaStream 8.15, .Tags 8.22, .Video 8.67, no recipe applied after the split; Recipe P blocked by CS0177 (out variables assigned on some paths); Recipe G WORSE on three nested methods; GetMediaInfo 5 arguments (public) |
+| R05 | 2.90 | 8.01 | split into .Audio 8.04 and .Video 7.98 (the six endpoints; their Code Duplication is no longer reported because the copies sit in different files); endpoints and GetLiveHlsStream complex through `??` defaults in DTO initializers (cc 12-17), no recipe; GetSegmentResult bumps need a nullable result; Excess Arguments (GetLiveHlsStream 51, new helpers 9 and 5); Constructor Over-Injection (11); Primitive Obsession |
+| R06 | 4.36 | 6.93 | stopped at 6.93 (rerun after the WORSE fix added two P steps): ApplyParam (34-case switch, cc 56); ApplyVideoOutputSettings blocked by CS8602 (nullable flow); GetOutputFileExtension early-return branches; Excess Arguments (GetStreamingState 11) |
+| R07 | 4.59 | 7.78 | stopped at 7.78: GetPlaylistAudioCodecs (flat early returns, cc 10); AppendDvString extraction FLAT; Complex Conditionals blocked by CS8629 (null checks before `.Value`); Excess Arguments (incl. new 6- and 7-argument helpers); Constructor Over-Injection (11) |
+| R08 | 4.90 | 7.78 | stopped at 7.78: GetPathProtocol (flat early returns, cc 9); public signatures with 5-6 arguments; Constructor Over-Injection (13); Low Cohesion; Primitive Obsession |
+| R09 | 5.41 | 9.38 | stopped at 9.38: public signatures with too many arguments (5, 19); Constructor Over-Injection |
 | R10 | 5.89 | 9.09 | stopped at 9.09: Excess Number of Function Arguments (public methods and the new helpers), Primitive Obsession, String Heavy Function Arguments |
 | R11 | 6.53 | 7.35 | stopped at 7.35: flat 19-case switch (cc 21); public plugin-API signatures with up to 20 arguments; duplicates differing in type (Recipe D does not apply) |
 | R12 | 6.69 | 8.69 | stopped at 8.69: remaining bumps write two outer variables (Recipe E rule 4); public 5-argument SaveUserData |

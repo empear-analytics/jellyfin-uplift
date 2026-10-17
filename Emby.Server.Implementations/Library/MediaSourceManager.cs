@@ -180,10 +180,7 @@ namespace Emby.Server.Implementations.Library
             ResolveSymlinkPaths(mediaSources, enablePathSubstitution);
 
             // If file is strm or main media stream is missing, force a metadata refresh with remote probing
-            if (allowMediaProbe && mediaSources[0].Type != MediaSourceType.Placeholder
-                && (item.Path.EndsWith(".strm", StringComparison.OrdinalIgnoreCase)
-                    || (item.MediaType == MediaType.Video && mediaSources[0].MediaStreams.All(i => i.Type != MediaStreamType.Video))
-                    || (item.MediaType == MediaType.Audio && mediaSources[0].MediaStreams.All(i => i.Type != MediaStreamType.Audio))))
+            if (NeedsRemoteProbe(item, mediaSources, allowMediaProbe))
             {
                 await item.RefreshMetadata(
                     new MetadataRefreshOptions(_directoryService)
@@ -211,20 +208,7 @@ namespace Emby.Server.Implementations.Library
                     source.SupportsDirectStream = SupportsDirectStream(source.Path, source.Protocol);
                 }
 
-                if (user is not null)
-                {
-                    SetDefaultAudioAndSubtitleStreamIndices(item, source, user);
-
-                    if (item.MediaType == MediaType.Audio)
-                    {
-                        source.SupportsTranscoding = user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding);
-                    }
-                    else if (item.MediaType == MediaType.Video)
-                    {
-                        source.SupportsTranscoding = user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding);
-                        source.SupportsDirectStream = user.HasPermission(PermissionKind.EnablePlaybackRemuxing);
-                    }
-                }
+                ApplyUserPlaybackSettings(item, source, user);
 
                 list.Add(source);
             }
@@ -234,6 +218,32 @@ namespace Emby.Server.Implementations.Library
                 : item.Id;
 
             return SortMediaSources(list, preferredId).ToArray();
+        }
+
+        private void ApplyUserPlaybackSettings(BaseItem item, MediaSourceInfo source, User user)
+        {
+            if (user is not null)
+            {
+                SetDefaultAudioAndSubtitleStreamIndices(item, source, user);
+
+                if (item.MediaType == MediaType.Audio)
+                {
+                    source.SupportsTranscoding = user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding);
+                }
+                else if (item.MediaType == MediaType.Video)
+                {
+                    source.SupportsTranscoding = user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding);
+                    source.SupportsDirectStream = user.HasPermission(PermissionKind.EnablePlaybackRemuxing);
+                }
+            }
+        }
+
+        private static bool NeedsRemoteProbe(BaseItem item, IReadOnlyList<MediaSourceInfo> mediaSources, bool allowMediaProbe)
+        {
+            return allowMediaProbe && mediaSources[0].Type != MediaSourceType.Placeholder
+                && (item.Path.EndsWith(".strm", StringComparison.OrdinalIgnoreCase)
+                    || (item.MediaType == MediaType.Video && mediaSources[0].MediaStreams.All(i => i.Type != MediaStreamType.Video))
+                    || (item.MediaType == MediaType.Audio && mediaSources[0].MediaStreams.All(i => i.Type != MediaStreamType.Audio)));
         }
 
         /// <inheritdoc />>
@@ -464,7 +474,7 @@ namespace Emby.Server.Implementations.Library
                 source => source.Id is not null ? dataBySourceId.GetValueOrDefault(source.Id) : null,
                 data => data.PlaybackPositionTicks > 0);
 
-            if (resumeSource is not null && !video.PrimaryVersionId.HasValue && !ReferenceEquals(sources[0], resumeSource))
+            if (ShouldMoveResumeSourceToFront(resumeSource, video, sources))
             {
                 var reordered = new List<MediaSourceInfo>(sources.Count) { resumeSource };
                 reordered.AddRange(sources.Where(s => !ReferenceEquals(s, resumeSource)));
@@ -472,6 +482,11 @@ namespace Emby.Server.Implementations.Library
             }
 
             return sources;
+        }
+
+        private static bool ShouldMoveResumeSourceToFront(MediaSourceInfo resumeSource, Video video, IReadOnlyList<MediaSourceInfo> sources)
+        {
+            return resumeSource is not null && !video.PrimaryVersionId.HasValue && !ReferenceEquals(sources[0], resumeSource);
         }
 
         private IReadOnlyList<string> NormalizeLanguage(string language)
@@ -492,20 +507,14 @@ namespace Emby.Server.Implementations.Library
 
         private void SetDefaultSubtitleStreamIndex(MediaSourceInfo source, UserItemData userData, User user, bool allowRememberingSelection)
         {
-            if (userData is not null
-                && userData.SubtitleStreamIndex.HasValue
-                && user.RememberSubtitleSelections
-                && user.SubtitleMode != SubtitlePlaybackMode.None
-                && allowRememberingSelection)
+            if (IsSubtitleSelectionRemembered(userData, user, allowRememberingSelection))
             {
                 var index = userData.SubtitleStreamIndex.Value;
                 // Make sure the saved index is still valid
                 var savedStream = source.MediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Subtitle && i.Index == index);
                 // "Only forced" rules out full tracks entirely, so a remembered one must not resurrect them.
                 // The client reports whatever is playing, so an index remembered under another mode sticks forever otherwise.
-                if (index == -1
-                    || (savedStream is not null
-                        && (user.SubtitleMode != SubtitlePlaybackMode.OnlyForced || savedStream.IsForced)))
+                if (IsRememberedSubtitleStillAllowed(index, savedStream, user))
                 {
                     source.DefaultSubtitleStreamIndex = index;
                     return;
@@ -528,47 +537,32 @@ namespace Emby.Server.Implementations.Library
             MediaStreamSelector.SetSubtitleStreamScores(source.MediaStreams, preferredSubs, user.SubtitleMode, audioLanguage);
         }
 
+        private static bool IsSubtitleSelectionRemembered(UserItemData userData, User user, bool allowRememberingSelection)
+        {
+            return userData is not null
+                && userData.SubtitleStreamIndex.HasValue
+                && user.RememberSubtitleSelections
+                && user.SubtitleMode != SubtitlePlaybackMode.None
+                && allowRememberingSelection;
+        }
+
+        private static bool IsRememberedSubtitleStillAllowed(int index, MediaStream savedStream, User user)
+        {
+            return index == -1
+                || (savedStream is not null
+                    && (user.SubtitleMode != SubtitlePlaybackMode.OnlyForced || savedStream.IsForced));
+        }
+
         private void SetDefaultAudioStreamIndex(MediaSourceInfo source, UserItemData userData, User user, bool allowRememberingSelection, string originalLanguage)
         {
-            if (userData is not null && userData.AudioStreamIndex.HasValue && user.RememberAudioSelections && allowRememberingSelection)
+            if (TrySetRememberedAudioStreamIndex(source, userData, user, allowRememberingSelection))
             {
-                var index = userData.AudioStreamIndex.Value;
-                // Make sure the saved index is still valid
-                if (source.MediaStreams.Any(i => i.Type == MediaStreamType.Audio && i.Index == index))
-                {
-                    source.DefaultAudioStreamIndex = index;
-                    source.DefaultAudioIndexSource = AudioIndexSource.User;
-                    return;
-                }
+                return;
             }
 
-            if (string.Equals(user.AudioLanguagePreference, "OriginalLanguage", StringComparison.OrdinalIgnoreCase))
+            if (TrySetOriginalLanguageAudioStreamIndex(source, user, originalLanguage))
             {
-                if (user.PlayDefaultAudioTrack)
-                {
-                    source.DefaultAudioStreamIndex = MediaStreamSelector.GetDefaultAudioStreamIndex(
-                        source.MediaStreams,
-                        NormalizeLanguage(originalLanguage),
-                        user.PlayDefaultAudioTrack);
-                    return;
-                }
-
-                var originalIndex = source.MediaStreams.FindIndex(i => i.Type == MediaStreamType.Audio && i.IsOriginal);
-
-                if (!string.IsNullOrWhiteSpace(originalLanguage) && originalIndex != -1)
-                {
-                    var mediaLanguageOriginal = source.MediaStreams[originalIndex].Language;
-                    if (NormalizeLanguage(mediaLanguageOriginal).Contains(NormalizeLanguage(originalLanguage).FirstOrDefault()))
-                    {
-                        source.DefaultAudioStreamIndex = originalIndex;
-                        return;
-                    }
-                }
-                else if (originalIndex != -1)
-                {
-                    source.DefaultAudioStreamIndex = originalIndex;
-                    return;
-                }
+                return;
             }
 
             var preferredAudio = string.Equals(user.AudioLanguagePreference, "OriginalLanguage", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(originalLanguage)
@@ -585,6 +579,64 @@ namespace Emby.Server.Implementations.Library
             {
                 source.DefaultAudioIndexSource |= AudioIndexSource.Language;
             }
+        }
+
+        private static bool TrySetRememberedAudioStreamIndex(MediaSourceInfo source, UserItemData userData, User user, bool allowRememberingSelection)
+        {
+            if (IsAudioSelectionRemembered(userData, user, allowRememberingSelection))
+            {
+                var index = userData.AudioStreamIndex.Value;
+                // Make sure the saved index is still valid
+                if (source.MediaStreams.Any(i => i.Type == MediaStreamType.Audio && i.Index == index))
+                {
+                    source.DefaultAudioStreamIndex = index;
+                    source.DefaultAudioIndexSource = AudioIndexSource.User;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsAudioSelectionRemembered(UserItemData userData, User user, bool allowRememberingSelection)
+        {
+            return userData is not null && userData.AudioStreamIndex.HasValue && user.RememberAudioSelections && allowRememberingSelection;
+        }
+
+        private bool TrySetOriginalLanguageAudioStreamIndex(MediaSourceInfo source, User user, string originalLanguage)
+        {
+            if (!string.Equals(user.AudioLanguagePreference, "OriginalLanguage", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (user.PlayDefaultAudioTrack)
+            {
+                source.DefaultAudioStreamIndex = MediaStreamSelector.GetDefaultAudioStreamIndex(
+                    source.MediaStreams,
+                    NormalizeLanguage(originalLanguage),
+                    user.PlayDefaultAudioTrack);
+                return true;
+            }
+
+            var originalIndex = source.MediaStreams.FindIndex(i => i.Type == MediaStreamType.Audio && i.IsOriginal);
+
+            if (!string.IsNullOrWhiteSpace(originalLanguage) && originalIndex != -1)
+            {
+                var mediaLanguageOriginal = source.MediaStreams[originalIndex].Language;
+                if (NormalizeLanguage(mediaLanguageOriginal).Contains(NormalizeLanguage(originalLanguage).FirstOrDefault()))
+                {
+                    source.DefaultAudioStreamIndex = originalIndex;
+                    return true;
+                }
+            }
+            else if (originalIndex != -1)
+            {
+                source.DefaultAudioStreamIndex = originalIndex;
+                return true;
+            }
+
+            return false;
         }
 
         public void SetDefaultAudioAndSubtitleStreamIndices(BaseItem item, MediaSourceInfo source, User user)
@@ -717,18 +769,17 @@ namespace Emby.Server.Implementations.Library
                 mediaSource.RunTimeTicks = null;
             }
 
-            var audioStream = mediaSource.MediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Audio);
-
-            if (audioStream is null || audioStream.Index == -1)
-            {
-                mediaSource.DefaultAudioStreamIndex = null;
-            }
-            else
-            {
-                mediaSource.DefaultAudioStreamIndex = audioStream.Index;
-            }
+            SetProbedDefaultAudioStreamIndex(mediaSource, mediaSource.MediaStreams);
 
             var videoStream = mediaSource.MediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Video);
+            EstimateVideoBitrate(videoStream);
+
+            // Try to estimate this
+            mediaSource.InferTotalBitrate();
+        }
+
+        private static void EstimateVideoBitrate(MediaStream videoStream)
+        {
             if (videoStream is not null)
             {
                 if (!videoStream.BitRate.HasValue)
@@ -753,9 +804,6 @@ namespace Emby.Server.Implementations.Library
                     }
                 }
             }
-
-            // Try to estimate this
-            mediaSource.InferTotalBitrate();
         }
 
         public async Task<LiveStreamResponse> OpenLiveStream(LiveStreamRequest request, CancellationToken cancellationToken)
@@ -801,29 +849,12 @@ namespace Emby.Server.Implementations.Library
 
             if (!string.IsNullOrEmpty(cacheKey))
             {
-                FileStream jsonStream = AsyncFile.OpenRead(cacheFilePath);
-                try
-                {
-                    mediaInfo = await JsonSerializer.DeserializeAsync<MediaInfo>(jsonStream, _jsonOptions, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogDebug(ex, "Error parsing cached media info.");
-                }
-                finally
-                {
-                    await jsonStream.DisposeAsync().ConfigureAwait(false);
-                }
+                mediaInfo = await ReadCachedMediaInfo(cacheFilePath, cancellationToken).ConfigureAwait(false);
             }
 
             if (mediaInfo is null)
             {
-                if (addProbeDelay)
-                {
-                    var delayMs = mediaSource.AnalyzeDurationMs ?? 0;
-                    delayMs = Math.Max(3000, delayMs);
-                    await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
-                }
+                await DelayProbe(mediaSource, addProbeDelay, cancellationToken).ConfigureAwait(false);
 
                 if (isLiveStream)
                 {
@@ -839,34 +870,14 @@ namespace Emby.Server.Implementations.Library
                     },
                     cancellationToken).ConfigureAwait(false);
 
-                if (cacheFilePath is not null)
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(cacheFilePath));
-                    FileStream createStream = AsyncFile.Create(cacheFilePath);
-                    await using (createStream.ConfigureAwait(false))
-                    {
-                        await JsonSerializer.SerializeAsync(createStream, mediaInfo, _jsonOptions, cancellationToken).ConfigureAwait(false);
-                    }
-
-                    // _logger.LogDebug("Saved media info to {0}", cacheFilePath);
-                }
+                await SaveCachedMediaInfo(cacheFilePath, mediaInfo, cancellationToken).ConfigureAwait(false);
             }
 
             var mediaStreams = mediaInfo.MediaStreams;
 
-            if (isLiveStream && !string.IsNullOrEmpty(cacheKey))
+            if (IsCachedLiveStream(isLiveStream, cacheKey))
             {
-                var newList = new List<MediaStream>();
-                newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Video).Take(1));
-                newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Audio).Take(1));
-
-                foreach (var stream in newList)
-                {
-                    stream.Index = -1;
-                    stream.Language = null;
-                }
-
-                mediaStreams = newList;
+                mediaStreams = GetFirstVideoAndAudioStreams(mediaStreams);
             }
 
             _logger.LogInformation("Live tv media info probe took {0} seconds", (DateTime.UtcNow - now).TotalSeconds.ToString(CultureInfo.InvariantCulture));
@@ -883,6 +894,39 @@ namespace Emby.Server.Implementations.Library
 
             mediaSource.DefaultSubtitleStreamIndex = null;
 
+            ClearLiveStreamRuntime(mediaSource, isLiveStream, originalRuntime);
+
+            SetProbedDefaultAudioStreamIndex(mediaSource, mediaStreams);
+
+            var videoStream = mediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Video);
+            NormalizeProbedVideoStream(videoStream);
+
+            if (isLiveStream)
+            {
+                mediaSource.AnalyzeDurationMs = 3000;
+            }
+
+            // Try to estimate this
+            mediaSource.InferTotalBitrate(true);
+        }
+
+        private static bool IsCachedLiveStream(bool isLiveStream, string cacheKey)
+        {
+            return isLiveStream && !string.IsNullOrEmpty(cacheKey);
+        }
+
+        private static async Task DelayProbe(MediaSourceInfo mediaSource, bool addProbeDelay, CancellationToken cancellationToken)
+        {
+            if (addProbeDelay)
+            {
+                var delayMs = mediaSource.AnalyzeDurationMs ?? 0;
+                delayMs = Math.Max(3000, delayMs);
+                await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        private static void ClearLiveStreamRuntime(MediaSourceInfo mediaSource, bool isLiveStream, long? originalRuntime)
+        {
             if (isLiveStream)
             {
                 // Null this out so that it will be treated like a live stream
@@ -891,7 +935,10 @@ namespace Emby.Server.Implementations.Library
                     mediaSource.RunTimeTicks = null;
                 }
             }
+        }
 
+        private static void SetProbedDefaultAudioStreamIndex(MediaSourceInfo mediaSource, IReadOnlyList<MediaStream> mediaStreams)
+        {
             var audioStream = mediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Audio);
 
             if (audioStream is null || audioStream.Index == -1)
@@ -902,8 +949,60 @@ namespace Emby.Server.Implementations.Library
             {
                 mediaSource.DefaultAudioStreamIndex = audioStream.Index;
             }
+        }
 
-            var videoStream = mediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Video);
+        private async Task<MediaInfo> ReadCachedMediaInfo(string cacheFilePath, CancellationToken cancellationToken)
+        {
+            MediaInfo mediaInfo = null;
+            FileStream jsonStream = AsyncFile.OpenRead(cacheFilePath);
+            try
+            {
+                mediaInfo = await JsonSerializer.DeserializeAsync<MediaInfo>(jsonStream, _jsonOptions, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error parsing cached media info.");
+            }
+            finally
+            {
+                await jsonStream.DisposeAsync().ConfigureAwait(false);
+            }
+
+            return mediaInfo;
+        }
+
+        private async Task SaveCachedMediaInfo(string cacheFilePath, MediaInfo mediaInfo, CancellationToken cancellationToken)
+        {
+            if (cacheFilePath is not null)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(cacheFilePath));
+                FileStream createStream = AsyncFile.Create(cacheFilePath);
+                await using (createStream.ConfigureAwait(false))
+                {
+                    await JsonSerializer.SerializeAsync(createStream, mediaInfo, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                }
+
+                // _logger.LogDebug("Saved media info to {0}", cacheFilePath);
+            }
+        }
+
+        private static List<MediaStream> GetFirstVideoAndAudioStreams(IReadOnlyList<MediaStream> mediaStreams)
+        {
+            var newList = new List<MediaStream>();
+            newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Video).Take(1));
+            newList.AddRange(mediaStreams.Where(i => i.Type == MediaStreamType.Audio).Take(1));
+
+            foreach (var stream in newList)
+            {
+                stream.Index = -1;
+                stream.Language = null;
+            }
+
+            return newList;
+        }
+
+        private static void NormalizeProbedVideoStream(MediaStream videoStream)
+        {
             if (videoStream is not null)
             {
                 if (!videoStream.BitRate.HasValue)
@@ -931,14 +1030,6 @@ namespace Emby.Server.Implementations.Library
                 // This is coming up false and preventing stream copy
                 videoStream.IsAVC = null;
             }
-
-            if (isLiveStream)
-            {
-                mediaSource.AnalyzeDurationMs = 3000;
-            }
-
-            // Try to estimate this
-            mediaSource.InferTotalBitrate(true);
         }
 
         public Task<Tuple<MediaSourceInfo, IDirectStreamProvider>> GetLiveStreamWithDirectStreamProvider(string id, CancellationToken cancellationToken)

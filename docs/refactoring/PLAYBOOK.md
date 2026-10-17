@@ -18,7 +18,8 @@ recipes are the protection; the tests are the backstop.
    extractions from one method. The one exception to "one method" is Recipe D across
    several methods (see Recipe D).
 2. **Re-measure after every step, before committing it.** If the Code Health score did not
-   improve, revert.
+   improve, revert. A step that raises the score but brings a smell category new to the file,
+   or makes an already flagged method worse, is reverted too (verdict `WORSE`).
 3. **When in doubt, stop and report.** An unfinished task is fine. A silently broken
    media server is not.
 
@@ -321,6 +322,7 @@ and ends with a verdict:
 | Tests fail | `git checkout -- <file>`. No exceptions. Never change a test. |
 | Guard FAILs | `git checkout -- <file>`. No exceptions. |
 | `UP` | Keep it. Commit. Next method. |
+| `WORSE` | The score rose, but a smell is new or a method got worse. `git checkout -- <file>`. Next method. |
 | `FLAT` or `DOWN` | `git checkout -- <file>`. Next method. |
 
 The guard checks constants, not control flow, and the tests catch only some behaviour
@@ -341,3 +343,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-16 | Recipe P: an `out` variable the expression already declares becomes an `out` parameter of the predicate. | Calibration probe, R32 `FFProbeHelpers.GetDictionaryDateTime`: all three agents (Claude Haiku, Sonnet and Opus) needed it, applied it, and asked independently whether P allows it. Decided by the campaign owner. |
 | 2026-10-16 | Rule 1: one commit may apply the same recipe several times within the same method. | First backlog batches: agents already made several extractions per method and commit (R13, R19, R22). R14's first agent expected its two mapping `switch` expressions to score UP only if extracted together; the rerun under this rule measured FLAT (each extracted switch is itself a Complex Method), so R14 is not evidence for it. Decided by the campaign owner. |
 | 2026-10-16 | Recipe D: a duplicate spread over several methods is deduplicated in one commit; an identical copy CodeScene does not report may reuse a helper extracted earlier from the same file. | R17 `EncodingJobInfo`: deduplicating one of three methods per commit is FLAT, all three at once UP (8.54 to 9.09). R18 `DotIgnoreIgnoreRule` and R14 `HlsCodecStringHelpers`: identical copies needed a second helper with the same body, because reuse counted as Recipe D without a duplication report. Decided by the campaign owner. |
+| 2026-10-16 | Rule 2: a step that raises the score but brings a smell category new to the file, or raises the number of an already flagged method, is reverted (`codehealth_check.py` verdict `WORSE`). | CodeScene's PR gate on part 1 (#9) rejected two such steps although each file improved: R15 `PathExtensions` (Complex Method in `GetAttributeValue`, cc 27 to 31) and R14 `HlsCodecStringHelpers` (new String Heavy Function Arguments). Decided by the campaign owner; the two steps stay. |

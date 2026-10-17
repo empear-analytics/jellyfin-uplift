@@ -6,7 +6,9 @@ the CodeScene CLI on the working-tree file and on the committed version (by defa
 HEAD, i.e. before your uncommitted change), prints both scores and the smells that
 remain, and ends with one verdict:
 
-    UP     the score improved: keep the change
+    UP     the score improved, with no new smell and no method made worse: keep the change
+    WORSE  the score improved, but a smell category is new to the file, or a method that was
+           already flagged got a higher number (complexity, nesting, bumps...): revert it
     FLAT   the score did not move: revert it
     DOWN   the score fell: revert it
 
@@ -17,7 +19,7 @@ Usage:
     python tools/codehealth_check.py path/File.cs
     python tools/codehealth_check.py --base master path/File.cs
 
-Exit codes: 0 UP, 2 FLAT or DOWN, 1 the file could not be measured.
+Exit codes: 0 UP, 2 WORSE, FLAT or DOWN, 1 the file could not be measured.
 """
 
 from __future__ import annotations
@@ -25,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -55,6 +58,36 @@ def review_at(exe: str, rel: str, ref: str) -> dict | None:
         copy = Path(tmp) / Path(rel).name
         copy.write_bytes(content)
         return review(exe, copy, Path(tmp))
+
+
+NUMBER = re.compile(r"(\d+)")
+
+
+def findings(review: dict) -> tuple[set[str], dict[tuple[str, str], int]]:
+    """Smell categories in the file, and the largest number each method's findings report.
+
+    A method can have several findings of one category (two complex conditionals, say).
+    Compare the largest, so removing the smaller one does not count as a regression.
+    """
+    categories, numbers = set(), {}
+    for item in review.get("review", []):
+        categories.add(item.get("category"))
+        for f in item.get("functions", []):
+            m = NUMBER.search(f.get("details") or "")
+            key = (item.get("category"), f.get("title", "").split(":")[0])
+            numbers[key] = max(numbers.get(key, 0), int(m.group(1)) if m else 0)
+    return categories, numbers
+
+
+def regressions(before: dict, after: dict) -> list[str]:
+    """What the CodeScene PR gate would reject even when the score rose."""
+    old_categories, old_numbers = findings(before)
+    new_categories, new_numbers = findings(after)
+    found = [f"new smell: {c}" for c in sorted(new_categories - old_categories)]
+    for key, value in sorted(new_numbers.items()):
+        if key in old_numbers and value > old_numbers[key]:
+            found.append(f"worse: {key[0]} in {key[1]} ({old_numbers[key]} -> {value})")
+    return found
 
 
 def show(score) -> str:
@@ -90,6 +123,12 @@ def main() -> int:
         print("VERDICT: cannot compare (one side has no score)")
         return 1
     if new > old:
+        worse = regressions(before, after)
+        if worse:
+            for line in worse:
+                print("  ! " + line)
+            print(f"VERDICT: WORSE ({old:.2f} -> {new:.2f}, but see above) - revert with: git checkout -- {rel}")
+            return 2
         print(f"VERDICT: UP ({old:.2f} -> {new:.2f}) - keep it")
         return 0
     print(f"VERDICT: {'FLAT' if new == old else 'DOWN'} ({old:.2f} -> {new:.2f}) - revert with: git checkout -- {rel}")

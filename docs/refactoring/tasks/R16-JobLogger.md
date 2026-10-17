@@ -4,8 +4,8 @@
 | --- | --- |
 | Baseline Code Health | **8.28** / 10 (Yellow) |
 | Exit target | **10.00** |
-| File size | 163 lines (81 lines of code) |
-| Git churn | 35 commits |
+| File size | 181 lines (89 lines of code) |
+| Git churn | 36 commits |
 | Part | encoding (`MediaBrowser.Controller/MediaEncoding`) |
 | Recipes needed | E, G, P |
 | Smells without a recipe | none |
@@ -102,7 +102,7 @@ python tools/codehealth_check.py MediaBrowser.Controller/MediaEncoding/JobLogger
 ```
 
 - `UP`, build passed, tests passed, guard passed: commit and continue.
-- `FLAT` or `DOWN`: revert that step with `git checkout -- MediaBrowser.Controller/MediaEncoding/JobLogger.cs` and move to the next method.
+- `WORSE`, `FLAT` or `DOWN`: revert that step with `git checkout -- MediaBrowser.Controller/MediaEncoding/JobLogger.cs` and move to the next method.
 - Tests or guard **failed**: revert that step, no exceptions.
 
 ## 8. Definition of done

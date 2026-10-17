@@ -88,7 +88,7 @@ dotnet test tests/<project> --no-build
 # 3. no constant was removed or altered
 python tools/refactor_guard.py <the file you changed>
 
-# 4. the metric improved
+# 4. the metric improved, with no new smell and no method made worse (verdict UP)
 python tools/codehealth_check.py <the file you changed>
 ```
 

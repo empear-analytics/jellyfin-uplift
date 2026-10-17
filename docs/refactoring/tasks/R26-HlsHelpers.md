@@ -98,7 +98,7 @@ python tools/codehealth_check.py Jellyfin.Api/Helpers/HlsHelpers.cs
 ```
 
 - `UP`, build passed, tests passed, guard passed: commit and continue.
-- `FLAT` or `DOWN`: revert that step with `git checkout -- Jellyfin.Api/Helpers/HlsHelpers.cs` and move to the next method.
+- `WORSE`, `FLAT` or `DOWN`: revert that step with `git checkout -- Jellyfin.Api/Helpers/HlsHelpers.cs` and move to the next method.
 - Tests or guard **failed**: revert that step, no exceptions.
 
 ## 8. Definition of done

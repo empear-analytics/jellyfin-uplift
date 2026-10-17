@@ -38,7 +38,7 @@ namespace Jellyfin.Api.Controllers;
 [Route("")]
 [Authorize]
 [ApiExplorerSettings(IgnoreApi = true)]
-public class DynamicHlsController : BaseJellyfinApiController
+public partial class DynamicHlsController : BaseJellyfinApiController
 {
     private const EncoderPreset DefaultVodEncoderPreset = EncoderPreset.veryfast;
     private const EncoderPreset DefaultEventEncoderPreset = EncoderPreset.superfast;
@@ -304,29 +304,10 @@ public class DynamicHlsController : BaseJellyfinApiController
                 if (!System.IO.File.Exists(playlistPath))
                 {
                     // If the playlist doesn't already exist, startup ffmpeg
-                    try
-                    {
-                        job = await _transcodeManager.StartFfMpeg(
-                                state,
-                                playlistPath,
-                                GetCommandLineArguments(playlistPath, state, true, 0),
-                                Request.HttpContext.User.GetUserId(),
-                                TranscodingJobType,
-                                cancellationTokenSource)
-                            .ConfigureAwait(false);
-                        job.IsLiveOutput = true;
-                    }
-                    catch
-                    {
-                        state.Dispose();
-                        throw;
-                    }
+                    job = await StartLiveTranscoding(state, playlistPath, cancellationTokenSource).ConfigureAwait(false);
 
                     minSegments = state.MinSegments;
-                    if (minSegments > 0)
-                    {
-                        await HlsHelpers.WaitForMinimumSegmentCount(playlistPath, minSegments, _logger, cancellationToken).ConfigureAwait(false);
-                    }
+                    await WaitForMinimumLiveSegments(playlistPath, minSegments, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -343,1045 +324,36 @@ public class DynamicHlsController : BaseJellyfinApiController
         return Content(playlistText, MimeTypes.GetMimeType("playlist.m3u8"));
     }
 
-    /// <summary>
-    /// Gets a video hls playlist stream.
-    /// </summary>
-    /// <param name="itemId">The item id.</param>
-    /// <param name="static">Optional. If true, the original file will be streamed statically without any encoding. Use either no url extension or the original file extension. true/false.</param>
-    /// <param name="params">The streaming parameters.</param>
-    /// <param name="tag">The tag.</param>
-    /// <param name="deviceProfileId">Optional. The dlna device profile id to utilize.</param>
-    /// <param name="playSessionId">The play session id.</param>
-    /// <param name="segmentContainer">The segment container.</param>
-    /// <param name="segmentLength">The segment length.</param>
-    /// <param name="minSegments">The minimum number of segments.</param>
-    /// <param name="mediaSourceId">The media version id, if playing an alternate version.</param>
-    /// <param name="deviceId">The device id of the client requesting. Used to stop encoding processes when needed.</param>
-    /// <param name="audioCodec">Optional. Specify an audio codec to encode to, e.g. mp3.</param>
-    /// <param name="enableAutoStreamCopy">Whether or not to allow automatic stream copy if requested values match the original source. Defaults to true.</param>
-    /// <param name="allowVideoStreamCopy">Whether or not to allow copying of the video stream url.</param>
-    /// <param name="allowAudioStreamCopy">Whether or not to allow copying of the audio stream url.</param>
-    /// <param name="audioSampleRate">Optional. Specify a specific audio sample rate, e.g. 44100.</param>
-    /// <param name="maxAudioBitDepth">Optional. The maximum audio bit depth.</param>
-    /// <param name="audioBitRate">Optional. Specify an audio bitrate to encode to, e.g. 128000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="audioChannels">Optional. Specify a specific number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="maxAudioChannels">Optional. Specify a maximum number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="profile">Optional. Specify a specific an encoder profile (varies by encoder), e.g. main, baseline, high.</param>
-    /// <param name="level">Optional. Specify a level for the encoder profile (varies by encoder), e.g. 3, 3.1.</param>
-    /// <param name="framerate">Optional. A specific video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="maxFramerate">Optional. A specific maximum video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="copyTimestamps">Whether or not to copy timestamps when transcoding with an offset. Defaults to false.</param>
-    /// <param name="startTimeTicks">Optional. Specify a starting offset, in ticks. 1 tick = 10000 ms.</param>
-    /// <param name="width">Optional. The fixed horizontal resolution of the encoded video.</param>
-    /// <param name="height">Optional. The fixed vertical resolution of the encoded video.</param>
-    /// <param name="maxWidth">Optional. The maximum horizontal resolution of the encoded video.</param>
-    /// <param name="maxHeight">Optional. The maximum vertical resolution of the encoded video.</param>
-    /// <param name="videoBitRate">Optional. Specify a video bitrate to encode to, e.g. 500000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="subtitleStreamIndex">Optional. The index of the subtitle stream to use. If omitted no subtitles will be used.</param>
-    /// <param name="subtitleMethod">Optional. Specify the subtitle delivery method.</param>
-    /// <param name="maxRefFrames">Optional.</param>
-    /// <param name="maxVideoBitDepth">Optional. The maximum video bit depth.</param>
-    /// <param name="requireAvc">Optional. Whether to require avc.</param>
-    /// <param name="deInterlace">Optional. Whether to deinterlace the video.</param>
-    /// <param name="requireNonAnamorphic">Optional. Whether to require a non anamorphic stream.</param>
-    /// <param name="transcodingMaxAudioChannels">Optional. The maximum number of audio channels to transcode.</param>
-    /// <param name="cpuCoreLimit">Optional. The limit of how many cpu cores to use.</param>
-    /// <param name="liveStreamId">The live stream id.</param>
-    /// <param name="enableMpegtsM2TsMode">Optional. Whether to enable the MpegtsM2Ts mode.</param>
-    /// <param name="videoCodec">Optional. Specify a video codec to encode to, e.g. h264.</param>
-    /// <param name="subtitleCodec">Optional. Specify a subtitle codec to encode to.</param>
-    /// <param name="transcodeReasons">Optional. The transcoding reason.</param>
-    /// <param name="audioStreamIndex">Optional. The index of the audio stream to use. If omitted the first audio stream will be used.</param>
-    /// <param name="videoStreamIndex">Optional. The index of the video stream to use. If omitted the first video stream will be used.</param>
-    /// <param name="context">Optional. The <see cref="EncodingContext"/>.</param>
-    /// <param name="streamOptions">Optional. The streaming options.</param>
-    /// <param name="enableAdaptiveBitrateStreaming">Enable adaptive bitrate streaming.</param>
-    /// <param name="enableTrickplay">Enable trickplay image playlists being added to master playlist.</param>
-    /// <param name="enableAudioVbrEncoding">Whether to enable Audio Encoding.</param>
-    /// <param name="alwaysBurnInSubtitleWhenTranscoding">Whether to always burn in subtitles when transcoding.</param>
-    /// <response code="200">Video stream returned.</response>
-    /// <returns>A <see cref="FileResult"/> containing the playlist file.</returns>
-    [HttpGet("Videos/{itemId}/master.m3u8")]
-    [HttpHead("Videos/{itemId}/master.m3u8", Name = "HeadMasterHlsVideoPlaylist")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesPlaylistFile]
-    public async Task<ActionResult> GetMasterHlsVideoPlaylist(
-        [FromRoute, Required] Guid itemId,
-        [FromQuery] bool? @static,
-        [FromQuery] string? @params,
-        [FromQuery] string? tag,
-        [FromQuery, ParameterObsolete] string? deviceProfileId,
-        [FromQuery] string? playSessionId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? segmentContainer,
-        [FromQuery] int? segmentLength,
-        [FromQuery] int? minSegments,
-        [FromQuery, Required] string mediaSourceId,
-        [FromQuery] string? deviceId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? audioCodec,
-        [FromQuery] bool? enableAutoStreamCopy,
-        [FromQuery] bool? allowVideoStreamCopy,
-        [FromQuery] bool? allowAudioStreamCopy,
-        [FromQuery] int? audioSampleRate,
-        [FromQuery] int? maxAudioBitDepth,
-        [FromQuery] int? audioBitRate,
-        [FromQuery] int? audioChannels,
-        [FromQuery] int? maxAudioChannels,
-        [FromQuery] string? profile,
-        [FromQuery][RegularExpression(EncodingHelper.LevelValidationRegexStr)] string? level,
-        [FromQuery] float? framerate,
-        [FromQuery] float? maxFramerate,
-        [FromQuery] bool? copyTimestamps,
-        [FromQuery] long? startTimeTicks,
-        [FromQuery] int? width,
-        [FromQuery] int? height,
-        [FromQuery] int? maxWidth,
-        [FromQuery] int? maxHeight,
-        [FromQuery] int? videoBitRate,
-        [FromQuery] int? subtitleStreamIndex,
-        [FromQuery] SubtitleDeliveryMethod? subtitleMethod,
-        [FromQuery] int? maxRefFrames,
-        [FromQuery] int? maxVideoBitDepth,
-        [FromQuery] bool? requireAvc,
-        [FromQuery] bool? deInterlace,
-        [FromQuery] bool? requireNonAnamorphic,
-        [FromQuery] int? transcodingMaxAudioChannels,
-        [FromQuery] int? cpuCoreLimit,
-        [FromQuery] string? liveStreamId,
-        [FromQuery] bool? enableMpegtsM2TsMode,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? videoCodec,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? subtitleCodec,
-        [FromQuery] string? transcodeReasons,
-        [FromQuery] int? audioStreamIndex,
-        [FromQuery] int? videoStreamIndex,
-        [FromQuery] EncodingContext? context,
-        [FromQuery] Dictionary<string, string> streamOptions,
-        [FromQuery] bool enableAdaptiveBitrateStreaming = false,
-        [FromQuery] bool enableTrickplay = true,
-        [FromQuery] bool enableAudioVbrEncoding = true,
-        [FromQuery] bool alwaysBurnInSubtitleWhenTranscoding = false)
+    private async Task<TranscodingJob> StartLiveTranscoding(StreamState state, string playlistPath, CancellationTokenSource cancellationTokenSource)
     {
-        var streamingRequest = new HlsVideoRequestDto
+        TranscodingJob job;
+        try
         {
-            Id = itemId,
-            Static = @static ?? false,
-            Params = @params,
-            Tag = tag,
-            PlaySessionId = playSessionId,
-            SegmentContainer = segmentContainer,
-            SegmentLength = segmentLength,
-            MinSegments = minSegments,
-            MediaSourceId = mediaSourceId,
-            DeviceId = deviceId,
-            AudioCodec = audioCodec,
-            EnableAutoStreamCopy = enableAutoStreamCopy ?? true,
-            AllowAudioStreamCopy = allowAudioStreamCopy ?? true,
-            AllowVideoStreamCopy = allowVideoStreamCopy ?? true,
-            AudioSampleRate = audioSampleRate,
-            MaxAudioChannels = maxAudioChannels,
-            AudioBitRate = audioBitRate,
-            MaxAudioBitDepth = maxAudioBitDepth,
-            AudioChannels = audioChannels,
-            Profile = profile,
-            Level = level,
-            Framerate = framerate,
-            MaxFramerate = maxFramerate,
-            CopyTimestamps = copyTimestamps ?? false,
-            StartTimeTicks = startTimeTicks,
-            Width = width,
-            Height = height,
-            MaxWidth = maxWidth,
-            MaxHeight = maxHeight,
-            VideoBitRate = videoBitRate,
-            SubtitleStreamIndex = subtitleStreamIndex,
-            SubtitleMethod = subtitleMethod ?? SubtitleDeliveryMethod.External,
-            MaxRefFrames = maxRefFrames,
-            MaxVideoBitDepth = maxVideoBitDepth,
-            RequireAvc = requireAvc ?? false,
-            DeInterlace = deInterlace ?? false,
-            RequireNonAnamorphic = requireNonAnamorphic ?? false,
-            TranscodingMaxAudioChannels = transcodingMaxAudioChannels,
-            CpuCoreLimit = cpuCoreLimit,
-            LiveStreamId = liveStreamId,
-            EnableMpegtsM2TsMode = enableMpegtsM2TsMode ?? false,
-            VideoCodec = videoCodec,
-            SubtitleCodec = subtitleCodec,
-            TranscodeReasons = transcodeReasons,
-            AudioStreamIndex = audioStreamIndex,
-            VideoStreamIndex = videoStreamIndex,
-            Context = context ?? EncodingContext.Streaming,
-            StreamOptions = streamOptions,
-            EnableAdaptiveBitrateStreaming = enableAdaptiveBitrateStreaming,
-            EnableTrickplay = enableTrickplay,
-            EnableAudioVbrEncoding = enableAudioVbrEncoding,
-            AlwaysBurnInSubtitleWhenTranscoding = alwaysBurnInSubtitleWhenTranscoding
-        };
+            job = await _transcodeManager.StartFfMpeg(
+                    state,
+                    playlistPath,
+                    GetCommandLineArguments(playlistPath, state, true, 0),
+                    Request.HttpContext.User.GetUserId(),
+                    TranscodingJobType,
+                    cancellationTokenSource)
+                .ConfigureAwait(false);
+            job.IsLiveOutput = true;
+        }
+        catch
+        {
+            state.Dispose();
+            throw;
+        }
 
-        return await _dynamicHlsHelper.GetMasterHlsPlaylist(TranscodingJobType, streamingRequest, enableAdaptiveBitrateStreaming).ConfigureAwait(false);
+        return job;
     }
 
-    /// <summary>
-    /// Gets an audio hls playlist stream.
-    /// </summary>
-    /// <param name="itemId">The item id.</param>
-    /// <param name="static">Optional. If true, the original file will be streamed statically without any encoding. Use either no url extension or the original file extension. true/false.</param>
-    /// <param name="params">The streaming parameters.</param>
-    /// <param name="tag">The tag.</param>
-    /// <param name="deviceProfileId">Optional. The dlna device profile id to utilize.</param>
-    /// <param name="playSessionId">The play session id.</param>
-    /// <param name="segmentContainer">The segment container.</param>
-    /// <param name="segmentLength">The segment length.</param>
-    /// <param name="minSegments">The minimum number of segments.</param>
-    /// <param name="mediaSourceId">The media version id, if playing an alternate version.</param>
-    /// <param name="deviceId">The device id of the client requesting. Used to stop encoding processes when needed.</param>
-    /// <param name="audioCodec">Optional. Specify an audio codec to encode to, e.g. mp3.</param>
-    /// <param name="enableAutoStreamCopy">Whether or not to allow automatic stream copy if requested values match the original source. Defaults to true.</param>
-    /// <param name="allowVideoStreamCopy">Whether or not to allow copying of the video stream url.</param>
-    /// <param name="allowAudioStreamCopy">Whether or not to allow copying of the audio stream url.</param>
-    /// <param name="audioSampleRate">Optional. Specify a specific audio sample rate, e.g. 44100.</param>
-    /// <param name="maxAudioBitDepth">Optional. The maximum audio bit depth.</param>
-    /// <param name="maxStreamingBitrate">Optional. The maximum streaming bitrate.</param>
-    /// <param name="audioBitRate">Optional. Specify an audio bitrate to encode to, e.g. 128000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="audioChannels">Optional. Specify a specific number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="maxAudioChannels">Optional. Specify a maximum number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="profile">Optional. Specify a specific an encoder profile (varies by encoder), e.g. main, baseline, high.</param>
-    /// <param name="level">Optional. Specify a level for the encoder profile (varies by encoder), e.g. 3, 3.1.</param>
-    /// <param name="framerate">Optional. A specific video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="maxFramerate">Optional. A specific maximum video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="copyTimestamps">Whether or not to copy timestamps when transcoding with an offset. Defaults to false.</param>
-    /// <param name="startTimeTicks">Optional. Specify a starting offset, in ticks. 1 tick = 10000 ms.</param>
-    /// <param name="width">Optional. The fixed horizontal resolution of the encoded video.</param>
-    /// <param name="height">Optional. The fixed vertical resolution of the encoded video.</param>
-    /// <param name="videoBitRate">Optional. Specify a video bitrate to encode to, e.g. 500000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="subtitleStreamIndex">Optional. The index of the subtitle stream to use. If omitted no subtitles will be used.</param>
-    /// <param name="subtitleMethod">Optional. Specify the subtitle delivery method.</param>
-    /// <param name="maxRefFrames">Optional.</param>
-    /// <param name="maxVideoBitDepth">Optional. The maximum video bit depth.</param>
-    /// <param name="requireAvc">Optional. Whether to require avc.</param>
-    /// <param name="deInterlace">Optional. Whether to deinterlace the video.</param>
-    /// <param name="requireNonAnamorphic">Optional. Whether to require a non anamorphic stream.</param>
-    /// <param name="transcodingMaxAudioChannels">Optional. The maximum number of audio channels to transcode.</param>
-    /// <param name="cpuCoreLimit">Optional. The limit of how many cpu cores to use.</param>
-    /// <param name="liveStreamId">The live stream id.</param>
-    /// <param name="enableMpegtsM2TsMode">Optional. Whether to enable the MpegtsM2Ts mode.</param>
-    /// <param name="videoCodec">Optional. Specify a video codec to encode to, e.g. h264.</param>
-    /// <param name="subtitleCodec">Optional. Specify a subtitle codec to encode to.</param>
-    /// <param name="transcodeReasons">Optional. The transcoding reason.</param>
-    /// <param name="audioStreamIndex">Optional. The index of the audio stream to use. If omitted the first audio stream will be used.</param>
-    /// <param name="videoStreamIndex">Optional. The index of the video stream to use. If omitted the first video stream will be used.</param>
-    /// <param name="context">Optional. The <see cref="EncodingContext"/>.</param>
-    /// <param name="streamOptions">Optional. The streaming options.</param>
-    /// <param name="enableAdaptiveBitrateStreaming">Enable adaptive bitrate streaming.</param>
-    /// <param name="enableAudioVbrEncoding">Optional. Whether to enable Audio Encoding.</param>
-    /// <response code="200">Audio stream returned.</response>
-    /// <returns>A <see cref="FileResult"/> containing the playlist file.</returns>
-    [HttpGet("Audio/{itemId}/master.m3u8")]
-    [HttpHead("Audio/{itemId}/master.m3u8", Name = "HeadMasterHlsAudioPlaylist")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesPlaylistFile]
-    public async Task<ActionResult> GetMasterHlsAudioPlaylist(
-        [FromRoute, Required] Guid itemId,
-        [FromQuery] bool? @static,
-        [FromQuery] string? @params,
-        [FromQuery] string? tag,
-        [FromQuery, ParameterObsolete] string? deviceProfileId,
-        [FromQuery] string? playSessionId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? segmentContainer,
-        [FromQuery] int? segmentLength,
-        [FromQuery] int? minSegments,
-        [FromQuery, Required] string mediaSourceId,
-        [FromQuery] string? deviceId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? audioCodec,
-        [FromQuery] bool? enableAutoStreamCopy,
-        [FromQuery] bool? allowVideoStreamCopy,
-        [FromQuery] bool? allowAudioStreamCopy,
-        [FromQuery] int? audioSampleRate,
-        [FromQuery] int? maxAudioBitDepth,
-        [FromQuery] int? maxStreamingBitrate,
-        [FromQuery] int? audioBitRate,
-        [FromQuery] int? audioChannels,
-        [FromQuery] int? maxAudioChannels,
-        [FromQuery] string? profile,
-        [FromQuery][RegularExpression(EncodingHelper.LevelValidationRegexStr)] string? level,
-        [FromQuery] float? framerate,
-        [FromQuery] float? maxFramerate,
-        [FromQuery] bool? copyTimestamps,
-        [FromQuery] long? startTimeTicks,
-        [FromQuery] int? width,
-        [FromQuery] int? height,
-        [FromQuery] int? videoBitRate,
-        [FromQuery] int? subtitleStreamIndex,
-        [FromQuery] SubtitleDeliveryMethod? subtitleMethod,
-        [FromQuery] int? maxRefFrames,
-        [FromQuery] int? maxVideoBitDepth,
-        [FromQuery] bool? requireAvc,
-        [FromQuery] bool? deInterlace,
-        [FromQuery] bool? requireNonAnamorphic,
-        [FromQuery] int? transcodingMaxAudioChannels,
-        [FromQuery] int? cpuCoreLimit,
-        [FromQuery] string? liveStreamId,
-        [FromQuery] bool? enableMpegtsM2TsMode,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? videoCodec,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? subtitleCodec,
-        [FromQuery] string? transcodeReasons,
-        [FromQuery] int? audioStreamIndex,
-        [FromQuery] int? videoStreamIndex,
-        [FromQuery] EncodingContext? context,
-        [FromQuery] Dictionary<string, string> streamOptions,
-        [FromQuery] bool enableAdaptiveBitrateStreaming = false,
-        [FromQuery] bool enableAudioVbrEncoding = true)
+    private async Task WaitForMinimumLiveSegments(string playlistPath, int? minSegments, CancellationToken cancellationToken)
     {
-        var streamingRequest = new HlsAudioRequestDto
+        if (minSegments > 0)
         {
-            Id = itemId,
-            Static = @static ?? false,
-            Params = @params,
-            Tag = tag,
-            PlaySessionId = playSessionId,
-            SegmentContainer = segmentContainer,
-            SegmentLength = segmentLength,
-            MinSegments = minSegments,
-            MediaSourceId = mediaSourceId,
-            DeviceId = deviceId,
-            AudioCodec = audioCodec,
-            EnableAutoStreamCopy = enableAutoStreamCopy ?? true,
-            AllowAudioStreamCopy = allowAudioStreamCopy ?? true,
-            AllowVideoStreamCopy = allowVideoStreamCopy ?? true,
-            AudioSampleRate = audioSampleRate,
-            MaxAudioChannels = maxAudioChannels,
-            AudioBitRate = audioBitRate ?? maxStreamingBitrate,
-            MaxAudioBitDepth = maxAudioBitDepth,
-            AudioChannels = audioChannels,
-            Profile = profile,
-            Level = level,
-            Framerate = framerate,
-            MaxFramerate = maxFramerate,
-            CopyTimestamps = copyTimestamps ?? false,
-            StartTimeTicks = startTimeTicks,
-            Width = width,
-            Height = height,
-            VideoBitRate = videoBitRate,
-            SubtitleStreamIndex = subtitleStreamIndex,
-            SubtitleMethod = subtitleMethod ?? SubtitleDeliveryMethod.External,
-            MaxRefFrames = maxRefFrames,
-            MaxVideoBitDepth = maxVideoBitDepth,
-            RequireAvc = requireAvc ?? false,
-            DeInterlace = deInterlace ?? false,
-            RequireNonAnamorphic = requireNonAnamorphic ?? false,
-            TranscodingMaxAudioChannels = transcodingMaxAudioChannels,
-            CpuCoreLimit = cpuCoreLimit,
-            LiveStreamId = liveStreamId,
-            EnableMpegtsM2TsMode = enableMpegtsM2TsMode ?? false,
-            VideoCodec = videoCodec,
-            SubtitleCodec = subtitleCodec,
-            TranscodeReasons = transcodeReasons,
-            AudioStreamIndex = audioStreamIndex,
-            VideoStreamIndex = videoStreamIndex,
-            Context = context ?? EncodingContext.Streaming,
-            StreamOptions = streamOptions,
-            EnableAdaptiveBitrateStreaming = enableAdaptiveBitrateStreaming,
-            EnableAudioVbrEncoding = enableAudioVbrEncoding,
-            AlwaysBurnInSubtitleWhenTranscoding = false
-        };
-
-        return await _dynamicHlsHelper.GetMasterHlsPlaylist(TranscodingJobType, streamingRequest, enableAdaptiveBitrateStreaming).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Gets a video stream using HTTP live streaming.
-    /// </summary>
-    /// <param name="itemId">The item id.</param>
-    /// <param name="static">Optional. If true, the original file will be streamed statically without any encoding. Use either no url extension or the original file extension. true/false.</param>
-    /// <param name="params">The streaming parameters.</param>
-    /// <param name="tag">The tag.</param>
-    /// <param name="deviceProfileId">Optional. The dlna device profile id to utilize.</param>
-    /// <param name="playSessionId">The play session id.</param>
-    /// <param name="segmentContainer">The segment container.</param>
-    /// <param name="segmentLength">The segment length.</param>
-    /// <param name="minSegments">The minimum number of segments.</param>
-    /// <param name="mediaSourceId">The media version id, if playing an alternate version.</param>
-    /// <param name="deviceId">The device id of the client requesting. Used to stop encoding processes when needed.</param>
-    /// <param name="audioCodec">Optional. Specify an audio codec to encode to, e.g. mp3.</param>
-    /// <param name="enableAutoStreamCopy">Whether or not to allow automatic stream copy if requested values match the original source. Defaults to true.</param>
-    /// <param name="allowVideoStreamCopy">Whether or not to allow copying of the video stream url.</param>
-    /// <param name="allowAudioStreamCopy">Whether or not to allow copying of the audio stream url.</param>
-    /// <param name="audioSampleRate">Optional. Specify a specific audio sample rate, e.g. 44100.</param>
-    /// <param name="maxAudioBitDepth">Optional. The maximum audio bit depth.</param>
-    /// <param name="audioBitRate">Optional. Specify an audio bitrate to encode to, e.g. 128000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="audioChannels">Optional. Specify a specific number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="maxAudioChannels">Optional. Specify a maximum number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="profile">Optional. Specify a specific an encoder profile (varies by encoder), e.g. main, baseline, high.</param>
-    /// <param name="level">Optional. Specify a level for the encoder profile (varies by encoder), e.g. 3, 3.1.</param>
-    /// <param name="framerate">Optional. A specific video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="maxFramerate">Optional. A specific maximum video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="copyTimestamps">Whether or not to copy timestamps when transcoding with an offset. Defaults to false.</param>
-    /// <param name="startTimeTicks">Optional. Specify a starting offset, in ticks. 1 tick = 10000 ms.</param>
-    /// <param name="width">Optional. The fixed horizontal resolution of the encoded video.</param>
-    /// <param name="height">Optional. The fixed vertical resolution of the encoded video.</param>
-    /// <param name="maxWidth">Optional. The maximum horizontal resolution of the encoded video.</param>
-    /// <param name="maxHeight">Optional. The maximum vertical resolution of the encoded video.</param>
-    /// <param name="videoBitRate">Optional. Specify a video bitrate to encode to, e.g. 500000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="subtitleStreamIndex">Optional. The index of the subtitle stream to use. If omitted no subtitles will be used.</param>
-    /// <param name="subtitleMethod">Optional. Specify the subtitle delivery method.</param>
-    /// <param name="maxRefFrames">Optional.</param>
-    /// <param name="maxVideoBitDepth">Optional. The maximum video bit depth.</param>
-    /// <param name="requireAvc">Optional. Whether to require avc.</param>
-    /// <param name="deInterlace">Optional. Whether to deinterlace the video.</param>
-    /// <param name="requireNonAnamorphic">Optional. Whether to require a non anamorphic stream.</param>
-    /// <param name="transcodingMaxAudioChannels">Optional. The maximum number of audio channels to transcode.</param>
-    /// <param name="cpuCoreLimit">Optional. The limit of how many cpu cores to use.</param>
-    /// <param name="liveStreamId">The live stream id.</param>
-    /// <param name="enableMpegtsM2TsMode">Optional. Whether to enable the MpegtsM2Ts mode.</param>
-    /// <param name="videoCodec">Optional. Specify a video codec to encode to, e.g. h264.</param>
-    /// <param name="subtitleCodec">Optional. Specify a subtitle codec to encode to.</param>
-    /// <param name="transcodeReasons">Optional. The transcoding reason.</param>
-    /// <param name="audioStreamIndex">Optional. The index of the audio stream to use. If omitted the first audio stream will be used.</param>
-    /// <param name="videoStreamIndex">Optional. The index of the video stream to use. If omitted the first video stream will be used.</param>
-    /// <param name="context">Optional. The <see cref="EncodingContext"/>.</param>
-    /// <param name="streamOptions">Optional. The streaming options.</param>
-    /// <param name="enableAudioVbrEncoding">Optional. Whether to enable Audio Encoding.</param>
-    /// <param name="alwaysBurnInSubtitleWhenTranscoding">Whether to always burn in subtitles when transcoding.</param>
-    /// <response code="200">Video stream returned.</response>
-    /// <returns>A <see cref="FileResult"/> containing the audio file.</returns>
-    [HttpGet("Videos/{itemId}/main.m3u8")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesPlaylistFile]
-    public async Task<ActionResult> GetVariantHlsVideoPlaylist(
-        [FromRoute, Required] Guid itemId,
-        [FromQuery] bool? @static,
-        [FromQuery] string? @params,
-        [FromQuery] string? tag,
-        [FromQuery, ParameterObsolete] string? deviceProfileId,
-        [FromQuery] string? playSessionId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? segmentContainer,
-        [FromQuery] int? segmentLength,
-        [FromQuery] int? minSegments,
-        [FromQuery] string? mediaSourceId,
-        [FromQuery] string? deviceId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? audioCodec,
-        [FromQuery] bool? enableAutoStreamCopy,
-        [FromQuery] bool? allowVideoStreamCopy,
-        [FromQuery] bool? allowAudioStreamCopy,
-        [FromQuery] int? audioSampleRate,
-        [FromQuery] int? maxAudioBitDepth,
-        [FromQuery] int? audioBitRate,
-        [FromQuery] int? audioChannels,
-        [FromQuery] int? maxAudioChannels,
-        [FromQuery] string? profile,
-        [FromQuery][RegularExpression(EncodingHelper.LevelValidationRegexStr)] string? level,
-        [FromQuery] float? framerate,
-        [FromQuery] float? maxFramerate,
-        [FromQuery] bool? copyTimestamps,
-        [FromQuery] long? startTimeTicks,
-        [FromQuery] int? width,
-        [FromQuery] int? height,
-        [FromQuery] int? maxWidth,
-        [FromQuery] int? maxHeight,
-        [FromQuery] int? videoBitRate,
-        [FromQuery] int? subtitleStreamIndex,
-        [FromQuery] SubtitleDeliveryMethod? subtitleMethod,
-        [FromQuery] int? maxRefFrames,
-        [FromQuery] int? maxVideoBitDepth,
-        [FromQuery] bool? requireAvc,
-        [FromQuery] bool? deInterlace,
-        [FromQuery] bool? requireNonAnamorphic,
-        [FromQuery] int? transcodingMaxAudioChannels,
-        [FromQuery] int? cpuCoreLimit,
-        [FromQuery] string? liveStreamId,
-        [FromQuery] bool? enableMpegtsM2TsMode,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? videoCodec,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? subtitleCodec,
-        [FromQuery] string? transcodeReasons,
-        [FromQuery] int? audioStreamIndex,
-        [FromQuery] int? videoStreamIndex,
-        [FromQuery] EncodingContext? context,
-        [FromQuery] Dictionary<string, string> streamOptions,
-        [FromQuery] bool enableAudioVbrEncoding = true,
-        [FromQuery] bool alwaysBurnInSubtitleWhenTranscoding = false)
-    {
-        using var cancellationTokenSource = new CancellationTokenSource();
-        var streamingRequest = new VideoRequestDto
-        {
-            Id = itemId,
-            Static = @static ?? false,
-            Params = @params,
-            Tag = tag,
-            PlaySessionId = playSessionId,
-            SegmentContainer = segmentContainer,
-            SegmentLength = segmentLength,
-            MinSegments = minSegments,
-            MediaSourceId = mediaSourceId,
-            DeviceId = deviceId,
-            AudioCodec = audioCodec,
-            EnableAutoStreamCopy = enableAutoStreamCopy ?? true,
-            AllowAudioStreamCopy = allowAudioStreamCopy ?? true,
-            AllowVideoStreamCopy = allowVideoStreamCopy ?? true,
-            AudioSampleRate = audioSampleRate,
-            MaxAudioChannels = maxAudioChannels,
-            AudioBitRate = audioBitRate,
-            MaxAudioBitDepth = maxAudioBitDepth,
-            AudioChannels = audioChannels,
-            Profile = profile,
-            Level = level,
-            Framerate = framerate,
-            MaxFramerate = maxFramerate,
-            CopyTimestamps = copyTimestamps ?? false,
-            StartTimeTicks = startTimeTicks,
-            Width = width,
-            Height = height,
-            MaxWidth = maxWidth,
-            MaxHeight = maxHeight,
-            VideoBitRate = videoBitRate,
-            SubtitleStreamIndex = subtitleStreamIndex,
-            SubtitleMethod = subtitleMethod ?? SubtitleDeliveryMethod.External,
-            MaxRefFrames = maxRefFrames,
-            MaxVideoBitDepth = maxVideoBitDepth,
-            RequireAvc = requireAvc ?? false,
-            DeInterlace = deInterlace ?? false,
-            RequireNonAnamorphic = requireNonAnamorphic ?? false,
-            TranscodingMaxAudioChannels = transcodingMaxAudioChannels,
-            CpuCoreLimit = cpuCoreLimit,
-            LiveStreamId = liveStreamId,
-            EnableMpegtsM2TsMode = enableMpegtsM2TsMode ?? false,
-            VideoCodec = videoCodec,
-            SubtitleCodec = subtitleCodec,
-            TranscodeReasons = transcodeReasons,
-            AudioStreamIndex = audioStreamIndex,
-            VideoStreamIndex = videoStreamIndex,
-            Context = context ?? EncodingContext.Streaming,
-            StreamOptions = streamOptions,
-            EnableAudioVbrEncoding = enableAudioVbrEncoding,
-            AlwaysBurnInSubtitleWhenTranscoding = alwaysBurnInSubtitleWhenTranscoding
-        };
-
-        return await GetVariantPlaylistInternal(streamingRequest, cancellationTokenSource)
-            .ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Gets an audio stream using HTTP live streaming.
-    /// </summary>
-    /// <param name="itemId">The item id.</param>
-    /// <param name="static">Optional. If true, the original file will be streamed statically without any encoding. Use either no url extension or the original file extension. true/false.</param>
-    /// <param name="params">The streaming parameters.</param>
-    /// <param name="tag">The tag.</param>
-    /// <param name="deviceProfileId">Optional. The dlna device profile id to utilize.</param>
-    /// <param name="playSessionId">The play session id.</param>
-    /// <param name="segmentContainer">The segment container.</param>
-    /// <param name="segmentLength">The segment length.</param>
-    /// <param name="minSegments">The minimum number of segments.</param>
-    /// <param name="mediaSourceId">The media version id, if playing an alternate version.</param>
-    /// <param name="deviceId">The device id of the client requesting. Used to stop encoding processes when needed.</param>
-    /// <param name="audioCodec">Optional. Specify an audio codec to encode to, e.g. mp3.</param>
-    /// <param name="enableAutoStreamCopy">Whether or not to allow automatic stream copy if requested values match the original source. Defaults to true.</param>
-    /// <param name="allowVideoStreamCopy">Whether or not to allow copying of the video stream url.</param>
-    /// <param name="allowAudioStreamCopy">Whether or not to allow copying of the audio stream url.</param>
-    /// <param name="audioSampleRate">Optional. Specify a specific audio sample rate, e.g. 44100.</param>
-    /// <param name="maxAudioBitDepth">Optional. The maximum audio bit depth.</param>
-    /// <param name="maxStreamingBitrate">Optional. The maximum streaming bitrate.</param>
-    /// <param name="audioBitRate">Optional. Specify an audio bitrate to encode to, e.g. 128000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="audioChannels">Optional. Specify a specific number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="maxAudioChannels">Optional. Specify a maximum number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="profile">Optional. Specify a specific an encoder profile (varies by encoder), e.g. main, baseline, high.</param>
-    /// <param name="level">Optional. Specify a level for the encoder profile (varies by encoder), e.g. 3, 3.1.</param>
-    /// <param name="framerate">Optional. A specific video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="maxFramerate">Optional. A specific maximum video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="copyTimestamps">Whether or not to copy timestamps when transcoding with an offset. Defaults to false.</param>
-    /// <param name="startTimeTicks">Optional. Specify a starting offset, in ticks. 1 tick = 10000 ms.</param>
-    /// <param name="width">Optional. The fixed horizontal resolution of the encoded video.</param>
-    /// <param name="height">Optional. The fixed vertical resolution of the encoded video.</param>
-    /// <param name="videoBitRate">Optional. Specify a video bitrate to encode to, e.g. 500000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="subtitleStreamIndex">Optional. The index of the subtitle stream to use. If omitted no subtitles will be used.</param>
-    /// <param name="subtitleMethod">Optional. Specify the subtitle delivery method.</param>
-    /// <param name="maxRefFrames">Optional.</param>
-    /// <param name="maxVideoBitDepth">Optional. The maximum video bit depth.</param>
-    /// <param name="requireAvc">Optional. Whether to require avc.</param>
-    /// <param name="deInterlace">Optional. Whether to deinterlace the video.</param>
-    /// <param name="requireNonAnamorphic">Optional. Whether to require a non anamorphic stream.</param>
-    /// <param name="transcodingMaxAudioChannels">Optional. The maximum number of audio channels to transcode.</param>
-    /// <param name="cpuCoreLimit">Optional. The limit of how many cpu cores to use.</param>
-    /// <param name="liveStreamId">The live stream id.</param>
-    /// <param name="enableMpegtsM2TsMode">Optional. Whether to enable the MpegtsM2Ts mode.</param>
-    /// <param name="videoCodec">Optional. Specify a video codec to encode to, e.g. h264.</param>
-    /// <param name="subtitleCodec">Optional. Specify a subtitle codec to encode to.</param>
-    /// <param name="transcodeReasons">Optional. The transcoding reason.</param>
-    /// <param name="audioStreamIndex">Optional. The index of the audio stream to use. If omitted the first audio stream will be used.</param>
-    /// <param name="videoStreamIndex">Optional. The index of the video stream to use. If omitted the first video stream will be used.</param>
-    /// <param name="context">Optional. The <see cref="EncodingContext"/>.</param>
-    /// <param name="streamOptions">Optional. The streaming options.</param>
-    /// <param name="enableAudioVbrEncoding">Optional. Whether to enable Audio Encoding.</param>
-    /// <response code="200">Audio stream returned.</response>
-    /// <returns>A <see cref="FileResult"/> containing the audio file.</returns>
-    [HttpGet("Audio/{itemId}/main.m3u8")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesPlaylistFile]
-    public async Task<ActionResult> GetVariantHlsAudioPlaylist(
-        [FromRoute, Required] Guid itemId,
-        [FromQuery] bool? @static,
-        [FromQuery] string? @params,
-        [FromQuery] string? tag,
-        [FromQuery, ParameterObsolete] string? deviceProfileId,
-        [FromQuery] string? playSessionId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? segmentContainer,
-        [FromQuery] int? segmentLength,
-        [FromQuery] int? minSegments,
-        [FromQuery] string? mediaSourceId,
-        [FromQuery] string? deviceId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? audioCodec,
-        [FromQuery] bool? enableAutoStreamCopy,
-        [FromQuery] bool? allowVideoStreamCopy,
-        [FromQuery] bool? allowAudioStreamCopy,
-        [FromQuery] int? audioSampleRate,
-        [FromQuery] int? maxAudioBitDepth,
-        [FromQuery] int? maxStreamingBitrate,
-        [FromQuery] int? audioBitRate,
-        [FromQuery] int? audioChannels,
-        [FromQuery] int? maxAudioChannels,
-        [FromQuery] string? profile,
-        [FromQuery][RegularExpression(EncodingHelper.LevelValidationRegexStr)] string? level,
-        [FromQuery] float? framerate,
-        [FromQuery] float? maxFramerate,
-        [FromQuery] bool? copyTimestamps,
-        [FromQuery] long? startTimeTicks,
-        [FromQuery] int? width,
-        [FromQuery] int? height,
-        [FromQuery] int? videoBitRate,
-        [FromQuery] int? subtitleStreamIndex,
-        [FromQuery] SubtitleDeliveryMethod? subtitleMethod,
-        [FromQuery] int? maxRefFrames,
-        [FromQuery] int? maxVideoBitDepth,
-        [FromQuery] bool? requireAvc,
-        [FromQuery] bool? deInterlace,
-        [FromQuery] bool? requireNonAnamorphic,
-        [FromQuery] int? transcodingMaxAudioChannels,
-        [FromQuery] int? cpuCoreLimit,
-        [FromQuery] string? liveStreamId,
-        [FromQuery] bool? enableMpegtsM2TsMode,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? videoCodec,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? subtitleCodec,
-        [FromQuery] string? transcodeReasons,
-        [FromQuery] int? audioStreamIndex,
-        [FromQuery] int? videoStreamIndex,
-        [FromQuery] EncodingContext? context,
-        [FromQuery] Dictionary<string, string> streamOptions,
-        [FromQuery] bool enableAudioVbrEncoding = true)
-    {
-        using var cancellationTokenSource = new CancellationTokenSource();
-        var streamingRequest = new StreamingRequestDto
-        {
-            Id = itemId,
-            Static = @static ?? false,
-            Params = @params,
-            Tag = tag,
-            PlaySessionId = playSessionId,
-            SegmentContainer = segmentContainer,
-            SegmentLength = segmentLength,
-            MinSegments = minSegments,
-            MediaSourceId = mediaSourceId,
-            DeviceId = deviceId,
-            AudioCodec = audioCodec,
-            EnableAutoStreamCopy = enableAutoStreamCopy ?? true,
-            AllowAudioStreamCopy = allowAudioStreamCopy ?? true,
-            AllowVideoStreamCopy = allowVideoStreamCopy ?? true,
-            AudioSampleRate = audioSampleRate,
-            MaxAudioChannels = maxAudioChannels,
-            AudioBitRate = audioBitRate ?? maxStreamingBitrate,
-            MaxAudioBitDepth = maxAudioBitDepth,
-            AudioChannels = audioChannels,
-            Profile = profile,
-            Level = level,
-            Framerate = framerate,
-            MaxFramerate = maxFramerate,
-            CopyTimestamps = copyTimestamps ?? false,
-            StartTimeTicks = startTimeTicks,
-            Width = width,
-            Height = height,
-            VideoBitRate = videoBitRate,
-            SubtitleStreamIndex = subtitleStreamIndex,
-            SubtitleMethod = subtitleMethod ?? SubtitleDeliveryMethod.External,
-            MaxRefFrames = maxRefFrames,
-            MaxVideoBitDepth = maxVideoBitDepth,
-            RequireAvc = requireAvc ?? false,
-            DeInterlace = deInterlace ?? false,
-            RequireNonAnamorphic = requireNonAnamorphic ?? false,
-            TranscodingMaxAudioChannels = transcodingMaxAudioChannels,
-            CpuCoreLimit = cpuCoreLimit,
-            LiveStreamId = liveStreamId,
-            EnableMpegtsM2TsMode = enableMpegtsM2TsMode ?? false,
-            VideoCodec = videoCodec,
-            SubtitleCodec = subtitleCodec,
-            TranscodeReasons = transcodeReasons,
-            AudioStreamIndex = audioStreamIndex,
-            VideoStreamIndex = videoStreamIndex,
-            Context = context ?? EncodingContext.Streaming,
-            StreamOptions = streamOptions,
-            EnableAudioVbrEncoding = enableAudioVbrEncoding,
-            AlwaysBurnInSubtitleWhenTranscoding = false
-        };
-
-        return await GetVariantPlaylistInternal(streamingRequest, cancellationTokenSource)
-            .ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Gets a video stream using HTTP live streaming.
-    /// </summary>
-    /// <param name="itemId">The item id.</param>
-    /// <param name="playlistId">The playlist id.</param>
-    /// <param name="segmentId">The segment id.</param>
-    /// <param name="container">The video container. Possible values are: ts, webm, asf, wmv, ogv, mp4, m4v, mkv, mpeg, mpg, avi, 3gp, wmv, wtv, m2ts, mov, iso, flv. </param>
-    /// <param name="runtimeTicks">The position of the requested segment in ticks.</param>
-    /// <param name="actualSegmentLengthTicks">The length of the requested segment in ticks.</param>
-    /// <param name="static">Optional. If true, the original file will be streamed statically without any encoding. Use either no url extension or the original file extension. true/false.</param>
-    /// <param name="params">The streaming parameters.</param>
-    /// <param name="tag">The tag.</param>
-    /// <param name="deviceProfileId">Optional. The dlna device profile id to utilize.</param>
-    /// <param name="playSessionId">The play session id.</param>
-    /// <param name="segmentContainer">The segment container.</param>
-    /// <param name="segmentLength">The desired segment length.</param>
-    /// <param name="minSegments">The minimum number of segments.</param>
-    /// <param name="mediaSourceId">The media version id, if playing an alternate version.</param>
-    /// <param name="deviceId">The device id of the client requesting. Used to stop encoding processes when needed.</param>
-    /// <param name="audioCodec">Optional. Specify an audio codec to encode to, e.g. mp3.</param>
-    /// <param name="enableAutoStreamCopy">Whether or not to allow automatic stream copy if requested values match the original source. Defaults to true.</param>
-    /// <param name="allowVideoStreamCopy">Whether or not to allow copying of the video stream url.</param>
-    /// <param name="allowAudioStreamCopy">Whether or not to allow copying of the audio stream url.</param>
-    /// <param name="audioSampleRate">Optional. Specify a specific audio sample rate, e.g. 44100.</param>
-    /// <param name="maxAudioBitDepth">Optional. The maximum audio bit depth.</param>
-    /// <param name="audioBitRate">Optional. Specify an audio bitrate to encode to, e.g. 128000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="audioChannels">Optional. Specify a specific number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="maxAudioChannels">Optional. Specify a maximum number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="profile">Optional. Specify a specific an encoder profile (varies by encoder), e.g. main, baseline, high.</param>
-    /// <param name="level">Optional. Specify a level for the encoder profile (varies by encoder), e.g. 3, 3.1.</param>
-    /// <param name="framerate">Optional. A specific video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="maxFramerate">Optional. A specific maximum video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="copyTimestamps">Whether or not to copy timestamps when transcoding with an offset. Defaults to false.</param>
-    /// <param name="startTimeTicks">Optional. Specify a starting offset, in ticks. 1 tick = 10000 ms.</param>
-    /// <param name="width">Optional. The fixed horizontal resolution of the encoded video.</param>
-    /// <param name="height">Optional. The fixed vertical resolution of the encoded video.</param>
-    /// <param name="maxWidth">Optional. The maximum horizontal resolution of the encoded video.</param>
-    /// <param name="maxHeight">Optional. The maximum vertical resolution of the encoded video.</param>
-    /// <param name="videoBitRate">Optional. Specify a video bitrate to encode to, e.g. 500000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="subtitleStreamIndex">Optional. The index of the subtitle stream to use. If omitted no subtitles will be used.</param>
-    /// <param name="subtitleMethod">Optional. Specify the subtitle delivery method.</param>
-    /// <param name="maxRefFrames">Optional.</param>
-    /// <param name="maxVideoBitDepth">Optional. The maximum video bit depth.</param>
-    /// <param name="requireAvc">Optional. Whether to require avc.</param>
-    /// <param name="deInterlace">Optional. Whether to deinterlace the video.</param>
-    /// <param name="requireNonAnamorphic">Optional. Whether to require a non anamorphic stream.</param>
-    /// <param name="transcodingMaxAudioChannels">Optional. The maximum number of audio channels to transcode.</param>
-    /// <param name="cpuCoreLimit">Optional. The limit of how many cpu cores to use.</param>
-    /// <param name="liveStreamId">The live stream id.</param>
-    /// <param name="enableMpegtsM2TsMode">Optional. Whether to enable the MpegtsM2Ts mode.</param>
-    /// <param name="videoCodec">Optional. Specify a video codec to encode to, e.g. h264.</param>
-    /// <param name="subtitleCodec">Optional. Specify a subtitle codec to encode to.</param>
-    /// <param name="transcodeReasons">Optional. The transcoding reason.</param>
-    /// <param name="audioStreamIndex">Optional. The index of the audio stream to use. If omitted the first audio stream will be used.</param>
-    /// <param name="videoStreamIndex">Optional. The index of the video stream to use. If omitted the first video stream will be used.</param>
-    /// <param name="context">Optional. The <see cref="EncodingContext"/>.</param>
-    /// <param name="streamOptions">Optional. The streaming options.</param>
-    /// <param name="enableAudioVbrEncoding">Optional. Whether to enable Audio Encoding.</param>
-    /// <param name="alwaysBurnInSubtitleWhenTranscoding">Whether to always burn in subtitles when transcoding.</param>
-    /// <response code="200">Video stream returned.</response>
-    /// <returns>A <see cref="FileResult"/> containing the audio file.</returns>
-    [HttpGet("Videos/{itemId}/hls1/{playlistId}/{segmentId}.{container}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesVideoFile]
-    [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "playlistId", Justification = "Imported from ServiceStack")]
-    public async Task<ActionResult> GetHlsVideoSegment(
-        [FromRoute, Required] Guid itemId,
-        [FromRoute, Required] string playlistId,
-        [FromRoute, Required] int segmentId,
-        [FromRoute, Required][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string container,
-        [FromQuery, Required] long runtimeTicks,
-        [FromQuery, Required] long actualSegmentLengthTicks,
-        [FromQuery] bool? @static,
-        [FromQuery] string? @params,
-        [FromQuery] string? tag,
-        [FromQuery, ParameterObsolete] string? deviceProfileId,
-        [FromQuery] string? playSessionId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? segmentContainer,
-        [FromQuery] int? segmentLength,
-        [FromQuery] int? minSegments,
-        [FromQuery] string? mediaSourceId,
-        [FromQuery] string? deviceId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? audioCodec,
-        [FromQuery] bool? enableAutoStreamCopy,
-        [FromQuery] bool? allowVideoStreamCopy,
-        [FromQuery] bool? allowAudioStreamCopy,
-        [FromQuery] int? audioSampleRate,
-        [FromQuery] int? maxAudioBitDepth,
-        [FromQuery] int? audioBitRate,
-        [FromQuery] int? audioChannels,
-        [FromQuery] int? maxAudioChannels,
-        [FromQuery] string? profile,
-        [FromQuery][RegularExpression(EncodingHelper.LevelValidationRegexStr)] string? level,
-        [FromQuery] float? framerate,
-        [FromQuery] float? maxFramerate,
-        [FromQuery] bool? copyTimestamps,
-        [FromQuery] long? startTimeTicks,
-        [FromQuery] int? width,
-        [FromQuery] int? height,
-        [FromQuery] int? maxWidth,
-        [FromQuery] int? maxHeight,
-        [FromQuery] int? videoBitRate,
-        [FromQuery] int? subtitleStreamIndex,
-        [FromQuery] SubtitleDeliveryMethod? subtitleMethod,
-        [FromQuery] int? maxRefFrames,
-        [FromQuery] int? maxVideoBitDepth,
-        [FromQuery] bool? requireAvc,
-        [FromQuery] bool? deInterlace,
-        [FromQuery] bool? requireNonAnamorphic,
-        [FromQuery] int? transcodingMaxAudioChannels,
-        [FromQuery] int? cpuCoreLimit,
-        [FromQuery] string? liveStreamId,
-        [FromQuery] bool? enableMpegtsM2TsMode,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? videoCodec,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? subtitleCodec,
-        [FromQuery] string? transcodeReasons,
-        [FromQuery] int? audioStreamIndex,
-        [FromQuery] int? videoStreamIndex,
-        [FromQuery] EncodingContext? context,
-        [FromQuery] Dictionary<string, string> streamOptions,
-        [FromQuery] bool enableAudioVbrEncoding = true,
-        [FromQuery] bool alwaysBurnInSubtitleWhenTranscoding = false)
-    {
-        var streamingRequest = new VideoRequestDto
-        {
-            Id = itemId,
-            CurrentRuntimeTicks = runtimeTicks,
-            ActualSegmentLengthTicks = actualSegmentLengthTicks,
-            Container = container,
-            Static = @static ?? false,
-            Params = @params,
-            Tag = tag,
-            PlaySessionId = playSessionId,
-            SegmentContainer = segmentContainer,
-            SegmentLength = segmentLength,
-            MinSegments = minSegments,
-            MediaSourceId = mediaSourceId,
-            DeviceId = deviceId,
-            AudioCodec = audioCodec,
-            EnableAutoStreamCopy = enableAutoStreamCopy ?? true,
-            AllowAudioStreamCopy = allowAudioStreamCopy ?? true,
-            AllowVideoStreamCopy = allowVideoStreamCopy ?? true,
-            AudioSampleRate = audioSampleRate,
-            MaxAudioChannels = maxAudioChannels,
-            AudioBitRate = audioBitRate,
-            MaxAudioBitDepth = maxAudioBitDepth,
-            AudioChannels = audioChannels,
-            Profile = profile,
-            Level = level,
-            Framerate = framerate,
-            MaxFramerate = maxFramerate,
-            CopyTimestamps = copyTimestamps ?? false,
-            StartTimeTicks = startTimeTicks,
-            Width = width,
-            Height = height,
-            MaxWidth = maxWidth,
-            MaxHeight = maxHeight,
-            VideoBitRate = videoBitRate,
-            SubtitleStreamIndex = subtitleStreamIndex,
-            SubtitleMethod = subtitleMethod ?? SubtitleDeliveryMethod.External,
-            MaxRefFrames = maxRefFrames,
-            MaxVideoBitDepth = maxVideoBitDepth,
-            RequireAvc = requireAvc ?? false,
-            DeInterlace = deInterlace ?? false,
-            RequireNonAnamorphic = requireNonAnamorphic ?? false,
-            TranscodingMaxAudioChannels = transcodingMaxAudioChannels,
-            CpuCoreLimit = cpuCoreLimit,
-            LiveStreamId = liveStreamId,
-            EnableMpegtsM2TsMode = enableMpegtsM2TsMode ?? false,
-            VideoCodec = videoCodec,
-            SubtitleCodec = subtitleCodec,
-            TranscodeReasons = transcodeReasons,
-            AudioStreamIndex = audioStreamIndex,
-            VideoStreamIndex = videoStreamIndex,
-            Context = context ?? EncodingContext.Streaming,
-            StreamOptions = streamOptions,
-            EnableAudioVbrEncoding = enableAudioVbrEncoding,
-            AlwaysBurnInSubtitleWhenTranscoding = alwaysBurnInSubtitleWhenTranscoding
-        };
-
-        return await GetDynamicSegment(streamingRequest, segmentId)
-            .ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Gets a video stream using HTTP live streaming.
-    /// </summary>
-    /// <param name="itemId">The item id.</param>
-    /// <param name="playlistId">The playlist id.</param>
-    /// <param name="segmentId">The segment id.</param>
-    /// <param name="container">The video container. Possible values are: ts, webm, asf, wmv, ogv, mp4, m4v, mkv, mpeg, mpg, avi, 3gp, wmv, wtv, m2ts, mov, iso, flv. </param>
-    /// <param name="runtimeTicks">The position of the requested segment in ticks.</param>
-    /// <param name="actualSegmentLengthTicks">The length of the requested segment in ticks.</param>
-    /// <param name="static">Optional. If true, the original file will be streamed statically without any encoding. Use either no url extension or the original file extension. true/false.</param>
-    /// <param name="params">The streaming parameters.</param>
-    /// <param name="tag">The tag.</param>
-    /// <param name="deviceProfileId">Optional. The dlna device profile id to utilize.</param>
-    /// <param name="playSessionId">The play session id.</param>
-    /// <param name="segmentContainer">The segment container.</param>
-    /// <param name="segmentLength">The segment length.</param>
-    /// <param name="minSegments">The minimum number of segments.</param>
-    /// <param name="mediaSourceId">The media version id, if playing an alternate version.</param>
-    /// <param name="deviceId">The device id of the client requesting. Used to stop encoding processes when needed.</param>
-    /// <param name="audioCodec">Optional. Specify an audio codec to encode to, e.g. mp3.</param>
-    /// <param name="enableAutoStreamCopy">Whether or not to allow automatic stream copy if requested values match the original source. Defaults to true.</param>
-    /// <param name="allowVideoStreamCopy">Whether or not to allow copying of the video stream url.</param>
-    /// <param name="allowAudioStreamCopy">Whether or not to allow copying of the audio stream url.</param>
-    /// <param name="audioSampleRate">Optional. Specify a specific audio sample rate, e.g. 44100.</param>
-    /// <param name="maxAudioBitDepth">Optional. The maximum audio bit depth.</param>
-    /// <param name="maxStreamingBitrate">Optional. The maximum streaming bitrate.</param>
-    /// <param name="audioBitRate">Optional. Specify an audio bitrate to encode to, e.g. 128000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="audioChannels">Optional. Specify a specific number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="maxAudioChannels">Optional. Specify a maximum number of audio channels to encode to, e.g. 2.</param>
-    /// <param name="profile">Optional. Specify a specific an encoder profile (varies by encoder), e.g. main, baseline, high.</param>
-    /// <param name="level">Optional. Specify a level for the encoder profile (varies by encoder), e.g. 3, 3.1.</param>
-    /// <param name="framerate">Optional. A specific video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="maxFramerate">Optional. A specific maximum video framerate to encode to, e.g. 23.976. Generally this should be omitted unless the device has specific requirements.</param>
-    /// <param name="copyTimestamps">Whether or not to copy timestamps when transcoding with an offset. Defaults to false.</param>
-    /// <param name="startTimeTicks">Optional. Specify a starting offset, in ticks. 1 tick = 10000 ms.</param>
-    /// <param name="width">Optional. The fixed horizontal resolution of the encoded video.</param>
-    /// <param name="height">Optional. The fixed vertical resolution of the encoded video.</param>
-    /// <param name="videoBitRate">Optional. Specify a video bitrate to encode to, e.g. 500000. If omitted this will be left to encoder defaults.</param>
-    /// <param name="subtitleStreamIndex">Optional. The index of the subtitle stream to use. If omitted no subtitles will be used.</param>
-    /// <param name="subtitleMethod">Optional. Specify the subtitle delivery method.</param>
-    /// <param name="maxRefFrames">Optional.</param>
-    /// <param name="maxVideoBitDepth">Optional. The maximum video bit depth.</param>
-    /// <param name="requireAvc">Optional. Whether to require avc.</param>
-    /// <param name="deInterlace">Optional. Whether to deinterlace the video.</param>
-    /// <param name="requireNonAnamorphic">Optional. Whether to require a non anamorphic stream.</param>
-    /// <param name="transcodingMaxAudioChannels">Optional. The maximum number of audio channels to transcode.</param>
-    /// <param name="cpuCoreLimit">Optional. The limit of how many cpu cores to use.</param>
-    /// <param name="liveStreamId">The live stream id.</param>
-    /// <param name="enableMpegtsM2TsMode">Optional. Whether to enable the MpegtsM2Ts mode.</param>
-    /// <param name="videoCodec">Optional. Specify a video codec to encode to, e.g. h264.</param>
-    /// <param name="subtitleCodec">Optional. Specify a subtitle codec to encode to.</param>
-    /// <param name="transcodeReasons">Optional. The transcoding reason.</param>
-    /// <param name="audioStreamIndex">Optional. The index of the audio stream to use. If omitted the first audio stream will be used.</param>
-    /// <param name="videoStreamIndex">Optional. The index of the video stream to use. If omitted the first video stream will be used.</param>
-    /// <param name="context">Optional. The <see cref="EncodingContext"/>.</param>
-    /// <param name="streamOptions">Optional. The streaming options.</param>
-    /// <param name="enableAudioVbrEncoding">Optional. Whether to enable Audio Encoding.</param>
-    /// <response code="200">Video stream returned.</response>
-    /// <returns>A <see cref="FileResult"/> containing the audio file.</returns>
-    [HttpGet("Audio/{itemId}/hls1/{playlistId}/{segmentId}.{container}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesAudioFile]
-    [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "playlistId", Justification = "Imported from ServiceStack")]
-    public async Task<ActionResult> GetHlsAudioSegment(
-        [FromRoute, Required] Guid itemId,
-        [FromRoute, Required] string playlistId,
-        [FromRoute, Required] int segmentId,
-        [FromRoute, Required][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string container,
-        [FromQuery, Required] long runtimeTicks,
-        [FromQuery, Required] long actualSegmentLengthTicks,
-        [FromQuery] bool? @static,
-        [FromQuery] string? @params,
-        [FromQuery] string? tag,
-        [FromQuery, ParameterObsolete] string? deviceProfileId,
-        [FromQuery] string? playSessionId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? segmentContainer,
-        [FromQuery] int? segmentLength,
-        [FromQuery] int? minSegments,
-        [FromQuery] string? mediaSourceId,
-        [FromQuery] string? deviceId,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? audioCodec,
-        [FromQuery] bool? enableAutoStreamCopy,
-        [FromQuery] bool? allowVideoStreamCopy,
-        [FromQuery] bool? allowAudioStreamCopy,
-        [FromQuery] int? audioSampleRate,
-        [FromQuery] int? maxAudioBitDepth,
-        [FromQuery] int? maxStreamingBitrate,
-        [FromQuery] int? audioBitRate,
-        [FromQuery] int? audioChannels,
-        [FromQuery] int? maxAudioChannels,
-        [FromQuery] string? profile,
-        [FromQuery][RegularExpression(EncodingHelper.LevelValidationRegexStr)] string? level,
-        [FromQuery] float? framerate,
-        [FromQuery] float? maxFramerate,
-        [FromQuery] bool? copyTimestamps,
-        [FromQuery] long? startTimeTicks,
-        [FromQuery] int? width,
-        [FromQuery] int? height,
-        [FromQuery] int? videoBitRate,
-        [FromQuery] int? subtitleStreamIndex,
-        [FromQuery] SubtitleDeliveryMethod? subtitleMethod,
-        [FromQuery] int? maxRefFrames,
-        [FromQuery] int? maxVideoBitDepth,
-        [FromQuery] bool? requireAvc,
-        [FromQuery] bool? deInterlace,
-        [FromQuery] bool? requireNonAnamorphic,
-        [FromQuery] int? transcodingMaxAudioChannels,
-        [FromQuery] int? cpuCoreLimit,
-        [FromQuery] string? liveStreamId,
-        [FromQuery] bool? enableMpegtsM2TsMode,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? videoCodec,
-        [FromQuery][RegularExpression(EncodingHelper.ContainerValidationRegexStr)] string? subtitleCodec,
-        [FromQuery] string? transcodeReasons,
-        [FromQuery] int? audioStreamIndex,
-        [FromQuery] int? videoStreamIndex,
-        [FromQuery] EncodingContext? context,
-        [FromQuery] Dictionary<string, string> streamOptions,
-        [FromQuery] bool enableAudioVbrEncoding = true)
-    {
-        var streamingRequest = new StreamingRequestDto
-        {
-            Id = itemId,
-            Container = container,
-            CurrentRuntimeTicks = runtimeTicks,
-            ActualSegmentLengthTicks = actualSegmentLengthTicks,
-            Static = @static ?? false,
-            Params = @params,
-            Tag = tag,
-            PlaySessionId = playSessionId,
-            SegmentContainer = segmentContainer,
-            SegmentLength = segmentLength,
-            MinSegments = minSegments,
-            MediaSourceId = mediaSourceId,
-            DeviceId = deviceId,
-            AudioCodec = audioCodec,
-            EnableAutoStreamCopy = enableAutoStreamCopy ?? true,
-            AllowAudioStreamCopy = allowAudioStreamCopy ?? true,
-            AllowVideoStreamCopy = allowVideoStreamCopy ?? true,
-            AudioSampleRate = audioSampleRate,
-            MaxAudioChannels = maxAudioChannels,
-            AudioBitRate = audioBitRate ?? maxStreamingBitrate,
-            MaxAudioBitDepth = maxAudioBitDepth,
-            AudioChannels = audioChannels,
-            Profile = profile,
-            Level = level,
-            Framerate = framerate,
-            MaxFramerate = maxFramerate,
-            CopyTimestamps = copyTimestamps ?? false,
-            StartTimeTicks = startTimeTicks,
-            Width = width,
-            Height = height,
-            VideoBitRate = videoBitRate,
-            SubtitleStreamIndex = subtitleStreamIndex,
-            SubtitleMethod = subtitleMethod ?? SubtitleDeliveryMethod.External,
-            MaxRefFrames = maxRefFrames,
-            MaxVideoBitDepth = maxVideoBitDepth,
-            RequireAvc = requireAvc ?? false,
-            DeInterlace = deInterlace ?? false,
-            RequireNonAnamorphic = requireNonAnamorphic ?? false,
-            TranscodingMaxAudioChannels = transcodingMaxAudioChannels,
-            CpuCoreLimit = cpuCoreLimit,
-            LiveStreamId = liveStreamId,
-            EnableMpegtsM2TsMode = enableMpegtsM2TsMode ?? false,
-            VideoCodec = videoCodec,
-            SubtitleCodec = subtitleCodec,
-            TranscodeReasons = transcodeReasons,
-            AudioStreamIndex = audioStreamIndex,
-            VideoStreamIndex = videoStreamIndex,
-            Context = context ?? EncodingContext.Streaming,
-            StreamOptions = streamOptions,
-            EnableAudioVbrEncoding = enableAudioVbrEncoding,
-            AlwaysBurnInSubtitleWhenTranscoding = false
-        };
-
-        return await GetDynamicSegment(streamingRequest, segmentId)
-            .ConfigureAwait(false);
+            await HlsHelpers.WaitForMinimumSegmentCount(playlistPath, minSegments, _logger, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     private async Task<ActionResult> GetVariantPlaylistInternal(StreamingRequestDto streamingRequest, CancellationTokenSource cancellationTokenSource)
@@ -1495,52 +467,77 @@ public class DynamicHlsController : BaseJellyfinApiController
 
             if (startTranscoding)
             {
-                // If the playlist doesn't already exist, startup ffmpeg
-                try
-                {
-                    var currentJob = _transcodeManager.GetTranscodingJob(playlistPath, TranscodingJobType);
-                    await WaitForActiveTranscodingRequests(currentJob, cancellationToken).ConfigureAwait(false);
-
-                    await _transcodeManager.KillTranscodingJobs(streamingRequest.DeviceId, streamingRequest.PlaySessionId, p => false)
-                        .ConfigureAwait(false);
-
-                    if (currentTranscodingIndex.HasValue)
-                    {
-                        await DeleteLastFile(playlistPath, segmentExtension, 0).ConfigureAwait(false);
-                    }
-
-                    streamingRequest.StartTimeTicks = streamingRequest.CurrentRuntimeTicks;
-
-                    state.WaitForPath = segmentPath;
-                    job = await _transcodeManager.StartFfMpeg(
-                        state,
-                        playlistPath,
-                        GetCommandLineArguments(playlistPath, state, false, segmentId),
-                        Request.HttpContext.User.GetUserId(),
-                        TranscodingJobType,
-                        cancellationTokenSource).ConfigureAwait(false);
-                }
-                catch
-                {
-                    state.Dispose();
-                    throw;
-                }
+                job = await StartTranscodingForSegment(streamingRequest, state, playlistPath, segmentPath, segmentExtension, segmentId, currentTranscodingIndex, cancellationTokenSource, cancellationToken).ConfigureAwait(false);
 
                 // await WaitForMinimumSegmentCount(playlistPath, 1, cancellationTokenSource.Token).ConfigureAwait(false);
             }
             else
             {
-                job = _transcodeManager.OnTranscodeBeginRequest(playlistPath, TranscodingJobType);
-                if (job?.TranscodingThrottler is not null)
-                {
-                    await job.TranscodingThrottler.UnpauseTranscoding().ConfigureAwait(false);
-                }
+                job = await ResumeTranscodingJob(playlistPath).ConfigureAwait(false);
             }
 
             _logger.LogDebug("returning {0} [general case]", segmentPath);
             job ??= _transcodeManager.OnTranscodeBeginRequest(playlistPath, TranscodingJobType);
             return await GetSegmentResult(state, playlistPath, segmentPath, segmentExtension, segmentId, job, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private async Task<TranscodingJob> StartTranscodingForSegment(
+        StreamingRequestDto streamingRequest,
+        StreamState state,
+        string playlistPath,
+        string segmentPath,
+        string segmentExtension,
+        int segmentId,
+        int? currentTranscodingIndex,
+        CancellationTokenSource cancellationTokenSource,
+        CancellationToken cancellationToken)
+    {
+        TranscodingJob job;
+
+        // If the playlist doesn't already exist, startup ffmpeg
+        try
+        {
+            var currentJob = _transcodeManager.GetTranscodingJob(playlistPath, TranscodingJobType);
+            await WaitForActiveTranscodingRequests(currentJob, cancellationToken).ConfigureAwait(false);
+
+            await _transcodeManager.KillTranscodingJobs(streamingRequest.DeviceId, streamingRequest.PlaySessionId, p => false)
+                .ConfigureAwait(false);
+
+            if (currentTranscodingIndex.HasValue)
+            {
+                await DeleteLastFile(playlistPath, segmentExtension, 0).ConfigureAwait(false);
+            }
+
+            streamingRequest.StartTimeTicks = streamingRequest.CurrentRuntimeTicks;
+
+            state.WaitForPath = segmentPath;
+            job = await _transcodeManager.StartFfMpeg(
+                state,
+                playlistPath,
+                GetCommandLineArguments(playlistPath, state, false, segmentId),
+                Request.HttpContext.User.GetUserId(),
+                TranscodingJobType,
+                cancellationTokenSource).ConfigureAwait(false);
+        }
+        catch
+        {
+            state.Dispose();
+            throw;
+        }
+
+        return job;
+    }
+
+    private async Task<TranscodingJob?> ResumeTranscodingJob(string playlistPath)
+    {
+        var job = _transcodeManager.OnTranscodeBeginRequest(playlistPath, TranscodingJobType);
+        if (job?.TranscodingThrottler is not null)
+        {
+            await job.TranscodingThrottler.UnpauseTranscoding().ConfigureAwait(false);
+        }
+
+        return job;
     }
 
     internal static async Task WaitForActiveTranscodingRequests(TranscodingJob? job, CancellationToken cancellationToken)
@@ -1607,14 +604,7 @@ public class DynamicHlsController : BaseJellyfinApiController
                 false => " -hls_fmp4_init_filename \"" + outputFileNameWithoutExtension + "-1" + outputExtension + "\""
             };
 
-            var useLegacySegmentOption = _mediaEncoder.EncoderVersion < _minFFmpegHlsSegmentOptions;
-
-            if (state.VideoStream is not null && state.IsOutputVideo)
-            {
-                // fMP4 needs frag_discont to write the audio packet DTS/PTS including the initial delay into MOOF::TRAF::TFDT
-                // HLS does not use SIDX, and skipping it avoids FFmpeg rewriting open-GOP boundary packet PTS
-                hlsArguments += $" {(useLegacySegmentOption ? "-hls_ts_options" : "-hls_segment_options")} movflags=+frag_discont+skip_sidx";
-            }
+            hlsArguments += GetFmp4HlsSegmentOptions(state);
 
             segmentFormat = "fmp4" + outputFmp4HeaderArg;
         }
@@ -1624,18 +614,9 @@ public class DynamicHlsController : BaseJellyfinApiController
             segmentFormat = "mpegts";
         }
 
-        var maxMuxingQueueSize = _encodingOptions.MaxMuxingQueueSize > 128
-            ? _encodingOptions.MaxMuxingQueueSize.ToString(CultureInfo.InvariantCulture)
-            : "128";
+        var maxMuxingQueueSize = GetMaxMuxingQueueSize();
 
-        var baseUrlParam = string.Empty;
-        if (isEventPlaylist)
-        {
-            baseUrlParam = string.Format(
-                CultureInfo.InvariantCulture,
-                " -hls_base_url \"hls/{0}/\"",
-                Path.GetFileNameWithoutExtension(outputPath));
-        }
+        var baseUrlParam = GetHlsBaseUrlParam(outputPath, isEventPlaylist);
 
         return string.Format(
             CultureInfo.InvariantCulture,
@@ -1656,6 +637,42 @@ public class DynamicHlsController : BaseJellyfinApiController
             outputPath.EscapeProcessArgument()).Trim();
     }
 
+    private string GetFmp4HlsSegmentOptions(StreamState state)
+    {
+        var hlsArguments = string.Empty;
+        var useLegacySegmentOption = _mediaEncoder.EncoderVersion < _minFFmpegHlsSegmentOptions;
+
+        if (state.VideoStream is not null && state.IsOutputVideo)
+        {
+            // fMP4 needs frag_discont to write the audio packet DTS/PTS including the initial delay into MOOF::TRAF::TFDT
+            // HLS does not use SIDX, and skipping it avoids FFmpeg rewriting open-GOP boundary packet PTS
+            hlsArguments += $" {(useLegacySegmentOption ? "-hls_ts_options" : "-hls_segment_options")} movflags=+frag_discont+skip_sidx";
+        }
+
+        return hlsArguments;
+    }
+
+    private string GetMaxMuxingQueueSize()
+    {
+        return _encodingOptions.MaxMuxingQueueSize > 128
+            ? _encodingOptions.MaxMuxingQueueSize.ToString(CultureInfo.InvariantCulture)
+            : "128";
+    }
+
+    private static string GetHlsBaseUrlParam(string outputPath, bool isEventPlaylist)
+    {
+        var baseUrlParam = string.Empty;
+        if (isEventPlaylist)
+        {
+            baseUrlParam = string.Format(
+                CultureInfo.InvariantCulture,
+                " -hls_base_url \"hls/{0}/\"",
+                Path.GetFileNameWithoutExtension(outputPath));
+        }
+
+        return baseUrlParam;
+    }
+
     /// <summary>
     /// Gets the audio arguments for transcoding.
     /// </summary>
@@ -1672,58 +689,12 @@ public class DynamicHlsController : BaseJellyfinApiController
         var bitStreamArgs = _encodingHelper.GetAudioBitStreamArguments(state, state.Request.SegmentContainer, state.MediaSource.Container);
 
         // opus, dts, truehd and flac (in FFmpeg 5 and older) are experimental in mp4 muxer
-        var strictArgs = string.Empty;
         var actualOutputAudioCodec = state.ActualOutputAudioCodec;
-        if (string.Equals(actualOutputAudioCodec, "opus", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(actualOutputAudioCodec, "dts", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(actualOutputAudioCodec, "truehd", StringComparison.OrdinalIgnoreCase)
-            || (string.Equals(actualOutputAudioCodec, "flac", StringComparison.OrdinalIgnoreCase)
-                && _mediaEncoder.EncoderVersion < _minFFmpegFlacInMp4))
-        {
-            strictArgs = " -strict -2";
-        }
+        var strictArgs = GetAudioStrictArguments(actualOutputAudioCodec);
 
         if (!state.IsOutputVideo)
         {
-            var audioTranscodeParams = string.Empty;
-
-            // -vn to drop any video streams
-            audioTranscodeParams += "-vn";
-
-            if (EncodingHelper.IsCopyCodec(audioCodec))
-            {
-                return audioTranscodeParams + " -acodec copy" + bitStreamArgs + strictArgs;
-            }
-
-            audioTranscodeParams += " -acodec " + audioCodec + bitStreamArgs + strictArgs;
-
-            var audioBitrate = state.OutputAudioBitrate;
-            var audioChannels = state.OutputAudioChannels;
-
-            if (audioBitrate.HasValue && !EncodingHelper.LosslessAudioCodecs.Contains(state.ActualOutputAudioCodec, StringComparison.OrdinalIgnoreCase))
-            {
-                var vbrParam = _encodingHelper.GetAudioVbrModeParam(audioCodec, audioBitrate.Value, audioChannels ?? 2);
-                if (_encodingOptions.EnableAudioVbr && state.EnableAudioVbrEncoding && vbrParam is not null)
-                {
-                    audioTranscodeParams += vbrParam;
-                }
-                else
-                {
-                    audioTranscodeParams += " -ab " + audioBitrate.Value.ToString(CultureInfo.InvariantCulture);
-                }
-            }
-
-            if (audioChannels.HasValue)
-            {
-                audioTranscodeParams += " -ac " + audioChannels.Value.ToString(CultureInfo.InvariantCulture);
-            }
-
-            if (state.OutputAudioSampleRate.HasValue)
-            {
-                audioTranscodeParams += " -ar " + state.OutputAudioSampleRate.Value.ToString(CultureInfo.InvariantCulture);
-            }
-
-            return audioTranscodeParams;
+            return GetAudioOnlyArguments(state, audioCodec, bitStreamArgs, strictArgs);
         }
 
         if (EncodingHelper.IsCopyCodec(audioCodec))
@@ -1738,20 +709,107 @@ public class DynamicHlsController : BaseJellyfinApiController
 
         var channels = state.OutputAudioChannels;
 
+        args += GetAudioChannelArguments(state, channels);
+
+        args += GetAudioBitrateArguments(state, audioCodec, actualOutputAudioCodec, channels);
+
+        args += GetAudioSampleRateArguments(state);
+
+        args += _encodingHelper.GetAudioFilterParam(state, _encodingOptions);
+
+        return args;
+    }
+
+    private string GetAudioChannelArguments(StreamState state, int? channels)
+    {
         var useDownMixAlgorithm = DownMixAlgorithmsHelper.AlgorithmFilterStrings.ContainsKey((_encodingOptions.DownMixStereoAlgorithm, DownMixAlgorithmsHelper.InferChannelLayout(state.AudioStream)));
 
-        if (channels.HasValue
-            && (channels.Value != 2
-                || (state.AudioStream?.Channels is not null && !useDownMixAlgorithm)))
+        if (RequiresExplicitChannelCount(state, channels, useDownMixAlgorithm))
         {
-            args += " -ac " + channels.Value;
+            return " -ac " + channels.Value;
         }
 
+        return string.Empty;
+    }
+
+    private static bool RequiresExplicitChannelCount(StreamState state, [NotNullWhen(true)] int? channels, bool useDownMixAlgorithm)
+    {
+        return channels.HasValue
+            && (channels.Value != 2
+                || (state.AudioStream?.Channels is not null && !useDownMixAlgorithm));
+    }
+
+    private string GetAudioStrictArguments(string actualOutputAudioCodec)
+    {
+        var strictArgs = string.Empty;
+        if (IsExperimentalInMp4(actualOutputAudioCodec))
+        {
+            strictArgs = " -strict -2";
+        }
+
+        return strictArgs;
+    }
+
+    private bool IsExperimentalInMp4(string actualOutputAudioCodec)
+    {
+        return string.Equals(actualOutputAudioCodec, "opus", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(actualOutputAudioCodec, "dts", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(actualOutputAudioCodec, "truehd", StringComparison.OrdinalIgnoreCase)
+            || (string.Equals(actualOutputAudioCodec, "flac", StringComparison.OrdinalIgnoreCase)
+                && _mediaEncoder.EncoderVersion < _minFFmpegFlacInMp4);
+    }
+
+    private string GetAudioOnlyArguments(StreamState state, string audioCodec, string bitStreamArgs, string strictArgs)
+    {
+        var audioTranscodeParams = string.Empty;
+
+        // -vn to drop any video streams
+        audioTranscodeParams += "-vn";
+
+        if (EncodingHelper.IsCopyCodec(audioCodec))
+        {
+            return audioTranscodeParams + " -acodec copy" + bitStreamArgs + strictArgs;
+        }
+
+        audioTranscodeParams += " -acodec " + audioCodec + bitStreamArgs + strictArgs;
+
+        var audioBitrate = state.OutputAudioBitrate;
+        var audioChannels = state.OutputAudioChannels;
+
+        if (IsLossyAudioBitrate(audioBitrate, state.ActualOutputAudioCodec))
+        {
+            var vbrParam = _encodingHelper.GetAudioVbrModeParam(audioCodec, audioBitrate.Value, audioChannels ?? 2);
+            if (IsAudioVbrEnabled(state, vbrParam))
+            {
+                audioTranscodeParams += vbrParam;
+            }
+            else
+            {
+                audioTranscodeParams += " -ab " + audioBitrate.Value.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        if (audioChannels.HasValue)
+        {
+            audioTranscodeParams += " -ac " + audioChannels.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (state.OutputAudioSampleRate.HasValue)
+        {
+            audioTranscodeParams += " -ar " + state.OutputAudioSampleRate.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return audioTranscodeParams;
+    }
+
+    private string GetAudioBitrateArguments(StreamState state, string audioCodec, string actualOutputAudioCodec, int? channels)
+    {
+        var args = string.Empty;
         var bitrate = state.OutputAudioBitrate;
-        if (bitrate.HasValue && !EncodingHelper.LosslessAudioCodecs.Contains(actualOutputAudioCodec, StringComparison.OrdinalIgnoreCase))
+        if (IsLossyAudioBitrate(bitrate, actualOutputAudioCodec))
         {
             var vbrParam = _encodingHelper.GetAudioVbrModeParam(audioCodec, bitrate.Value, channels ?? 2);
-            if (_encodingOptions.EnableAudioVbr && state.EnableAudioVbrEncoding && vbrParam is not null)
+            if (IsAudioVbrEnabled(state, vbrParam))
             {
                 args += vbrParam;
             }
@@ -1761,20 +819,33 @@ public class DynamicHlsController : BaseJellyfinApiController
             }
         }
 
+        return args;
+    }
+
+    private static bool IsLossyAudioBitrate([NotNullWhen(true)] int? bitrate, string actualOutputAudioCodec)
+    {
+        return bitrate.HasValue && !EncodingHelper.LosslessAudioCodecs.Contains(actualOutputAudioCodec, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsAudioVbrEnabled(StreamState state, string vbrParam)
+    {
+        return _encodingOptions.EnableAudioVbr && state.EnableAudioVbrEncoding && vbrParam is not null;
+    }
+
+    private static string GetAudioSampleRateArguments(StreamState state)
+    {
         if (state.OutputAudioSampleRate.HasValue)
         {
-            args += " -ar " + state.OutputAudioSampleRate.Value.ToString(CultureInfo.InvariantCulture);
+            return " -ar " + state.OutputAudioSampleRate.Value.ToString(CultureInfo.InvariantCulture);
         }
         else if (state.AudioStream?.CodecTag is not null && state.AudioStream.CodecTag.Equals("ac-4", StringComparison.Ordinal))
         {
             // ac-4 audio tends to have a super weird sample rate that will fail most encoders
             // force resample it to 48KHz
-            args += " -ar 48000";
+            return " -ar 48000";
         }
 
-        args += _encodingHelper.GetAudioFilterParam(state, _encodingOptions);
-
-        return args;
+        return string.Empty;
     }
 
     /// <summary>
@@ -1811,6 +882,43 @@ public class DynamicHlsController : BaseJellyfinApiController
 
         var args = "-codec:v:0 " + codec;
 
+        args += GetVideoCodecTagArguments(state, codec);
+
+        // if  (state.EnableMpegtsM2TsMode)
+        // {
+        //     args += " -mpegts_m2ts_mode 1";
+        // }
+
+        // See if we can save come cpu cycles by avoiding encoding.
+        if (EncodingHelper.IsCopyCodec(codec))
+        {
+            args += GetVideoCopyArguments(state);
+        }
+        else
+        {
+            args = GetVideoEncodingArguments(state, codec, args, startNumber, isEventPlaylist);
+        }
+
+        // TODO why was this not enabled for VOD?
+        if (isEventPlaylist && string.Equals(segmentContainer, "ts", StringComparison.OrdinalIgnoreCase))
+        {
+            args += " -flags -global_header";
+        }
+
+        if (!string.IsNullOrEmpty(state.OutputVideoSync))
+        {
+            args += EncodingHelper.GetVideoSyncOption(state.OutputVideoSync, _mediaEncoder.EncoderVersion);
+        }
+
+        args += _encodingHelper.GetOutputFFlags(state);
+
+        return args;
+    }
+
+    private string GetVideoCodecTagArguments(StreamState state, string codec)
+    {
+        var args = string.Empty;
+
         var isActualOutputVideoCodecAv1 = string.Equals(state.ActualOutputVideoCodec, "av1", StringComparison.OrdinalIgnoreCase);
         var isActualOutputVideoCodecHevc = string.Equals(state.ActualOutputVideoCodec, "h265", StringComparison.OrdinalIgnoreCase)
                                            || string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase);
@@ -1823,9 +931,7 @@ public class DynamicHlsController : BaseJellyfinApiController
             var clientSupportsDoVi = requestedRange.Contains(VideoRangeType.DOVI.ToString(), StringComparison.OrdinalIgnoreCase);
             var videoIsDoVi = EncodingHelper.IsDovi(state.VideoStream);
 
-            if (EncodingHelper.IsCopyCodec(codec)
-                && (videoIsDoVi && clientSupportsDoVi)
-                && !_encodingHelper.IsDoviRemoved(state))
+            if (IsDolbyVisionRemux(state, codec, videoIsDoVi, clientSupportsDoVi))
             {
                 if (isActualOutputVideoCodecHevc)
                 {
@@ -1844,71 +950,66 @@ public class DynamicHlsController : BaseJellyfinApiController
             }
         }
 
-        // if  (state.EnableMpegtsM2TsMode)
-        // {
-        //     args += " -mpegts_m2ts_mode 1";
-        // }
+        return args;
+    }
 
-        // See if we can save come cpu cycles by avoiding encoding.
-        if (EncodingHelper.IsCopyCodec(codec))
+    private bool IsDolbyVisionRemux(StreamState state, string codec, bool videoIsDoVi, bool clientSupportsDoVi)
+    {
+        return EncodingHelper.IsCopyCodec(codec)
+            && (videoIsDoVi && clientSupportsDoVi)
+            && !_encodingHelper.IsDoviRemoved(state);
+    }
+
+    private string GetVideoCopyArguments(StreamState state)
+    {
+        var args = string.Empty;
+
+        // If h264_mp4toannexb is ever added, do not use it for live tv.
+        if (state.VideoStream is not null && !string.Equals(state.VideoStream.NalLengthSize, "0", StringComparison.OrdinalIgnoreCase))
         {
-            // If h264_mp4toannexb is ever added, do not use it for live tv.
-            if (state.VideoStream is not null && !string.Equals(state.VideoStream.NalLengthSize, "0", StringComparison.OrdinalIgnoreCase))
+            string bitStreamArgs = _encodingHelper.GetBitStreamArgs(state, MediaStreamType.Video);
+            if (!string.IsNullOrEmpty(bitStreamArgs))
             {
-                string bitStreamArgs = _encodingHelper.GetBitStreamArgs(state, MediaStreamType.Video);
-                if (!string.IsNullOrEmpty(bitStreamArgs))
-                {
-                    args += " " + bitStreamArgs;
-                }
-            }
-
-            args += " -start_at_zero";
-        }
-        else
-        {
-            args += _encodingHelper.GetVideoQualityParam(state, codec, _encodingOptions, isEventPlaylist ? DefaultEventEncoderPreset : DefaultVodEncoderPreset);
-
-            // Set the key frame params for video encoding to match the hls segment time.
-            args += _encodingHelper.GetHlsVideoKeyFrameArguments(state, codec, state.SegmentLength, isEventPlaylist, startNumber);
-
-            // Currently b-frames in libx265 breaks the FMP4-HLS playback on iOS, disable it for now.
-            if (string.Equals(codec, "libx265", StringComparison.OrdinalIgnoreCase)
-                && _mediaEncoder.EncoderVersion < _minFFmpegX265BframeInFmp4)
-            {
-                args += " -bf 0";
-            }
-
-            // video processing filters.
-            var videoProcessParam = _encodingHelper.GetVideoProcessingFilterParam(state, _encodingOptions, codec);
-
-            var negativeMapArgs = _encodingHelper.GetNegativeMapArgsByFilters(state, videoProcessParam);
-
-            args = negativeMapArgs + args + videoProcessParam;
-
-            // -start_at_zero is necessary to use with -ss when seeking,
-            // otherwise the target position cannot be determined.
-            if (state.SubtitleStream is not null)
-            {
-                // Disable start_at_zero for external graphical subs
-                if (!(state.SubtitleStream.IsExternal && !state.SubtitleStream.IsTextSubtitleStream))
-                {
-                    args += " -start_at_zero";
-                }
+                args += " " + bitStreamArgs;
             }
         }
 
-        // TODO why was this not enabled for VOD?
-        if (isEventPlaylist && string.Equals(segmentContainer, "ts", StringComparison.OrdinalIgnoreCase))
+        args += " -start_at_zero";
+
+        return args;
+    }
+
+    private string GetVideoEncodingArguments(StreamState state, string codec, string args, int startNumber, bool isEventPlaylist)
+    {
+        args += _encodingHelper.GetVideoQualityParam(state, codec, _encodingOptions, isEventPlaylist ? DefaultEventEncoderPreset : DefaultVodEncoderPreset);
+
+        // Set the key frame params for video encoding to match the hls segment time.
+        args += _encodingHelper.GetHlsVideoKeyFrameArguments(state, codec, state.SegmentLength, isEventPlaylist, startNumber);
+
+        // Currently b-frames in libx265 breaks the FMP4-HLS playback on iOS, disable it for now.
+        if (string.Equals(codec, "libx265", StringComparison.OrdinalIgnoreCase)
+            && _mediaEncoder.EncoderVersion < _minFFmpegX265BframeInFmp4)
         {
-            args += " -flags -global_header";
+            args += " -bf 0";
         }
 
-        if (!string.IsNullOrEmpty(state.OutputVideoSync))
-        {
-            args += EncodingHelper.GetVideoSyncOption(state.OutputVideoSync, _mediaEncoder.EncoderVersion);
-        }
+        // video processing filters.
+        var videoProcessParam = _encodingHelper.GetVideoProcessingFilterParam(state, _encodingOptions, codec);
 
-        args += _encodingHelper.GetOutputFFlags(state);
+        var negativeMapArgs = _encodingHelper.GetNegativeMapArgsByFilters(state, videoProcessParam);
+
+        args = negativeMapArgs + args + videoProcessParam;
+
+        // -start_at_zero is necessary to use with -ss when seeking,
+        // otherwise the target position cannot be determined.
+        if (state.SubtitleStream is not null)
+        {
+            // Disable start_at_zero for external graphical subs
+            if (!(state.SubtitleStream.IsExternal && !state.SubtitleStream.IsTextSubtitleStream))
+            {
+                args += " -start_at_zero";
+            }
+        }
 
         return args;
     }
@@ -1933,7 +1034,7 @@ public class DynamicHlsController : BaseJellyfinApiController
         var segmentExists = System.IO.File.Exists(segmentPath);
         if (segmentExists)
         {
-            if (transcodingJob is not null && transcodingJob.HasExited)
+            if (HasTranscodingJobExited(transcodingJob))
             {
                 // Transcoding job is over, so assume all existing files are ready
                 _logger.LogDebug("serving up {0} as transcode is over", segmentPath);
@@ -1951,49 +1052,68 @@ public class DynamicHlsController : BaseJellyfinApiController
         }
 
         var nextSegmentPath = GetSegmentPath(state, playlistPath, segmentIndex + 1);
-        if (transcodingJob is not null)
+        if (transcodingJob is null)
         {
-            while (!cancellationToken.IsCancellationRequested && !transcodingJob.HasExited)
-            {
-                // To be considered ready, the segment file has to exist AND
-                // either the transcoding job should be done or next segment should also exist
-                if (segmentExists)
-                {
-                    if (transcodingJob.HasExited || System.IO.File.Exists(nextSegmentPath))
-                    {
-                        _logger.LogDebug("Serving up {SegmentPath} as it deemed ready", segmentPath);
-                        return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
-                    }
-                }
-                else
-                {
-                    segmentExists = System.IO.File.Exists(segmentPath);
-                    if (segmentExists)
-                    {
-                        continue; // avoid unnecessary waiting if segment just became available
-                    }
-                }
+            _logger.LogWarning("cannot serve {0} as it doesn't exist and no transcode is running", segmentPath);
+            return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
+        }
 
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (!System.IO.File.Exists(segmentPath))
+        while (IsTranscodingInProgress(transcodingJob, cancellationToken))
+        {
+            // To be considered ready, the segment file has to exist AND
+            // either the transcoding job should be done or next segment should also exist
+            if (segmentExists)
             {
-                _logger.LogWarning("cannot serve {0} as transcoding quit before we got there", segmentPath);
+                if (IsSegmentReady(transcodingJob, nextSegmentPath))
+                {
+                    _logger.LogDebug("Serving up {SegmentPath} as it deemed ready", segmentPath);
+                    return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
+                }
             }
             else
             {
-                _logger.LogDebug("serving {0} as it's on disk and transcoding stopped", segmentPath);
+                segmentExists = System.IO.File.Exists(segmentPath);
+                if (segmentExists)
+                {
+                    continue; // avoid unnecessary waiting if segment just became available
+                }
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
+            await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+        }
+
+        LogSegmentStateAfterTranscodingStopped(segmentPath);
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
+    }
+
+    private static bool HasTranscodingJobExited(TranscodingJob? transcodingJob)
+    {
+        return transcodingJob is not null && transcodingJob.HasExited;
+    }
+
+    private static bool IsTranscodingInProgress(TranscodingJob transcodingJob, CancellationToken cancellationToken)
+    {
+        return !cancellationToken.IsCancellationRequested && !transcodingJob.HasExited;
+    }
+
+    private static bool IsSegmentReady(TranscodingJob transcodingJob, string nextSegmentPath)
+    {
+        return transcodingJob.HasExited || System.IO.File.Exists(nextSegmentPath);
+    }
+
+    private void LogSegmentStateAfterTranscodingStopped(string segmentPath)
+    {
+        if (!System.IO.File.Exists(segmentPath))
+        {
+            _logger.LogWarning("cannot serve {0} as transcoding quit before we got there", segmentPath);
         }
         else
         {
-            _logger.LogWarning("cannot serve {0} as it doesn't exist and no transcode is running", segmentPath);
+            _logger.LogDebug("serving {0} as it's on disk and transcoding stopped", segmentPath);
         }
-
-        return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
     }
 
     private ActionResult GetSegmentResult(StreamState state, string segmentPath, int segmentIndex, TranscodingJob? transcodingJob)

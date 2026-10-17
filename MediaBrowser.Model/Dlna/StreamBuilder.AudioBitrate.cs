@@ -1,0 +1,179 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using Jellyfin.Data.Enums;
+using Jellyfin.Extensions;
+using MediaBrowser.Model.Dto;
+using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.Extensions;
+using MediaBrowser.Model.MediaInfo;
+using MediaBrowser.Model.Session;
+using Microsoft.Extensions.Logging;
+
+namespace MediaBrowser.Model.Dlna
+{
+    /// <summary>
+    /// Class StreamBuilder.
+    /// </summary>
+    public partial class StreamBuilder
+    {
+        private static int GetDefaultAudioBitrate(string? audioCodec, int? audioChannels)
+        {
+            if (!string.IsNullOrEmpty(audioCodec))
+            {
+                // Default to a higher bitrate for stream copy
+                if (IsLossyStreamCopyCodec(audioCodec))
+                {
+                    return GetLossyCodecDefaultBitrate(audioChannels);
+                }
+
+                if (IsLosslessStreamCopyCodec(audioCodec))
+                {
+                    return GetLosslessCodecDefaultBitrate(audioChannels);
+                }
+            }
+
+            return 192000;
+        }
+
+        private static bool IsLossyStreamCopyCodec(string? audioCodec)
+        {
+            return string.Equals(audioCodec, "aac", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "mp3", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "ac3", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "eac3", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsLosslessStreamCopyCodec(string? audioCodec)
+        {
+            return string.Equals(audioCodec, "flac", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "alac", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int GetLossyCodecDefaultBitrate(int? audioChannels)
+        {
+            if ((audioChannels ?? 0) < 2)
+            {
+                return 128000;
+            }
+
+            return (audioChannels ?? 0) >= 6 ? 640000 : 384000;
+        }
+
+        private static int GetLosslessCodecDefaultBitrate(int? audioChannels)
+        {
+            if ((audioChannels ?? 0) < 2)
+            {
+                return 768000;
+            }
+
+            return (audioChannels ?? 0) >= 6 ? 3584000 : 1536000;
+        }
+
+        private static int GetAudioBitrate(long maxTotalBitrate, IReadOnlyList<string> targetAudioCodecs, MediaStream? audioStream, StreamInfo item)
+        {
+            string? targetAudioCodec = targetAudioCodecs.Count == 0 ? null : targetAudioCodecs[0];
+
+            int? targetAudioChannels = item.GetTargetAudioChannels(targetAudioCodec);
+
+            int defaultBitrate;
+            int encoderAudioBitrateLimit = int.MaxValue;
+
+            if (audioStream is null)
+            {
+                defaultBitrate = 192000;
+            }
+            else
+            {
+                if (IsDownmixing(targetAudioChannels, audioStream))
+                {
+                    // Reduce the bitrate if we're down mixing.
+                    defaultBitrate = GetDefaultAudioBitrate(targetAudioCodec, targetAudioChannels);
+                }
+                else if (targetAudioChannels.HasValue
+                         && audioStream.Channels.HasValue
+                         && audioStream.Channels.Value <= targetAudioChannels.Value
+                         && !string.IsNullOrEmpty(audioStream.Codec)
+                         && targetAudioCodecs is not null
+                         && targetAudioCodecs.Count > 0
+                         && !targetAudioCodecs.Any(elem => string.Equals(audioStream.Codec, elem, StringComparison.OrdinalIgnoreCase)))
+                {
+                    // Shift the bitrate if we're transcoding to a different audio codec.
+                    defaultBitrate = GetDefaultAudioBitrate(targetAudioCodec, audioStream.Channels.Value);
+                }
+                else
+                {
+                    defaultBitrate = audioStream.BitRate ?? GetDefaultAudioBitrate(targetAudioCodec, targetAudioChannels);
+                }
+
+                // Seeing webm encoding failures when source has 1 audio channel and 22k bitrate.
+                // Any attempts to transcode over 64k will fail
+                if (audioStream.Channels == 1
+                    && (audioStream.BitRate ?? 0) < 64000)
+                {
+                    encoderAudioBitrateLimit = 64000;
+                }
+            }
+
+            if (maxTotalBitrate > 0)
+            {
+                defaultBitrate = Math.Min(GetMaxAudioBitrateForTotalBitrate(maxTotalBitrate), defaultBitrate);
+            }
+
+            return Math.Min(defaultBitrate, encoderAudioBitrateLimit);
+        }
+
+        private static bool IsDownmixing(int? targetAudioChannels, MediaStream audioStream)
+        {
+            return targetAudioChannels.HasValue
+                && audioStream.Channels.HasValue
+                && audioStream.Channels.Value > targetAudioChannels.Value;
+        }
+
+        private static int GetMaxAudioBitrateForTotalBitrate(long totalBitrate)
+        {
+            if (totalBitrate <= 640000)
+            {
+                return 128000;
+            }
+
+            if (totalBitrate <= 2000000)
+            {
+                return 384000;
+            }
+
+            if (totalBitrate <= 3000000)
+            {
+                return 448000;
+            }
+
+            if (totalBitrate <= 4000000)
+            {
+                return 640000;
+            }
+
+            if (totalBitrate <= 5000000)
+            {
+                return 768000;
+            }
+
+            if (totalBitrate <= 10000000)
+            {
+                return 1536000;
+            }
+
+            if (totalBitrate <= 15000000)
+            {
+                return 2304000;
+            }
+
+            if (totalBitrate <= 20000000)
+            {
+                return 3584000;
+            }
+
+            return 7168000;
+        }
+    }
+}
