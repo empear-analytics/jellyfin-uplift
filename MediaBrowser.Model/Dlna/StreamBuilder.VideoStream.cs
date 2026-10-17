@@ -46,7 +46,7 @@ namespace MediaBrowser.Model.Dlna
 
             var audioStreamWithSupportedCodec = candidateAudioStreams.Where(stream => ContainerHelper.ContainsContainer(audioCodecs, false, stream.Codec)).FirstOrDefault();
 
-            var channelsExceedsLimit = audioStreamWithSupportedCodec is not null && audioStreamWithSupportedCodec.Channels > (playlistItem.TranscodingMaxAudioChannels ?? int.MaxValue);
+            var channelsExceedsLimit = IsAudioChannelLimitExceeded(audioStreamWithSupportedCodec, playlistItem);
 
             var directAudioFailures = audioStreamWithSupportedCodec is null ? default : GetCompatibilityAudioCodec(options, item, container ?? string.Empty, audioStreamWithSupportedCodec, null, true, false);
 
@@ -166,6 +166,11 @@ namespace MediaBrowser.Model.Dlna
             audioCodecs = FilterHlsAudioCodecs(playlistItem, audioCodecs);
 
             return audioCodecs;
+        }
+
+        private static bool IsAudioChannelLimitExceeded(MediaStream? audioStreamWithSupportedCodec, StreamInfo playlistItem)
+        {
+            return audioStreamWithSupportedCodec is not null && audioStreamWithSupportedCodec.Channels > (playlistItem.TranscodingMaxAudioChannels ?? int.MaxValue);
         }
 
         private void LogTranscodeResult(MediaOptions options, MediaSourceInfo item, StreamInfo playlistItem, MediaStream? audioStream)
