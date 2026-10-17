@@ -1692,9 +1692,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return FormattableString.Invariant($" -maxrate {bitrate} -bufsize {bufsize}");
             }
 
-            if (string.Equals(videoCodec, "h264_qsv", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoCodec, "hevc_qsv", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoCodec, "av1_qsv", StringComparison.OrdinalIgnoreCase))
+            if (IsQsvVideoEncoder(videoCodec))
             {
                 // TODO: probe QSV encoders' capabilities and enable more tuning options
                 // See also https://github.com/intel/media-delivery/blob/master/doc/quality.rst
@@ -1727,9 +1725,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return FormattableString.Invariant($" -rc cbr -qmin 0 -qmax 32 -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
             }
 
-            if (string.Equals(videoCodec, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoCodec, "hevc_vaapi", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoCodec, "av1_vaapi", StringComparison.OrdinalIgnoreCase))
+            if (IsVaapiVideoEncoder(videoCodec))
             {
                 // VBR in i965 driver may result in pixelated output.
                 if (_mediaEncoder.IsVaapiDeviceInteli965)
