@@ -43,7 +43,7 @@ public partial class DynamicHlsHelper
         string levelString = string.Empty;
         if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
             && state.VideoStream is not null
-            && state.VideoStream.Level.HasValue)
+            && HasLevel(state.VideoStream.Level))
         {
             levelString = state.VideoStream.Level.Value.ToString(CultureInfo.InvariantCulture);
         }
@@ -266,12 +266,22 @@ public partial class DynamicHlsHelper
         int bitDepth = 8;
         if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
             && state.VideoStream is not null
-            && state.VideoStream.BitDepth.HasValue)
+            && HasBitDepth(state.VideoStream.BitDepth))
         {
             bitDepth = state.VideoStream.BitDepth.Value;
         }
 
         return bitDepth;
+    }
+
+    private static bool HasLevel([NotNullWhen(true)] double? level)
+    {
+        return level.HasValue;
+    }
+
+    private static bool HasBitDepth([NotNullWhen(true)] int? bitDepth)
+    {
+        return bitDepth.HasValue;
     }
 
     private static string GetVp9CodecString(StreamState state)
