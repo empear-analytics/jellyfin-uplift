@@ -326,7 +326,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doToneMap = IsSwTonemapAvailable(state, options);
-            var requireDoviReshaping = doToneMap && state.VideoStream.VideoRangeType == VideoRangeType.DOVI;
+            var requireDoviReshaping = IsSwDoviReshapingRequired(state, doToneMap);
 
             var hasSubs = HasSubtitlesToEncode(state);
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
@@ -401,6 +401,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return outFormat;
+        }
+
+        private static bool IsSwDoviReshapingRequired(EncodingJobInfo state, bool doToneMap)
+        {
+            return doToneMap && state.VideoStream.VideoRangeType == VideoRangeType.DOVI;
         }
 
         private static void AddSwTonemapFilter(EncodingOptions options, List<string> mainFilters, bool requireDoviReshaping, string outFormat)
