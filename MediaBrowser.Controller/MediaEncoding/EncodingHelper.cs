@@ -358,9 +358,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         private bool IsHwTonemapAvailable(EncodingJobInfo state, EncodingOptions options)
         {
-            if (state.VideoStream is null
-                || !options.EnableTonemapping
-                || GetVideoColorBitDepth(state) < 10)
+            if (IsHwTonemapInputUnsupported(state, options))
             {
                 return false;
             }
@@ -372,9 +370,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 var vidDecoder = GetHardwareVideoDecoder(state, options) ?? string.Empty;
 
                 var isRkmppDecoder = vidDecoder.Contains("rkmpp", StringComparison.OrdinalIgnoreCase);
-                if (isRkmppDecoder
-                    && _mediaEncoder.EncoderVersion >= _minFFmpegRkmppHevcDecDoviRpu
-                    && string.Equals(state.VideoStream?.Codec, "hevc", StringComparison.OrdinalIgnoreCase))
+                if (CanRkmppParseDoviRpu(state, isRkmppDecoder))
                 {
                     return true;
                 }
@@ -389,6 +385,20 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // GPU tonemapping supports all HDR RangeTypes
             return state.VideoStream.VideoRange == VideoRange.HDR;
+        }
+
+        private bool IsHwTonemapInputUnsupported(EncodingJobInfo state, EncodingOptions options)
+        {
+            return state.VideoStream is null
+                || !options.EnableTonemapping
+                || GetVideoColorBitDepth(state) < 10;
+        }
+
+        private bool CanRkmppParseDoviRpu(EncodingJobInfo state, bool isRkmppDecoder)
+        {
+            return isRkmppDecoder
+                && _mediaEncoder.EncoderVersion >= _minFFmpegRkmppHevcDecDoviRpu
+                && string.Equals(state.VideoStream?.Codec, "hevc", StringComparison.OrdinalIgnoreCase);
         }
 
         private bool IsVulkanHwTonemapAvailable(EncodingJobInfo state, EncodingOptions options)
