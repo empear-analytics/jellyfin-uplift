@@ -125,7 +125,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subH = state.SubtitleStream?.Height;
 
             var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+            var transposeDir = GetTransposeDirection(state, rotation);
             var doVppTranspose = !string.IsNullOrEmpty(transposeDir);
             var swapWAndH = Math.Abs(rotation) == 90 && (isSwDecoder || ((isD3d11vaDecoder || isQsvDecoder) && doVppTranspose));
             var swpInW = swapWAndH ? inH : inW;
@@ -142,7 +142,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // sw deint
                 AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
-                var outFormat = doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
+                var outFormat = GetSwDecoderOutputFormat(doOclTonemap, hasGraphicalSubs);
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
                 swScaleFilter = ApplyMjpegFullRangeSwScale(swScaleFilter, isMjpegEncoder, doOclTonemap);
 
@@ -195,8 +195,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     }
                 }
 
-                var outFormat = doOclTonemap ? ((doVppTranspose || isRext) ? "p010" : string.Empty) : "nv12";
-                outFormat = twoPassVppTonemap ? "p010" : outFormat;
+                var outFormat = GetVppOutputFormat(doOclTonemap, doVppTranspose, isRext, twoPassVppTonemap);
 
                 var swapOutputWandH = doVppTranspose && swapWAndH;
                 var hwScaleFilter = GetHwScaleFilter("vpp", "qsv", outFormat, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
@@ -215,13 +214,13 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
                 {
-                    hwScaleFilter += (doVppFullRangeOut && !doOclTonemap) ? ":out_range=pc" : string.Empty;
+                    hwScaleFilter += GetVppFullRangeOption(doVppFullRangeOut, doOclTonemap);
                     hwScaleFilter += doVppScaleModeHq ? ":scale_mode=hq" : string.Empty;
                 }
 
                 if (NeedsVppTonemapOptions(hwScaleFilter, doVppTonemap))
                 {
-                    hwScaleFilter += doVppProcamp ? procampParams : (twoPassVppTonemap ? string.Empty : ":tonemap=1");
+                    hwScaleFilter += GetVppTonemapOption(doVppProcamp, procampParams, twoPassVppTonemap);
                 }
 
                 if (isD3d11vaDecoder)
@@ -230,11 +229,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
 
                 // hw deint
-                if (doDeintH2645)
-                {
-                    var deintFilter = GetHwDeinterlaceFilter(state, options, "qsv");
-                    mainFilters.Add(deintFilter);
-                }
+                AddQsvHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 // hw transpose & scale & tonemap(w/o procamp)
                 mainFilters.Add(hwScaleFilter);
@@ -252,18 +247,10 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (NeedsHwToOpenclMapping(doOclTonemap, isHwDecoder))
-            {
-                // map from qsv to opencl via qsv(d3d11)-opencl interop.
-                mainFilters.Add("hwmap=derive_device=opencl:mode=read");
-            }
+            AddQsvToOpenclMapping(mainFilters, doOclTonemap, isHwDecoder);
 
             // hw tonemap
-            if (doOclTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "opencl", "nv12", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
             var memoryOutput = false;
             var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
@@ -290,13 +277,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
             }
 
-            if (NeedsQsvReverseMapping(isQsvInQsvOut, doOclTonemap))
-            {
-                // OUTPUT qsv(nv12) surface(vram)
-                // reverse-mapping via qsv(d3d11)-opencl interop.
-                mainFilters.Add("hwmap=derive_device=qsv:mode=write:reverse=1");
-                mainFilters.Add("format=qsv");
-            }
+            AddQsvReverseMapping(mainFilters, isQsvInQsvOut, doOclTonemap);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
@@ -315,7 +296,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     else if (hasTextSubs)
                     {
                         var framerate = state.VideoStream?.RealFrameRate;
-                        var subFramerate = hasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
+                        var subFramerate = GetSubtitleFramerate(hasAssSubs, framerate);
 
                         // alphasrc=s=1280x720:r=10:start=0,format=bgra,subtitles,hwupload
                         var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, 1080, subFramerate);
@@ -330,9 +311,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     subFilters.Add("hwupload=derive_device=qsv:extra_hw_frames=64");
 
                     var (overlayW, overlayH) = GetFixedOutputSize(swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                    var overlaySize = HasFixedOverlaySize(overlayW, overlayH)
-                        ? $":w={overlayW.Value}:h={overlayH.Value}"
-                        : string.Empty;
+                    var overlaySize = GetOverlaySizeOption(overlayW, overlayH);
                     var overlayQsvFilter = string.Format(
                         CultureInfo.InvariantCulture,
                         "overlay_qsv=eof_action=pass:repeatlast=0{0}",
@@ -351,6 +330,83 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static string GetSwDecoderOutputFormat(bool doOclTonemap, bool hasGraphicalSubs)
+        {
+            return doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
+        }
+
+        private static string GetVppOutputFormat(bool doOclTonemap, bool doVppTranspose, bool isRext, bool twoPassVppTonemap)
+        {
+            var outFormat = doOclTonemap ? ((doVppTranspose || isRext) ? "p010" : string.Empty) : "nv12";
+            outFormat = twoPassVppTonemap ? "p010" : outFormat;
+            return outFormat;
+        }
+
+        private static string GetVppFullRangeOption(bool doVppFullRangeOut, bool doOclTonemap)
+        {
+            return (doVppFullRangeOut && !doOclTonemap) ? ":out_range=pc" : string.Empty;
+        }
+
+        private static string GetVppTonemapOption(bool doVppProcamp, string procampParams, bool twoPassVppTonemap)
+        {
+            return doVppProcamp ? procampParams : (twoPassVppTonemap ? string.Empty : ":tonemap=1");
+        }
+
+        private static float GetSubtitleFramerate(bool hasAssSubs, float? framerate)
+        {
+            return hasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
+        }
+
+        private static string GetOverlaySizeOption(int? overlayW, int? overlayH)
+        {
+            return HasFixedOverlaySize(overlayW, overlayH)
+                ? $":w={overlayW.Value}:h={overlayH.Value}"
+                : string.Empty;
+        }
+
+        private string GetTransposeDirection(EncodingJobInfo state, int rotation)
+        {
+            return rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+        }
+
+        private void AddQsvHwDeinterlaceFilter(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, bool doDeintH2645)
+        {
+            if (doDeintH2645)
+            {
+                var deintFilter = GetHwDeinterlaceFilter(state, options, "qsv");
+                mainFilters.Add(deintFilter);
+            }
+        }
+
+        private void AddOpenclTonemapFilter(EncodingOptions options, List<string> mainFilters, bool doOclTonemap, bool isMjpegEncoder)
+        {
+            if (doOclTonemap)
+            {
+                var tonemapFilter = GetHwTonemapFilter(options, "opencl", "nv12", isMjpegEncoder);
+                mainFilters.Add(tonemapFilter);
+            }
+        }
+
+        private static void AddQsvToOpenclMapping(List<string> mainFilters, bool doOclTonemap, bool isHwDecoder)
+        {
+            if (NeedsHwToOpenclMapping(doOclTonemap, isHwDecoder))
+            {
+                // map from qsv to opencl via qsv(d3d11)-opencl interop.
+                mainFilters.Add("hwmap=derive_device=opencl:mode=read");
+            }
+        }
+
+        private static void AddQsvReverseMapping(List<string> mainFilters, bool isQsvInQsvOut, bool doOclTonemap)
+        {
+            if (NeedsQsvReverseMapping(isQsvInQsvOut, doOclTonemap))
+            {
+                // OUTPUT qsv(nv12) surface(vram)
+                // reverse-mapping via qsv(d3d11)-opencl interop.
+                mainFilters.Add("hwmap=derive_device=qsv:mode=write:reverse=1");
+                mainFilters.Add("format=qsv");
+            }
         }
 
         private static bool NeedsVppPassthrough(string hwScaleFilter, bool isD3d11vaDecoder)
