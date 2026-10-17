@@ -6859,10 +6859,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // HWA decoders can handle both video files and video folders.
             var videoType = state.VideoType;
-            if (videoType != VideoType.VideoFile
-                && videoType != VideoType.Iso
-                && videoType != VideoType.Dvd
-                && videoType != VideoType.BluRay)
+            if (IsUnsupportedHwDecodeVideoType(videoType))
             {
                 return null;
             }
@@ -6879,11 +6876,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 var bitDepth = GetVideoColorBitDepth(state);
 
                 // Only HEVC, VP9 and AV1 formats have 10-bit hardware decoder support for most platforms
-                if (bitDepth == 10
-                    && !(string.Equals(videoStream.Codec, "hevc", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(videoStream.Codec, "h265", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase)))
+                if (IsTenBitWithoutCommonHwDecoder(videoStream, bitDepth))
                 {
                     // RKMPP has H.264 Hi10P decoder
                     bool hasHardwareHi10P = hardwareAccelerationType == HardwareAccelerationType.rkmpp;
@@ -6907,9 +6900,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
 
                 // Block unsupported H.264 Hi422P and Hi444PP profiles, which can be encoded with 4:2:0 pixel format
-                if (string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase)
-                    && ((videoStream.Profile?.Contains("4:2:2", StringComparison.OrdinalIgnoreCase) ?? false)
-                        || (videoStream.Profile?.Contains("4:4:4", StringComparison.OrdinalIgnoreCase) ?? false)))
+                if (IsH264Hi422OrHi444Profile(videoStream))
                 {
                     // VideoToolbox on Apple Silicon has H.264 Hi444PP and theoretically also has Hi422P
                     if (!(hardwareAccelerationType == HardwareAccelerationType.videotoolbox
@@ -6938,6 +6929,30 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // leave blank so ffmpeg will decide
             return null;
+        }
+
+        private static bool IsUnsupportedHwDecodeVideoType(VideoType videoType)
+        {
+            return videoType != VideoType.VideoFile
+                && videoType != VideoType.Iso
+                && videoType != VideoType.Dvd
+                && videoType != VideoType.BluRay;
+        }
+
+        private static bool IsTenBitWithoutCommonHwDecoder(MediaStream videoStream, int bitDepth)
+        {
+            return bitDepth == 10
+                && !(string.Equals(videoStream.Codec, "hevc", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(videoStream.Codec, "h265", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool IsH264Hi422OrHi444Profile(MediaStream videoStream)
+        {
+            return string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase)
+                && ((videoStream.Profile?.Contains("4:2:2", StringComparison.OrdinalIgnoreCase) ?? false)
+                    || (videoStream.Profile?.Contains("4:4:4", StringComparison.OrdinalIgnoreCase) ?? false));
         }
 
         /// <summary>
