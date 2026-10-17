@@ -2637,9 +2637,7 @@ namespace Emby.Server.Implementations.Library
                 : item.ImageInfos.Where(ImageNeedsRefresh).ToArray();
 
             var parentItem = item.GetParent();
-            var isLiveTvShow = item.SourceType != SourceType.Library &&
-                               parentItem is not null &&
-                               parentItem.SourceType != SourceType.Library; // not a channel
+            var isLiveTvShow = IsLiveTvShow(item, parentItem);
 
             // Skip image processing if current or live tv show
             if (outdated.Length == 0 || isLiveTvShow)
@@ -2700,6 +2698,13 @@ namespace Emby.Server.Implementations.Library
             await _persistenceService.SaveImagesAsync(item).ConfigureAwait(false);
 
             RegisterItem(item);
+        }
+
+        private static bool IsLiveTvShow(BaseItem item, BaseItem parentItem)
+        {
+            return item.SourceType != SourceType.Library &&
+                   parentItem is not null &&
+                   parentItem.SourceType != SourceType.Library; // not a channel
         }
 
         private ImageDimensions UpdateImageDimensions(BaseItem item, ItemImageInfo image)
