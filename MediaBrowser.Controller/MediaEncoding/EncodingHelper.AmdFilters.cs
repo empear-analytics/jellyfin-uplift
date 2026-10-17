@@ -164,12 +164,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (isD3d11vaDecoder && isSwEncoder)
             {
                 memoryOutput = true;
-
-                // OUTPUT nv12 surface(memory)
-                // prefer hwmap to hwdownload on opencl.
-                var hwTransferFilter = hasGraphicalSubs ? "hwdownload" : "hwmap=mode=read";
-                mainFilters.Add(hwTransferFilter);
-                mainFilters.Add("format=nv12");
+                AddAmdHwTransferToMemory(mainFilters, hasGraphicalSubs);
             }
 
             // OUTPUT yuv420p surface
@@ -240,6 +235,15 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add("hwmap=derive_device=d3d11va:mode=write:reverse=1");
                 mainFilters.Add("format=d3d11");
             }
+        }
+
+        private static void AddAmdHwTransferToMemory(List<string> mainFilters, bool hasGraphicalSubs)
+        {
+            // OUTPUT nv12 surface(memory)
+            // prefer hwmap to hwdownload on opencl.
+            var hwTransferFilter = hasGraphicalSubs ? "hwdownload" : "hwmap=mode=read";
+            mainFilters.Add(hwTransferFilter);
+            mainFilters.Add("format=nv12");
         }
 
         private static bool NeedsAmfHwUpload(bool isSwDecoder, bool isAmfEncoder, bool isUploadForOclTonemap)
