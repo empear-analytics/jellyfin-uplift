@@ -683,6 +683,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 param = AppendLevelParam(param, videoEncoder, level);
             }
 
+            return AppendVideoEncoderSpecificParams(param, videoEncoder, encodingOptions);
+        }
+
+        private string AppendVideoEncoderSpecificParams(string param, string videoEncoder, EncodingOptions encodingOptions)
+        {
             if (string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase))
             {
                 param += " -x264opts:0 subme=0:me_range=16:rc_lookahead=10:me=hex:open_gop=0";
