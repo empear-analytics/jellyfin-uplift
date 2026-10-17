@@ -263,11 +263,8 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return string.Empty;
                 }
 
-                var isD3d11vaDecoder = vidDecoder.Contains("d3d11va", StringComparison.OrdinalIgnoreCase);
-                var isVaapiDecoder = vidDecoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
-                var isQsvDecoder = vidDecoder.Contains("qsv", StringComparison.OrdinalIgnoreCase);
                 var isQsvEncoder = vidEncoder.Contains("qsv", StringComparison.OrdinalIgnoreCase);
-                var isHwDecoder = isQsvDecoder || isVaapiDecoder || isD3d11vaDecoder;
+                var isHwDecoder = IsQsvHwDecoder(vidDecoder);
                 if (IsHwDeviceUnused(isHwDecoder, isQsvEncoder))
                 {
                     return string.Empty;
@@ -282,10 +279,8 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return string.Empty;
                 }
 
-                var isCuvidDecoder = vidDecoder.Contains("cuvid", StringComparison.OrdinalIgnoreCase);
-                var isNvdecDecoder = vidDecoder.Contains("cuda", StringComparison.OrdinalIgnoreCase);
                 var isNvencEncoder = vidEncoder.Contains("nvenc", StringComparison.OrdinalIgnoreCase);
-                var isHwDecoder = isNvdecDecoder || isCuvidDecoder;
+                var isHwDecoder = IsNvencHwDecoder(vidDecoder);
                 if (IsHwDeviceUnused(isHwDecoder, isNvencEncoder))
                 {
                     return string.Empty;
@@ -355,6 +350,21 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static bool IsHwDeviceUnused(bool isHwDecoder, bool isHwEncoder)
         {
             return !isHwDecoder && !isHwEncoder;
+        }
+
+        private static bool IsQsvHwDecoder(string vidDecoder)
+        {
+            var isD3d11vaDecoder = vidDecoder.Contains("d3d11va", StringComparison.OrdinalIgnoreCase);
+            var isVaapiDecoder = vidDecoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
+            var isQsvDecoder = vidDecoder.Contains("qsv", StringComparison.OrdinalIgnoreCase);
+            return isQsvDecoder || isVaapiDecoder || isD3d11vaDecoder;
+        }
+
+        private static bool IsNvencHwDecoder(string vidDecoder)
+        {
+            var isCuvidDecoder = vidDecoder.Contains("cuvid", StringComparison.OrdinalIgnoreCase);
+            var isNvdecDecoder = vidDecoder.Contains("cuda", StringComparison.OrdinalIgnoreCase);
+            return isNvdecDecoder || isCuvidDecoder;
         }
 
         private bool IsVaapiHwaccelUnsupported(bool isLinux)
