@@ -116,6 +116,11 @@ namespace MediaBrowser.MediaEncoding.Probing
                 }
             }
 
+            return CreateNameValuePair(name, value);
+        }
+
+        private static NameValuePair CreateNameValuePair(string name, string value)
+        {
             if (string.IsNullOrEmpty(name)
                 || string.IsNullOrEmpty(value))
             {
