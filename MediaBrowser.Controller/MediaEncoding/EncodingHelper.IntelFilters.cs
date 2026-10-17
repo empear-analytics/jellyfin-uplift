@@ -585,13 +585,13 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
 
                 // hw transpose(vaapi vpp)
-                if (isVaapiDecoder && doVppTranspose)
+                if (NeedsVaapiTranspose(isVaapiDecoder, doVppTranspose))
                 {
                     mainFilters.Add($"transpose_vaapi=dir={transposeDir}");
                 }
 
                 var outFormat = doTonemap ? (((isQsvDecoder && doVppTranspose) || isRext) ? "p010" : string.Empty) : "nv12";
-                var swapOutputWandH = isQsvDecoder && doVppTranspose && swapWAndH;
+                var swapOutputWandH = NeedsQsvOutputSwap(isQsvDecoder, doVppTranspose, swapWAndH);
                 var hwScalePrefix = isQsvDecoder ? "vpp" : "scale";
                 var hwScaleFilter = GetHwScaleFilter(hwScalePrefix, hwFilterSuffix, outFormat, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
 
@@ -607,7 +607,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
 
                 // allocate extra pool sizes for vaapi vpp scale
-                if (!string.IsNullOrEmpty(hwScaleFilter) && isVaapiDecoder)
+                if (NeedsVaapiExtraHwFrames(hwScaleFilter, isVaapiDecoder))
                 {
                     hwScaleFilter += ":extra_hw_frames=24";
                 }
@@ -617,7 +617,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // vaapi vpp tonemap
-            if (doVaVppTonemap && isHwDecoder)
+            if (NeedsHwVaapiVppTonemap(doVaVppTonemap, isHwDecoder))
             {
                 AddVaapiVppTonemapFilters(options, mainFilters, isQsvDecoder, isMjpegEncoder);
             }
@@ -637,7 +637,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var memoryOutput = false;
             var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
-            var isHwmapUsable = isSwEncoder && (doOclTonemap || isVaapiDecoder);
+            var isHwmapUsable = CanHwmapToMemory(isSwEncoder, doOclTonemap, isVaapiDecoder);
             if (NeedsMemoryOutput(isHwDecoder, isSwEncoder, isUploadForOclTonemap))
             {
                 memoryOutput = true;
@@ -717,6 +717,31 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool NeedsVaapiTranspose(bool isVaapiDecoder, bool doVppTranspose)
+        {
+            return isVaapiDecoder && doVppTranspose;
+        }
+
+        private static bool NeedsVaapiExtraHwFrames(string hwScaleFilter, bool isVaapiDecoder)
+        {
+            return !string.IsNullOrEmpty(hwScaleFilter) && isVaapiDecoder;
+        }
+
+        private static bool NeedsHwVaapiVppTonemap(bool doVaVppTonemap, bool isHwDecoder)
+        {
+            return doVaVppTonemap && isHwDecoder;
+        }
+
+        private static bool CanHwmapToMemory(bool isSwEncoder, bool doOclTonemap, bool isVaapiDecoder)
+        {
+            return isSwEncoder && (doOclTonemap || isVaapiDecoder);
+        }
+
+        private static bool NeedsQsvOutputSwap(bool isQsvDecoder, bool doVppTranspose, bool swapWAndH)
+        {
+            return isQsvDecoder && doVppTranspose && swapWAndH;
         }
 
         private void AddVaapiVppTonemapFilters(EncodingOptions options, List<string> mainFilters, bool isQsvDecoder, bool isMjpegEncoder)
