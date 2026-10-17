@@ -33,47 +33,52 @@ namespace MediaBrowser.MediaEncoding.Probing
             {
                 try
                 {
-                    using (var reader = XmlReader.Create(streamReader))
-                    {
-                        reader.MoveToContent();
-                        reader.Read();
-
-                        // Loop through each element
-                        while (!reader.EOF && reader.ReadState == ReadState.Interactive)
-                        {
-                            if (reader.NodeType == XmlNodeType.Element)
-                            {
-                                switch (reader.Name)
-                                {
-                                    case "dict":
-                                        if (reader.IsEmptyElement)
-                                        {
-                                            reader.Read();
-                                            continue;
-                                        }
-
-                                        using (var subtree = reader.ReadSubtree())
-                                        {
-                                            ReadFromDictNode(subtree, info);
-                                        }
-
-                                        break;
-                                    default:
-                                        reader.Skip();
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                reader.Read();
-                            }
-                        }
-                    }
+                    ReadPlistRoot(streamReader, info);
                 }
                 catch (XmlException)
                 {
                     // I've seen probe examples where the iTunMOVI value is just "<"
                     // So we should not allow this to fail the entire probing operation
+                }
+            }
+        }
+
+        private void ReadPlistRoot(StreamReader streamReader, MediaInfo info)
+        {
+            using (var reader = XmlReader.Create(streamReader))
+            {
+                reader.MoveToContent();
+                reader.Read();
+
+                // Loop through each element
+                while (!reader.EOF && reader.ReadState == ReadState.Interactive)
+                {
+                    if (reader.NodeType == XmlNodeType.Element)
+                    {
+                        switch (reader.Name)
+                        {
+                            case "dict":
+                                if (reader.IsEmptyElement)
+                                {
+                                    reader.Read();
+                                    continue;
+                                }
+
+                                using (var subtree = reader.ReadSubtree())
+                                {
+                                    ReadFromDictNode(subtree, info);
+                                }
+
+                                break;
+                            default:
+                                reader.Skip();
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        reader.Read();
+                    }
                 }
             }
         }
