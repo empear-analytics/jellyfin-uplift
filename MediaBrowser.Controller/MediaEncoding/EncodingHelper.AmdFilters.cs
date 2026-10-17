@@ -225,35 +225,5 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             return (mainFilters, subFilters, overlayFilters);
         }
-
-        private static void AddAmdD3d11OutputMapping(List<string> mainFilters, bool isDxInDxOut, bool isUploadForOclTonemap, bool hasSubs)
-        {
-            if (NeedsAmfHwOutputMap(isDxInDxOut, isUploadForOclTonemap, hasSubs))
-            {
-                // OUTPUT d3d11(nv12) surface(vram)
-                // reverse-mapping via d3d11-opencl interop.
-                mainFilters.Add("hwmap=derive_device=d3d11va:mode=write:reverse=1");
-                mainFilters.Add("format=d3d11");
-            }
-        }
-
-        private static void AddAmdHwTransferToMemory(List<string> mainFilters, bool hasGraphicalSubs)
-        {
-            // OUTPUT nv12 surface(memory)
-            // prefer hwmap to hwdownload on opencl.
-            var hwTransferFilter = hasGraphicalSubs ? "hwdownload" : "hwmap=mode=read";
-            mainFilters.Add(hwTransferFilter);
-            mainFilters.Add("format=nv12");
-        }
-
-        private static bool NeedsAmfHwUpload(bool isSwDecoder, bool isAmfEncoder, bool isUploadForOclTonemap)
-        {
-            return isSwDecoder && isAmfEncoder && !isUploadForOclTonemap;
-        }
-
-        private static bool NeedsAmfHwOutputMap(bool isDxInDxOut, bool isUploadForOclTonemap, bool hasSubs)
-        {
-            return (isDxInDxOut || isUploadForOclTonemap) && !hasSubs;
-        }
     }
 }
