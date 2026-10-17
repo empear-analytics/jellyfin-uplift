@@ -1446,12 +1446,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 if (string.IsNullOrEmpty(videoRequest.VideoCodec))
                 {
-                    if (string.IsNullOrEmpty(requestedUrl))
-                    {
-                        requestedUrl = "test." + videoRequest.Container;
-                    }
-
-                    videoRequest.VideoCodec = InferVideoCodec(requestedUrl);
+                    InferRequestedVideoCodec(videoRequest, requestedUrl);
                 }
 
                 state.VideoStream = GetMediaStream(mediaStreams, videoRequest.VideoStreamIndex, MediaStreamType.Video);
@@ -1459,10 +1454,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 state.SubtitleDeliveryMethod = videoRequest.SubtitleMethod;
                 state.AudioStream = GetMediaStream(mediaStreams, videoRequest.AudioStreamIndex, MediaStreamType.Audio);
 
-                if (state.SubtitleStream is not null && !state.SubtitleStream.IsExternal)
-                {
-                    state.InternalSubtitleStreamOffset = mediaStreams.Where(i => i.Type == MediaStreamType.Subtitle && !i.IsExternal).ToList().IndexOf(state.SubtitleStream);
-                }
+                SetInternalSubtitleStreamOffset(state, mediaStreams);
 
                 EnforceResolutionLimit(state);
 
@@ -1499,6 +1491,24 @@ namespace MediaBrowser.Controller.MediaEncoding
                 state.SupportedVideoCodecs = supportedVideoCodecsList.ToArray();
 
                 request.VideoCodec = state.SupportedVideoCodecs.FirstOrDefault();
+            }
+        }
+
+        private void InferRequestedVideoCodec(BaseEncodingJobOptions videoRequest, string requestedUrl)
+        {
+            if (string.IsNullOrEmpty(requestedUrl))
+            {
+                requestedUrl = "test." + videoRequest.Container;
+            }
+
+            videoRequest.VideoCodec = InferVideoCodec(requestedUrl);
+        }
+
+        private static void SetInternalSubtitleStreamOffset(EncodingJobInfo state, IReadOnlyList<MediaStream> mediaStreams)
+        {
+            if (state.SubtitleStream is not null && !state.SubtitleStream.IsExternal)
+            {
+                state.InternalSubtitleStreamOffset = mediaStreams.Where(i => i.Type == MediaStreamType.Subtitle && !i.IsExternal).ToList().IndexOf(state.SubtitleStream);
             }
         }
 
