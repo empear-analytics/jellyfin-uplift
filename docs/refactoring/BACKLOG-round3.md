@@ -107,7 +107,7 @@ Update as tasks land.
 | R3-19 | 8.00 | 9.09 | Sonnet. Two splits (the maximum): ItunesPairs 10.00, ItunesArray 9.38, Itunes 9.09. Recipe D merged the three PersonKind loops (no duplication report), rule 7 on GetNameValuePair, rule 9 on FetchFromItunesInfo. Left: nesting 4 in ReadPlistRoot, ReadFromDictNode, ReadValueArray (G is DOWN or WORSE); the `if (reader.IsEmptyElement) { reader.Read(); continue; }` blocks need a continue-to-return rule |
 | R3-20 | 8.01 | - | not started |
 | R3-21 | 8.03 | - | not started |
-| R3-22 | 8.03 | - | not started |
+| R3-22 | 8.03 | 8.81 | Sonnet. Split into DynamicHlsHelper.Codecs.cs (9.09 after the second commit) and DynamicHlsHelper.cs (8.81). The second commit applies nullable case 3 to two methods together (rule 1 exception: each alone FLAT, together UP); the predicates are trivial wrappers of `.HasValue`. GetPlaylistAudioCodecs tails FLAT or DOWN alone and in pairs; Excess Arguments and Constructor Over-Injection (11) have no recipe |
 | R3-23 | 8.04 | - | not started |
 | R3-24 | 8.15 | - | not started |
 | R3-25 | 8.22 | - | not started |
