@@ -92,14 +92,7 @@ namespace Emby.Server.Implementations.Library
                 }
             }
 
-            // for imdbid we also accept pattern matching
-            if (attribute.Equals("imdbid", StringComparison.OrdinalIgnoreCase))
-            {
-                var match = ProviderIdParsers.TryFindImdbId(str, out var imdbId);
-                return match ? imdbId.ToString() : null;
-            }
-
-            return null;
+            return FindImdbIdByPattern(str, attribute);
         }
 
         private static bool IsAliasFollowedById(ReadOnlySpan<char> shortAttr, ReadOnlySpan<char> subStr, int attributeEnd)
@@ -135,6 +128,18 @@ namespace Emby.Server.Implementations.Library
         private static bool HasAssignmentAfterAttribute(ReadOnlySpan<char> subStr, int attributeEnd)
         {
             return attributeEnd + 2 < subStr.Length && (subStr[attributeEnd] is '=' or '-');
+        }
+
+        private static string? FindImdbIdByPattern(ReadOnlySpan<char> str, ReadOnlySpan<char> attribute)
+        {
+            // for imdbid we also accept pattern matching
+            if (attribute.Equals("imdbid", StringComparison.OrdinalIgnoreCase))
+            {
+                var match = ProviderIdParsers.TryFindImdbId(str, out var imdbId);
+                return match ? imdbId.ToString() : null;
+            }
+
+            return null;
         }
     }
 }
