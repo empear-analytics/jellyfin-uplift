@@ -26,13 +26,7 @@ namespace Emby.Server.Implementations.Library
 
             // Allow tmdb as an alias for tmdbid, tvdb for tvdbid, etc.
             // The code below only supports aliases for attributes in the form of "<alias>id".
-            ReadOnlySpan<char> shortAttr = attribute switch
-            {
-                _ when attribute.Equals("tmdbid", StringComparison.OrdinalIgnoreCase) => "tmdb",
-                _ when attribute.Equals("tvdbid", StringComparison.OrdinalIgnoreCase) => "tvdb",
-                _ when attribute.Equals("imdbid", StringComparison.OrdinalIgnoreCase) => "imdb",
-                _ => ReadOnlySpan<char>.Empty
-            };
+            ReadOnlySpan<char> shortAttr = GetShortAlias(attribute);
 
             for (int strIndex = 0, attributeIndex = 0; attributeIndex > -1;)
             {
@@ -120,6 +114,17 @@ namespace Emby.Server.Implementations.Library
                 && attributeEnd + 1 < subStr.Length
                 && (subStr[attributeEnd] is 'i' or 'I')
                 && (subStr[attributeEnd + 1] is 'd' or 'D');
+        }
+
+        private static ReadOnlySpan<char> GetShortAlias(ReadOnlySpan<char> attribute)
+        {
+            return attribute switch
+            {
+                _ when attribute.Equals("tmdbid", StringComparison.OrdinalIgnoreCase) => "tmdb",
+                _ when attribute.Equals("tvdbid", StringComparison.OrdinalIgnoreCase) => "tvdb",
+                _ when attribute.Equals("imdbid", StringComparison.OrdinalIgnoreCase) => "imdb",
+                _ => ReadOnlySpan<char>.Empty
+            };
         }
     }
 }
