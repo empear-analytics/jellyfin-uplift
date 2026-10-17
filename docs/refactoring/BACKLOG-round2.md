@@ -67,7 +67,7 @@ Update as tasks land.
 | R2-06 | 7.35 | 7.57 | stopped at 7.57: CompareInt and CompareDouble merged into a generic Compare<T> (Recipe D, type-only copies, accepted by the campaign owner); the rest has no recipe (flat 20-case switch, near-miss copies differing in two places, public argument lists) |
 | R2-07 | 7.47 | - | not started |
 | R2-08 | 7.78 | 7.78 | no step applies: GetPathProtocol is a trailing if-chain of early returns (candidate: extend Recipe E rule 7 to if-chains); public argument lists; Constructor Over-Injection (13); Low Cohesion; Primitive Obsession |
-| R2-09 | 7.78 | - | not started |
+| R2-09 | 7.78 | 8.03 | stopped at 8.03: AppendDvString cleared with Recipe P and [NotNullWhen(false)]; GetOutputVideoCodecLevel and GetOutputAv1BitDepth conditionals blocked (null checks on property paths inside the expression, no nullable rule covers them); GetPlaylistAudioCodecs flat return chain, no recipe; Excess Arguments; Constructor Over-Injection (11) |
 | R2-10 | 7.98 | - | not started |
 | R2-11 | 7.98 | - | not started |
 | R2-12 | 8.01 | - | not started |
