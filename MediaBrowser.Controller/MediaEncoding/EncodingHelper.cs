@@ -903,19 +903,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             // If we don't have known media info
             // If input is video, use -sn to drop subtitles
             // Otherwise just return empty
-            if (state.VideoStream is null && state.AudioStream is null)
+            if (HasNoKnownMediaStreams(state))
             {
                 return state.IsInputVideo ? "-sn" : string.Empty;
             }
 
             // We have media info, but we don't know the stream index
-            if (state.VideoStream is not null && state.VideoStream.Index == -1)
+            if (HasUnknownVideoStreamIndex(state))
             {
                 return "-sn";
             }
 
             // We have media info, but we don't know the stream index
-            if (state.AudioStream is not null && state.AudioStream.Index == -1)
+            if (HasUnknownAudioStreamIndex(state))
             {
                 return state.IsInputVideo ? "-sn" : string.Empty;
             }
@@ -947,7 +947,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             var subtitleMethod = state.SubtitleDeliveryMethod;
-            if (state.SubtitleStream is null || subtitleMethod == SubtitleDeliveryMethod.Hls)
+            if (IsSubtitleExcludedFromMap(state, subtitleMethod))
             {
                 args += " -map -0:s";
             }
@@ -955,7 +955,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 args = AppendEmbeddedSubtitleMapArgs(args, state);
             }
-            else if (state.SubtitleStream.IsExternal && !state.SubtitleStream.IsTextSubtitleStream)
+            else if (IsExternalGraphicalSubtitle(state))
             {
                 int externalSubtitleStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.SubtitleStream);
 
@@ -966,6 +966,31 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return args;
+        }
+
+        private static bool HasNoKnownMediaStreams(EncodingJobInfo state)
+        {
+            return state.VideoStream is null && state.AudioStream is null;
+        }
+
+        private static bool HasUnknownVideoStreamIndex(EncodingJobInfo state)
+        {
+            return state.VideoStream is not null && state.VideoStream.Index == -1;
+        }
+
+        private static bool HasUnknownAudioStreamIndex(EncodingJobInfo state)
+        {
+            return state.AudioStream is not null && state.AudioStream.Index == -1;
+        }
+
+        private static bool IsSubtitleExcludedFromMap(EncodingJobInfo state, SubtitleDeliveryMethod subtitleMethod)
+        {
+            return state.SubtitleStream is null || subtitleMethod == SubtitleDeliveryMethod.Hls;
+        }
+
+        private static bool IsExternalGraphicalSubtitle(EncodingJobInfo state)
+        {
+            return state.SubtitleStream.IsExternal && !state.SubtitleStream.IsTextSubtitleStream;
         }
 
         private static string AppendAudioMapArgs(string args, EncodingJobInfo state)
