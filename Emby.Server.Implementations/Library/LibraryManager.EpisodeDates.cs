@@ -25,6 +25,19 @@ namespace Emby.Server.Implementations.Library
                 changed = true;
             }
 
+            changed = FillPremiereDate(episode, episodeInfo, changed);
+            changed = FillProductionYear(episode, episodeInfo, changed);
+
+            return changed;
+        }
+
+        private static bool HasFullDate([NotNullWhen(true)] int? year, [NotNullWhen(true)] int? month, [NotNullWhen(true)] int? day)
+        {
+            return year.HasValue && month.HasValue && day.HasValue;
+        }
+
+        private static bool FillPremiereDate(Episode episode, EpisodeInfo episodeInfo, bool changed)
+        {
             if (!episode.PremiereDate.HasValue)
             {
                 if (HasFullDate(episodeInfo.Year, episodeInfo.Month, episodeInfo.Day))
@@ -38,6 +51,11 @@ namespace Emby.Server.Implementations.Library
                 }
             }
 
+            return changed;
+        }
+
+        private static bool FillProductionYear(Episode episode, EpisodeInfo episodeInfo, bool changed)
+        {
             if (episode.ProductionYear is null)
             {
                 episode.ProductionYear = episodeInfo.Year;
@@ -49,11 +67,6 @@ namespace Emby.Server.Implementations.Library
             }
 
             return changed;
-        }
-
-        private static bool HasFullDate([NotNullWhen(true)] int? year, [NotNullWhen(true)] int? month, [NotNullWhen(true)] int? day)
-        {
-            return year.HasValue && month.HasValue && day.HasValue;
         }
     }
 }
