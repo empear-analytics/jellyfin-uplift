@@ -485,11 +485,7 @@ namespace MediaBrowser.Model.Dlna
             TranscodeReason transcodeReasons = 0;
             if (directPlayProfile is null)
             {
-                _logger.LogDebug(
-                    "Profile: {0}, No audio direct play profiles found for {1} with codec {2}",
-                    options.Profile.Name ?? "Unknown Profile",
-                    item.Path ?? "Unknown path",
-                    audioStream.Codec ?? "Unknown codec");
+                LogNoAudioDirectPlayProfile(item, audioStream, options);
 
                 var directStreamProfile = options.Profile.DirectPlayProfiles
                     .FirstOrDefault(x => IsSupportedAudioDirectStreamProfile(x, item, audioStream));
@@ -544,6 +540,15 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return (directPlayProfile, null, transcodeReasons);
+        }
+
+        private void LogNoAudioDirectPlayProfile(MediaSourceInfo item, MediaStream audioStream, MediaOptions options)
+        {
+            _logger.LogDebug(
+                "Profile: {0}, No audio direct play profiles found for {1} with codec {2}",
+                options.Profile.Name ?? "Unknown Profile",
+                item.Path ?? "Unknown path",
+                audioStream.Codec ?? "Unknown codec");
         }
 
         private static bool IsSupportedAudioDirectPlayProfile(DirectPlayProfile x, MediaSourceInfo item, MediaStream audioStream)
