@@ -677,14 +677,7 @@ namespace Emby.Server.Implementations.Library
                         fileSystemInfo.FullName,
                         item.Id);
 
-                    if (fileSystemInfo.IsDirectory)
-                    {
-                        Directory.Delete(fileSystemInfo.FullName, true);
-                    }
-                    else
-                    {
-                        File.Delete(fileSystemInfo.FullName);
-                    }
+                    DeleteFileSystemEntry(fileSystemInfo);
                 }
                 catch (DirectoryNotFoundException)
                 {
@@ -718,6 +711,18 @@ namespace Emby.Server.Implementations.Library
                         throw;
                     }
                 }
+            }
+        }
+
+        private static void DeleteFileSystemEntry(FileSystemMetadata fileSystemInfo)
+        {
+            if (fileSystemInfo.IsDirectory)
+            {
+                Directory.Delete(fileSystemInfo.FullName, true);
+            }
+            else
+            {
+                File.Delete(fileSystemInfo.FullName);
             }
         }
 
