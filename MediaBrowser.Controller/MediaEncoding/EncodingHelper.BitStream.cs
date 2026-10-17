@@ -128,7 +128,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // Case 2: Client supports DOVI, does not support broken DOVI config
             // Client does not report DOVI support should be allowed to copy bad data for remuxing as HDR10 players would not crash
-            shouldRemoveDovi = shouldRemoveDovi || (requestHasDOVI && videoStream.VideoRangeType == VideoRangeType.DOVIInvalid);
+            shouldRemoveDovi = shouldRemoveDovi || IsInvalidDoviForDoviClient(videoStream, requestHasDOVI);
 
             // Special case: we have a video with both EL and HDR10+
             // If the client supports EL but not in the case of coexistence with HDR10+, remove HDR10+ for compatibility reasons.
@@ -145,8 +145,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // If the client is a Dolby Vision Player, remove the HDR10+ metadata to avoid playback issues
-            shouldRemoveHdr10Plus = shouldRemoveHdr10Plus || (requestHasDOVI && videoStream.VideoRangeType == VideoRangeType.DOVIWithHDR10Plus);
+            shouldRemoveHdr10Plus = shouldRemoveHdr10Plus || IsDoviWithHdr10PlusForDoviClient(videoStream, requestHasDOVI);
             return shouldRemoveHdr10Plus ? DynamicHdrMetadataRemovalPlan.RemoveHdr10Plus : DynamicHdrMetadataRemovalPlan.None;
+        }
+
+        private static bool IsInvalidDoviForDoviClient(MediaStream videoStream, bool requestHasDOVI)
+        {
+            return requestHasDOVI && videoStream.VideoRangeType == VideoRangeType.DOVIInvalid;
+        }
+
+        private static bool IsDoviWithHdr10PlusForDoviClient(MediaStream videoStream, bool requestHasDOVI)
+        {
+            return requestHasDOVI && videoStream.VideoRangeType == VideoRangeType.DOVIWithHDR10Plus;
         }
 
         private static bool IsNonHdrVideoStream(MediaStream videoStream)
