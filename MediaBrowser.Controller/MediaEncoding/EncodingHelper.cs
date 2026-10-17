@@ -655,15 +655,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (state.MediaSource.VideoType == VideoType.Dvd || state.MediaSource.VideoType == VideoType.BluRay)
             {
-                var concatFilePath = Path.Join(_configurationManager.CommonApplicationPaths.CachePath, "concat", state.MediaSource.Id + ".concat");
-                if (!File.Exists(concatFilePath))
-                {
-                    _mediaEncoder.GenerateConcatConfig(state.MediaSource, concatFilePath);
-                }
-
-                arg.Append(" -f concat -safe 0 -i \"")
-                    .Append(concatFilePath)
-                    .Append("\" ");
+                AppendConcatInput(state, arg);
             }
             else
             {
@@ -677,15 +669,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 var isGraphicalBurnIn = ShouldEncodeSubtitle(state) && !state.SubtitleStream.IsTextSubtitleStream;
 
                 // dvdsub/vobsub graphical subtitles use .sub+.idx pairs
-                var subtitleExtension = Path.GetExtension(subtitlePath.AsSpan());
-                if (subtitleExtension.Equals(".sub", StringComparison.OrdinalIgnoreCase))
-                {
-                    var idxFile = Path.ChangeExtension(subtitlePath, ".idx");
-                    if (File.Exists(idxFile))
-                    {
-                        subtitlePath = idxFile;
-                    }
-                }
+                subtitlePath = GetIdxSubtitlePath(subtitlePath);
 
                 // Use analyzeduration also for subtitle streams to improve resolution detection  with streams inside MKS files
                 var analyzeDurationArgument = GetFfmpegAnalyzeDurationArg(state);
@@ -718,14 +702,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (state.AudioStream is not null && state.AudioStream.IsExternal)
             {
-                // Also seek the external audio stream.
-                var seekAudioParam = GetFastSeekCommandLineParameter(state, options, segmentContainer);
-                if (!string.IsNullOrEmpty(seekAudioParam))
-                {
-                    arg.Append(' ').Append(seekAudioParam);
-                }
-
-                arg.Append(" -i \"").Append(state.AudioStream.Path.EscapeProcessArgument()).Append('"');
+                AppendExternalAudioInput(state, options, segmentContainer, arg);
             }
 
             // Disable auto inserted SW scaler for HW decoders in case of changed resolution.
@@ -736,6 +713,46 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return arg.ToString();
+        }
+
+        private void AppendConcatInput(EncodingJobInfo state, StringBuilder arg)
+        {
+            var concatFilePath = Path.Join(_configurationManager.CommonApplicationPaths.CachePath, "concat", state.MediaSource.Id + ".concat");
+            if (!File.Exists(concatFilePath))
+            {
+                _mediaEncoder.GenerateConcatConfig(state.MediaSource, concatFilePath);
+            }
+
+            arg.Append(" -f concat -safe 0 -i \"")
+                .Append(concatFilePath)
+                .Append("\" ");
+        }
+
+        private static string GetIdxSubtitlePath(string subtitlePath)
+        {
+            var subtitleExtension = Path.GetExtension(subtitlePath.AsSpan());
+            if (subtitleExtension.Equals(".sub", StringComparison.OrdinalIgnoreCase))
+            {
+                var idxFile = Path.ChangeExtension(subtitlePath, ".idx");
+                if (File.Exists(idxFile))
+                {
+                    subtitlePath = idxFile;
+                }
+            }
+
+            return subtitlePath;
+        }
+
+        private void AppendExternalAudioInput(EncodingJobInfo state, EncodingOptions options, string segmentContainer, StringBuilder arg)
+        {
+            // Also seek the external audio stream.
+            var seekAudioParam = GetFastSeekCommandLineParameter(state, options, segmentContainer);
+            if (!string.IsNullOrEmpty(seekAudioParam))
+            {
+                arg.Append(' ').Append(seekAudioParam);
+            }
+
+            arg.Append(" -i \"").Append(state.AudioStream.Path.EscapeProcessArgument()).Append('"');
         }
 
         /// <summary>
