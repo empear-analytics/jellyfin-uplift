@@ -186,6 +186,11 @@ namespace MediaBrowser.Model.Dlna
             // Honor max rate
             ApplyMaxVideoBitrate(playlistItem, maxBitrateSetting);
 
+            LogTranscodeResult(options, item, playlistItem, audioStream);
+        }
+
+        private void LogTranscodeResult(MediaOptions options, MediaSourceInfo item, StreamInfo playlistItem, MediaStream? audioStream)
+        {
             _logger.LogDebug(
                 "Transcode Result for Profile: {Profile}, Path: {Path}, PlayMethod: {PlayMethod}, AudioStreamIndex: {AudioStreamIndex}, SubtitleStreamIndex: {SubtitleStreamIndex}, Reasons: {TranscodeReason}",
                 options.Profile.Name ?? "Anonymous Profile",
