@@ -32,10 +32,7 @@ namespace MediaBrowser.Model.Dlna
             var videoCodecs = GetPreferredVideoCodecs(playlistItem, videoStream, videoCodec);
 
             playlistItem.VideoCodecs = videoCodecs;
-            if (videoStream is not null && !ContainerHelper.ContainsContainer(videoCodecs, false, videoStream.Codec))
-            {
-                playlistItem.TranscodeReasons |= TranscodeReason.VideoCodecNotSupported;
-            }
+            MarkUnsupportedVideoCodec(playlistItem, videoStream, videoCodecs);
 
             // Copy video codec options as a starting point, this applies to transcode and direct-stream
             playlistItem.MaxFramerate = videoStream?.ReferenceFrameRate;
@@ -149,6 +146,14 @@ namespace MediaBrowser.Model.Dlna
             {
                 playlistItem.TranscodeReasons |= TranscodeReason.AudioChannelsNotSupported;
                 playlistItem.TargetAudioStream.Channels = playlistItem.TranscodingMaxAudioChannels;
+            }
+        }
+
+        private static void MarkUnsupportedVideoCodec(StreamInfo playlistItem, MediaStream? videoStream, List<string> videoCodecs)
+        {
+            if (videoStream is not null && !ContainerHelper.ContainsContainer(videoCodecs, false, videoStream.Codec))
+            {
+                playlistItem.TranscodeReasons |= TranscodeReason.VideoCodecNotSupported;
             }
         }
 
