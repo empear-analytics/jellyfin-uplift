@@ -145,17 +145,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            if (bool.TryParse(value, out var isAnamorphic))
-                            {
-                                if (isAnamorphic && condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.RequireNonAnamorphic = true;
-                                }
-                                else if (!isAnamorphic && condition.Condition == ProfileConditionType.NotEquals)
-                                {
-                                    item.RequireNonAnamorphic = true;
-                                }
-                            }
+                            ApplyAnamorphicCondition(item, condition, value);
 
                             break;
                         }
@@ -177,17 +167,7 @@ namespace MediaBrowser.Model.Dlna
                                 }
                             }
 
-                            if (bool.TryParse(value, out var isInterlaced))
-                            {
-                                if (!isInterlaced && condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.SetOption(qualifier, "deinterlace", "true");
-                                }
-                                else if (isInterlaced && condition.Condition == ProfileConditionType.NotEquals)
-                                {
-                                    item.SetOption(qualifier, "deinterlace", "true");
-                                }
-                            }
+                            ApplyInterlacedCondition(item, condition, value, qualifier);
 
                             break;
                         }
@@ -288,31 +268,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            // change from split by | to comma
-                            // strip spaces to avoid having to encode
-                            var values = value
-                                .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-                            if (condition.Condition == ProfileConditionType.Equals)
-                            {
-                                item.SetOption(qualifier, "rangetype", string.Join(',', values));
-                            }
-                            else if (condition.Condition == ProfileConditionType.NotEquals)
-                            {
-                                item.SetOption(qualifier, "rangetype", string.Join(',', Enum.GetNames<VideoRangeType>().Except(values)));
-                            }
-                            else if (condition.Condition == ProfileConditionType.EqualsAny)
-                            {
-                                var currentValue = item.GetOption(qualifier, "rangetype");
-                                if (!string.IsNullOrEmpty(currentValue) && values.Any(v => string.Equals(v, currentValue, StringComparison.OrdinalIgnoreCase)))
-                                {
-                                    item.SetOption(qualifier, "rangetype", currentValue);
-                                }
-                                else
-                                {
-                                    item.SetOption(qualifier, "rangetype", string.Join(',', values));
-                                }
-                            }
+                            ApplyVideoRangeTypeCondition(item, condition, value, qualifier);
 
                             break;
                         }
@@ -443,6 +399,65 @@ namespace MediaBrowser.Model.Dlna
 
                     default:
                         break;
+                }
+            }
+        }
+
+        private static void ApplyInterlacedCondition(StreamInfo item, ProfileCondition condition, string value, string? qualifier)
+        {
+            if (bool.TryParse(value, out var isInterlaced))
+            {
+                if (!isInterlaced && condition.Condition == ProfileConditionType.Equals)
+                {
+                    item.SetOption(qualifier, "deinterlace", "true");
+                }
+                else if (isInterlaced && condition.Condition == ProfileConditionType.NotEquals)
+                {
+                    item.SetOption(qualifier, "deinterlace", "true");
+                }
+            }
+        }
+
+        private static void ApplyAnamorphicCondition(StreamInfo item, ProfileCondition condition, string value)
+        {
+            if (bool.TryParse(value, out var isAnamorphic))
+            {
+                if (isAnamorphic && condition.Condition == ProfileConditionType.Equals)
+                {
+                    item.RequireNonAnamorphic = true;
+                }
+                else if (!isAnamorphic && condition.Condition == ProfileConditionType.NotEquals)
+                {
+                    item.RequireNonAnamorphic = true;
+                }
+            }
+        }
+
+        private static void ApplyVideoRangeTypeCondition(StreamInfo item, ProfileCondition condition, string value, string? qualifier)
+        {
+            // change from split by | to comma
+            // strip spaces to avoid having to encode
+            var values = value
+                .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            if (condition.Condition == ProfileConditionType.Equals)
+            {
+                item.SetOption(qualifier, "rangetype", string.Join(',', values));
+            }
+            else if (condition.Condition == ProfileConditionType.NotEquals)
+            {
+                item.SetOption(qualifier, "rangetype", string.Join(',', Enum.GetNames<VideoRangeType>().Except(values)));
+            }
+            else if (condition.Condition == ProfileConditionType.EqualsAny)
+            {
+                var currentValue = item.GetOption(qualifier, "rangetype");
+                if (!string.IsNullOrEmpty(currentValue) && values.Any(v => string.Equals(v, currentValue, StringComparison.OrdinalIgnoreCase)))
+                {
+                    item.SetOption(qualifier, "rangetype", currentValue);
+                }
+                else
+                {
+                    item.SetOption(qualifier, "rangetype", string.Join(',', values));
                 }
             }
         }
