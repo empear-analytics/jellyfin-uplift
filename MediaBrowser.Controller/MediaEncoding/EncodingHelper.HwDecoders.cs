@@ -243,12 +243,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isWindows = OperatingSystem.IsWindows();
             var isLinux = OperatingSystem.IsLinux();
             var isMacOS = OperatingSystem.IsMacOS();
-            var isD3d11Supported = isWindows && _mediaEncoder.SupportsHwaccel("d3d11va");
-            var isVaapiSupported = isLinux && IsVaapiSupported(state);
-            var isCudaSupported = (isLinux || isWindows) && IsCudaFullSupported();
-            var isQsvSupported = (isLinux || isWindows) && _mediaEncoder.SupportsHwaccel("qsv");
-            var isVideotoolboxSupported = isMacOS && _mediaEncoder.SupportsHwaccel("videotoolbox");
-            var isRkmppSupported = isLinux && IsRkmppFullSupported();
+            var isD3d11Supported = IsD3d11HwaccelSupported(isWindows);
+            var isVaapiSupported = IsLinuxVaapiSupported(state, isLinux);
+            var isCudaSupported = IsCudaHwaccelSupported(isLinux, isWindows);
+            var isQsvSupported = IsQsvHwaccelSupported(isLinux, isWindows);
+            var isVideotoolboxSupported = IsVideotoolboxHwaccelSupported(isMacOS);
+            var isRkmppSupported = IsLinuxRkmppSupported(isLinux);
             var isCodecAvailable = options.HardwareDecodingCodecs.Contains(videoCodec, StringComparison.OrdinalIgnoreCase);
             var hardwareAccelerationType = options.HardwareAccelerationType;
 
@@ -374,6 +374,36 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private bool IsD3d11HwaccelSupported(bool isWindows)
+        {
+            return isWindows && _mediaEncoder.SupportsHwaccel("d3d11va");
+        }
+
+        private bool IsLinuxVaapiSupported(EncodingJobInfo state, bool isLinux)
+        {
+            return isLinux && IsVaapiSupported(state);
+        }
+
+        private bool IsCudaHwaccelSupported(bool isLinux, bool isWindows)
+        {
+            return (isLinux || isWindows) && IsCudaFullSupported();
+        }
+
+        private bool IsQsvHwaccelSupported(bool isLinux, bool isWindows)
+        {
+            return (isLinux || isWindows) && _mediaEncoder.SupportsHwaccel("qsv");
+        }
+
+        private bool IsVideotoolboxHwaccelSupported(bool isMacOS)
+        {
+            return isMacOS && _mediaEncoder.SupportsHwaccel("videotoolbox");
+        }
+
+        private bool IsLinuxRkmppSupported(bool isLinux)
+        {
+            return isLinux && IsRkmppFullSupported();
         }
 
         private bool NeedsExplicitAv1Decoder(Version ffmpegVersion, string videoCodec)
