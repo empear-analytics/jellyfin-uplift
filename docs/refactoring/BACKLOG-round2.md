@@ -66,7 +66,7 @@ Update as tasks land.
 | R2-05 | 6.93 | 7.80 | stopped at 7.80: ApplyVideoOutputSettings no longer flagged (nullable rule 2 unblocked three P steps); ApplyParam cc 56 to 35, the 34-case switch itself has no recipe; GetOutputFileExtension if-chains with early returns (rule 7 covers loops only); Excess Arguments (GetStreamingState 11) |
 | R2-06 | 7.35 | 7.35 | held for the campaign owner: the only UP step (7.57, commit 2100ed372a on task/R2-06) merges CompareInt and CompareDouble into a generic Compare<T> with generic-math constraints, which Recipe D (differ by a single value) does not cover; the rest has no recipe (flat 20-case switch, near-miss copies differing in two places, public argument lists) |
 | R2-07 | 7.47 | - | not started |
-| R2-08 | 7.78 | - | not started |
+| R2-08 | 7.78 | 7.78 | no step applies: GetPathProtocol is a trailing if-chain of early returns (candidate: extend Recipe E rule 7 to if-chains); public argument lists; Constructor Over-Injection (13); Low Cohesion; Primitive Obsession |
 | R2-09 | 7.78 | - | not started |
 | R2-10 | 7.98 | - | not started |
 | R2-11 | 7.98 | - | not started |
