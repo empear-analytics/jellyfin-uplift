@@ -271,11 +271,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             var stripRotationDataArgs = stripRotationData ? " -display_rotation 0" : string.Empty;
 
             // VideoToolbox decoders have built-in SW fallback
-            if (isCodecAvailable
-                && (options.HardwareAccelerationType != HardwareAccelerationType.videotoolbox))
+            if (IsNonVideotoolboxCodecAvailable(options, isCodecAvailable))
             {
-                if (string.Equals(videoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
-                    && options.HardwareDecodingCodecs.Contains("hevc", StringComparison.OrdinalIgnoreCase))
+                if (IsHevcHwDecodingCodec(options, videoCodec))
                 {
                     if (IsVideoStreamHevcRext(state))
                     {
@@ -380,6 +378,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private static bool IsNonVideotoolboxCodecAvailable(EncodingOptions options, bool isCodecAvailable)
+        {
+            return isCodecAvailable
+                && (options.HardwareAccelerationType != HardwareAccelerationType.videotoolbox);
+        }
+
+        private static bool IsHevcHwDecodingCodec(EncodingOptions options, string videoCodec)
+        {
+            return string.Equals(videoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
+                && options.HardwareDecodingCodecs.Contains("hevc", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsVp9TenBitHwDecodingDisabled(EncodingOptions options, string videoCodec, int bitDepth)
