@@ -6731,24 +6731,17 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return videoStream.BitDepth.Value;
                 }
 
-                if (string.Equals(videoStream.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoStream.PixelFormat, "yuvj420p", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoStream.PixelFormat, "yuv422p", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoStream.PixelFormat, "yuv444p", StringComparison.OrdinalIgnoreCase))
+                if (Is8BitPixelFormat(videoStream))
                 {
                     return 8;
                 }
 
-                if (string.Equals(videoStream.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoStream.PixelFormat, "yuv422p10le", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoStream.PixelFormat, "yuv444p10le", StringComparison.OrdinalIgnoreCase))
+                if (Is10BitPixelFormat(videoStream))
                 {
                     return 10;
                 }
 
-                if (string.Equals(videoStream.PixelFormat, "yuv420p12le", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoStream.PixelFormat, "yuv422p12le", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoStream.PixelFormat, "yuv444p12le", StringComparison.OrdinalIgnoreCase))
+                if (Is12BitPixelFormat(videoStream))
                 {
                     return 12;
                 }
@@ -6757,6 +6750,28 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return 0;
+        }
+
+        private static bool Is8BitPixelFormat(MediaStream videoStream)
+        {
+            return string.Equals(videoStream.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoStream.PixelFormat, "yuvj420p", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoStream.PixelFormat, "yuv422p", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoStream.PixelFormat, "yuv444p", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool Is10BitPixelFormat(MediaStream videoStream)
+        {
+            return string.Equals(videoStream.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoStream.PixelFormat, "yuv422p10le", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoStream.PixelFormat, "yuv444p10le", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool Is12BitPixelFormat(MediaStream videoStream)
+        {
+            return string.Equals(videoStream.PixelFormat, "yuv420p12le", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoStream.PixelFormat, "yuv422p12le", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoStream.PixelFormat, "yuv444p12le", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
