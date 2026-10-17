@@ -1004,10 +1004,7 @@ namespace MediaBrowser.Controller.MediaEncoding
         public string GetGraphicalSubCanvasSize(EncodingJobInfo state)
         {
             // DVBSUB uses the fixed canvas size 720x576
-            if (state.SubtitleStream is not null
-                && ShouldEncodeSubtitle(state)
-                && !state.SubtitleStream.IsTextSubtitleStream
-                && !string.Equals(state.SubtitleStream.Codec, "DVBSUB", StringComparison.OrdinalIgnoreCase))
+            if (IsEncodedNonDvbGraphicalSubtitle(state))
             {
                 var subtitleWidth = state.SubtitleStream?.Width;
                 var subtitleHeight = state.SubtitleStream?.Height;
@@ -1026,6 +1023,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static bool IsEncodedNonDvbGraphicalSubtitle(EncodingJobInfo state)
+        {
+            return state.SubtitleStream is not null
+                && ShouldEncodeSubtitle(state)
+                && !state.SubtitleStream.IsTextSubtitleStream
+                && !string.Equals(state.SubtitleStream.Codec, "DVBSUB", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
