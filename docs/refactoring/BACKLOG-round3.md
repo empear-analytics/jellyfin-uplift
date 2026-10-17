@@ -133,7 +133,7 @@ Update as tasks land.
 | R3-45 | 9.09 | - | not started |
 | R3-46 | 9.09 | - | not started |
 | R3-47 | 9.38 | - | not started |
-| R3-48 | 9.38 | - | not started |
+| R3-48 | 9.38 | 9.38 | Sonnet. No applicable step: the Complex Conditional in OrderViews declares a pattern variable (`i is UserView view`) that the code after the condition uses (not covered); GetUserView has 6 arguments (public, no recipe). Candidate: Recipe P for a pattern variable used afterwards |
 | R3-49 | 9.38 | - | not started |
 | R3-50 | 9.38 | - | not started |
 | R3-51 | 9.38 | - | not started |
