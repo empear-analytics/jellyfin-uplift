@@ -848,24 +848,44 @@ namespace MediaBrowser.Controller.MediaEncoding
         private bool GetWaFori915Hang(EncodingJobInfo state, EncodingOptions encodingOptions, bool enableWaFori915Hang)
         {
             var ver = Environment.OSVersion.Version;
-            var isFixedKernel60 = ver.Major == 6 && ver.Minor == 0 && ver >= _minFixedKernel60i915Hang;
-            var isUnaffectedKernel = ver < _minKerneli915Hang || ver > _maxKerneli915Hang;
+            var isFixedKernel60 = IsFixedKernel60i915(ver);
+            var isUnaffectedKernel = IsKernelUnaffectedByI915Hang(ver);
 
             if (!(isUnaffectedKernel || isFixedKernel60))
             {
                 var vidDecoder = GetHardwareVideoDecoder(state, encodingOptions) ?? string.Empty;
-                var isIntelDecoder = vidDecoder.Contains("qsv", StringComparison.OrdinalIgnoreCase)
-                                     || vidDecoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
-                var doOclTonemap = _mediaEncoder.SupportsHwaccel("qsv")
-                    && IsVaapiSupported(state)
-                    && IsOpenclFullSupported()
-                    && !IsIntelVppTonemapAvailable(state, encodingOptions)
-                    && IsHwTonemapAvailable(state, encodingOptions);
+                var isIntelDecoder = IsIntelHwDecoder(vidDecoder);
+                var doOclTonemap = NeedsQsvOclTonemap(state, encodingOptions);
 
                 enableWaFori915Hang = isIntelDecoder && doOclTonemap;
             }
 
             return enableWaFori915Hang;
+        }
+
+        private bool IsFixedKernel60i915(Version ver)
+        {
+            return ver.Major == 6 && ver.Minor == 0 && ver >= _minFixedKernel60i915Hang;
+        }
+
+        private bool IsKernelUnaffectedByI915Hang(Version ver)
+        {
+            return ver < _minKerneli915Hang || ver > _maxKerneli915Hang;
+        }
+
+        private static bool IsIntelHwDecoder(string vidDecoder)
+        {
+            return vidDecoder.Contains("qsv", StringComparison.OrdinalIgnoreCase)
+                || vidDecoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool NeedsQsvOclTonemap(EncodingJobInfo state, EncodingOptions encodingOptions)
+        {
+            return _mediaEncoder.SupportsHwaccel("qsv")
+                && IsVaapiSupported(state)
+                && IsOpenclFullSupported()
+                && !IsIntelVppTonemapAvailable(state, encodingOptions)
+                && IsHwTonemapAvailable(state, encodingOptions);
         }
 
         private static string AppendProfileParam(string param, string videoEncoder, string profile)
