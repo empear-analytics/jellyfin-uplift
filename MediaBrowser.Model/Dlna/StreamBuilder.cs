@@ -127,11 +127,7 @@ namespace MediaBrowser.Model.Dlna
 
             if (directPlayMethod is PlayMethod.DirectStream)
             {
-                var remuxContainer = item.TranscodingContainer ?? "ts";
-                string[] supportedHlsContainers = ["ts", "mp4"];
-                // If the container specified for the profile is an HLS supported container, use that container instead, overriding the preference
-                // The client should be responsible to ensure this container is compatible
-                remuxContainer = Array.Exists(supportedHlsContainers, element => string.Equals(element, directPlayInfo.Profile?.Container, StringComparison.OrdinalIgnoreCase)) ? directPlayInfo.Profile?.Container : remuxContainer;
+                var remuxContainer = GetAudioRemuxContainer(item, directPlayInfo);
                 bool codeIsSupported = IsRemuxAudioCodecSupported(item, remuxContainer, directPlayInfo.Profile);
 
                 if (codeIsSupported)
@@ -180,6 +176,16 @@ namespace MediaBrowser.Model.Dlna
 
             playlistItem.TranscodeReasons = transcodeReasons;
             return playlistItem;
+        }
+
+        private static string? GetAudioRemuxContainer(MediaSourceInfo item, (DirectPlayProfile? Profile, PlayMethod? PlayMethod, TranscodeReason TranscodeReasons) directPlayInfo)
+        {
+            var remuxContainer = item.TranscodingContainer ?? "ts";
+            string[] supportedHlsContainers = ["ts", "mp4"];
+            // If the container specified for the profile is an HLS supported container, use that container instead, overriding the preference
+            // The client should be responsible to ensure this container is compatible
+            remuxContainer = Array.Exists(supportedHlsContainers, element => string.Equals(element, directPlayInfo.Profile?.Container, StringComparison.OrdinalIgnoreCase)) ? directPlayInfo.Profile?.Container : remuxContainer;
+            return remuxContainer;
         }
 
         private static bool IsRemuxAudioCodecSupported(MediaSourceInfo item, string? remuxContainer, DirectPlayProfile? directPlayProfile)
