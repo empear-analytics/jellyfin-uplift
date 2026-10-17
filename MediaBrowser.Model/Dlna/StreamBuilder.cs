@@ -290,16 +290,7 @@ namespace MediaBrowser.Model.Dlna
 
         private static IOrderedEnumerable<StreamInfo> SortMediaSources(List<StreamInfo> streams, long maxBitrate)
         {
-            return streams.OrderBy(i =>
-            {
-                // Nothing beats direct playing a file
-                if (i.PlayMethod == PlayMethod.DirectPlay && i.MediaSource?.Protocol == MediaProtocol.File)
-                {
-                    return 0;
-                }
-
-                return 1;
-            }).ThenBy(i =>
+            return streams.OrderBy(GetDirectPlayFileRank).ThenBy(i =>
             {
                 switch (i.PlayMethod)
                 {
@@ -319,18 +310,31 @@ namespace MediaBrowser.Model.Dlna
                     default:
                         return 1;
                 }
-            }).ThenBy(i =>
-            {
-                if (maxBitrate > 0)
-                {
-                    if (i.MediaSource?.Bitrate is not null)
-                    {
-                        return Math.Abs(i.MediaSource.Bitrate.Value - maxBitrate);
-                    }
-                }
+            }).ThenBy(i => GetBitrateDistance(i, maxBitrate)).ThenBy(streams.IndexOf);
+        }
 
+        private static int GetDirectPlayFileRank(StreamInfo i)
+        {
+            // Nothing beats direct playing a file
+            if (i.PlayMethod == PlayMethod.DirectPlay && i.MediaSource?.Protocol == MediaProtocol.File)
+            {
                 return 0;
-            }).ThenBy(streams.IndexOf);
+            }
+
+            return 1;
+        }
+
+        private static long GetBitrateDistance(StreamInfo i, long maxBitrate)
+        {
+            if (maxBitrate > 0)
+            {
+                if (i.MediaSource?.Bitrate is not null)
+                {
+                    return Math.Abs(i.MediaSource.Bitrate.Value - maxBitrate);
+                }
+            }
+
+            return 0;
         }
 
         private static TranscodeReason GetTranscodeReasonForFailedCondition(ProfileCondition condition)
