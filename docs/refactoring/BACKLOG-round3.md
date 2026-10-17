@@ -94,7 +94,7 @@ Update as tasks land.
 | R3-06 | 6.51 | - | not started |
 | R3-07 | 6.98 | - | not started |
 | R3-08 | 7.14 | 9.38 | Sonnet. Nine commits: eight rule-7 tails turned the 10-bump CanStreamCopyVideo into a chain of methods (the flattened chain is identical to the original method, line for line), one predicate; every step chosen by measuring each candidate tail alone. Left: Bumpy Road in CanCopyGivenRequestedProfile and CanCopyGivenRangeRotationSizeAndFrameRate (nested ifs that fall through), IsIncompatibleRangeType 5 arguments (no recipe). Candidates: merge nested ifs into one condition; Recipe G on those blocks |
-| R3-09 | 7.47 | - | not started |
+| R3-09 | 7.47 | 7.86 | Sonnet. Three commits, all Recipe P: nullable case 3 on GetHighestSubtitleScore, three predicates each in GetSubtitleProfile and GetExternalSubtitleProfile (each alone 7.73 to 7.81, together UP). Left: the two embedded-subtitle loops that return on some paths and fall through (not a tail), a block mixing continue and return, a tail extraction that would need 5 arguments (WORSE), Excess Arguments (7 and 6, no recipe) |
 | R3-10 | 7.54 | - | not started |
 | R3-11 | 7.57 | - | not started |
 | R3-12 | 7.71 | - | not started |
