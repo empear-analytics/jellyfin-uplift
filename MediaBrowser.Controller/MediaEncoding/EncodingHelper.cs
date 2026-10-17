@@ -4260,15 +4260,20 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isSwEncoder = !vidEncoder.Contains("nvenc", StringComparison.OrdinalIgnoreCase);
 
             // legacy cuvid pipeline(copy-back)
-            if ((isSwDecoder && isSwEncoder)
-                || !IsCudaFullSupported()
-                || !_mediaEncoder.SupportsFilter("alphasrc"))
+            if (UseLegacyCudaPipeline(isSwDecoder, isSwEncoder))
             {
                 return GetSwVidFilterChain(state, options, vidEncoder);
             }
 
             // preferred nvdec/cuvid + cuda filters + nvenc pipeline
             return GetNvidiaVidFiltersPrefered(state, options, vidDecoder, vidEncoder);
+        }
+
+        private bool UseLegacyCudaPipeline(bool isSwDecoder, bool isSwEncoder)
+        {
+            return (isSwDecoder && isSwEncoder)
+                || !IsCudaFullSupported()
+                || !_mediaEncoder.SupportsFilter("alphasrc");
         }
 
         public (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetNvidiaVidFiltersPrefered(
