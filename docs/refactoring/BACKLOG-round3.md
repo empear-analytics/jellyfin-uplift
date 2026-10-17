@@ -93,7 +93,7 @@ Update as tasks land.
 | R3-05 | 6.47 | - | not started |
 | R3-06 | 6.51 | - | not started |
 | R3-07 | 6.98 | - | not started |
-| R3-08 | 7.14 | - | not started |
+| R3-08 | 7.14 | 9.38 | Sonnet. Nine commits: eight rule-7 tails turned the 10-bump CanStreamCopyVideo into a chain of methods (the flattened chain is identical to the original method, line for line), one predicate; every step chosen by measuring each candidate tail alone. Left: Bumpy Road in CanCopyGivenRequestedProfile and CanCopyGivenRangeRotationSizeAndFrameRate (nested ifs that fall through), IsIncompatibleRangeType 5 arguments (no recipe). Candidates: merge nested ifs into one condition; Recipe G on those blocks |
 | R3-09 | 7.47 | - | not started |
 | R3-10 | 7.54 | - | not started |
 | R3-11 | 7.57 | - | not started |
