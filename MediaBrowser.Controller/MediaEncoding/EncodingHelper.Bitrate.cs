@@ -74,15 +74,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 if (bitrate.HasValue)
                 {
-                    var inputVideoCodec = videoStream.Codec;
-                    bitrate = GetBitDepthCompensatedBitrate(bitrate.Value, videoStream, 8);
-                    bitrate = ScaleBitrate(bitrate.Value, inputVideoCodec, outputVideoCodec);
-
-                    // If a max bitrate was requested, don't let the scaled bitrate exceed it
-                    if (request.VideoBitRate.HasValue)
-                    {
-                        bitrate = Math.Min(bitrate.Value, request.VideoBitRate.Value);
-                    }
+                    bitrate = GetCompensatedBitrate(request, videoStream, outputVideoCodec, bitrate);
                 }
             }
 
@@ -96,6 +88,21 @@ namespace MediaBrowser.Controller.MediaEncoding
             // sources that bypass the LiveTV pipeline are not covered by it.
             const int MaxSaneBitrate = 400_000_000; // 400 Mbps
             return Math.Min(bitrate ?? 0, MaxSaneBitrate);
+        }
+
+        private static int? GetCompensatedBitrate(BaseEncodingJobOptions request, MediaStream videoStream, string outputVideoCodec, int? bitrate)
+        {
+            var inputVideoCodec = videoStream.Codec;
+            bitrate = GetBitDepthCompensatedBitrate(bitrate.Value, videoStream, 8);
+            bitrate = ScaleBitrate(bitrate.Value, inputVideoCodec, outputVideoCodec);
+
+            // If a max bitrate was requested, don't let the scaled bitrate exceed it
+            if (request.VideoBitRate.HasValue)
+            {
+                bitrate = Math.Min(bitrate.Value, request.VideoBitRate.Value);
+            }
+
+            return bitrate;
         }
 
         private static bool ShouldCapToSourceBitrate(bool isUpscaling, int? bitrate, MediaStream videoStream)
