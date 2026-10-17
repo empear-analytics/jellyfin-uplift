@@ -64,7 +64,7 @@ Update as tasks land.
 | R2-03 | 5.26 | 8.03 | split into 13 files (new files 7.82 to 10.00; Extras 7.82, Deletion, Episodes, Views 9.09, the rest 9.38 to 10.00); every grouping that clears Number of Functions brings Low Cohesion; FindExtras blocks call local functions; mapping switches; CS8629 on properties of a parameter; Constructor Over-Injection (24); Excess Arguments (public) |
 | R2-04 | 6.46 | - | not started |
 | R2-05 | 6.93 | 7.80 | stopped at 7.80: ApplyVideoOutputSettings no longer flagged (nullable rule 2 unblocked three P steps); ApplyParam cc 56 to 35, the 34-case switch itself has no recipe; GetOutputFileExtension if-chains with early returns (rule 7 covers loops only); Excess Arguments (GetStreamingState 11) |
-| R2-06 | 7.35 | - | not started |
+| R2-06 | 7.35 | 7.35 | held for the campaign owner: the only UP step (7.57, commit 2100ed372a on task/R2-06) merges CompareInt and CompareDouble into a generic Compare<T> with generic-math constraints, which Recipe D (differ by a single value) does not cover; the rest has no recipe (flat 20-case switch, near-miss copies differing in two places, public argument lists) |
 | R2-07 | 7.47 | - | not started |
 | R2-08 | 7.78 | - | not started |
 | R2-09 | 7.78 | - | not started |
