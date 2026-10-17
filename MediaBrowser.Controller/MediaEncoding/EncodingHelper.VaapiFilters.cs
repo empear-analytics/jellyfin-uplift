@@ -750,17 +750,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (NeedsHwToOpenclMapping(doOclTonemap, isVaapiDecoder))
             {
-                if (isi965Driver)
-                {
-                    // map from vaapi to opencl via vaapi-opencl interop(Intel only).
-                    mainFilters.Add("hwmap=derive_device=opencl");
-                }
-                else
-                {
-                    mainFilters.Add("hwdownload");
-                    mainFilters.Add("format=p010le");
-                    mainFilters.Add("hwupload=derive_device=opencl");
-                }
+                AddLimitedVaapiToOpenclMapping(mainFilters, isi965Driver);
             }
 
             // ocl tonemap
@@ -772,13 +762,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (NeedsVaapiReverseMapping(doOclTonemap, isVaInVaOut))
             {
-                if (isi965Driver)
-                {
-                    // OUTPUT vaapi(nv12) surface(vram)
-                    // reverse-mapping via vaapi-opencl interop.
-                    mainFilters.Add("hwmap=derive_device=vaapi:reverse=1");
-                    mainFilters.Add("format=vaapi");
-                }
+                AddI965ReverseMapping(mainFilters, isi965Driver);
             }
 
             var memoryOutput = false;
@@ -838,6 +822,32 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static void AddLimitedVaapiToOpenclMapping(List<string> mainFilters, bool isi965Driver)
+        {
+            if (isi965Driver)
+            {
+                // map from vaapi to opencl via vaapi-opencl interop(Intel only).
+                mainFilters.Add("hwmap=derive_device=opencl");
+            }
+            else
+            {
+                mainFilters.Add("hwdownload");
+                mainFilters.Add("format=p010le");
+                mainFilters.Add("hwupload=derive_device=opencl");
+            }
+        }
+
+        private static void AddI965ReverseMapping(List<string> mainFilters, bool isi965Driver)
+        {
+            if (isi965Driver)
+            {
+                // OUTPUT vaapi(nv12) surface(vram)
+                // reverse-mapping via vaapi-opencl interop.
+                mainFilters.Add("hwmap=derive_device=vaapi:reverse=1");
+                mainFilters.Add("format=vaapi");
+            }
         }
     }
 }
