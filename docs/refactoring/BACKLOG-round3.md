@@ -100,7 +100,7 @@ Update as tasks land.
 | R3-12 | 7.71 | - | not started |
 | R3-13 | 7.78 | 8.03 | Sonnet. One step: GetPathProtocol tail extracted with Recipe E rule 7 (cc 9 cleared); the rest has no recipe (public argument lists, Constructor Over-Injection (13), Low Cohesion, Primitive Obsession) |
 | R3-14 | 7.79 | - | not started |
-| R3-15 | 7.80 | - | not started |
+| R3-15 | 7.80 | 8.37 | Sonnet. Two commits: GetOutputFileExtension tails extracted with Recipe E rule 7 (GetCodecExtension, GetContainerExtension); cleared Overall Code Complexity. Left: GetCodecExtension if-chains that fall through (not a tail), ApplyParam 34-case switch (cc 35), Excess Arguments (GetStreamingState 11) |
 | R3-16 | 7.81 | - | not started |
 | R3-17 | 7.82 | - | not started |
 | R3-18 | 7.98 | - | not started |
