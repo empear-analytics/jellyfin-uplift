@@ -202,15 +202,9 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 // d3d11va doesn't support dynamic pool size, use vpp filter ctx to relay
                 // to prevent encoder async and bframes from exhausting the decoder pool.
-                if (NeedsVppPassthrough(hwScaleFilter, isD3d11vaDecoder))
-                {
-                    hwScaleFilter += ":passthrough=0";
-                }
+                hwScaleFilter = AppendVppPassthroughOption(hwScaleFilter, isD3d11vaDecoder);
 
-                if (NeedsVppTransposeOption(hwScaleFilter, doVppTranspose))
-                {
-                    hwScaleFilter += $":transpose={transposeDir}";
-                }
+                hwScaleFilter = AppendVppTransposeOption(hwScaleFilter, doVppTranspose, transposeDir);
 
                 if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
                 {
@@ -235,16 +229,10 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add(hwScaleFilter);
 
                 // hw tonemap(w/ procamp)
-                if (NeedsTwoPassVppTonemap(doVppTonemap, twoPassVppTonemap))
-                {
-                    mainFilters.Add("vpp_qsv=tonemap=1:format=nv12:async_depth=2");
-                }
+                AddTwoPassVppTonemapFilter(mainFilters, doVppTonemap, twoPassVppTonemap);
 
                 // force bt709 just in case vpp tonemap is not triggered or using MSDK instead of VPL.
-                if (doVppTonemap)
-                {
-                    mainFilters.Add(GetOverwriteColorPropertiesParam(state, false));
-                }
+                AddBt709OverwriteFilter(state, mainFilters, doVppTonemap);
             }
 
             AddQsvToOpenclMapping(mainFilters, doOclTonemap, isHwDecoder);
@@ -406,6 +394,42 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // reverse-mapping via qsv(d3d11)-opencl interop.
                 mainFilters.Add("hwmap=derive_device=qsv:mode=write:reverse=1");
                 mainFilters.Add("format=qsv");
+            }
+        }
+
+        private static string AppendVppPassthroughOption(string hwScaleFilter, bool isD3d11vaDecoder)
+        {
+            if (NeedsVppPassthrough(hwScaleFilter, isD3d11vaDecoder))
+            {
+                hwScaleFilter += ":passthrough=0";
+            }
+
+            return hwScaleFilter;
+        }
+
+        private static string AppendVppTransposeOption(string hwScaleFilter, bool doVppTranspose, string transposeDir)
+        {
+            if (NeedsVppTransposeOption(hwScaleFilter, doVppTranspose))
+            {
+                hwScaleFilter += $":transpose={transposeDir}";
+            }
+
+            return hwScaleFilter;
+        }
+
+        private static void AddTwoPassVppTonemapFilter(List<string> mainFilters, bool doVppTonemap, bool twoPassVppTonemap)
+        {
+            if (NeedsTwoPassVppTonemap(doVppTonemap, twoPassVppTonemap))
+            {
+                mainFilters.Add("vpp_qsv=tonemap=1:format=nv12:async_depth=2");
+            }
+        }
+
+        private void AddBt709OverwriteFilter(EncodingJobInfo state, List<string> mainFilters, bool doVppTonemap)
+        {
+            if (doVppTonemap)
+            {
+                mainFilters.Add(GetOverwriteColorPropertiesParam(state, false));
             }
         }
 
