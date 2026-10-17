@@ -63,7 +63,7 @@ Update as tasks land.
 | R2-02 | 4.14 | 4.33 | stopped at 4.33: any 4th extraction from ApplyTranscodingConditions brings Code Duplication, Overall Code Complexity and Primitive Obsession together (DOWN); G DOWN; qualifier gating if/else with `continue` and nested EqualsAny ifs have no recipe; S not applicable (no Number of Functions smell); Low Cohesion; Excess Arguments |
 | R2-03 | 5.26 | 8.03 | split into 13 files (new files 7.82 to 10.00; Extras 7.82, Deletion, Episodes, Views 9.09, the rest 9.38 to 10.00); every grouping that clears Number of Functions brings Low Cohesion; FindExtras blocks call local functions; mapping switches; CS8629 on properties of a parameter; Constructor Over-Injection (24); Excess Arguments (public) |
 | R2-04 | 6.46 | - | not started |
-| R2-05 | 6.93 | - | not started |
+| R2-05 | 6.93 | 7.80 | stopped at 7.80: ApplyVideoOutputSettings no longer flagged (nullable rule 2 unblocked three P steps); ApplyParam cc 56 to 35, the 34-case switch itself has no recipe; GetOutputFileExtension if-chains with early returns (rule 7 covers loops only); Excess Arguments (GetStreamingState 11) |
 | R2-06 | 7.35 | - | not started |
 | R2-07 | 7.47 | - | not started |
 | R2-08 | 7.78 | - | not started |
