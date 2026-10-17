@@ -290,9 +290,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             var doToneMap = IsSwTonemapAvailable(state, options);
             var requireDoviReshaping = doToneMap && state.VideoStream.VideoRangeType == VideoRangeType.DOVI;
 
-            var hasSubs = state.SubtitleStream is not null && ShouldEncodeSubtitle(state);
-            var hasTextSubs = hasSubs && state.SubtitleStream.IsTextSubtitleStream;
-            var hasGraphicalSubs = hasSubs && !state.SubtitleStream.IsTextSubtitleStream;
+            var hasSubs = HasSubtitlesToEncode(state);
+            var hasTextSubs = HasTextSubtitles(state, hasSubs);
+            var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
 
             var rotation = state.VideoStream?.Rotation ?? 0;
             var swapWAndH = Math.Abs(rotation) == 90;
@@ -401,9 +401,9 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return string.Empty;
             }
 
-            var hasSubs = state.SubtitleStream is not null && ShouldEncodeSubtitle(state);
-            var hasTextSubs = hasSubs && state.SubtitleStream.IsTextSubtitleStream;
-            var hasGraphicalSubs = hasSubs && !state.SubtitleStream.IsTextSubtitleStream;
+            var hasSubs = HasSubtitlesToEncode(state);
+            var hasTextSubs = HasTextSubtitles(state, hasSubs);
+            var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
 
             List<string> mainFilters;
             List<string> subFilters;
