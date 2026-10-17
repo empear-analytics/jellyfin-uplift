@@ -527,16 +527,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isQsvInQsvOut = isHwDecoder && isQsvEncoder;
 
             var doVaVppTonemap = IsIntelVppTonemapAvailable(state, options);
-            var doOclTonemap = !doVaVppTonemap && IsHwTonemapAvailable(state, options);
+            var doOclTonemap = NeedsOclTonemap(state, options, doVaVppTonemap);
             var doTonemap = doVaVppTonemap || doOclTonemap;
             var doDeintH2645 = IsDeinterlaceAvailable(state);
 
-            var hasSubs = state.SubtitleStream is not null && ShouldEncodeSubtitle(state);
-            var hasTextSubs = hasSubs && state.SubtitleStream.IsTextSubtitleStream;
-            var hasGraphicalSubs = hasSubs && !state.SubtitleStream.IsTextSubtitleStream;
-            var hasAssSubs = hasSubs
-                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+            var hasSubs = HasSubtitlesToEncode(state);
+            var hasTextSubs = HasTextSubtitles(state, hasSubs);
+            var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
+            var hasAssSubs = HasAssSubtitles(state, hasSubs);
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
@@ -556,19 +554,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // INPUT sw surface(memory)
                 // sw deint
-                if (doDeintH2645)
-                {
-                    var swDeintFilter = GetSwDeinterlaceFilter(state, options);
-                    mainFilters.Add(swDeintFilter);
-                }
+                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 var outFormat = doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-                if (isMjpegEncoder && !doOclTonemap)
-                {
-                    // sw decoder + hw mjpeg encoder
-                    swScaleFilter = string.IsNullOrEmpty(swScaleFilter) ? "scale=out_range=pc" : $"{swScaleFilter}:out_range=pc";
-                }
+                swScaleFilter = ApplyMjpegFullRangeSwScale(swScaleFilter, isMjpegEncoder, doOclTonemap);
 
                 // sw scale
                 mainFilters.Add(swScaleFilter);
@@ -577,19 +567,14 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // keep video at memory except ocl tonemap,
                 // since the overhead caused by hwupload >>> using sw filter.
                 // sw => hw
-                if (doOclTonemap)
-                {
-                    mainFilters.Add("hwupload=derive_device=opencl");
-                }
+                AddOpenclHwupload(mainFilters, doOclTonemap);
             }
             else if (isVaapiDecoder || isQsvDecoder)
             {
                 var hwFilterSuffix = isVaapiDecoder ? "vaapi" : "qsv";
                 var isRext = IsVideoStreamHevcRext(state);
-                var doVppFullRangeOut = isMjpegEncoder
-                    && _mediaEncoder.EncoderVersion >= _minFFmpegQsvVppOutRangeOption;
-                var doVppScaleModeHq = isMjpegEncoder
-                    && _mediaEncoder.EncoderVersion >= _minFFmpegQsvVppScaleModeOption;
+                var doVppFullRangeOut = CanDoQsvVppFullRangeOut(isMjpegEncoder);
+                var doVppScaleModeHq = CanDoQsvVppScaleModeHq(isMjpegEncoder);
 
                 // INPUT vaapi/qsv surface(vram)
                 // hw deint
@@ -615,7 +600,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     hwScaleFilter += $":transpose={transposeDir}";
                 }
 
-                if (!string.IsNullOrEmpty(hwScaleFilter) && isMjpegEncoder)
+                if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
                 {
                     hwScaleFilter += ((isQsvDecoder && !doVppFullRangeOut) || doOclTonemap) ? string.Empty : ":out_range=pc";
                     hwScaleFilter += isQsvDecoder ? (doVppScaleModeHq ? ":scale_mode=hq" : string.Empty) : ":mode=hq";
@@ -652,7 +637,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (doOclTonemap && isHwDecoder)
+            if (NeedsHwToOpenclMapping(doOclTonemap, isHwDecoder))
             {
                 // map from qsv to opencl via qsv(vaapi)-opencl interop.
                 mainFilters.Add("hwmap=derive_device=opencl:mode=read");
@@ -680,19 +665,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT nv12 surface(memory)
-            if (isSwDecoder && isQsvEncoder)
+            if (IsSwDecodeToQsvEncode(isSwDecoder, isQsvEncoder))
             {
                 memoryOutput = true;
             }
 
             if (memoryOutput)
             {
-                // text subtitles
-                if (hasTextSubs)
-                {
-                    var textSubtitlesFilter = GetTextSubtitlesFilter(state, false, false);
-                    mainFilters.Add(textSubtitlesFilter);
-                }
+                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
             }
 
             if (isQsvInQsvOut)
@@ -743,7 +723,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     subFilters.Add("hwupload=derive_device=qsv:extra_hw_frames=64");
 
                     var (overlayW, overlayH) = GetFixedOutputSize(swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                    var overlaySize = (overlayW.HasValue && overlayH.HasValue)
+                    var overlaySize = HasFixedOverlaySize(overlayW, overlayH)
                         ? $":w={overlayW.Value}:h={overlayH.Value}"
                         : string.Empty;
                     var overlayQsvFilter = string.Format(
