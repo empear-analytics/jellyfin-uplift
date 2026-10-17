@@ -694,7 +694,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
 
             var rotation = state.VideoStream?.Rotation ?? 0;
-            var swapWAndH = Math.Abs(rotation) == 90 && isSwDecoder;
+            var swapWAndH = NeedsSwSwapWAndH(rotation, isSwDecoder);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
@@ -766,10 +766,10 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             var memoryOutput = false;
-            var isUploadForOclTonemap = doOclTonemap && (isSwDecoder || (isVaapiDecoder && !isi965Driver));
+            var isUploadForOclTonemap = NeedsLimitedUploadForOclTonemap(doOclTonemap, isSwDecoder, isVaapiDecoder, isi965Driver);
             var isHwmapNotUsable = hasGraphicalSubs || isUploadForOclTonemap;
-            var isHwmapForSubs = hasSubs && isVaapiDecoder;
-            var isHwUnmapForTextSubs = hasTextSubs && isVaInVaOut && !isUploadForOclTonemap;
+            var isHwmapForSubs = NeedsHwmapForSubs(hasSubs, isVaapiDecoder);
+            var isHwUnmapForTextSubs = NeedsHwUnmapForTextSubs(hasTextSubs, isVaInVaOut, isUploadForOclTonemap);
             if (NeedsMemoryOutput(isVaapiDecoder, isSwEncoder, isUploadForOclTonemap) || isHwmapForSubs)
             {
                 memoryOutput = true;
@@ -822,6 +822,26 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool NeedsLimitedUploadForOclTonemap(bool doOclTonemap, bool isSwDecoder, bool isVaapiDecoder, bool isi965Driver)
+        {
+            return doOclTonemap && (isSwDecoder || (isVaapiDecoder && !isi965Driver));
+        }
+
+        private static bool NeedsHwUnmapForTextSubs(bool hasTextSubs, bool isVaInVaOut, bool isUploadForOclTonemap)
+        {
+            return hasTextSubs && isVaInVaOut && !isUploadForOclTonemap;
+        }
+
+        private static bool NeedsHwmapForSubs(bool hasSubs, bool isVaapiDecoder)
+        {
+            return hasSubs && isVaapiDecoder;
+        }
+
+        private static bool NeedsSwSwapWAndH(int rotation, bool isSwDecoder)
+        {
+            return Math.Abs(rotation) == 90 && isSwDecoder;
         }
 
         private static void AddLimitedVaapiToOpenclMapping(List<string> mainFilters, bool isi965Driver)
