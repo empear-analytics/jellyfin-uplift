@@ -7760,9 +7760,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             state.RemoteHttpHeaders = mediaSource.RequiredHttpHeaders;
             state.ReadInputAtNativeFramerate = mediaSource.ReadAtNativeFramerate;
 
-            if ((state.ReadInputAtNativeFramerate && !state.IsSegmentedLiveStream)
-                || (mediaSource.Protocol == MediaProtocol.File
-                && string.Equals(mediaSource.Container, "wtv", StringComparison.OrdinalIgnoreCase)))
+            if (NeedsInputSync(state, mediaSource))
             {
                 state.InputVideoSync = "-1";
                 state.InputAudioSync = "1";
@@ -7814,7 +7812,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var request = state.BaseRequest;
             var supportedAudioCodecs = state.SupportedAudioCodecs;
-            if (request is not null && supportedAudioCodecs is not null && supportedAudioCodecs.Length > 0)
+            if (HasSupportedCodecs(request, supportedAudioCodecs))
             {
                 var supportedAudioCodecsList = supportedAudioCodecs.ToList();
 
@@ -7837,6 +7835,18 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 request.VideoCodec = state.SupportedVideoCodecs.FirstOrDefault();
             }
+        }
+
+        private static bool NeedsInputSync(EncodingJobInfo state, MediaSourceInfo mediaSource)
+        {
+            return (state.ReadInputAtNativeFramerate && !state.IsSegmentedLiveStream)
+                || (mediaSource.Protocol == MediaProtocol.File
+                && string.Equals(mediaSource.Container, "wtv", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool HasSupportedCodecs(BaseEncodingJobOptions request, string[] supportedCodecs)
+        {
+            return request is not null && supportedCodecs is not null && supportedCodecs.Length > 0;
         }
 
         private void ShiftAudioCodecsIfNeeded(List<string> audioCodecs, MediaStream audioStream)
