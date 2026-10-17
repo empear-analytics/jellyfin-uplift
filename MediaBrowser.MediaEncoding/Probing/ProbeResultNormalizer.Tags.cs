@@ -27,26 +27,17 @@ namespace MediaBrowser.MediaEncoding.Probing
             var people = new List<BaseItemPerson>();
             if (tags.TryGetValue("composer", out var composer) && !string.IsNullOrWhiteSpace(composer))
             {
-                foreach (var person in Split(composer, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Composer });
-                }
+                AddSplitPeople(people, composer, PersonKind.Composer);
             }
 
             if (tags.TryGetValue("conductor", out var conductor) && !string.IsNullOrWhiteSpace(conductor))
             {
-                foreach (var person in Split(conductor, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Conductor });
-                }
+                AddSplitPeople(people, conductor, PersonKind.Conductor);
             }
 
             if (tags.TryGetValue("lyricist", out var lyricist) && !string.IsNullOrWhiteSpace(lyricist))
             {
-                foreach (var person in Split(lyricist, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Lyricist });
-                }
+                AddSplitPeople(people, lyricist, PersonKind.Lyricist);
             }
 
             AddPerformers(people, tags);
@@ -54,42 +45,27 @@ namespace MediaBrowser.MediaEncoding.Probing
             // In cases where there isn't sufficient information as to which role a writer performed on a recording, tagging software uses the "writer" tag.
             if (tags.TryGetValue("writer", out var writer) && !string.IsNullOrWhiteSpace(writer))
             {
-                foreach (var person in Split(writer, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Writer });
-                }
+                AddSplitPeople(people, writer, PersonKind.Writer);
             }
 
             if (tags.TryGetValue("arranger", out var arranger) && !string.IsNullOrWhiteSpace(arranger))
             {
-                foreach (var person in Split(arranger, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Arranger });
-                }
+                AddSplitPeople(people, arranger, PersonKind.Arranger);
             }
 
             if (tags.TryGetValue("engineer", out var engineer) && !string.IsNullOrWhiteSpace(engineer))
             {
-                foreach (var person in Split(engineer, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Engineer });
-                }
+                AddSplitPeople(people, engineer, PersonKind.Engineer);
             }
 
             if (tags.TryGetValue("mixer", out var mixer) && !string.IsNullOrWhiteSpace(mixer))
             {
-                foreach (var person in Split(mixer, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Mixer });
-                }
+                AddSplitPeople(people, mixer, PersonKind.Mixer);
             }
 
             if (tags.TryGetValue("remixer", out var remixer) && !string.IsNullOrWhiteSpace(remixer))
             {
-                foreach (var person in Split(remixer, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Remixer });
-                }
+                AddSplitPeople(people, remixer, PersonKind.Remixer);
             }
 
             audio.People = people.ToArray();
@@ -109,6 +85,14 @@ namespace MediaBrowser.MediaEncoding.Probing
             FetchStudios(audio, tags, "label");
 
             SetMusicBrainzIds(audio, tags);
+        }
+
+        private void AddSplitPeople(List<BaseItemPerson> people, string names, PersonKind kind)
+        {
+            foreach (var person in Split(names, false))
+            {
+                people.Add(new BaseItemPerson { Name = person, Type = kind });
+            }
         }
 
         private void AddPerformers(List<BaseItemPerson> people, Dictionary<string, string> tags)
