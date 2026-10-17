@@ -118,7 +118,7 @@ Update as tasks land.
 | R3-30 | 8.45 | - | not started |
 | R3-31 | 8.47 | - | not started |
 | R3-32 | 8.62 | - | not started |
-| R3-33 | 8.62 | - | not started |
+| R3-33 | 8.62 | 8.67 | Sonnet. One commit (rule 9: the LogDebug call with `??` to LogTranscodeResult). The file is at a cliff: a 7th method brings Overall Code Complexity and Code Duplication; six candidate steps all DOWN alone, all UP (8.72 to 8.75) after a split that is itself FLAT. Excess Arguments (BuildStreamVideoItem 9, no recipe) |
 | R3-34 | 8.64 | - | not started |
 | R3-35 | 8.67 | - | not started |
 | R3-36 | 8.69 | - | not started |

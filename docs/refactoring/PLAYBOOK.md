@@ -443,6 +443,18 @@ on those file-level smells.
 (R2-03). Try at most two groupings; keep the first one under which the original file scores
 `UP`. If none does, revert and report the file as blocked.
 
+**A split that is `FLAT` may be kept when it enables a step.** A file can sit just below a
+file-level smell (*Overall Code Complexity*, *Code Duplication* that the extra methods would
+reveal, *Primitive Obsession*): then a split scores `FLAT`, and so does every extraction before it,
+but after the split the extractions score `UP`. Keep such a split (never one that scores `DOWN`)
+only as a pair: apply the split, then the best step on top of it, and measure both against the score
+**before the split**. If the pair scores `UP` against that score, commit the split first
+(commit message: `split ... (FLAT, enables <step>)`), then the step, each after its own four checks
+(the guard `--together` for the split). If the step scores `UP` only against the split's own score
+and not against the score before the split, revert both. The split moves members only and widens
+nothing, so this exception adds no behaviour risk. *Primitive Obsession* counts as a file-level smell
+here, like *Overall Code Complexity*.
+
 **After the split, keep going.** Work the remaining steps, and retry the steps that were
 `FLAT`, `DOWN` or `WORSE` before the split, on whichever file now holds each method. Measure
 each later step on the file it changes.
@@ -553,3 +565,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-17 | Recipe D: blocks or loops that differ in a single constant or enum member may be merged into one helper taking that value, even when CodeScene reports no *Code Duplication*. | R2-11 `ProcessPairs`: three `foreach` loops that differ only in `PersonKind`. Adopted by the campaign owner. |
 | 2026-10-17 | Choosing the next step: a step that reveals *Large Method* is `WORSE`; do not retry, report the method as blocked. | R2-04 `GetVideoDirectPlayProfile`: reducing it from a Complex Method showed Large Method (81 lines), 7.79 to 8.29 was WORSE. |
 | 2026-10-17 | Rule 1: a single recipe may be applied the same way to several methods of one file in one commit when each application alone is `FLAT` and together they score `UP`, as Recipe D already could. | R3-22 `DynamicHlsHelper.Codecs`: nullable case 3 on `GetOutputVideoCodecLevel` and on `GetOutputAv1BitDepth` was `FLAT` each (the guard terms stay behind), `UP` together (8.54 to 9.09); the agent did not commit it because the rule allowed multi-method commits only for Recipe D. Same shape as R17 `EncodingJobInfo` (one of three methods per commit FLAT, all three UP). Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
+| 2026-10-17 | Recipe S: a split that scores `FLAT` (never `DOWN`) is kept as a pair with the step it enables, when the pair scores `UP` against the score before the split; *Primitive Obsession* counts as a file-level smell for this. | R3-33 `StreamBuilder.VideoStream`: a split of small methods scored FLAT (8.67), and then six extractions that were DOWN before (7.70 to 7.73) scored UP (8.72 to 8.75). R3-27 `ProbeResultNormalizer`: a second split FLAT (8.54), with the predicate step on top 8.79 UP. Both agents correctly did not commit the pair under the old wording. Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
