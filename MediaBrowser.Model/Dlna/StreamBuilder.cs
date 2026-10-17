@@ -553,13 +553,13 @@ namespace MediaBrowser.Model.Dlna
             foreach (var profile in directPlayProfiles)
             {
                 // Check container type
-                if (profile.Type == mediaType && profile.SupportsContainer(item.Container))
+                if (SupportsMediaTypeAndContainer(profile, mediaType, item))
                 {
                     containerSupported = true;
 
-                    videoSupported = videoStream is null || profile.SupportsVideoCodec(videoStream.Codec);
+                    videoSupported = SupportsVideoStreamCodec(profile, videoStream);
 
-                    audioSupported = audioStream is null || profile.SupportsAudioCodec(audioStream.Codec);
+                    audioSupported = SupportsAudioStreamCodec(profile, audioStream);
 
                     if (videoSupported && audioSupported)
                     {
@@ -585,6 +585,21 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return reasons;
+        }
+
+        private static bool SupportsMediaTypeAndContainer(DirectPlayProfile profile, DlnaProfileType mediaType, MediaSourceInfo item)
+        {
+            return profile.Type == mediaType && profile.SupportsContainer(item.Container);
+        }
+
+        private static bool SupportsVideoStreamCodec(DirectPlayProfile profile, MediaStream? videoStream)
+        {
+            return videoStream is null || profile.SupportsVideoCodec(videoStream.Codec);
+        }
+
+        private static bool SupportsAudioStreamCodec(DirectPlayProfile profile, MediaStream audioStream)
+        {
+            return audioStream is null || profile.SupportsAudioCodec(audioStream.Codec);
         }
 
         private static void SetStreamInfoOptionsFromTranscodingProfile(MediaSourceInfo item, StreamInfo playlistItem, TranscodingProfile transcodingProfile)
