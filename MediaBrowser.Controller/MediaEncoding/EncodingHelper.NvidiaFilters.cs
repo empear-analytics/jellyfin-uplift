@@ -102,7 +102,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subH = state.SubtitleStream?.Height;
 
             var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+            var transposeDir = GetTransposeDirection(state, rotation);
             var doCuTranspose = !string.IsNullOrEmpty(transposeDir) && _mediaEncoder.SupportsFilter("transpose_cuda");
             var swapWAndH = NeedsVaapiSwapWAndH(rotation, isSwDecoder, isNvDecoder, doCuTranspose);
             var swpInW = swapWAndH ? inH : inW;
