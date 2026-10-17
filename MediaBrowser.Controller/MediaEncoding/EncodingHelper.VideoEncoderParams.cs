@@ -912,8 +912,7 @@ namespace MediaBrowser.Controller.MediaEncoding
         private string AppendLevelParam(string param, string videoEncoder, string level)
         {
             // libx264, QSV, AMF can adjust the given level to match the output.
-            if (string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase))
+            if (IsH264QsvOrLibX264Encoder(videoEncoder))
             {
                 param += " -level " + level;
             }
@@ -939,8 +938,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 param = AppendVaapiLevel(param, level);
             }
-            else if (string.Equals(videoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase)
-                     || string.Equals(videoEncoder, "hevc_rkmpp", StringComparison.OrdinalIgnoreCase))
+            else if (IsRkmppH26xEncoder(videoEncoder))
             {
                 param += " -level " + level;
             }
@@ -950,6 +948,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return param;
+        }
+
+        private static bool IsH264QsvOrLibX264Encoder(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsRkmppH26xEncoder(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoEncoder, "hevc_rkmpp", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string AppendHevcQsvLevel(string param, string level)
