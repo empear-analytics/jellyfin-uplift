@@ -293,7 +293,7 @@ public static class StreamingHelpers
             {
                 // Don't downscale the resolution if the width/height/MaxWidth/MaxHeight is not requested,
                 // and the requested video bitrate is greater than source video bitrate.
-                if (state.VideoStream.Width.HasValue || state.VideoStream.Height.HasValue)
+                if (HasSourceVideoDimensions(state))
                 {
                     state.VideoRequest.MaxWidth = state.VideoStream?.Width;
                     state.VideoRequest.MaxHeight = state.VideoStream?.Height;
@@ -322,6 +322,11 @@ public static class StreamingHelpers
         {
             state.OutputAudioCodec = state.SupportedAudioCodecs.Where(c => !EncodingHelper.LosslessAudioCodecs.Contains(c)).FirstOrDefault(mediaEncoder.CanEncodeToAudioCodec);
         }
+    }
+
+    private static bool HasSourceVideoDimensions(StreamState state)
+    {
+        return state.VideoStream.Width.HasValue || state.VideoStream.Height.HasValue;
     }
 
     private static bool IsVideoResolutionNotRequested(VideoRequestDto videoRequest)
