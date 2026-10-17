@@ -25,14 +25,7 @@ namespace MediaBrowser.MediaEncoding.Probing
         private void FetchFromItunesInfo(string xml, MediaInfo info)
         {
             // Make things simpler and strip out the dtd
-            var plistIndex = xml.IndexOf("<plist", StringComparison.OrdinalIgnoreCase);
-
-            if (plistIndex != -1)
-            {
-                xml = xml.Substring(plistIndex);
-            }
-
-            xml = "<?xml version=\"1.0\"?>" + xml;
+            xml = PrepareXmlForParsing(xml);
 
             // <?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n\t<key>cast</key>\n\t<array>\n\t\t<dict>\n\t\t\t<key>name</key>\n\t\t\t<string>Blender Foundation</string>\n\t\t</dict>\n\t\t<dict>\n\t\t\t<key>name</key>\n\t\t\t<string>Janus Bager Kristensen</string>\n\t\t</dict>\n\t</array>\n\t<key>directors</key>\n\t<array>\n\t\t<dict>\n\t\t\t<key>name</key>\n\t\t\t<string>Sacha Goedegebure</string>\n\t\t</dict>\n\t</array>\n\t<key>studio</key>\n\t<string>Blender Foundation</string>\n</dict>\n</plist>\n
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(xml)))
@@ -83,6 +76,19 @@ namespace MediaBrowser.MediaEncoding.Probing
                     // So we should not allow this to fail the entire probing operation
                 }
             }
+        }
+
+        private static string PrepareXmlForParsing(string xml)
+        {
+            var plistIndex = xml.IndexOf("<plist", StringComparison.OrdinalIgnoreCase);
+
+            if (plistIndex != -1)
+            {
+                xml = xml.Substring(plistIndex);
+            }
+
+            xml = "<?xml version=\"1.0\"?>" + xml;
+            return xml;
         }
 
         private void ReadFromDictNode(XmlReader reader, MediaInfo info)
