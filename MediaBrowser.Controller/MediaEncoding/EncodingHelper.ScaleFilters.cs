@@ -39,12 +39,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? requestedMaxWidth,
             int? requestedMaxHeight)
         {
-            if (!videoWidth.HasValue && !requestedWidth.HasValue)
+            if (IsDimensionUnknown(videoWidth, requestedWidth))
             {
                 return (null, null);
             }
 
-            if (!videoHeight.HasValue && !requestedHeight.HasValue)
+            if (IsDimensionUnknown(videoHeight, requestedHeight))
             {
                 return (null, null);
             }
@@ -71,6 +71,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             outputHeight = 2 * (outputHeight / 2);
 
             return (outputWidth, outputHeight);
+        }
+
+        private static bool IsDimensionUnknown(int? videoDimension, int? requestedDimension)
+        {
+            return !videoDimension.HasValue && !requestedDimension.HasValue;
         }
 
         public static bool IsScaleRatioSupported(
