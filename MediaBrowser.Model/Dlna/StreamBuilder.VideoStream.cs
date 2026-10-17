@@ -60,11 +60,7 @@ namespace MediaBrowser.Model.Dlna
 
             var directAudioStream = directAudioStreamSatisfied ? audioStreamWithSupportedCodec : null;
 
-            if (channelsExceedsLimit && playlistItem.TargetAudioStream is not null)
-            {
-                playlistItem.TranscodeReasons |= TranscodeReason.AudioChannelsNotSupported;
-                playlistItem.TargetAudioStream.Channels = playlistItem.TranscodingMaxAudioChannels;
-            }
+            ApplyAudioChannelLimit(playlistItem, channelsExceedsLimit);
 
             playlistItem.AudioCodecs = audioCodecs;
             if (directAudioStream is not null)
@@ -145,6 +141,15 @@ namespace MediaBrowser.Model.Dlna
         {
             int audioBitrate = GetAudioBitrate(options.GetMaxBitrate(true) ?? 0, playlistItem.TargetAudioCodec, audioStream, playlistItem);
             playlistItem.AudioBitrate = Math.Min(playlistItem.AudioBitrate ?? audioBitrate, audioBitrate);
+        }
+
+        private static void ApplyAudioChannelLimit(StreamInfo playlistItem, bool channelsExceedsLimit)
+        {
+            if (channelsExceedsLimit && playlistItem.TargetAudioStream is not null)
+            {
+                playlistItem.TranscodeReasons |= TranscodeReason.AudioChannelsNotSupported;
+                playlistItem.TargetAudioStream.Channels = playlistItem.TranscodingMaxAudioChannels;
+            }
         }
 
         private void LogTranscodeResult(MediaOptions options, MediaSourceInfo item, StreamInfo playlistItem, MediaStream? audioStream)
