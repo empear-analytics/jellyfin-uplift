@@ -136,10 +136,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 AddAmdOclHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 // hw transpose
-                if (doOclTranspose)
-                {
-                    mainFilters.Add($"transpose_opencl=dir={transposeDir}");
-                }
+                AddAmdOclTransposeFilter(mainFilters, doOclTranspose, transposeDir);
 
                 var outFormat = doOclTonemap ? string.Empty : "nv12";
                 var hwScaleFilter = GetHwScaleFilter("scale", "opencl", outFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);

@@ -79,5 +79,13 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add(deintFilter);
             }
         }
+
+        private static void AddAmdOclTransposeFilter(List<string> mainFilters, bool doOclTranspose, string transposeDir)
+        {
+            if (doOclTranspose)
+            {
+                mainFilters.Add($"transpose_opencl=dir={transposeDir}");
+            }
+        }
     }
 }
