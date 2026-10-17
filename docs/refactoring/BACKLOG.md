@@ -54,7 +54,7 @@ Update as tasks land.
 
 | Task | Baseline | Current | Status |
 | --- | --- | --- | --- |
-| R01 | 1.00 | - | not started |
+| R01 | 1.00 | 1.73 | stopped at 1.73 (51 of 80 steps; 49 UP steps were Recipe P or predicate reuse, Recipe E FLAT unless it removed deep nesting): GetHwaccelType E WORSE on "Number of Functions in a Single Module" (needs a split); early-return branches; P blocked by CS0177, `out` to an existing variable, pattern variables; Low Cohesion, Constructor Over-Injection (frozen), Primitive Obsession, Excess Arguments |
 | R02 | 1.65 | 6.46 | split into five files: TranscodingConditions 4.14 (ApplyTranscodingConditions, 27 bumps, every attempt DOWN or FLAT), Subtitles 7.47, AudioBitrate 8.28, VideoStream 8.62, Compatibility 9.09; seven FLAT steps scored UP after the split; GetTranscodeReasonForFailedCondition (flat switch, cc 28) and threshold chains, no recipe; conditionals blocked by CS8629; Excess Arguments throughout |
 | R03 | 2.03 | 5.26 | stopped at 5.26 (28 of 37 steps): remaining blocks call local functions, end in catch/continue or `throw;`, or differ in two values (UpdateEpisodeNumbers); mapping switches (GetExtraTypeNameKey); CS8629 blocks P; Constructor Over-Injection (24); Excess Arguments; Number of Functions in a Single Module (grows with every helper, not split) |
 | R04 | 2.18 | 8.41 | split early (Recipe S) once every E/P step scored DOWN on "Number of Functions in a Single Module"; split files .Itunes 7.98, .MediaStream 8.15, .Tags 8.22, .Video 8.67, no recipe applied after the split; Recipe P blocked by CS0177 (out variables assigned on some paths); Recipe G WORSE on three nested methods; GetMediaInfo 5 arguments (public) |
