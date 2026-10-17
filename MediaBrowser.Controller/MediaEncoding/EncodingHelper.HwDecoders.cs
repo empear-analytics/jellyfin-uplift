@@ -1087,19 +1087,19 @@ namespace MediaBrowser.Controller.MediaEncoding
                 if (IsAvcOrH264Codec(videoStream))
                 {
                     var accelType = GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
-                    return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
+                    return AppendAfbcRgaOption(accelType, isAfbcSupported);
                 }
 
                 if (IsHevcOrH265Codec(videoStream))
                 {
                     var accelType = GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
-                    return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
+                    return AppendAfbcRgaOption(accelType, isAfbcSupported);
                 }
 
                 if (string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
                 {
                     var accelType = GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
-                    return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
+                    return AppendAfbcRgaOption(accelType, isAfbcSupported);
                 }
 
                 if (string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
@@ -1132,6 +1132,11 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static bool IsRkmppBitstreamOnlyFormat(bool is10bitSwFormatsRkmpp, bool hwSurface)
         {
             return is10bitSwFormatsRkmpp && !hwSurface;
+        }
+
+        private static string AppendAfbcRgaOption(string accelType, bool isAfbcSupported)
+        {
+            return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
         }
 
         private static bool CanUseAfbcRga(string accelType, bool isAfbcSupported)
