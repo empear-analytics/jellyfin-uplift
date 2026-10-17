@@ -70,6 +70,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return false;
             }
 
+            return CanCopyGivenRequestedProfile(state, request, videoStream);
+        }
+
+        private bool CanCopyGivenRequestedProfile(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             var requestedProfiles = state.GetRequestedProfiles(videoStream.Codec);
 
             // If client is requesting a specific video profile, it must match the source
