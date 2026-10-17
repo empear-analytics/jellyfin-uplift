@@ -6304,9 +6304,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isSwEncoder = !vidEncoder.Contains("rkmpp", StringComparison.OrdinalIgnoreCase);
             var isRkmppOclSupported = isLinux && IsRkmppFullSupported() && IsOpenclFullSupported();
 
-            if ((isSwDecoder && isSwEncoder)
-                || !isRkmppOclSupported
-                || !_mediaEncoder.SupportsFilter("alphasrc"))
+            if (UseLegacyHwPipeline(isSwDecoder, isSwEncoder, isRkmppOclSupported))
             {
                 return GetSwVidFilterChain(state, options, vidEncoder);
             }
