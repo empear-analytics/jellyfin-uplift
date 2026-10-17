@@ -328,21 +328,19 @@ namespace MediaBrowser.Controller.MediaEncoding
                 {
                     if (IsHwaccelAvailable(isVaapiSupported, isCodecAvailable))
                     {
-                        return " -hwaccel vaapi" + (outputHwSurface ? " -hwaccel_output_format vaapi -noautorotate" + stripRotationDataArgs : string.Empty)
-                            + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + (isAv1 ? " -c:v av1" : string.Empty);
+                        return GetVaapiHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
                     }
 
                     if (IsHwaccelAvailable(isD3d11Supported, isCodecAvailable))
                     {
-                        return " -hwaccel d3d11va" + (outputHwSurface ? " -hwaccel_output_format d3d11 -noautorotate" + stripRotationDataArgs : string.Empty)
-                            + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + " -threads 2" + (isAv1 ? " -c:v av1" : string.Empty);
+                        return GetD3d11vaHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
                     }
                 }
                 else
                 {
                     if (IsHwaccelAvailable(isQsvSupported, isCodecAvailable))
                     {
-                        return " -hwaccel qsv" + (outputHwSurface ? " -hwaccel_output_format qsv -noautorotate" + stripRotationDataArgs : string.Empty);
+                        return GetQsvHwaccelOption(outputHwSurface, stripRotationDataArgs);
                     }
                 }
             }
@@ -355,12 +353,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                     if (options.EnableEnhancedNvdecDecoder)
                     {
                         // set -threads 1 to nvdec decoder explicitly since it doesn't implement threading support.
-                        return " -hwaccel cuda" + (outputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + stripRotationDataArgs : string.Empty)
-                            + (nvdecNoInternalCopy ? " -hwaccel_flags +unsafe_output" : string.Empty) + " -threads 1" + (isAv1 ? " -c:v av1" : string.Empty);
+                        return GetCudaNvdecHwaccelOption(outputHwSurface, stripRotationDataArgs, nvdecNoInternalCopy, isAv1);
                     }
 
                     // cuvid decoder doesn't have threading issue.
-                    return " -hwaccel cuda" + (outputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + stripRotationDataArgs : string.Empty);
+                    return GetCudaHwaccelOption(outputHwSurface, stripRotationDataArgs);
                 }
             }
 
@@ -369,31 +366,67 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 if (IsHwaccelAvailable(isD3d11Supported, isCodecAvailable))
                 {
-                    return " -hwaccel d3d11va" + (outputHwSurface ? " -hwaccel_output_format d3d11 -noautorotate" + stripRotationDataArgs : string.Empty)
-                        + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + " -threads 2" + (isAv1 ? " -c:v av1" : string.Empty);
+                    return GetD3d11vaHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
                 }
             }
 
             // Vaapi
             if (IsVaapiHwaccelUsable(hardwareAccelerationType, isVaapiSupported, isCodecAvailable))
             {
-                return " -hwaccel vaapi" + (outputHwSurface ? " -hwaccel_output_format vaapi -noautorotate" + stripRotationDataArgs : string.Empty)
-                    + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + (isAv1 ? " -c:v av1" : string.Empty);
+                return GetVaapiHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
             }
 
             // Apple videotoolbox
             if (IsVideotoolboxHwaccelUsable(hardwareAccelerationType, isVideotoolboxSupported, isCodecAvailable))
             {
-                return " -hwaccel videotoolbox" + (outputHwSurface ? " -hwaccel_output_format videotoolbox_vld" : string.Empty) + " -noautorotate" + stripRotationDataArgs;
+                return GetVideotoolboxHwaccelOption(outputHwSurface, stripRotationDataArgs);
             }
 
             // Rockchip rkmpp
             if (IsRkmppHwaccelUsable(hardwareAccelerationType, isRkmppSupported, isCodecAvailable))
             {
-                return " -hwaccel rkmpp" + (outputHwSurface ? " -hwaccel_output_format drm_prime -noautorotate" + stripRotationDataArgs : string.Empty);
+                return GetRkmppHwaccelOption(outputHwSurface, stripRotationDataArgs);
             }
 
             return null;
+        }
+
+        private static string GetVaapiHwaccelOption(bool outputHwSurface, string stripRotationDataArgs, bool profileMismatch, bool isAv1)
+        {
+            return " -hwaccel vaapi" + (outputHwSurface ? " -hwaccel_output_format vaapi -noautorotate" + stripRotationDataArgs : string.Empty)
+                + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + (isAv1 ? " -c:v av1" : string.Empty);
+        }
+
+        private static string GetD3d11vaHwaccelOption(bool outputHwSurface, string stripRotationDataArgs, bool profileMismatch, bool isAv1)
+        {
+            return " -hwaccel d3d11va" + (outputHwSurface ? " -hwaccel_output_format d3d11 -noautorotate" + stripRotationDataArgs : string.Empty)
+                + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + " -threads 2" + (isAv1 ? " -c:v av1" : string.Empty);
+        }
+
+        private static string GetQsvHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        {
+            return " -hwaccel qsv" + (outputHwSurface ? " -hwaccel_output_format qsv -noautorotate" + stripRotationDataArgs : string.Empty);
+        }
+
+        private static string GetCudaNvdecHwaccelOption(bool outputHwSurface, string stripRotationDataArgs, bool nvdecNoInternalCopy, bool isAv1)
+        {
+            return " -hwaccel cuda" + (outputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + stripRotationDataArgs : string.Empty)
+                + (nvdecNoInternalCopy ? " -hwaccel_flags +unsafe_output" : string.Empty) + " -threads 1" + (isAv1 ? " -c:v av1" : string.Empty);
+        }
+
+        private static string GetCudaHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        {
+            return " -hwaccel cuda" + (outputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + stripRotationDataArgs : string.Empty);
+        }
+
+        private static string GetVideotoolboxHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        {
+            return " -hwaccel videotoolbox" + (outputHwSurface ? " -hwaccel_output_format videotoolbox_vld" : string.Empty) + " -noautorotate" + stripRotationDataArgs;
+        }
+
+        private static string GetRkmppHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        {
+            return " -hwaccel rkmpp" + (outputHwSurface ? " -hwaccel_output_format drm_prime -noautorotate" + stripRotationDataArgs : string.Empty);
         }
 
         private static bool IsHwaccelAvailable(bool isHwaccelSupported, bool isCodecAvailable)
