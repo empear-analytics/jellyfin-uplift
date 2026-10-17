@@ -131,37 +131,6 @@ namespace MediaBrowser.Model.Dlna
             LogTranscodeResult(options, item, playlistItem, audioStream);
         }
 
-        private void ApplyAudioBitrateLimit(MediaOptions options, StreamInfo playlistItem, MediaStream? audioStream)
-        {
-            int audioBitrate = GetAudioBitrate(options.GetMaxBitrate(true) ?? 0, playlistItem.TargetAudioCodec, audioStream, playlistItem);
-            playlistItem.AudioBitrate = Math.Min(playlistItem.AudioBitrate ?? audioBitrate, audioBitrate);
-        }
-
-        private static void ApplyAudioChannelLimit(StreamInfo playlistItem, bool channelsExceedsLimit)
-        {
-            if (channelsExceedsLimit && playlistItem.TargetAudioStream is not null)
-            {
-                playlistItem.TranscodeReasons |= TranscodeReason.AudioChannelsNotSupported;
-                playlistItem.TargetAudioStream.Channels = playlistItem.TranscodingMaxAudioChannels;
-            }
-        }
-
-        private static void MarkUnsupportedVideoCodec(StreamInfo playlistItem, MediaStream? videoStream, List<string> videoCodecs)
-        {
-            if (videoStream is not null && !ContainerHelper.ContainsContainer(videoCodecs, false, videoStream.Codec))
-            {
-                playlistItem.TranscodeReasons |= TranscodeReason.VideoCodecNotSupported;
-            }
-        }
-
-        private static void MarkUnsupportedAudioCodec(StreamInfo playlistItem, MediaStream? audioStream, MediaStream? audioStreamWithSupportedCodec)
-        {
-            if (audioStream is not null && audioStreamWithSupportedCodec is null)
-            {
-                playlistItem.TranscodeReasons |= TranscodeReason.AudioCodecNotSupported;
-            }
-        }
-
         private void LogTranscodeResult(MediaOptions options, MediaSourceInfo item, StreamInfo playlistItem, MediaStream? audioStream)
         {
             _logger.LogDebug(
