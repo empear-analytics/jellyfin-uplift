@@ -140,19 +140,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // INPUT sw surface(memory)
                 // sw deint
-                if (doDeintH2645)
-                {
-                    var swDeintFilter = GetSwDeinterlaceFilter(state, options);
-                    mainFilters.Add(swDeintFilter);
-                }
+                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 var outFormat = doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-                if (isMjpegEncoder && !doOclTonemap)
-                {
-                    // sw decoder + hw mjpeg encoder
-                    swScaleFilter = string.IsNullOrEmpty(swScaleFilter) ? "scale=out_range=pc" : $"{swScaleFilter}:out_range=pc";
-                }
+                swScaleFilter = ApplyMjpegFullRangeSwScale(swScaleFilter, isMjpegEncoder, doOclTonemap);
 
                 // sw scale
                 mainFilters.Add(swScaleFilter);
@@ -161,10 +153,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // keep video at memory except ocl tonemap,
                 // since the overhead caused by hwupload >>> using sw filter.
                 // sw => hw
-                if (doOclTonemap)
-                {
-                    mainFilters.Add("hwupload=derive_device=opencl");
-                }
+                AddOpenclHwupload(mainFilters, doOclTonemap);
             }
             else if (isD3d11vaDecoder || isQsvDecoder)
             {
@@ -362,6 +351,34 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static void AddSwDeinterlaceFilter(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, bool doDeintH2645)
+        {
+            if (doDeintH2645)
+            {
+                var swDeintFilter = GetSwDeinterlaceFilter(state, options);
+                mainFilters.Add(swDeintFilter);
+            }
+        }
+
+        private static string ApplyMjpegFullRangeSwScale(string swScaleFilter, bool isMjpegEncoder, bool doOclTonemap)
+        {
+            if (isMjpegEncoder && !doOclTonemap)
+            {
+                // sw decoder + hw mjpeg encoder
+                swScaleFilter = string.IsNullOrEmpty(swScaleFilter) ? "scale=out_range=pc" : $"{swScaleFilter}:out_range=pc";
+            }
+
+            return swScaleFilter;
+        }
+
+        private static void AddOpenclHwupload(List<string> mainFilters, bool doOclTonemap)
+        {
+            if (doOclTonemap)
+            {
+                mainFilters.Add("hwupload=derive_device=opencl");
+            }
         }
 
         private void AddTextSubtitlesFilter(EncodingJobInfo state, List<string> mainFilters, bool hasTextSubs)
