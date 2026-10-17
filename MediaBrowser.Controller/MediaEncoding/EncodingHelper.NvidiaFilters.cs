@@ -152,11 +152,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // hw tonemap
-            if (doCuTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "cuda", "yuv420p", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            AddNvidiaHwTonemapFilter(options, mainFilters, doCuTonemap, isMjpegEncoder);
 
             var memoryOutput = false;
             var isUploadForCuTonemap = isSwDecoder && doCuTonemap;

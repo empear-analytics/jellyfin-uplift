@@ -55,5 +55,14 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add(deintFilter);
             }
         }
+
+        private void AddNvidiaHwTonemapFilter(EncodingOptions options, List<string> mainFilters, bool doCuTonemap, bool isMjpegEncoder)
+        {
+            if (doCuTonemap)
+            {
+                var tonemapFilter = GetHwTonemapFilter(options, "cuda", "yuv420p", isMjpegEncoder);
+                mainFilters.Add(tonemapFilter);
+            }
+        }
     }
 }
