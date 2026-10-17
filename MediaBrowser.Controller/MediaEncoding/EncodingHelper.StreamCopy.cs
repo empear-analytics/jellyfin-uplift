@@ -187,6 +187,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenBitDepthRefFramesLevelAndContainer(state, videoStream);
+        }
+
+        private static bool CanCopyGivenBitDepthRefFramesLevelAndContainer(EncodingJobInfo state, MediaStream videoStream)
+        {
             var maxBitDepth = state.GetRequestedVideoBitDepth(videoStream.Codec);
             if (maxBitDepth.HasValue)
             {
