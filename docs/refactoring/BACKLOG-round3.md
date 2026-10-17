@@ -114,7 +114,7 @@ Update as tasks land.
 | R3-26 | 8.28 | - | not started |
 | R3-27 | 8.41 | 8.79 | Sonnet. Four commits (the last two use the FLAT-split pair rule: split into ProbeResultNormalizer.Attachments.cs, FLAT 8.54, enables the IsAudioBitrateNotEstimable predicate with [NotNullWhen(false)], 8.79). First two commits: Recipe S moved NormalizeFormat and its helper to ProbeResultNormalizer.Format.cs (8.41 to 8.54), then E extracted NormalizeSingleFormat (Format.cs 10.00). GetEstimatedAudioBitrate (frozen internal): P and E both DOWN (every new method brings Primitive Obsession). Found: a second split scores FLAT alone but unblocks a P step that scores UP (8.79 together); the playbook does not allow keeping a FLAT split. GetMediaInfo (5 arguments, public) has no recipe |
 | R3-28 | 8.41 | - | not started |
-| R3-29 | 8.44 | - | not started |
+| R3-29 | 8.44 | 9.68 | Sonnet. Seven commits: Recipe S first (GetAttributeValue to PathExtensions.AttributeValue.cs, original 8.95, new file 9.12) because every E or P step on the whole file scored DOWN (Overall Code Complexity, String Heavy Function Arguments); then P, E, E, P, rule 7 on the new file (9.58) and P with [NotNullWhen(false)] on TryReplaceSubPath (original 9.68). Left: GetAttributeValue cc 15 (a block assigns two variables), TryReplaceSubPath second conditional (any new string-argument method brings Primitive Obsession) |
 | R3-30 | 8.45 | - | not started |
 | R3-31 | 8.47 | - | not started |
 | R3-32 | 8.62 | - | not started |
