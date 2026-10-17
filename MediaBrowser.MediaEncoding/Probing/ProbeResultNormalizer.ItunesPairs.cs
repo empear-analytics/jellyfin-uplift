@@ -49,39 +49,30 @@ namespace MediaBrowser.MediaEncoding.Probing
             }
             else if (string.Equals(key, "screenwriters", StringComparison.OrdinalIgnoreCase))
             {
-                foreach (var pair in distinctPairs)
-                {
-                    peoples.Add(new BaseItemPerson
-                    {
-                        Name = pair,
-                        Type = PersonKind.Writer
-                    });
-                }
+                AddPeople(peoples, distinctPairs, PersonKind.Writer);
             }
             else if (string.Equals(key, "producers", StringComparison.OrdinalIgnoreCase))
             {
-                foreach (var pair in distinctPairs)
-                {
-                    peoples.Add(new BaseItemPerson
-                    {
-                        Name = pair,
-                        Type = PersonKind.Producer
-                    });
-                }
+                AddPeople(peoples, distinctPairs, PersonKind.Producer);
             }
             else if (string.Equals(key, "directors", StringComparison.OrdinalIgnoreCase))
             {
-                foreach (var pair in distinctPairs)
-                {
-                    peoples.Add(new BaseItemPerson
-                    {
-                        Name = pair,
-                        Type = PersonKind.Director
-                    });
-                }
+                AddPeople(peoples, distinctPairs, PersonKind.Director);
             }
 
             info.People = peoples.ToArray();
+        }
+
+        private static void AddPeople(List<BaseItemPerson> peoples, IEnumerable<string> names, PersonKind kind)
+        {
+            foreach (var pair in names)
+            {
+                peoples.Add(new BaseItemPerson
+                {
+                    Name = pair,
+                    Type = kind
+                });
+            }
         }
 
         private static NameValuePair GetNameValuePair(XmlReader reader)
