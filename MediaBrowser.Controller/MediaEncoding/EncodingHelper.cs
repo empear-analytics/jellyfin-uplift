@@ -6136,15 +6136,20 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isVtFullSupported = isMacOS && IsVideoToolboxFullSupported();
 
             // legacy videotoolbox pipeline (disable hw filters)
-            if (!(isVtEncoder || isVtDecoder)
-                || !isVtFullSupported
-                || !_mediaEncoder.SupportsFilter("alphasrc"))
+            if (UseLegacyVideoToolboxPipeline(isVtEncoder, isVtDecoder, isVtFullSupported))
             {
                 return GetSwVidFilterChain(state, options, vidEncoder);
             }
 
             // preferred videotoolbox + metal filters pipeline
             return GetAppleVidFiltersPreferred(state, options, vidDecoder, vidEncoder);
+        }
+
+        private bool UseLegacyVideoToolboxPipeline(bool isVtEncoder, bool isVtDecoder, bool isVtFullSupported)
+        {
+            return !(isVtEncoder || isVtDecoder)
+                || !isVtFullSupported
+                || !_mediaEncoder.SupportsFilter("alphasrc");
         }
 
         public (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetAppleVidFiltersPreferred(
