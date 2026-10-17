@@ -238,12 +238,12 @@ namespace MediaBrowser.Model.Dlna
         {
             foreach (var profile in subtitleProfiles)
             {
-                if (profile.Method != SubtitleDeliveryMethod.External && profile.Method != SubtitleDeliveryMethod.Hls)
+                if (IsNeitherExternalNorHls(profile))
                 {
                     continue;
                 }
 
-                if (profile.Method == SubtitleDeliveryMethod.Hls && playMethod != PlayMethod.Transcode)
+                if (IsHlsWithoutTranscode(profile, playMethod))
                 {
                     continue;
                 }
@@ -262,8 +262,7 @@ namespace MediaBrowser.Model.Dlna
 
                 if (IsMatchingExternalOrHlsProfile(profile, subtitleStream, isVobSubMksProfile))
                 {
-                    bool requiresConversion = !isVobSubMksProfile
-                        && !string.Equals(subtitleStream.Codec, profile.Format, StringComparison.OrdinalIgnoreCase);
+                    bool requiresConversion = DoesRequireConversion(isVobSubMksProfile, subtitleStream, profile);
 
                     if (!requiresConversion)
                     {
@@ -289,6 +288,22 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return null;
+        }
+
+        private static bool IsNeitherExternalNorHls(SubtitleProfile profile)
+        {
+            return profile.Method != SubtitleDeliveryMethod.External && profile.Method != SubtitleDeliveryMethod.Hls;
+        }
+
+        private static bool IsHlsWithoutTranscode(SubtitleProfile profile, PlayMethod playMethod)
+        {
+            return profile.Method == SubtitleDeliveryMethod.Hls && playMethod != PlayMethod.Transcode;
+        }
+
+        private static bool DoesRequireConversion(bool isVobSubMksProfile, MediaStream subtitleStream, SubtitleProfile profile)
+        {
+            return !isVobSubMksProfile
+                && !string.Equals(subtitleStream.Codec, profile.Format, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsUnextractableEmbeddedSubtitle(MediaStream subtitleStream, PlayMethod playMethod, ITranscoderSupport transcoderSupport)
