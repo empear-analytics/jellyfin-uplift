@@ -137,12 +137,12 @@ namespace MediaBrowser.Model.Dlna
                         continue;
                     }
 
-                    if (playMethod == PlayMethod.Transcode && !IsSubtitleEmbedSupported(outputContainer))
+                    if (IsEmbedUnsupportedForTranscode(playMethod, outputContainer))
                     {
                         continue;
                     }
 
-                    if (subtitleStream.IsTextSubtitleStream == MediaStream.IsTextFormat(profile.Format) && string.Equals(profile.Format, subtitleStream.Codec, StringComparison.OrdinalIgnoreCase))
+                    if (IsEmbeddedFormatMatch(subtitleStream, profile))
                     {
                         return profile;
                     }
@@ -166,12 +166,12 @@ namespace MediaBrowser.Model.Dlna
                         continue;
                     }
 
-                    if (playMethod == PlayMethod.Transcode && !IsSubtitleEmbedSupported(outputContainer))
+                    if (IsEmbedUnsupportedForTranscode(playMethod, outputContainer))
                     {
                         continue;
                     }
 
-                    if (subtitleStream.IsTextSubtitleStream && subtitleStream.SupportsSubtitleConversionTo(profile.Format))
+                    if (IsConvertibleTextSubtitle(subtitleStream, profile))
                     {
                         return profile;
                     }
@@ -186,6 +186,21 @@ namespace MediaBrowser.Model.Dlna
                     Method = SubtitleDeliveryMethod.Encode,
                     Format = subtitleStream.Codec
                 };
+        }
+
+        private static bool IsEmbeddedFormatMatch(MediaStream subtitleStream, SubtitleProfile profile)
+        {
+            return subtitleStream.IsTextSubtitleStream == MediaStream.IsTextFormat(profile.Format) && string.Equals(profile.Format, subtitleStream.Codec, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsEmbedUnsupportedForTranscode(PlayMethod playMethod, string? outputContainer)
+        {
+            return playMethod == PlayMethod.Transcode && !IsSubtitleEmbedSupported(outputContainer);
+        }
+
+        private static bool IsConvertibleTextSubtitle(MediaStream subtitleStream, SubtitleProfile profile)
+        {
+            return subtitleStream.IsTextSubtitleStream && subtitleStream.SupportsSubtitleConversionTo(profile.Format);
         }
 
         private static bool IsSubtitleEmbedSupported(string? transcodingContainer)
