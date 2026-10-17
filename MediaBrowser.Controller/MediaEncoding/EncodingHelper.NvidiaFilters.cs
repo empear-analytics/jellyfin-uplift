@@ -212,8 +212,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                         subFilters.Add("format=yuva420p");
                         subFilters.Add(subTextSubtitlesFilter);
 
-                        alphaFormatOpt = _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayCudaAlphaFormat)
-                            ? ":alpha_format=premultiplied" : string.Empty;
+                        alphaFormatOpt = GetNvidiaOverlayAlphaFormatOption();
                     }
 
                     subFilters.Add("hwupload=derive_device=cuda");
@@ -231,6 +230,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private string GetNvidiaOverlayAlphaFormatOption()
+        {
+            return _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayCudaAlphaFormat)
+                ? ":alpha_format=premultiplied" : string.Empty;
         }
 
         private static bool NeedsCudaMemoryOutput(bool isNvDecoder, bool isSwEncoder, bool isUploadForCuTonemap, bool hasSubs)
