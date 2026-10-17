@@ -475,7 +475,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             overlayFilters?.RemoveAll(string.IsNullOrEmpty);
 
             var framerate = GetFramerateParam(state);
-            if (mainFilters is not null && framerate.HasValue)
+            if (ShouldAddFpsFilter(mainFilters, framerate))
             {
                 AddFpsFilter(state, mainFilters, framerate);
             }
@@ -553,6 +553,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return filterStr;
+        }
+
+        private static bool ShouldAddFpsFilter(List<string> mainFilters, double? framerate)
+        {
+            return mainFilters is not null && framerate.HasValue;
         }
 
         private static void AddFpsFilter(EncodingJobInfo state, List<string> mainFilters, double? framerate)
