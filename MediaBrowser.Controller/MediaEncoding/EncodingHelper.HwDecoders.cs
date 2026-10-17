@@ -255,19 +255,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             var ffmpegVersion = _mediaEncoder.EncoderVersion;
 
             // Set the av1 codec explicitly to trigger hw accelerator, otherwise libdav1d will be used.
-            var isAv1 = ffmpegVersion < _minFFmpegImplicitHwaccel
-                && string.Equals(videoCodec, "av1", StringComparison.OrdinalIgnoreCase);
+            var isAv1 = NeedsExplicitAv1Decoder(ffmpegVersion, videoCodec);
 
             // Allow profile mismatch if decoding H.264 baseline with d3d11va and vaapi hwaccels.
-            var profileMismatch = string.Equals(videoCodec, "h264", StringComparison.OrdinalIgnoreCase)
-                && string.Equals(state.VideoStream?.Profile, "baseline", StringComparison.OrdinalIgnoreCase);
+            var profileMismatch = IsH264BaselineProfile(state, videoCodec);
 
             // Disable the extra internal copy in nvdec. We already handle it in filter chain.
             var nvdecNoInternalCopy = ffmpegVersion >= _minFFmpegHwaUnsafeOutput;
 
             // Strip the display rotation side data from the transposed fmp4 output stream.
-            var stripRotationData = (state.VideoStream?.Rotation ?? 0) != 0
-                && ffmpegVersion >= _minFFmpegDisplayRotationOption;
+            var stripRotationData = NeedsDisplayRotationStrip(state, ffmpegVersion);
             var stripRotationDataArgs = stripRotationData ? " -display_rotation 0" : string.Empty;
 
             // VideoToolbox decoders have built-in SW fallback
@@ -377,6 +374,24 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private bool NeedsExplicitAv1Decoder(Version ffmpegVersion, string videoCodec)
+        {
+            return ffmpegVersion < _minFFmpegImplicitHwaccel
+                && string.Equals(videoCodec, "av1", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsH264BaselineProfile(EncodingJobInfo state, string videoCodec)
+        {
+            return string.Equals(videoCodec, "h264", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(state.VideoStream?.Profile, "baseline", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool NeedsDisplayRotationStrip(EncodingJobInfo state, Version ffmpegVersion)
+        {
+            return (state.VideoStream?.Rotation ?? 0) != 0
+                && ffmpegVersion >= _minFFmpegDisplayRotationOption;
         }
 
         private static bool IsNonVideotoolboxCodecAvailable(EncodingOptions options, bool isCodecAvailable)
