@@ -2562,11 +2562,16 @@ namespace Emby.Server.Implementations.Library
             }
         }
 
+        private static bool IsMissingImageMetadata(ItemImageInfo image)
+        {
+            return image.Width == 0 || image.Height == 0 || string.IsNullOrEmpty(image.BlurHash);
+        }
+
         private bool ImageNeedsRefresh(ItemImageInfo image)
         {
             if (image.Path is not null && image.IsLocalFile)
             {
-                if (image.Width == 0 || image.Height == 0 || string.IsNullOrEmpty(image.BlurHash))
+                if (IsMissingImageMetadata(image))
                 {
                     return true;
                 }
