@@ -506,38 +506,13 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (hardwareAccelerationType == HardwareAccelerationType.vaapi)
             {
-                var isIntelVaapiDriver = _mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965;
-
-                if (string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase))
-                {
-                    intelLowPowerHwEncoding = encodingOptions.EnableIntelLowPowerH264HwEncoder && isIntelVaapiDriver;
-                }
-                else if (string.Equals(videoEncoder, "hevc_vaapi", StringComparison.OrdinalIgnoreCase))
-                {
-                    intelLowPowerHwEncoding = encodingOptions.EnableIntelLowPowerHevcHwEncoder && isIntelVaapiDriver;
-                }
+                intelLowPowerHwEncoding = GetVaapiIntelLowPowerHwEncoding(videoEncoder, encodingOptions, intelLowPowerHwEncoding);
             }
             else if (hardwareAccelerationType == HardwareAccelerationType.qsv)
             {
                 if (OperatingSystem.IsLinux())
                 {
-                    var ver = Environment.OSVersion.Version;
-                    var isFixedKernel60 = ver.Major == 6 && ver.Minor == 0 && ver >= _minFixedKernel60i915Hang;
-                    var isUnaffectedKernel = ver < _minKerneli915Hang || ver > _maxKerneli915Hang;
-
-                    if (!(isUnaffectedKernel || isFixedKernel60))
-                    {
-                        var vidDecoder = GetHardwareVideoDecoder(state, encodingOptions) ?? string.Empty;
-                        var isIntelDecoder = vidDecoder.Contains("qsv", StringComparison.OrdinalIgnoreCase)
-                                             || vidDecoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
-                        var doOclTonemap = _mediaEncoder.SupportsHwaccel("qsv")
-                            && IsVaapiSupported(state)
-                            && IsOpenclFullSupported()
-                            && !IsIntelVppTonemapAvailable(state, encodingOptions)
-                            && IsHwTonemapAvailable(state, encodingOptions);
-
-                        enableWaFori915Hang = isIntelDecoder && doOclTonemap;
-                    }
+                    enableWaFori915Hang = GetWaFori915Hang(state, encodingOptions, enableWaFori915Hang);
                 }
 
                 if (string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase))
@@ -677,71 +652,14 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (!string.IsNullOrEmpty(profile))
             {
-                // Currently there's no profile option in av1_nvenc encoder
-                if (!(string.Equals(videoEncoder, "av1_nvenc", StringComparison.OrdinalIgnoreCase)
-                      || string.Equals(videoEncoder, "h264_v4l2m2m", StringComparison.OrdinalIgnoreCase)))
-                {
-                    param += " -profile:v:0 " + profile;
-                }
+                param = AppendProfileParam(param, videoEncoder, profile);
             }
 
             var level = NormalizeTranscodingLevel(state, state.GetRequestedLevel(targetVideoCodec));
 
             if (!string.IsNullOrEmpty(level))
             {
-                // libx264, QSV, AMF can adjust the given level to match the output.
-                if (string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase))
-                {
-                    param += " -level " + level;
-                }
-                else if (string.Equals(videoEncoder, "hevc_qsv", StringComparison.OrdinalIgnoreCase))
-                {
-                    // hevc_qsv use -level 51 instead of -level 153.
-                    if (double.TryParse(level, CultureInfo.InvariantCulture, out double hevcLevel))
-                    {
-                        param += " -level " + (hevcLevel / 3);
-                    }
-                }
-                else if (string.Equals(videoEncoder, "av1_qsv", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(videoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase))
-                {
-                    // libsvtav1 and av1_qsv use -level 60 instead of -level 16
-                    // https://aomedia.org/av1/specification/annex-a/
-                    if (int.TryParse(level, NumberStyles.Any, CultureInfo.InvariantCulture, out int av1Level))
-                    {
-                        var x = 2 + (av1Level >> 2);
-                        var y = av1Level & 3;
-                        var res = (x * 10) + y;
-                        param += " -level " + res;
-                    }
-                }
-                else if (IsAmfVideoEncoder(videoEncoder))
-                {
-                    param += " -level " + level;
-                }
-                else if (IsNvencVideoEncoder(videoEncoder))
-                {
-                    // level option may cause NVENC to fail.
-                    // NVENC cannot adjust the given level, just throw an error.
-                }
-                else if (IsVaapiVideoEncoder(videoEncoder))
-                {
-                    // level option may cause corrupted frames on AMD VAAPI.
-                    if (_mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965)
-                    {
-                        param += " -level " + level;
-                    }
-                }
-                else if (string.Equals(videoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(videoEncoder, "hevc_rkmpp", StringComparison.OrdinalIgnoreCase))
-                {
-                    param += " -level " + level;
-                }
-                else if (!string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase))
-                {
-                    param += " -level " + level;
-                }
+                param = AppendLevelParam(param, videoEncoder, level);
             }
 
             if (string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase))
@@ -751,16 +669,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase))
             {
-                // libx265 only accept level option in -x265-params.
-                // level option may cause libx265 to fail.
-                // libx265 cannot adjust the given level, just throw an error.
-                param += " -x265-params:0 no-scenecut=1:no-open-gop=1:no-info=1";
-
-                if (encodingOptions.EncoderPreset < EncoderPreset.ultrafast)
-                {
-                    // The following params are slower than the ultrafast preset, don't use when ultrafast is selected.
-                    param += ":subme=3:merange=25:rc-lookahead=10:me=star:ctu=32:max-tu-size=32:min-cu-size=16:rskip=2:rskip-edge-threshold=2:no-sao=1:no-strong-intra-smoothing=1";
-                }
+                param = AppendX265Params(param, encodingOptions);
             }
 
             if (string.Equals(videoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase)
@@ -773,6 +682,132 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (SupportsVaapiA53CcSei(videoEncoder))
             {
                 param += " -sei -a53_cc";
+            }
+
+            return param;
+        }
+
+        private bool GetVaapiIntelLowPowerHwEncoding(string videoEncoder, EncodingOptions encodingOptions, bool intelLowPowerHwEncoding)
+        {
+            var isIntelVaapiDriver = _mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965;
+
+            if (string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase))
+            {
+                intelLowPowerHwEncoding = encodingOptions.EnableIntelLowPowerH264HwEncoder && isIntelVaapiDriver;
+            }
+            else if (string.Equals(videoEncoder, "hevc_vaapi", StringComparison.OrdinalIgnoreCase))
+            {
+                intelLowPowerHwEncoding = encodingOptions.EnableIntelLowPowerHevcHwEncoder && isIntelVaapiDriver;
+            }
+
+            return intelLowPowerHwEncoding;
+        }
+
+        private bool GetWaFori915Hang(EncodingJobInfo state, EncodingOptions encodingOptions, bool enableWaFori915Hang)
+        {
+            var ver = Environment.OSVersion.Version;
+            var isFixedKernel60 = ver.Major == 6 && ver.Minor == 0 && ver >= _minFixedKernel60i915Hang;
+            var isUnaffectedKernel = ver < _minKerneli915Hang || ver > _maxKerneli915Hang;
+
+            if (!(isUnaffectedKernel || isFixedKernel60))
+            {
+                var vidDecoder = GetHardwareVideoDecoder(state, encodingOptions) ?? string.Empty;
+                var isIntelDecoder = vidDecoder.Contains("qsv", StringComparison.OrdinalIgnoreCase)
+                                     || vidDecoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
+                var doOclTonemap = _mediaEncoder.SupportsHwaccel("qsv")
+                    && IsVaapiSupported(state)
+                    && IsOpenclFullSupported()
+                    && !IsIntelVppTonemapAvailable(state, encodingOptions)
+                    && IsHwTonemapAvailable(state, encodingOptions);
+
+                enableWaFori915Hang = isIntelDecoder && doOclTonemap;
+            }
+
+            return enableWaFori915Hang;
+        }
+
+        private static string AppendProfileParam(string param, string videoEncoder, string profile)
+        {
+            // Currently there's no profile option in av1_nvenc encoder
+            if (!(string.Equals(videoEncoder, "av1_nvenc", StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(videoEncoder, "h264_v4l2m2m", StringComparison.OrdinalIgnoreCase)))
+            {
+                param += " -profile:v:0 " + profile;
+            }
+
+            return param;
+        }
+
+        private string AppendLevelParam(string param, string videoEncoder, string level)
+        {
+            // libx264, QSV, AMF can adjust the given level to match the output.
+            if (string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase))
+            {
+                param += " -level " + level;
+            }
+            else if (string.Equals(videoEncoder, "hevc_qsv", StringComparison.OrdinalIgnoreCase))
+            {
+                // hevc_qsv use -level 51 instead of -level 153.
+                if (double.TryParse(level, CultureInfo.InvariantCulture, out double hevcLevel))
+                {
+                    param += " -level " + (hevcLevel / 3);
+                }
+            }
+            else if (string.Equals(videoEncoder, "av1_qsv", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(videoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase))
+            {
+                // libsvtav1 and av1_qsv use -level 60 instead of -level 16
+                // https://aomedia.org/av1/specification/annex-a/
+                if (int.TryParse(level, NumberStyles.Any, CultureInfo.InvariantCulture, out int av1Level))
+                {
+                    var x = 2 + (av1Level >> 2);
+                    var y = av1Level & 3;
+                    var res = (x * 10) + y;
+                    param += " -level " + res;
+                }
+            }
+            else if (IsAmfVideoEncoder(videoEncoder))
+            {
+                param += " -level " + level;
+            }
+            else if (IsNvencVideoEncoder(videoEncoder))
+            {
+                // level option may cause NVENC to fail.
+                // NVENC cannot adjust the given level, just throw an error.
+            }
+            else if (IsVaapiVideoEncoder(videoEncoder))
+            {
+                // level option may cause corrupted frames on AMD VAAPI.
+                if (_mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965)
+                {
+                    param += " -level " + level;
+                }
+            }
+            else if (string.Equals(videoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(videoEncoder, "hevc_rkmpp", StringComparison.OrdinalIgnoreCase))
+            {
+                param += " -level " + level;
+            }
+            else if (!string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase))
+            {
+                param += " -level " + level;
+            }
+
+            return param;
+        }
+
+        private static string AppendX265Params(string param, EncodingOptions encodingOptions)
+        {
+            // libx265 only accept level option in -x265-params.
+            // level option may cause libx265 to fail.
+            // libx265 cannot adjust the given level, just throw an error.
+            param += " -x265-params:0 no-scenecut=1:no-open-gop=1:no-info=1";
+
+            if (encodingOptions.EncoderPreset < EncoderPreset.ultrafast)
+            {
+                // The following params are slower than the ultrafast preset, don't use when ultrafast is selected.
+                param += ":subme=3:merange=25:rc-lookahead=10:me=star:ctu=32:max-tu-size=32:min-cu-size=16:rskip=2:rskip-edge-threshold=2:no-sao=1:no-strong-intra-smoothing=1";
             }
 
             return param;
