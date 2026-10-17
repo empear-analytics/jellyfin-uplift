@@ -64,5 +64,13 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add(tonemapFilter);
             }
         }
+
+        private static void AddNvidiaHwTransposeFilter(List<string> mainFilters, bool doCuTranspose, string transposeDir)
+        {
+            if (doCuTranspose)
+            {
+                mainFilters.Add($"transpose_cuda=dir={transposeDir}");
+            }
+        }
     }
 }

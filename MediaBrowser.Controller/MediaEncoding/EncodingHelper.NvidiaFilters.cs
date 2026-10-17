@@ -139,10 +139,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 AddNvidiaHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 // hw transpose
-                if (doCuTranspose)
-                {
-                    mainFilters.Add($"transpose_cuda=dir={transposeDir}");
-                }
+                AddNvidiaHwTransposeFilter(mainFilters, doCuTranspose, transposeDir);
 
                 var isRext = IsVideoStreamHevcRext(state);
                 var outFormat = doCuTonemap ? (isRext ? "p010" : string.Empty) : "yuv420p";
