@@ -13,6 +13,15 @@ namespace Emby.Server.Implementations.Library
         {
             var changed = false;
 
+            changed = UpdateIndexNumber(episode, episodeInfo, forceRefresh, changed);
+            changed = UpdateIndexNumberEnd(episode, episodeInfo, forceRefresh, changed);
+            changed = UpdateParentIndexNumber(episode, episodeInfo, forceRefresh, changed);
+
+            return changed;
+        }
+
+        private static bool UpdateIndexNumber(Episode episode, EpisodeInfo episodeInfo, bool forceRefresh, bool changed)
+        {
             if (!episode.IndexNumber.HasValue || forceRefresh)
             {
                 if (episode.IndexNumber != episodeInfo.EpisodeNumber)
@@ -23,6 +32,11 @@ namespace Emby.Server.Implementations.Library
                 episode.IndexNumber = episodeInfo.EpisodeNumber;
             }
 
+            return changed;
+        }
+
+        private static bool UpdateIndexNumberEnd(Episode episode, EpisodeInfo episodeInfo, bool forceRefresh, bool changed)
+        {
             if (!episode.IndexNumberEnd.HasValue || forceRefresh)
             {
                 if (episode.IndexNumberEnd != episodeInfo.EndingEpisodeNumber)
@@ -33,6 +47,11 @@ namespace Emby.Server.Implementations.Library
                 episode.IndexNumberEnd = episodeInfo.EndingEpisodeNumber;
             }
 
+            return changed;
+        }
+
+        private static bool UpdateParentIndexNumber(Episode episode, EpisodeInfo episodeInfo, bool forceRefresh, bool changed)
+        {
             if (!episode.ParentIndexNumber.HasValue || forceRefresh)
             {
                 if (episode.ParentIndexNumber != episodeInfo.SeasonNumber)
