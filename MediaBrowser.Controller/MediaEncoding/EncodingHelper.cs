@@ -1295,6 +1295,37 @@ namespace MediaBrowser.Controller.MediaEncoding
                 inputModifier += $" -readrate_catchup {readrate * 100}";
             }
 
+            inputModifier = AppendInputFormatFlags(inputModifier, state);
+
+            if (state.IsVideoRequest)
+            {
+                inputModifier = AppendExplicitInputFormat(inputModifier, state, encodingOptions);
+            }
+
+            if (state.MediaSource.RequiresLooping)
+            {
+                inputModifier += " -stream_loop -1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2";
+            }
+
+            return inputModifier;
+        }
+
+        private static string AppendExplicitInputFormat(string inputModifier, EncodingJobInfo state, EncodingOptions encodingOptions)
+        {
+            if (NeedsExplicitInputFormat(state, encodingOptions))
+            {
+                var inputFormat = GetInputFormat(state.InputContainer);
+                if (!string.IsNullOrEmpty(inputFormat))
+                {
+                    inputModifier += " -f " + inputFormat;
+                }
+            }
+
+            return inputModifier;
+        }
+
+        private static string AppendInputFormatFlags(string inputModifier, EncodingJobInfo state)
+        {
             var flags = new List<string>();
             if (state.IgnoreInputDts)
             {
@@ -1324,23 +1355,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (flags.Count > 0)
             {
                 inputModifier += " -fflags " + string.Join(string.Empty, flags);
-            }
-
-            if (state.IsVideoRequest)
-            {
-                if (NeedsExplicitInputFormat(state, encodingOptions))
-                {
-                    var inputFormat = GetInputFormat(state.InputContainer);
-                    if (!string.IsNullOrEmpty(inputFormat))
-                    {
-                        inputModifier += " -f " + inputFormat;
-                    }
-                }
-            }
-
-            if (state.MediaSource.RequiresLooping)
-            {
-                inputModifier += " -stream_loop -1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2";
             }
 
             return inputModifier;
