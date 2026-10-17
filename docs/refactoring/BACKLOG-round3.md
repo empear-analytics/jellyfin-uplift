@@ -102,7 +102,7 @@ Update as tasks land.
 | R3-14 | 7.79 | - | not started |
 | R3-15 | 7.80 | 8.37 | Sonnet. Two commits: GetOutputFileExtension tails extracted with Recipe E rule 7 (GetCodecExtension, GetContainerExtension); cleared Overall Code Complexity. Left: GetCodecExtension if-chains that fall through (not a tail), ApplyParam 34-case switch (cc 35), Excess Arguments (GetStreamingState 11) |
 | R3-16 | 7.81 | - | not started |
-| R3-17 | 7.82 | - | not started |
+| R3-17 | 7.82 | 8.01 | Sonnet. One commit (rule 9: the candidate-collecting run with its local AddCandidate moved to FindExtraCandidates; FindExtras no longer flagged). Left: nesting 4 in FindExtraCandidates (G WORSE, helpers need 5 to 6 arguments), the mapping switch GetExtraTypeNameKey (no recipe), PrepareExtra conditional (calls a local function; as a LOCAL predicate it scores 8.26 UP but Recipe P says private method). Candidate: allow a local-function predicate when the expression calls a local function |
 | R3-18 | 7.98 | - | not started |
 | R3-19 | 8.00 | 9.09 | Sonnet. Two splits (the maximum): ItunesPairs 10.00, ItunesArray 9.38, Itunes 9.09. Recipe D merged the three PersonKind loops (no duplication report), rule 7 on GetNameValuePair, rule 9 on FetchFromItunesInfo. Left: nesting 4 in ReadPlistRoot, ReadFromDictNode, ReadValueArray (G is DOWN or WORSE); the `if (reader.IsEmptyElement) { reader.Read(); continue; }` blocks need a continue-to-return rule |
 | R3-20 | 8.01 | - | not started |
