@@ -942,6 +942,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return ResolveVideotoolboxAccelType(state, options, videoStream, bitDepth);
+        }
+
+        private string ResolveVideotoolboxAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
+        {
             var is8bitSwFormatsVt = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsVt = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVt);
             var is8_10_12bitSwFormatsVt = IsQsv8To12BitSwFormat(videoStream, is8_10bitSwFormatsVt);
