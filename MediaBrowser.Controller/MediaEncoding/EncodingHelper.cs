@@ -1704,9 +1704,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 int factor = 2;
                 var codec = state.ActualOutputVideoCodec;
                 var level = state.GetRequestedLevel(codec);
-                if (string.Equals(codec, "h264", StringComparison.OrdinalIgnoreCase)
-                    && double.TryParse(level, CultureInfo.InvariantCulture, out double requestedLevel)
-                    && requestedLevel < 51)
+                if (IsH264BelowLevel51(codec, level))
                 {
                     factor = 1;
                 }
@@ -1751,6 +1749,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return FormattableString.Invariant($" -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
+        }
+
+        private static bool IsH264BelowLevel51(string codec, string level)
+        {
+            return string.Equals(codec, "h264", StringComparison.OrdinalIgnoreCase)
+                && double.TryParse(level, CultureInfo.InvariantCulture, out double requestedLevel)
+                && requestedLevel < 51;
         }
 
         private string GetEncoderParam(EncoderPreset? preset, EncoderPreset defaultPreset, EncodingOptions encodingOptions, string videoEncoder, bool isLibX265)
