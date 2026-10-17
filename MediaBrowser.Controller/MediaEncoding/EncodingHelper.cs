@@ -8132,7 +8132,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (bitrate.HasValue && !LosslessAudioCodecs.Contains(outputCodec, StringComparison.OrdinalIgnoreCase))
             {
                 var vbrParam = GetAudioVbrModeParam(GetAudioEncoder(state), bitrate.Value, channels ?? 2);
-                if (encodingOptions.EnableAudioVbr && state.EnableAudioVbrEncoding && vbrParam is not null)
+                if (IsAudioVbrEnabled(state, encodingOptions, vbrParam))
                 {
                     audioTranscodeParams.Add(vbrParam);
                 }
@@ -8214,6 +8214,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 string.Empty,
                 string.Empty,
                 string.Empty).Trim();
+        }
+
+        private static bool IsAudioVbrEnabled(EncodingJobInfo state, EncodingOptions encodingOptions, string vbrParam)
+        {
+            return encodingOptions.EnableAudioVbr && state.EnableAudioVbrEncoding && vbrParam is not null;
         }
 
         public static int FindIndex(IReadOnlyList<MediaStream> mediaStreams, MediaStream streamToFind)
