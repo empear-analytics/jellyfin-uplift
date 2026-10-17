@@ -939,25 +939,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (state.AudioStream is not null)
             {
-                int audioStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.AudioStream);
-                if (state.AudioStream.IsExternal)
-                {
-                    bool hasExternalSubAsInput = NeedsExternalSubtitleMuxing(state);
-                    int externalAudioMapIndex = hasExternalSubAsInput ? 2 : 1;
-
-                    args += string.Format(
-                        CultureInfo.InvariantCulture,
-                        " -map {0}:{1}",
-                        externalAudioMapIndex,
-                        audioStreamIndex);
-                }
-                else
-                {
-                    args += string.Format(
-                        CultureInfo.InvariantCulture,
-                        " -map 0:{0}",
-                        audioStreamIndex);
-                }
+                args = AppendAudioMapArgs(args, state);
             }
             else
             {
@@ -971,31 +953,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else if (subtitleMethod == SubtitleDeliveryMethod.Embed)
             {
-                if (state.SubtitleStream.IsExternal)
-                {
-                    // External subtitle file is added as second FFmpeg input.
-                    // For single-stream files (SRT/ASS/VTT) the in-file index is always 0.
-                    // For multi-stream containers (MKS) we count how many streams from
-                    // the same file appear before the selected one.
-                    var inFileIndex = state.MediaSource.MediaStreams
-                        .Where(s => string.Equals(s.Path, state.SubtitleStream.Path, StringComparison.Ordinal))
-                        .TakeWhile(s => s.Index != state.SubtitleStream.Index)
-                        .Count();
-
-                    args += string.Format(
-                        CultureInfo.InvariantCulture,
-                        " -map 1:{0}",
-                        inFileIndex);
-                }
-                else
-                {
-                    int subtitleStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.SubtitleStream);
-
-                    args += string.Format(
-                        CultureInfo.InvariantCulture,
-                        " -map 0:{0}",
-                        subtitleStreamIndex);
-                }
+                args = AppendEmbeddedSubtitleMapArgs(args, state);
             }
             else if (state.SubtitleStream.IsExternal && !state.SubtitleStream.IsTextSubtitleStream)
             {
@@ -1005,6 +963,62 @@ namespace MediaBrowser.Controller.MediaEncoding
                     CultureInfo.InvariantCulture,
                     " -map 1:{0} -sn",
                     externalSubtitleStreamIndex);
+            }
+
+            return args;
+        }
+
+        private static string AppendAudioMapArgs(string args, EncodingJobInfo state)
+        {
+            int audioStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.AudioStream);
+            if (state.AudioStream.IsExternal)
+            {
+                bool hasExternalSubAsInput = NeedsExternalSubtitleMuxing(state);
+                int externalAudioMapIndex = hasExternalSubAsInput ? 2 : 1;
+
+                args += string.Format(
+                    CultureInfo.InvariantCulture,
+                    " -map {0}:{1}",
+                    externalAudioMapIndex,
+                    audioStreamIndex);
+            }
+            else
+            {
+                args += string.Format(
+                    CultureInfo.InvariantCulture,
+                    " -map 0:{0}",
+                    audioStreamIndex);
+            }
+
+            return args;
+        }
+
+        private static string AppendEmbeddedSubtitleMapArgs(string args, EncodingJobInfo state)
+        {
+            if (state.SubtitleStream.IsExternal)
+            {
+                // External subtitle file is added as second FFmpeg input.
+                // For single-stream files (SRT/ASS/VTT) the in-file index is always 0.
+                // For multi-stream containers (MKS) we count how many streams from
+                // the same file appear before the selected one.
+                var inFileIndex = state.MediaSource.MediaStreams
+                    .Where(s => string.Equals(s.Path, state.SubtitleStream.Path, StringComparison.Ordinal))
+                    .TakeWhile(s => s.Index != state.SubtitleStream.Index)
+                    .Count();
+
+                args += string.Format(
+                    CultureInfo.InvariantCulture,
+                    " -map 1:{0}",
+                    inFileIndex);
+            }
+            else
+            {
+                int subtitleStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.SubtitleStream);
+
+                args += string.Format(
+                    CultureInfo.InvariantCulture,
+                    " -map 0:{0}",
+                    subtitleStreamIndex);
             }
 
             return args;
