@@ -126,10 +126,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add($"format={outFormat}");
 
                 // sw => hw
-                if (doCuTonemap)
-                {
-                    mainFilters.Add("hwupload=derive_device=cuda");
-                }
+                AddNvidiaHwupload(mainFilters, doCuTonemap);
             }
 
             if (isNvDecoder)

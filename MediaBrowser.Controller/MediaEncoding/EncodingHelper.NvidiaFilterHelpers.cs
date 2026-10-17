@@ -72,5 +72,13 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add($"transpose_cuda=dir={transposeDir}");
             }
         }
+
+        private static void AddNvidiaHwupload(List<string> mainFilters, bool doCuTonemap)
+        {
+            if (doCuTonemap)
+            {
+                mainFilters.Add("hwupload=derive_device=cuda");
+            }
+        }
     }
 }
