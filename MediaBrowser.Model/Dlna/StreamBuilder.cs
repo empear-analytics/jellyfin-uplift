@@ -637,12 +637,12 @@ namespace MediaBrowser.Model.Dlna
             var videoStream = item.VideoStream;
 
             var bitrateLimitExceeded = IsBitrateLimitExceeded(item, options.GetMaxBitrate(false) ?? 0);
-            var isEligibleForDirectPlay = options.EnableDirectPlay && (options.ForceDirectPlay || !bitrateLimitExceeded);
-            var isEligibleForDirectStream = options.EnableDirectStream && (options.ForceDirectStream || !bitrateLimitExceeded);
+            var isEligibleForDirectPlay = IsEligibleForDirectPlay(options, bitrateLimitExceeded);
+            var isEligibleForDirectStream = IsEligibleForDirectStream(options, bitrateLimitExceeded);
             TranscodeReason transcodeReasons = 0;
 
             // Force transcode or remux for BD/DVD folders
-            if (item.VideoType == VideoType.Dvd || item.VideoType == VideoType.BluRay)
+            if (IsDiscFolder(item))
             {
                 isEligibleForDirectPlay = false;
             }
@@ -728,6 +728,21 @@ namespace MediaBrowser.Model.Dlna
 
             item.Container = NormalizeMediaSourceFormatIntoSingleContainer(item.Container, options.Profile, DlnaProfileType.Video, directPlayProfile);
             return playlistItem;
+        }
+
+        private static bool IsEligibleForDirectPlay(MediaOptions options, bool bitrateLimitExceeded)
+        {
+            return options.EnableDirectPlay && (options.ForceDirectPlay || !bitrateLimitExceeded);
+        }
+
+        private static bool IsEligibleForDirectStream(MediaOptions options, bool bitrateLimitExceeded)
+        {
+            return options.EnableDirectStream && (options.ForceDirectStream || !bitrateLimitExceeded);
+        }
+
+        private static bool IsDiscFolder(MediaSourceInfo item)
+        {
+            return item.VideoType == VideoType.Dvd || item.VideoType == VideoType.BluRay;
         }
 
         private static void SetDirectStreamAudioCodecs(StreamInfo playlistItem, MediaStream? audioStream, DirectPlayProfile? directPlayProfile)
