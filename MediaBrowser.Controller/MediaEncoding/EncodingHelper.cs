@@ -5259,9 +5259,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isVaapiVkSupported = isVaapiFullSupported && IsVulkanFullSupported();
 
             // legacy vaapi pipeline(copy-back)
-            if ((isSwDecoder && isSwEncoder)
-                || !isVaapiOclSupported
-                || !_mediaEncoder.SupportsFilter("alphasrc"))
+            if (UseLegacyHwPipeline(isSwDecoder, isSwEncoder, isVaapiOclSupported))
             {
                 var swFilterChain = GetSwVidFilterChain(state, options, vidEncoder);
 
@@ -5288,10 +5286,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // preferred vaapi + vulkan filters pipeline
-            if (_mediaEncoder.IsVaapiDeviceAmd
-                && isVaapiVkSupported
-                && _mediaEncoder.IsVaapiDeviceSupportVulkanDrmInterop
-                && Environment.OSVersion.Version >= _minKernelVersionAmdVkFmtModifier)
+            if (IsAmdVaapiVulkanPipelineUsable(isVaapiVkSupported))
             {
                 // AMD radeonsi path(targeting Polaris/gfx8+), with extra vulkan tonemap and overlay support.
                 return GetAmdVaapiFullVidFiltersPrefered(state, options, vidDecoder, vidEncoder);
@@ -5299,6 +5294,21 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // Intel i965 and Amd legacy driver path, only featuring scale and deinterlace support.
             return GetVaapiLimitedVidFiltersPrefered(state, options, vidDecoder, vidEncoder);
+        }
+
+        private bool UseLegacyHwPipeline(bool isSwDecoder, bool isSwEncoder, bool isHwOclSupported)
+        {
+            return (isSwDecoder && isSwEncoder)
+                || !isHwOclSupported
+                || !_mediaEncoder.SupportsFilter("alphasrc");
+        }
+
+        private bool IsAmdVaapiVulkanPipelineUsable(bool isVaapiVkSupported)
+        {
+            return _mediaEncoder.IsVaapiDeviceAmd
+                && isVaapiVkSupported
+                && _mediaEncoder.IsVaapiDeviceSupportVulkanDrmInterop
+                && Environment.OSVersion.Version >= _minKernelVersionAmdVkFmtModifier;
         }
 
         public (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetIntelVaapiFullVidFiltersPrefered(
