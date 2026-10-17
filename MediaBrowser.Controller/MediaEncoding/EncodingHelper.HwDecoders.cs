@@ -67,19 +67,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // Only HEVC, VP9 and AV1 formats have 10-bit hardware decoder support for most platforms
                 if (IsTenBitWithoutCommonHwDecoder(videoStream, bitDepth))
                 {
-                    // RKMPP has H.264 Hi10P decoder
-                    bool hasHardwareHi10P = hardwareAccelerationType == HardwareAccelerationType.rkmpp;
-
-                    // VideoToolbox on Apple Silicon has H.264 Hi10P mode enabled after macOS 14.6
-                    if (hardwareAccelerationType == HardwareAccelerationType.videotoolbox)
-                    {
-                        var ver = Environment.OSVersion.Version;
-                        var arch = RuntimeInformation.OSArchitecture;
-                        if (arch.Equals(Architecture.Arm64) && ver >= new Version(14, 6))
-                        {
-                            hasHardwareHi10P = true;
-                        }
-                    }
+                    bool hasHardwareHi10P = HasHardwareHi10PDecoder(hardwareAccelerationType);
 
                     if (!hasHardwareHi10P
                         && string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase))
@@ -118,6 +106,25 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // leave blank so ffmpeg will decide
             return null;
+        }
+
+        private static bool HasHardwareHi10PDecoder(HardwareAccelerationType hardwareAccelerationType)
+        {
+            // RKMPP has H.264 Hi10P decoder
+            bool hasHardwareHi10P = hardwareAccelerationType == HardwareAccelerationType.rkmpp;
+
+            // VideoToolbox on Apple Silicon has H.264 Hi10P mode enabled after macOS 14.6
+            if (hardwareAccelerationType == HardwareAccelerationType.videotoolbox)
+            {
+                var ver = Environment.OSVersion.Version;
+                var arch = RuntimeInformation.OSArchitecture;
+                if (arch.Equals(Architecture.Arm64) && ver >= new Version(14, 6))
+                {
+                    hasHardwareHi10P = true;
+                }
+            }
+
+            return hasHardwareHi10P;
         }
 
         private static bool IsUnsupportedHwDecodeVideoType(VideoType videoType)
