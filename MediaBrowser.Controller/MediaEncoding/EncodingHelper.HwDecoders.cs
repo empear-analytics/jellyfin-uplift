@@ -847,6 +847,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return ResolveVaapiAccelType(state, options, videoStream, bitDepth);
+        }
+
+        private string ResolveVaapiAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
+        {
             var hwSurface = HasVaapiHwSurface(state);
             var is8bitSwFormatsVaapi = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsVaapi = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVaapi);
