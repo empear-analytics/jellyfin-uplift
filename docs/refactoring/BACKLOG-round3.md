@@ -90,7 +90,7 @@ Update as tasks land.
 | R3-02 | 4.33 | - | not started |
 | R3-03 | 5.30 | - | not started |
 | R3-04 | 5.60 | - | not started |
-| R3-05 | 6.47 | - | not started |
+| R3-05 | 6.47 | 7.91 | Sonnet. 11 commits: E (several per method), D (including identical private helpers reused from EncodingHelper.HwDecoders.cs, now allowed by the playbook), P. Left: the three bumps of GetIntelQsvDx11VidFiltersPrefered and GetIntelQsvVaapiVidFiltersPrefered (each block needs 12 to 16 arguments, WORSE; the procamp block writes three outer variables); Primitive Obsession. Candidate: a parameter object for the ~14 shared locals (a new type, outside the catalogue) |
 | R3-06 | 6.51 | - | not started |
 | R3-07 | 6.98 | - | not started |
 | R3-08 | 7.14 | 9.38 | Sonnet. Nine commits: eight rule-7 tails turned the 10-bump CanStreamCopyVideo into a chain of methods (the flattened chain is identical to the original method, line for line), one predicate; every step chosen by measuring each candidate tail alone. Left: Bumpy Road in CanCopyGivenRequestedProfile and CanCopyGivenRangeRotationSizeAndFrameRate (nested ifs that fall through), IsIncompatibleRangeType 5 arguments (no recipe). Candidates: merge nested ifs into one condition; Recipe G on those blocks |
