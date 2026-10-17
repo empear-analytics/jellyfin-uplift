@@ -4463,9 +4463,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isAmfDx11OclSupported = isWindows && _mediaEncoder.SupportsHwaccel("d3d11va") && IsOpenclFullSupported();
 
             // legacy d3d11va pipeline(copy-back)
-            if ((isSwDecoder && isSwEncoder)
-                || !isAmfDx11OclSupported
-                || !_mediaEncoder.SupportsFilter("alphasrc"))
+            if (UseLegacyHwPipeline(isSwDecoder, isSwEncoder, isAmfDx11OclSupported))
             {
                 return GetSwVidFilterChain(state, options, vidEncoder);
             }
