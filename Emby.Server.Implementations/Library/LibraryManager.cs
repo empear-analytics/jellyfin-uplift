@@ -980,40 +980,7 @@ namespace Emby.Server.Implementations.Library
             // Gather child folder and files
             if (args.IsDirectory)
             {
-                var isPhysicalRoot = args.IsPhysicalRoot;
-
-                // When resolving the root, we need it's grandchildren (children of user views)
-                var flattenFolderDepth = isPhysicalRoot ? 2 : 0;
-
-                FileSystemMetadata[] files;
-                var isVf = args.IsVf;
-
-                try
-                {
-                    files = FileData.GetFilteredFileSystemEntries(directoryService, args.Path, _fileSystem, _appHost, _logger, args, flattenFolderDepth: flattenFolderDepth, resolveShortcuts: isPhysicalRoot || isVf);
-                }
-                catch (Exception ex)
-                {
-                    if (parent is not null && parent.IsPhysicalRoot)
-                    {
-                        _logger.LogError(ex, "Error in GetFilteredFileSystemEntries isPhysicalRoot: {0} IsVf: {1}", isPhysicalRoot, isVf);
-
-                        files = [];
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-
-                // Need to remove sub-paths that may have been resolved from shortcuts
-                // Example: if \\server\movies exists, then strip out \\server\movies\action
-                if (isPhysicalRoot)
-                {
-                    files = NormalizeRootPathList(files).ToArray();
-                }
-
-                args.FileSystemChildren = files;
+                GatherFileSystemChildren(args, directoryService, parent);
             }
 
             // Filter content based on ignore rules
@@ -1024,6 +991,44 @@ namespace Emby.Server.Implementations.Library
             }
 
             return ResolveItem(args, resolvers);
+        }
+
+        private void GatherFileSystemChildren(ItemResolveArgs args, IDirectoryService directoryService, Folder? parent)
+        {
+            var isPhysicalRoot = args.IsPhysicalRoot;
+
+            // When resolving the root, we need it's grandchildren (children of user views)
+            var flattenFolderDepth = isPhysicalRoot ? 2 : 0;
+
+            FileSystemMetadata[] files;
+            var isVf = args.IsVf;
+
+            try
+            {
+                files = FileData.GetFilteredFileSystemEntries(directoryService, args.Path, _fileSystem, _appHost, _logger, args, flattenFolderDepth: flattenFolderDepth, resolveShortcuts: isPhysicalRoot || isVf);
+            }
+            catch (Exception ex)
+            {
+                if (parent is not null && parent.IsPhysicalRoot)
+                {
+                    _logger.LogError(ex, "Error in GetFilteredFileSystemEntries isPhysicalRoot: {0} IsVf: {1}", isPhysicalRoot, isVf);
+
+                    files = [];
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            // Need to remove sub-paths that may have been resolved from shortcuts
+            // Example: if \\server\movies exists, then strip out \\server\movies\action
+            if (isPhysicalRoot)
+            {
+                files = NormalizeRootPathList(files).ToArray();
+            }
+
+            args.FileSystemChildren = files;
         }
 
         public bool IgnoreFile(FileSystemMetadata file, BaseItem? parent)
