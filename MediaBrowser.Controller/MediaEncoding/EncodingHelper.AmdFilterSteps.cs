@@ -92,5 +92,11 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             return Math.Abs(rotation) == 90 && (isSwDecoder || (isD3d11vaDecoder && doOclTranspose));
         }
+
+        private bool IsAmdOclTransposeAvailable(string transposeDir)
+        {
+            return !string.IsNullOrEmpty(transposeDir)
+                && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.TransposeOpenclReversal);
+        }
     }
 }
