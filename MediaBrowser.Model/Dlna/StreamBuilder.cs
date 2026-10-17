@@ -523,7 +523,7 @@ namespace MediaBrowser.Model.Dlna
             // While options takes the network and other factors into account. Only applies to direct stream
             if (item.SupportsDirectStream)
             {
-                if (!IsBitrateLimitExceeded(item, options.GetMaxBitrate(true) ?? 0))
+                if (!IsAudioBitrateLimitExceeded(item, options))
                 {
                     // Note: as of 10.10 codebase, the options.EnableDirectStream is always false due to
                     // "direct-stream http streaming is currently broken"
