@@ -381,8 +381,7 @@ public static class StreamingHelpers
                 return ".ts";
             }
 
-            if (string.Equals(videoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoCodec, "av1", StringComparison.OrdinalIgnoreCase))
+            if (IsHevcOrAv1Codec(videoCodec))
             {
                 return ".mp4";
             }
@@ -436,6 +435,12 @@ public static class StreamingHelpers
         }
 
         throw new InvalidOperationException("Failed to find an appropriate file extension");
+    }
+
+    private static bool IsHevcOrAv1Codec(string? videoCodec)
+    {
+        return string.Equals(videoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(videoCodec, "av1", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsVpxCodec(string? videoCodec)
