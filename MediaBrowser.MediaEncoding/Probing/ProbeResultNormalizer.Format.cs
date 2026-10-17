@@ -33,38 +33,45 @@ namespace MediaBrowser.MediaEncoding.Probing
             var splitFormat = format.Split(',');
             for (var i = 0; i < splitFormat.Length; i++)
             {
-                // Handle MPEG-1 container
-                if (string.Equals(splitFormat[i], "mpegvideo", StringComparison.OrdinalIgnoreCase))
-                {
-                    splitFormat[i] = "mpeg";
-                }
-
-                // Handle MPEG-TS container
-                else if (string.Equals(splitFormat[i], "mpegts", StringComparison.OrdinalIgnoreCase))
-                {
-                    splitFormat[i] = "ts";
-                }
-
-                // Handle matroska container
-                else if (string.Equals(splitFormat[i], "matroska", StringComparison.OrdinalIgnoreCase))
-                {
-                    splitFormat[i] = "mkv";
-                }
-
-                // Handle WebM
-                else if (string.Equals(splitFormat[i], "webm", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Limit WebM to supported stream types and codecs.
-                    // FFprobe can report "matroska,webm" for Matroska-like containers, so only keep "webm" if all streams are WebM-compatible.
-                    // Any stream that is not video nor audio is not supported in WebM and should disqualify the webm container probe result.
-                    if (HasWebmIncompatibleStream(mediaStreams))
-                    {
-                        splitFormat[i] = string.Empty;
-                    }
-                }
+                splitFormat[i] = NormalizeSingleFormat(splitFormat[i], mediaStreams);
             }
 
             return string.Join(',', splitFormat.Where(s => !string.IsNullOrEmpty(s)));
+        }
+
+        private static string NormalizeSingleFormat(string format, IReadOnlyList<MediaStream> mediaStreams)
+        {
+            // Handle MPEG-1 container
+            if (string.Equals(format, "mpegvideo", StringComparison.OrdinalIgnoreCase))
+            {
+                format = "mpeg";
+            }
+
+            // Handle MPEG-TS container
+            else if (string.Equals(format, "mpegts", StringComparison.OrdinalIgnoreCase))
+            {
+                format = "ts";
+            }
+
+            // Handle matroska container
+            else if (string.Equals(format, "matroska", StringComparison.OrdinalIgnoreCase))
+            {
+                format = "mkv";
+            }
+
+            // Handle WebM
+            else if (string.Equals(format, "webm", StringComparison.OrdinalIgnoreCase))
+            {
+                // Limit WebM to supported stream types and codecs.
+                // FFprobe can report "matroska,webm" for Matroska-like containers, so only keep "webm" if all streams are WebM-compatible.
+                // Any stream that is not video nor audio is not supported in WebM and should disqualify the webm container probe result.
+                if (HasWebmIncompatibleStream(mediaStreams))
+                {
+                    format = string.Empty;
+                }
+            }
+
+            return format;
         }
 
         private static bool HasWebmIncompatibleStream(IReadOnlyList<MediaStream> mediaStreams)
