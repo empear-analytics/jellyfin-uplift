@@ -208,13 +208,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // ocl tonemap
             AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
-            if (NeedsVaapiReverseMapping(doOclTonemap, isVaInVaOut))
-            {
-                // OUTPUT vaapi(nv12) surface(vram)
-                // reverse-mapping via vaapi-opencl interop.
-                mainFilters.Add("hwmap=derive_device=vaapi:mode=write:reverse=1");
-                mainFilters.Add("format=vaapi");
-            }
+            AddVaapiReverseMapping(mainFilters, doOclTonemap, isVaInVaOut);
 
             var memoryOutput = false;
             var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
@@ -303,6 +297,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // map from vaapi to opencl via vaapi-opencl interop(Intel only).
                 mainFilters.Add("hwmap=derive_device=opencl:mode=read");
+            }
+        }
+
+        private static void AddVaapiReverseMapping(List<string> mainFilters, bool doOclTonemap, bool isVaInVaOut)
+        {
+            if (NeedsVaapiReverseMapping(doOclTonemap, isVaInVaOut))
+            {
+                // OUTPUT vaapi(nv12) surface(vram)
+                // reverse-mapping via vaapi-opencl interop.
+                mainFilters.Add("hwmap=derive_device=vaapi:mode=write:reverse=1");
+                mainFilters.Add("format=vaapi");
             }
         }
 
