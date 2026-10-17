@@ -358,6 +358,24 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
         }
 
+        private static void AddNonMjpegScaleVaapiFilter(List<string> mainFilters, bool isMjpegEncoder, EncodingOptions options)
+        {
+            var hwCscFilter = "scale_vaapi=format=nv12";
+
+            hwCscFilter = ApplyNonMjpegTvOutRange(hwCscFilter, isMjpegEncoder, options);
+
+            mainFilters.Add(hwCscFilter);
+        }
+
+        private static void AddVkTonemapScaleVaapiFilter(List<string> overlayFilters, bool doVkTonemap, EncodingOptions options)
+        {
+            var hwCscFilter = "scale_vaapi=format=nv12";
+
+            hwCscFilter = ApplyVkTonemapTvOutRange(hwCscFilter, doVkTonemap, options);
+
+            overlayFilters.Add(hwCscFilter);
+        }
+
         private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
         {
             return isVaapiDecoder && IsIntelVppTonemapAvailable(state, options);
@@ -533,11 +551,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 AddVulkanToVaapiMapping(mainFilters);
 
                 // clear the surf->meta_offset and output nv12
-                var hwCscFilter = "scale_vaapi=format=nv12";
-
-                hwCscFilter = ApplyNonMjpegTvOutRange(hwCscFilter, isMjpegEncoder, options);
-
-                mainFilters.Add(hwCscFilter);
+                AddNonMjpegScaleVaapiFilter(mainFilters, isMjpegEncoder, options);
 
                 // hw deint
                 AddVaapiHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
@@ -595,11 +609,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     AddVulkanToVaapiMapping(overlayFilters);
 
                     // clear the surf->meta_offset and output nv12
-                    var hwCscFilter = "scale_vaapi=format=nv12";
-
-                    hwCscFilter = ApplyVkTonemapTvOutRange(hwCscFilter, doVkTonemap, options);
-
-                    overlayFilters.Add(hwCscFilter);
+                    AddVkTonemapScaleVaapiFilter(overlayFilters, doVkTonemap, options);
 
                     // hw deint
                     AddVaapiHwDeinterlaceFilter(state, options, overlayFilters, doDeintH2645);
