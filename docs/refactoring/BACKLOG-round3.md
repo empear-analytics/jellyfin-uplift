@@ -98,7 +98,7 @@ Update as tasks land.
 | R3-10 | 7.54 | - | not started |
 | R3-11 | 7.57 | - | not started |
 | R3-12 | 7.71 | - | not started |
-| R3-13 | 7.78 | - | not started |
+| R3-13 | 7.78 | 8.03 | Sonnet. One step: GetPathProtocol tail extracted with Recipe E rule 7 (cc 9 cleared); the rest has no recipe (public argument lists, Constructor Over-Injection (13), Low Cohesion, Primitive Obsession) |
 | R3-14 | 7.79 | - | not started |
 | R3-15 | 7.80 | - | not started |
 | R3-16 | 7.81 | - | not started |
