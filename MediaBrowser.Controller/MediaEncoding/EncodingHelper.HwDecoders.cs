@@ -632,9 +632,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             var hwSurface = IsCudaFullSupported() && _mediaEncoder.SupportsFilter("alphasrc");
-            var is8bitSwFormatsNvdec = string.Equals("yuv420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                                       || string.Equals("yuvj420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-            var is8_10bitSwFormatsNvdec = is8bitSwFormatsNvdec || string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+            var is8bitSwFormatsNvdec = Is8BitYuv420SwFormat(videoStream);
+            var is8_10bitSwFormatsNvdec = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsNvdec);
             var is8_10_12bitSwFormatsNvdec = is8_10bitSwFormatsNvdec
                 || string.Equals("yuv444p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
                 || string.Equals("yuv444p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
@@ -713,9 +712,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hwSurface = _mediaEncoder.SupportsHwaccel("d3d11va")
                 && IsOpenclFullSupported()
                 && _mediaEncoder.SupportsFilter("alphasrc");
-            var is8bitSwFormatsAmf = string.Equals("yuv420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                                     || string.Equals("yuvj420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-            var is8_10bitSwFormatsAmf = is8bitSwFormatsAmf || string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+            var is8bitSwFormatsAmf = Is8BitYuv420SwFormat(videoStream);
+            var is8_10bitSwFormatsAmf = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsAmf);
 
             if (is8bitSwFormatsAmf)
             {
@@ -770,9 +768,8 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && IsVaapiFullSupported()
                 && IsOpenclFullSupported()
                 && _mediaEncoder.SupportsFilter("alphasrc");
-            var is8bitSwFormatsVaapi = string.Equals("yuv420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                                       || string.Equals("yuvj420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-            var is8_10bitSwFormatsVaapi = is8bitSwFormatsVaapi || string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+            var is8bitSwFormatsVaapi = Is8BitYuv420SwFormat(videoStream);
+            var is8_10bitSwFormatsVaapi = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVaapi);
             var is8_10_12bitSwFormatsVaapi = is8_10bitSwFormatsVaapi
                 || string.Equals("yuv422p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
                 || string.Equals("yuv444p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
@@ -839,9 +836,8 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
-            var is8bitSwFormatsVt = string.Equals("yuv420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                                    || string.Equals("yuvj420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-            var is8_10bitSwFormatsVt = is8bitSwFormatsVt || string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+            var is8bitSwFormatsVt = Is8BitYuv420SwFormat(videoStream);
+            var is8_10bitSwFormatsVt = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVt);
             var is8_10_12bitSwFormatsVt = is8_10bitSwFormatsVt
                 || string.Equals("yuv422p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
                 || string.Equals("yuv444p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
@@ -932,8 +928,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isAfbcSupported = hwSurface && IsScaleRatioSupported(inW, inH, reqW, reqH, reqMaxW, reqMaxH, 8.0f);
 
             // TODO: add more 8/10bit and 4:2:2 formats for Rkmpp after finishing the ffcheck tool
-            var is8bitSwFormatsRkmpp = string.Equals("yuv420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                                       || string.Equals("yuvj420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+            var is8bitSwFormatsRkmpp = Is8BitYuv420SwFormat(videoStream);
             var is10bitSwFormatsRkmpp = string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
             var is8_10bitSwFormatsRkmpp = is8bitSwFormatsRkmpp || is10bitSwFormatsRkmpp;
 
@@ -968,15 +963,13 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (is8_10bitSwFormatsRkmpp)
             {
-                if (string.Equals(videoStream.Codec, "avc", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase))
+                if (IsAvcOrH264Codec(videoStream))
                 {
                     var accelType = GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
                     return accelType + ((!string.IsNullOrEmpty(accelType) && isAfbcSupported) ? " -afbc rga" : string.Empty);
                 }
 
-                if (string.Equals(videoStream.Codec, "hevc", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoStream.Codec, "h265", StringComparison.OrdinalIgnoreCase))
+                if (IsHevcOrH265Codec(videoStream))
                 {
                     var accelType = GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
                     return accelType + ((!string.IsNullOrEmpty(accelType) && isAfbcSupported) ? " -afbc rga" : string.Empty);
