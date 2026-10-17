@@ -114,12 +114,12 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doVppTonemap = IsIntelVppTonemapAvailable(state, options);
-            var doOclTonemap = !doVppTonemap && IsHwTonemapAvailable(state, options);
+            var doOclTonemap = NeedsOclTonemap(state, options, doVppTonemap);
             var doTonemap = doVppTonemap || doOclTonemap;
 
-            var hasSubs = state.SubtitleStream is not null && ShouldEncodeSubtitle(state);
-            var hasTextSubs = hasSubs && state.SubtitleStream.IsTextSubtitleStream;
-            var hasGraphicalSubs = hasSubs && !state.SubtitleStream.IsTextSubtitleStream;
+            var hasSubs = HasSubtitlesToEncode(state);
+            var hasTextSubs = HasTextSubtitles(state, hasSubs);
+            var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
             var hasAssSubs = HasAssSubtitles(state, hasSubs);
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
@@ -330,7 +330,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     subFilters.Add("hwupload=derive_device=qsv:extra_hw_frames=64");
 
                     var (overlayW, overlayH) = GetFixedOutputSize(swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                    var overlaySize = (overlayW.HasValue && overlayH.HasValue)
+                    var overlaySize = HasFixedOverlaySize(overlayW, overlayH)
                         ? $":w={overlayW.Value}:h={overlayH.Value}"
                         : string.Empty;
                     var overlayQsvFilter = string.Format(
@@ -351,6 +351,31 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private bool NeedsOclTonemap(EncodingJobInfo state, EncodingOptions options, bool doVppTonemap)
+        {
+            return !doVppTonemap && IsHwTonemapAvailable(state, options);
+        }
+
+        private static bool HasSubtitlesToEncode(EncodingJobInfo state)
+        {
+            return state.SubtitleStream is not null && ShouldEncodeSubtitle(state);
+        }
+
+        private static bool HasTextSubtitles(EncodingJobInfo state, bool hasSubs)
+        {
+            return hasSubs && state.SubtitleStream.IsTextSubtitleStream;
+        }
+
+        private static bool HasGraphicalSubtitles(EncodingJobInfo state, bool hasSubs)
+        {
+            return hasSubs && !state.SubtitleStream.IsTextSubtitleStream;
+        }
+
+        private static bool HasFixedOverlaySize(int? overlayW, int? overlayH)
+        {
+            return overlayW.HasValue && overlayH.HasValue;
         }
 
         private static void AddSwDeinterlaceFilter(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, bool doDeintH2645)
