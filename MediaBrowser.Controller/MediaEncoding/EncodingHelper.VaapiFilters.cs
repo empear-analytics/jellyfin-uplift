@@ -131,13 +131,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isVaInVaOut = isVaapiDecoder && isVaapiEncoder;
 
             var doVaVppTonemap = isVaapiDecoder && IsIntelVppTonemapAvailable(state, options);
-            var doOclTonemap = !doVaVppTonemap && IsHwTonemapAvailable(state, options);
+            var doOclTonemap = NeedsOclTonemap(state, options, doVaVppTonemap);
             var doTonemap = doVaVppTonemap || doOclTonemap;
             var doDeintH2645 = IsDeinterlaceAvailable(state);
 
-            var hasSubs = state.SubtitleStream is not null && ShouldEncodeSubtitle(state);
-            var hasTextSubs = hasSubs && state.SubtitleStream.IsTextSubtitleStream;
-            var hasGraphicalSubs = hasSubs && !state.SubtitleStream.IsTextSubtitleStream;
+            var hasSubs = HasSubtitlesToEncode(state);
+            var hasTextSubs = HasTextSubtitles(state, hasSubs);
+            var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
             var hasAssSubs = hasSubs
                 && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
@@ -160,11 +160,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // INPUT sw surface(memory)
                 // sw deint
-                if (doDeintH2645)
-                {
-                    var swDeintFilter = GetSwDeinterlaceFilter(state, options);
-                    mainFilters.Add(swDeintFilter);
-                }
+                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 var outFormat = doOclTonemap ? "yuv420p10le" : "nv12";
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
@@ -207,7 +203,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 var outFormat = doTonemap ? (isRext ? "p010" : string.Empty) : "nv12";
                 var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", outFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
 
-                if (!string.IsNullOrEmpty(hwScaleFilter) && isMjpegEncoder)
+                if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
                 {
                     hwScaleFilter += doOclTonemap ? string.Empty : ":out_range=pc";
                     hwScaleFilter += ":mode=hq";
@@ -224,13 +220,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // vaapi vpp tonemap
-            if (doVaVppTonemap && isVaapiDecoder)
+            if (NeedsHwVaapiVppTonemap(doVaVppTonemap, isVaapiDecoder))
             {
                 var tonemapFilter = GetHwTonemapFilter(options, "vaapi", "nv12", isMjpegEncoder);
                 mainFilters.Add(tonemapFilter);
             }
 
-            if (doOclTonemap && isVaapiDecoder)
+            if (NeedsHwToOpenclMapping(doOclTonemap, isVaapiDecoder))
             {
                 // map from vaapi to opencl via vaapi-opencl interop(Intel only).
                 mainFilters.Add("hwmap=derive_device=opencl:mode=read");
@@ -272,12 +268,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (memoryOutput)
             {
-                // text subtitles
-                if (hasTextSubs)
-                {
-                    var textSubtitlesFilter = GetTextSubtitlesFilter(state, false, false);
-                    mainFilters.Add(textSubtitlesFilter);
-                }
+                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
             }
 
             if (memoryOutput && isVaapiEncoder)
@@ -317,7 +308,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     subFilters.Add("hwupload=derive_device=vaapi");
 
                     var (overlayW, overlayH) = GetFixedOutputSize(swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                    var overlaySize = (overlayW.HasValue && overlayH.HasValue)
+                    var overlaySize = HasFixedOverlaySize(overlayW, overlayH)
                         ? $":w={overlayW.Value}:h={overlayH.Value}"
                         : string.Empty;
                     var overlayVaapiFilter = string.Format(
@@ -368,9 +359,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             var doVkTonemap = IsVulkanHwTonemapAvailable(state, options);
             var doDeintH2645 = IsDeinterlaceAvailable(state);
 
-            var hasSubs = state.SubtitleStream is not null && ShouldEncodeSubtitle(state);
-            var hasTextSubs = hasSubs && state.SubtitleStream.IsTextSubtitleStream;
-            var hasGraphicalSubs = hasSubs && !state.SubtitleStream.IsTextSubtitleStream;
+            var hasSubs = HasSubtitlesToEncode(state);
+            var hasTextSubs = HasTextSubtitles(state, hasSubs);
+            var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
             var hasAssSubs = hasSubs
                 && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
@@ -391,11 +382,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // INPUT sw surface(memory)
                 // sw deint
-                if (doDeintH2645)
-                {
-                    var swDeintFilter = GetSwDeinterlaceFilter(state, options);
-                    mainFilters.Add(swDeintFilter);
-                }
+                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 if (doVkTonemap || hasSubs)
                 {
@@ -655,9 +642,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doOclTonemap = IsHwTonemapAvailable(state, options);
 
-            var hasSubs = state.SubtitleStream is not null && ShouldEncodeSubtitle(state);
-            var hasTextSubs = hasSubs && state.SubtitleStream.IsTextSubtitleStream;
-            var hasGraphicalSubs = hasSubs && !state.SubtitleStream.IsTextSubtitleStream;
+            var hasSubs = HasSubtitlesToEncode(state);
+            var hasTextSubs = HasTextSubtitles(state, hasSubs);
+            var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
 
             var rotation = state.VideoStream?.Rotation ?? 0;
             var swapWAndH = Math.Abs(rotation) == 90 && isSwDecoder;
@@ -674,11 +661,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // INPUT sw surface(memory)
                 // sw deint
-                if (doDeintH2645)
-                {
-                    var swDeintFilter = GetSwDeinterlaceFilter(state, options);
-                    mainFilters.Add(swDeintFilter);
-                }
+                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 outFormat = doOclTonemap ? "yuv420p10le" : "nv12";
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
@@ -713,7 +696,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 outFormat = doOclTonemap ? string.Empty : "nv12";
                 var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", outFormat, false, inW, inH, reqW, reqH, reqMaxW, reqMaxH);
 
-                if (!string.IsNullOrEmpty(hwScaleFilter) && isMjpegEncoder)
+                if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
                 {
                     hwScaleFilter += doOclTonemap ? string.Empty : ":out_range=pc";
                     hwScaleFilter += ":mode=hq";
@@ -729,7 +712,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add(hwScaleFilter);
             }
 
-            if (doOclTonemap && isVaapiDecoder)
+            if (NeedsHwToOpenclMapping(doOclTonemap, isVaapiDecoder))
             {
                 if (isi965Driver)
                 {
@@ -785,12 +768,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (memoryOutput)
             {
-                // text subtitles
-                if (hasTextSubs)
-                {
-                    var textSubtitlesFilter = GetTextSubtitlesFilter(state, false, false);
-                    mainFilters.Add(textSubtitlesFilter);
-                }
+                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
             }
 
             if (isHwUnmapForTextSubs)
