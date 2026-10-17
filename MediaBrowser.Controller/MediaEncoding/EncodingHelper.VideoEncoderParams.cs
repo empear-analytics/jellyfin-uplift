@@ -434,19 +434,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // Transcode to level 5.3 (15) and lower for maximum compatibility.
                 // https://en.wikipedia.org/wiki/AV1#Levels
-                if (requestLevel < 0 || requestLevel >= 15)
+                if (IsAv1LevelAboveCap(requestLevel))
                 {
                     return "15";
                 }
             }
-            else if (string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
-                     || string.Equals(state.ActualOutputVideoCodec, "h265", StringComparison.OrdinalIgnoreCase))
+            else if (IsHevcOrH265OutputCodec(state.ActualOutputVideoCodec))
             {
                 // Transcode to level 5.0 and lower for maximum compatibility.
                 // Level 5.0 is suitable for up to 4k 30fps hevc encoding, otherwise let the encoder to handle it.
                 // https://en.wikipedia.org/wiki/High_Efficiency_Video_Coding_tiers_and_levels
                 // MaxLumaSampleRate = 3840*2160*30 = 248832000 < 267386880.
-                if (requestLevel < 0 || requestLevel >= 150)
+                if (IsHevcLevelAboveCap(requestLevel))
                 {
                     return "150";
                 }
@@ -456,13 +455,34 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // Transcode to level 5.1 and lower for maximum compatibility.
                 // h264 4k 30fps requires at least level 5.1 otherwise it will break on safari fmp4.
                 // https://en.wikipedia.org/wiki/Advanced_Video_Coding#Levels
-                if (requestLevel < 0 || requestLevel >= 51)
+                if (IsH264LevelAboveCap(requestLevel))
                 {
                     return "51";
                 }
             }
 
             return level;
+        }
+
+        private static bool IsAv1LevelAboveCap(double requestLevel)
+        {
+            return requestLevel < 0 || requestLevel >= 15;
+        }
+
+        private static bool IsHevcLevelAboveCap(double requestLevel)
+        {
+            return requestLevel < 0 || requestLevel >= 150;
+        }
+
+        private static bool IsH264LevelAboveCap(double requestLevel)
+        {
+            return requestLevel < 0 || requestLevel >= 51;
+        }
+
+        private static bool IsHevcOrH265OutputCodec(string codec)
+        {
+            return string.Equals(codec, "hevc", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(codec, "h265", StringComparison.OrdinalIgnoreCase);
         }
 
         public double? GetFramerateParam(EncodingJobInfo state)
