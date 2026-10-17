@@ -1269,13 +1269,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // The -fps_mode option cannot be applied to input
-            if (!string.IsNullOrEmpty(state.InputVideoSync) && _mediaEncoder.EncoderVersion < new Version(5, 1))
+            if (NeedsInputVideoSync(state))
             {
                 inputModifier += GetVideoSyncOption(state.InputVideoSync, _mediaEncoder.EncoderVersion);
             }
 
             int readrate = 0;
-            if (state.ReadInputAtNativeFramerate && state.InputProtocol != MediaProtocol.Rtsp)
+            if (ShouldReadAtNativeFramerate(state))
             {
                 readrate = 1;
                 inputModifier += " -re";
@@ -1290,7 +1290,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // Set a larger catchup value to revert to the old behavior,
             // otherwise, remuxing might stall due to this new option
-            if (readrate > 0 && _mediaEncoder.EncoderVersion >= _minFFmpegReadrateCatchupOption)
+            if (NeedsReadrateCatchup(readrate))
             {
                 inputModifier += $" -readrate_catchup {readrate * 100}";
             }
@@ -1308,6 +1308,21 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return inputModifier;
+        }
+
+        private bool NeedsInputVideoSync(EncodingJobInfo state)
+        {
+            return !string.IsNullOrEmpty(state.InputVideoSync) && _mediaEncoder.EncoderVersion < new Version(5, 1);
+        }
+
+        private static bool ShouldReadAtNativeFramerate(EncodingJobInfo state)
+        {
+            return state.ReadInputAtNativeFramerate && state.InputProtocol != MediaProtocol.Rtsp;
+        }
+
+        private bool NeedsReadrateCatchup(int readrate)
+        {
+            return readrate > 0 && _mediaEncoder.EncoderVersion >= _minFFmpegReadrateCatchupOption;
         }
 
         private static string AppendExplicitInputFormat(string inputModifier, EncodingJobInfo state, EncodingOptions encodingOptions)
