@@ -80,8 +80,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 if (IsH264Hi422OrHi444Profile(videoStream))
                 {
                     // VideoToolbox on Apple Silicon has H.264 Hi444PP and theoretically also has Hi422P
-                    if (!(hardwareAccelerationType == HardwareAccelerationType.videotoolbox
-                          && RuntimeInformation.OSArchitecture.Equals(Architecture.Arm64)))
+                    if (!IsAppleSiliconVideoToolbox(hardwareAccelerationType))
                     {
                         return null;
                     }
@@ -106,6 +105,12 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // leave blank so ffmpeg will decide
             return null;
+        }
+
+        private static bool IsAppleSiliconVideoToolbox(HardwareAccelerationType hardwareAccelerationType)
+        {
+            return hardwareAccelerationType == HardwareAccelerationType.videotoolbox
+                && RuntimeInformation.OSArchitecture.Equals(Architecture.Arm64);
         }
 
         private static bool HasHardwareHi10PDecoder(HardwareAccelerationType hardwareAccelerationType)
