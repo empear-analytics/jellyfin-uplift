@@ -7,8 +7,9 @@ HEAD, i.e. before your uncommitted change), prints both scores and the smells th
 remain, and ends with one verdict:
 
     UP     the score improved, with no new smell and no method made worse: keep the change
-    WORSE  the score improved, but a smell category is new to the file, or a method that was
-           already flagged got a higher number (complexity, nesting, bumps...): revert it
+    WORSE  the score improved, but a smell category is new to the file, a method that was
+           already flagged got a higher number (complexity, nesting, bumps...), or a new
+           method has Excess Number of Function Arguments: revert it
     FLAT   the score did not move: revert it
     DOWN   the score fell: revert it
 
@@ -61,6 +62,7 @@ def review_at(exe: str, rel: str, ref: str) -> dict | None:
 
 
 NUMBER = re.compile(r"(\d+)")
+EXCESS_ARGUMENTS = "Excess Number of Function Arguments"
 
 
 def findings(review: dict) -> tuple[set[str], dict[tuple[str, str], int]]:
@@ -87,6 +89,8 @@ def regressions(before: dict, after: dict) -> list[str]:
     for key, value in sorted(new_numbers.items()):
         if key in old_numbers and value > old_numbers[key]:
             found.append(f"worse: {key[0]} in {key[1]} ({old_numbers[key]} -> {value})")
+        elif key not in old_numbers and key[0] == EXCESS_ARGUMENTS:
+            found.append(f"new method with {EXCESS_ARGUMENTS}: {key[1]} ({value})")
     return found
 
 

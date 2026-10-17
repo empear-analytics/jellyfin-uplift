@@ -32,7 +32,8 @@ RECIPES = {
     "Brain Method": "G, E, P",
     "Large Method": "E",
     "Code Duplication": "D",
-    "Lines of Code in a Single File": "S (last)",
+    "Lines of Code in a Single File": "S (not first)",
+    "Number of Functions in a Single Module": "S (not first)",
     "Overall Code Complexity": "follows the functions",
 }
 
@@ -49,7 +50,8 @@ PLUGIN_API = ("MediaBrowser.Controller/", "MediaBrowser.Model/")
 
 # Internal members that the existing tests call directly; see test-harness.md, "What the tests freeze".
 FROZEN_INTERNALS = {
-    "MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.cs": ["GetEstimatedAudioBitrate", "GetFrameRate", "IsNearSquarePixelSar"],
+    "MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.cs": ["GetEstimatedAudioBitrate"],
+    "MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.MediaStream.cs": ["GetFrameRate", "IsNearSquarePixelSar"],
     "MediaBrowser.Model/Dlna/StreamBuilder.cs": ["ContainerReasons"],
     "Jellyfin.Api/Controllers/DynamicHlsController.cs": ["GetDolbyVisionHevcCodecTag", "GetSegmentLengthsInternal", "WaitForActiveTranscodingRequests"],
     "Jellyfin.Api/Helpers/MediaInfoHelper.cs": ["GetPublishedLiveStreamPath"],
@@ -160,7 +162,7 @@ def task_text(task_id: str, entry: dict) -> str:
     stem = Path(rel).stem
     part, tests = PARTS[str(Path(rel).parent).replace("\\", "/")]
     rows = entry["functions"]
-    recipes = sorted({r for s in entry["smells"] for r in RECIPES.get(s["category"], "").replace(" (last)", "").split(", ") if len(r) == 1})
+    recipes = sorted({r for s in entry["smells"] for r in RECIPES.get(s["category"], "").replace(" (not first)", "").split(", ") if len(r) == 1})
     uncovered = sorted({s["category"] for s in entry["smells"]} - set(RECIPES))
 
     out = [f"# {task_id} - refactor `{rel}`", ""]
@@ -196,9 +198,12 @@ def task_text(task_id: str, entry: dict) -> str:
     for s in sorted(entry["smells"], key=lambda s: -(s.get("indication") or 0)):
         out += [f"| {s['category']} | {s.get('indication')} | {RECIPES.get(s['category'], 'none - report it')} |"]
     out += [""]
-    if any(s["category"] == "Lines of Code in a Single File" for s in entry["smells"]):
-        out += ["This file also trips **Lines of Code in a Single File**. Splitting it is the *last* step."]
-        out += ["Reduce method-level complexity first; the file may drop below the limit without a split.", ""]
+    size_smells = [s["category"] for s in entry["smells"] if s["category"] in ("Lines of Code in a Single File", "Number of Functions in a Single Module")]
+    if size_smells:
+        out += [f"This file also trips **{' and '.join(size_smells)}**. Splitting it (Recipe S) is never the first step:"]
+        out += ["work the steps below once, then split when they stall on the file's size, and keep going on the new files.", ""]
+    out += ["If Recipe E or P steps score `DOWN` or `WORSE` only because they bring *Number of Functions in a Single"]
+    out += ["Module*, that is the signal for Recipe S (see the playbook).", ""]
 
     out += ["## 4. What must not change here", ""]
     if rel.startswith(PLUGIN_API):
@@ -325,7 +330,7 @@ def main() -> None:
     out += ["| Task | File | Score | LoC | Churn | Mutation (S / M) | Recipes | Smells without a recipe | Worst method |"]
     out += ["| --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for task_id, name, e, worst in rows:
-        recipes = sorted({r for s in e["smells"] for r in RECIPES.get(s["category"], "").replace(" (last)", "").split(", ") if len(r) == 1})
+        recipes = sorted({r for s in e["smells"] for r in RECIPES.get(s["category"], "").replace(" (not first)", "").split(", ") if len(r) == 1})
         uncovered = sorted({s["category"] for s in e["smells"]} - set(RECIPES))
         m = e["mutation"]
         low = " (low)" if m and min(m.values()) < PROTECTION_FLOOR else ""

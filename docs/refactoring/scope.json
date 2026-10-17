@@ -11,6 +11,9 @@
   ],
   "folders_note": "Direct files only; subfolders are not in scope.",
   "files": [
-    "Jellyfin.Api/Controllers/DynamicHlsController.cs"
-  ]
+    "Jellyfin.Api/Controllers/DynamicHlsController.cs",
+    "Jellyfin.Api/Controllers/DynamicHlsController.Audio.cs",
+    "Jellyfin.Api/Controllers/DynamicHlsController.Video.cs"
+  ],
+  "files_note": "Files split off a scope file by Recipe S are in scope (added 2026-10-17: the DynamicHlsController parts from R05; split-off files in scope folders are included through the folder)."
 }
