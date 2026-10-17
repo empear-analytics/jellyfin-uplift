@@ -1351,6 +1351,11 @@ namespace Emby.Server.Implementations.Library
                 folder.UserData = null;
             }
 
+            NotifyItemsUpdated(items, parent, updateReason);
+        }
+
+        private void NotifyItemsUpdated(IReadOnlyList<BaseItem> items, BaseItem parent, ItemUpdateType updateReason)
+        {
             if (ItemUpdated is not null)
             {
                 foreach (var item in items)
