@@ -1219,9 +1219,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // Disable AMD EFC feature since it's still unstable in upstream Mesa.
                 Environment.SetEnvironmentVariable("AMD_DEBUG", "noefc");
 
-                if (IsVulkanFullSupported()
-                    && _mediaEncoder.IsVaapiDeviceSupportVulkanDrmInterop
-                    && Environment.OSVersion.Version >= _minKernelVersionAmdVkFmtModifier)
+                if (IsAmdVulkanDrmInteropUsable())
                 {
                     args.Append(GetDrmDeviceArgs(options.VaapiDevice, DrmAlias));
                     args.Append(GetVaapiDeviceArgs(null, null, null, null, DrmAlias, VaapiAlias));
@@ -1250,6 +1248,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             args.Append(filterDevArgs);
+        }
+
+        private bool IsAmdVulkanDrmInteropUsable()
+        {
+            return IsVulkanFullSupported()
+                && _mediaEncoder.IsVaapiDeviceSupportVulkanDrmInterop
+                && Environment.OSVersion.Version >= _minKernelVersionAmdVkFmtModifier;
         }
 
         private void AppendQsvHwDeviceArgs(StringBuilder args, EncodingOptions options, bool isLinux, bool isHwDecoder, bool isHwTonemapAvailable)
