@@ -171,6 +171,29 @@ namespace Emby.Server.Implementations.Library
             // This happens when items were previously resolved without proper type context
             // in mixed-content libraries where collectionType is null.
             var expectedId = GetNewItemId(path, expectedVideoType);
+            RemoveWrongTypeAlternateVersion(path, expectedVideoType, expectedId);
+
+            var resolved = ResolvePath(
+                _fileSystem.GetFileSystemInfo(path),
+                parent,
+                collectionType: collectionType) as Video;
+
+            if (resolved is null)
+            {
+                return null;
+            }
+
+            // Ensure the alternate version has the same concrete type as the primary video.
+            // ResolvePath may return a generic Video for files in mixed-content libraries
+            // where collectionType is null, even though the primary is a Movie/Episode/etc.
+            resolved = ConvertToExpectedVideoType(resolved, expectedVideoType);
+
+            resolved.Id = expectedId;
+            return resolved;
+        }
+
+        private void RemoveWrongTypeAlternateVersion(string path, Type expectedVideoType, Guid expectedId)
+        {
             if (expectedVideoType != typeof(Video))
             {
                 var wrongTypeId = GetNewItemId(path, typeof(Video));
@@ -195,20 +218,10 @@ namespace Emby.Server.Implementations.Library
                     }
                 }
             }
+        }
 
-            var resolved = ResolvePath(
-                _fileSystem.GetFileSystemInfo(path),
-                parent,
-                collectionType: collectionType) as Video;
-
-            if (resolved is null)
-            {
-                return null;
-            }
-
-            // Ensure the alternate version has the same concrete type as the primary video.
-            // ResolvePath may return a generic Video for files in mixed-content libraries
-            // where collectionType is null, even though the primary is a Movie/Episode/etc.
+        private static Video ConvertToExpectedVideoType(Video resolved, Type expectedVideoType)
+        {
             if (resolved.GetType() != expectedVideoType)
             {
                 if (Activator.CreateInstance(expectedVideoType) is Video correctVideo)
@@ -222,7 +235,6 @@ namespace Emby.Server.Implementations.Library
                 }
             }
 
-            resolved.Id = expectedId;
             return resolved;
         }
 
