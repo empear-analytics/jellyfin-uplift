@@ -3863,9 +3863,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 var doVaVppProcamp = false;
                 var procampParams = string.Empty;
-                if (options.VppTonemappingBrightness != 0
-                    && options.VppTonemappingBrightness >= -100
-                    && options.VppTonemappingBrightness <= 100)
+                if (IsVppTonemappingBrightnessInRange(options))
                 {
                     procampParams += "procamp_vaapi=b={0}";
                     doVaVppProcamp = true;
