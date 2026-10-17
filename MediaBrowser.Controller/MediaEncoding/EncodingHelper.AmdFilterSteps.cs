@@ -87,5 +87,10 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add($"transpose_opencl=dir={transposeDir}");
             }
         }
+
+        private static bool IsAmdRotatedWidthHeightSwapped(int rotation, bool isSwDecoder, bool isD3d11vaDecoder, bool doOclTranspose)
+        {
+            return Math.Abs(rotation) == 90 && (isSwDecoder || (isD3d11vaDecoder && doOclTranspose));
+        }
     }
 }

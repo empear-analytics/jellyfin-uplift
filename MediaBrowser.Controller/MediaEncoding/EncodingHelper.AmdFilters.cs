@@ -99,7 +99,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var transposeDir = GetTransposeDirection(state, rotation);
             var doOclTranspose = !string.IsNullOrEmpty(transposeDir)
                 && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.TransposeOpenclReversal);
-            var swapWAndH = Math.Abs(rotation) == 90 && (isSwDecoder || (isD3d11vaDecoder && doOclTranspose));
+            var swapWAndH = IsAmdRotatedWidthHeightSwapped(rotation, isSwDecoder, isD3d11vaDecoder, doOclTranspose);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
