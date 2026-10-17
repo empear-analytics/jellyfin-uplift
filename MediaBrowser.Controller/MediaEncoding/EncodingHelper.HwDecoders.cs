@@ -190,6 +190,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return GetDecoderOptionUnlessSuperseded(options, decoderSuffix, decoderName, isCodecAvailable);
+        }
+
+        private static string GetDecoderOptionUnlessSuperseded(EncodingOptions options, string decoderSuffix, string decoderName, bool isCodecAvailable)
+        {
             if (IsCuvidSupersededByNvdec(options, decoderSuffix))
             {
                 return null;
