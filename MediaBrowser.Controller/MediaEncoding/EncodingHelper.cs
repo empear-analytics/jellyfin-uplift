@@ -2358,9 +2358,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // We only need Main profile of AV1 encoders.
-            if (videoEncoder.Contains("av1", StringComparison.OrdinalIgnoreCase)
-                && (profile.Contains("high", StringComparison.OrdinalIgnoreCase)
-                    || profile.Contains("professional", StringComparison.OrdinalIgnoreCase)))
+            if (IsAv1EncoderWithUnsupportedProfile(videoEncoder, profile))
             {
                 profile = "main";
             }
@@ -2374,22 +2372,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // libx264, h264_{qsv,nvenc,rkmpp} does not support Constrained Baseline profile, force Baseline in this case.
-            if ((string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase))
-                && profile.Contains("baseline", StringComparison.OrdinalIgnoreCase))
+            if (IsBaselineOnlyH264Encoder(videoEncoder, profile))
             {
                 profile = "baseline";
             }
 
             // libx264, h264_{qsv,nvenc,vaapi,rkmpp} does not support Constrained High profile, force High in this case.
-            if ((string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase))
-                && profile.Contains("high", StringComparison.OrdinalIgnoreCase))
+            if (IsHighOnlyH264Encoder(videoEncoder, profile))
             {
                 profile = "high";
             }
@@ -2519,14 +2508,45 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             /* Access unit too large: 8192 < 20880 error */
-            if ((string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(videoEncoder, "hevc_vaapi", StringComparison.OrdinalIgnoreCase)) &&
-                 _mediaEncoder.EncoderVersion >= _minFFmpegVaapiH26xEncA53CcSei)
+            if (SupportsVaapiA53CcSei(videoEncoder))
             {
                 param += " -sei -a53_cc";
             }
 
             return param;
+        }
+
+        private static bool IsAv1EncoderWithUnsupportedProfile(string videoEncoder, string profile)
+        {
+            return videoEncoder.Contains("av1", StringComparison.OrdinalIgnoreCase)
+                && (profile.Contains("high", StringComparison.OrdinalIgnoreCase)
+                    || profile.Contains("professional", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool IsBaselineOnlyH264Encoder(string videoEncoder, string profile)
+        {
+            return (string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(videoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase))
+                && profile.Contains("baseline", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsHighOnlyH264Encoder(string videoEncoder, string profile)
+        {
+            return (string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(videoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase))
+                && profile.Contains("high", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool SupportsVaapiA53CcSei(string videoEncoder)
+        {
+            return (string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(videoEncoder, "hevc_vaapi", StringComparison.OrdinalIgnoreCase)) &&
+                 _mediaEncoder.EncoderVersion >= _minFFmpegVaapiH26xEncA53CcSei;
         }
 
         public bool CanStreamCopyVideo(EncodingJobInfo state, MediaStream videoStream)
