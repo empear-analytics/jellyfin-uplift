@@ -145,7 +145,7 @@ Update as tasks land.
 | R3-57 | 9.68 | - | not started |
 | R3-58 | 9.68 | - | not started |
 | R3-59 | 9.68 | - | not started |
-| R3-60 | 9.68 | - | not started |
+| R3-60 | 9.68 | 10.00 | Sonnet. One commit: the two `?? 0` expressions moved into GetTranscodingPositionOrZero and GetDownloadPositionOrZero (rule 9, two applications in one method, each FLAT alone, UP together). Both properties are `long?`, so the types are identical. Protection by tests is low (the file needs a running ffmpeg): the change is two copied expressions, unverified by tests. No smell left |
 | R3-61 | 9.68 | - | not started |
 | R3-62 | 9.68 | - | not started |
 | R3-63 | 9.68 | - | not started |
