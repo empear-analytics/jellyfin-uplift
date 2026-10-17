@@ -338,6 +338,15 @@ namespace Emby.Server.Implementations.Library
 
             HashSet<Guid>? withLocalAlternates = FindIdsWithLocalAlternates(localProbeIds);
 
+            return ResolveResumeDataFromAlternates(result, candidates, withLocalAlternates, user);
+        }
+
+        private IReadOnlyDictionary<Guid, VersionResumeData> ResolveResumeDataFromAlternates(
+            Dictionary<Guid, VersionResumeData> result,
+            List<Video> candidates,
+            HashSet<Guid>? withLocalAlternates,
+            User user)
+        {
             List<(Guid PrimaryId, IReadOnlyList<Video> Versions)>? versionGroups = null;
             List<BaseItem>? allVersions = null;
 
