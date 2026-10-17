@@ -232,6 +232,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return string.Empty;
             }
 
+            return GetHwDeviceAndDecoderArgs(state, options, vidEncoder);
+        }
+
+        private string GetHwDeviceAndDecoderArgs(EncodingJobInfo state, EncodingOptions options, string vidEncoder)
+        {
             var args = new StringBuilder();
             var isWindows = OperatingSystem.IsWindows();
             var isLinux = OperatingSystem.IsLinux();
