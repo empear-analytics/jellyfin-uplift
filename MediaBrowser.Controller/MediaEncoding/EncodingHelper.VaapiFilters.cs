@@ -311,6 +311,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
         }
 
+        private static void AddVulkanToVaapiMapping(List<string> filters)
+        {
+            filters.Add("hwmap=derive_device=vaapi");
+            filters.Add("format=vaapi");
+        }
+
         private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
         {
             return isVaapiDecoder && IsIntelVppTonemapAvailable(state, options);
@@ -486,8 +492,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // OUTPUT vaapi(nv12) surface(vram)
                 // map from vulkan/drm to vaapi via interop (Polaris/gfx8+).
-                mainFilters.Add("hwmap=derive_device=vaapi");
-                mainFilters.Add("format=vaapi");
+                AddVulkanToVaapiMapping(mainFilters);
 
                 // clear the surf->meta_offset and output nv12
                 var hwCscFilter = "scale_vaapi=format=nv12";
@@ -556,8 +561,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 {
                     // OUTPUT vaapi(nv12) surface(vram)
                     // map from vulkan/drm to vaapi via interop (Polaris/gfx8+).
-                    overlayFilters.Add("hwmap=derive_device=vaapi");
-                    overlayFilters.Add("format=vaapi");
+                    AddVulkanToVaapiMapping(overlayFilters);
 
                     // clear the surf->meta_offset and output nv12
                     var hwCscFilter = "scale_vaapi=format=nv12";
