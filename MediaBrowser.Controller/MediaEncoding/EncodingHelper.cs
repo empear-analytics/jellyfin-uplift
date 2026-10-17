@@ -3522,12 +3522,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 requestedMaxWidth,
                 requestedMaxHeight);
 
-            if (!videoWidth.HasValue
-                 || !videoHeight.HasValue
-                 || !outWidth.HasValue
-                 || !outHeight.HasValue
-                 || !maxScaleRatio.HasValue
-                 || (maxScaleRatio.Value < 1.0f))
+            if (HasMissingScaleInput(videoWidth, videoHeight, outWidth, outHeight, maxScaleRatio))
             {
                 return false;
             }
@@ -3536,15 +3531,30 @@ namespace MediaBrowser.Controller.MediaEncoding
             var scaleRatioW = (double)outWidth / (double)videoWidth;
             var scaleRatioH = (double)outHeight / (double)videoHeight;
 
-            if (scaleRatioW < minScaleRatio
-                || scaleRatioW > maxScaleRatio
-                || scaleRatioH < minScaleRatio
-                || scaleRatioH > maxScaleRatio)
+            if (IsScaleRatioOutOfRange(scaleRatioW, scaleRatioH, minScaleRatio, maxScaleRatio))
             {
                 return false;
             }
 
             return true;
+        }
+
+        private static bool HasMissingScaleInput(int? videoWidth, int? videoHeight, int? outWidth, int? outHeight, double? maxScaleRatio)
+        {
+            return !videoWidth.HasValue
+                || !videoHeight.HasValue
+                || !outWidth.HasValue
+                || !outHeight.HasValue
+                || !maxScaleRatio.HasValue
+                || (maxScaleRatio.Value < 1.0f);
+        }
+
+        private static bool IsScaleRatioOutOfRange(double scaleRatioW, double scaleRatioH, double? minScaleRatio, double? maxScaleRatio)
+        {
+            return scaleRatioW < minScaleRatio
+                || scaleRatioW > maxScaleRatio
+                || scaleRatioH < minScaleRatio
+                || scaleRatioH > maxScaleRatio;
         }
 
         public static string GetHwScaleFilter(
