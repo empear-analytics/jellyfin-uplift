@@ -2787,9 +2787,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             TranscodeReason reasons = 0;
 
             var maxBitDepth = state.GetRequestedAudioBitDepth(audioStream.Codec);
-            if (maxBitDepth.HasValue
-                && audioStream.BitDepth.HasValue
-                && audioStream.BitDepth.Value > maxBitDepth.Value)
+            if (ExceedsMaxAudioBitDepth(maxBitDepth, audioStream))
             {
                 reasons |= TranscodeReason.AudioBitDepthNotSupported;
             }
@@ -2803,32 +2801,54 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // Channels must fall within requested value
             var channels = state.GetRequestedAudioChannels(audioStream.Codec);
-            if (channels.HasValue
-                && (!audioStream.Channels.HasValue
-                    || audioStream.Channels.Value <= 0
-                    || audioStream.Channels.Value > channels.Value))
+            if (ExceedsRequestedAudioChannels(channels, audioStream))
             {
                 reasons |= TranscodeReason.AudioChannelsNotSupported;
             }
 
             // Sample rate must fall within requested value
-            if (request.AudioSampleRate.HasValue
-                && (!audioStream.SampleRate.HasValue
-                    || audioStream.SampleRate.Value <= 0
-                    || audioStream.SampleRate.Value > request.AudioSampleRate.Value))
+            if (ExceedsRequestedAudioSampleRate(request, audioStream))
             {
                 reasons |= TranscodeReason.AudioSampleRateNotSupported;
             }
 
             // Audio bitrate must fall within requested value
-            if (request.AudioBitRate.HasValue
-                && audioStream.BitRate.HasValue
-                && audioStream.BitRate.Value > request.AudioBitRate.Value)
+            if (ExceedsRequestedAudioBitRate(request, audioStream))
             {
                 reasons |= TranscodeReason.AudioBitrateNotSupported;
             }
 
             return reasons;
+        }
+
+        private static bool ExceedsMaxAudioBitDepth(int? maxBitDepth, MediaStream audioStream)
+        {
+            return maxBitDepth.HasValue
+                && audioStream.BitDepth.HasValue
+                && audioStream.BitDepth.Value > maxBitDepth.Value;
+        }
+
+        private static bool ExceedsRequestedAudioChannels(int? channels, MediaStream audioStream)
+        {
+            return channels.HasValue
+                && (!audioStream.Channels.HasValue
+                    || audioStream.Channels.Value <= 0
+                    || audioStream.Channels.Value > channels.Value);
+        }
+
+        private static bool ExceedsRequestedAudioSampleRate(BaseEncodingJobOptions request, MediaStream audioStream)
+        {
+            return request.AudioSampleRate.HasValue
+                && (!audioStream.SampleRate.HasValue
+                    || audioStream.SampleRate.Value <= 0
+                    || audioStream.SampleRate.Value > request.AudioSampleRate.Value);
+        }
+
+        private static bool ExceedsRequestedAudioBitRate(BaseEncodingJobOptions request, MediaStream audioStream)
+        {
+            return request.AudioBitRate.HasValue
+                && audioStream.BitRate.HasValue
+                && audioStream.BitRate.Value > request.AudioBitRate.Value;
         }
 
         private static int GetBitDepthCompensatedBitrate(int bitrate, MediaStream videoStream, int targetBitDepth)
