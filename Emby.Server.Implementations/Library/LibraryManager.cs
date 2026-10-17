@@ -575,6 +575,16 @@ namespace Emby.Server.Implementations.Library
 
             // Delete alternates whose files no longer exist to avoid ghost items.
             // Clear PrimaryVersionId first so DeleteItem doesn't try to update the primary being deleted.
+            DeleteMissingAlternateVersions(missingAlternates);
+
+            if (alternateVersions.Count > 0)
+            {
+                PromoteFirstAlternateVersion(item, video, alternateVersions, localAlternateIds);
+            }
+        }
+
+        private void DeleteMissingAlternateVersions(List<Video> missingAlternates)
+        {
             foreach (var missing in missingAlternates)
             {
                 _logger.LogInformation(
@@ -587,41 +597,41 @@ namespace Emby.Server.Implementations.Library
                 missing.LinkedAlternateVersions = [];
                 DeleteItem(missing, new DeleteOptions { DeleteFileLocation = false }, false);
             }
+        }
 
-            if (alternateVersions.Count > 0)
+        private void PromoteFirstAlternateVersion(BaseItem item, Video video, List<Video> alternateVersions, HashSet<Guid> localAlternateIds)
+        {
+            _logger.LogInformation(
+                "Clearing PrimaryVersionId from {Count} alternate versions of {Name}",
+                alternateVersions.Count,
+                item.Name ?? "Unknown name");
+
+            // Promote the first alternate version to be the new primary
+            var newPrimary = alternateVersions[0];
+            newPrimary.SetPrimaryVersionId(null);
+            newPrimary.OwnerId = Guid.Empty;
+
+            // Transfer alternate version arrays from old primary to new primary
+            // so UpdateToRepositoryAsync creates correct LinkedChildren entries
+            newPrimary.LocalAlternateVersions = video.LocalAlternateVersions
+                .Where(p => !string.Equals(p, newPrimary.Path, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            newPrimary.LinkedAlternateVersions = video.LinkedAlternateVersions
+                .Where(lc => !lc.ItemId.HasValue || !lc.ItemId.Value.Equals(newPrimary.Id))
+                .ToArray();
+
+            newPrimary.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
+
+            // Re-route playlist/collection references from deleted primary to new primary
+            RerouteLinkedChildReferencesAsync(video.Id, newPrimary.Id).GetAwaiter().GetResult();
+
+            // Update remaining alternates to point to new primary
+            foreach (var alternate in alternateVersions.Skip(1))
             {
-                _logger.LogInformation(
-                    "Clearing PrimaryVersionId from {Count} alternate versions of {Name}",
-                    alternateVersions.Count,
-                    item.Name ?? "Unknown name");
-
-                // Promote the first alternate version to be the new primary
-                var newPrimary = alternateVersions[0];
-                newPrimary.SetPrimaryVersionId(null);
-                newPrimary.OwnerId = Guid.Empty;
-
-                // Transfer alternate version arrays from old primary to new primary
-                // so UpdateToRepositoryAsync creates correct LinkedChildren entries
-                newPrimary.LocalAlternateVersions = video.LocalAlternateVersions
-                    .Where(p => !string.Equals(p, newPrimary.Path, StringComparison.OrdinalIgnoreCase))
-                    .ToArray();
-                newPrimary.LinkedAlternateVersions = video.LinkedAlternateVersions
-                    .Where(lc => !lc.ItemId.HasValue || !lc.ItemId.Value.Equals(newPrimary.Id))
-                    .ToArray();
-
-                newPrimary.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
-
-                // Re-route playlist/collection references from deleted primary to new primary
-                RerouteLinkedChildReferencesAsync(video.Id, newPrimary.Id).GetAwaiter().GetResult();
-
-                // Update remaining alternates to point to new primary
-                foreach (var alternate in alternateVersions.Skip(1))
-                {
-                    alternate.SetPrimaryVersionId(newPrimary.Id);
-                    // Only set OwnerId for local alternates; linked alternates are independent items
-                    alternate.OwnerId = localAlternateIds.Contains(alternate.Id) ? newPrimary.Id : Guid.Empty;
-                    alternate.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
-                }
+                alternate.SetPrimaryVersionId(newPrimary.Id);
+                // Only set OwnerId for local alternates; linked alternates are independent items
+                alternate.OwnerId = localAlternateIds.Contains(alternate.Id) ? newPrimary.Id : Guid.Empty;
+                alternate.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).GetAwaiter().GetResult();
             }
         }
 
