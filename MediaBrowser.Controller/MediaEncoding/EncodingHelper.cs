@@ -2448,22 +2448,16 @@ namespace MediaBrowser.Controller.MediaEncoding
                         param += " -level " + res;
                     }
                 }
-                else if (string.Equals(videoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(videoEncoder, "hevc_amf", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(videoEncoder, "av1_amf", StringComparison.OrdinalIgnoreCase))
+                else if (IsAmfVideoEncoder(videoEncoder))
                 {
                     param += " -level " + level;
                 }
-                else if (string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(videoEncoder, "hevc_nvenc", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(videoEncoder, "av1_nvenc", StringComparison.OrdinalIgnoreCase))
+                else if (IsNvencVideoEncoder(videoEncoder))
                 {
                     // level option may cause NVENC to fail.
                     // NVENC cannot adjust the given level, just throw an error.
                 }
-                else if (string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(videoEncoder, "hevc_vaapi", StringComparison.OrdinalIgnoreCase)
-                         || string.Equals(videoEncoder, "av1_vaapi", StringComparison.OrdinalIgnoreCase))
+                else if (IsVaapiVideoEncoder(videoEncoder))
                 {
                     // level option may cause corrupted frames on AMD VAAPI.
                     if (_mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965)
