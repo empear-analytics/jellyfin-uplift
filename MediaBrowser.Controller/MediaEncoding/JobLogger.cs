@@ -69,13 +69,9 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var parts = line.Split(' ');
 
-            var totalMs = state.RunTimeTicks.HasValue
-                ? TimeSpan.FromTicks(state.RunTimeTicks.Value).TotalMilliseconds
-                : 0;
+            var totalMs = GetTotalMilliseconds(state);
 
-            var startMs = state.BaseRequest.StartTimeTicks.HasValue
-                ? TimeSpan.FromTicks(state.BaseRequest.StartTimeTicks.Value).TotalMilliseconds
-                : 0;
+            var startMs = GetStartMilliseconds(state);
 
             for (var i = 0; i < parts.Length; i++)
             {
@@ -122,6 +118,20 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 state.ReportTranscodingProgress(transcodingPosition, framerate, percent, bytesTranscoded, bitRate);
             }
+        }
+
+        private static double GetTotalMilliseconds(EncodingJobInfo state)
+        {
+            return state.RunTimeTicks.HasValue
+                ? TimeSpan.FromTicks(state.RunTimeTicks.Value).TotalMilliseconds
+                : 0;
+        }
+
+        private static double GetStartMilliseconds(EncodingJobInfo state)
+        {
+            return state.BaseRequest.StartTimeTicks.HasValue
+                ? TimeSpan.FromTicks(state.BaseRequest.StartTimeTicks.Value).TotalMilliseconds
+                : 0;
         }
     }
 }
