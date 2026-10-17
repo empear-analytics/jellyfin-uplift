@@ -277,9 +277,7 @@ namespace MediaBrowser.MediaEncoding.Probing
                 return;
             }
 
-            if (!string.Equals(video.Container, "mpeg2ts", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(video.Container, "m2ts", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(video.Container, "ts", StringComparison.OrdinalIgnoreCase))
+            if (IsNotMpegTransportStreamContainer(video))
             {
                 return;
             }
@@ -294,6 +292,13 @@ namespace MediaBrowser.MediaEncoding.Probing
                 video.Timestamp = null;
                 _logger.LogError(ex, "Error extracting timestamp info from {Path}", video.Path);
             }
+        }
+
+        private static bool IsNotMpegTransportStreamContainer(MediaInfo video)
+        {
+            return !string.Equals(video.Container, "mpeg2ts", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(video.Container, "m2ts", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(video.Container, "ts", StringComparison.OrdinalIgnoreCase);
         }
 
         // REVIEW: find out why the byte array needs to be 197 bytes long and comment the reason
