@@ -397,7 +397,11 @@ score UP. The copies must still be identical or differ by a single value.
 **An identical copy CodeScene does not report** may also call the helper (or predicate) that
 an earlier step extracted from the same file, instead of getting a second helper with the same
 body. The copy must be identical to the helper's body, character for character, apart from
-the names of the variables passed in.
+the names of the variables passed in. The helper may also live in **another part of the same
+partial class**, when it is `private` (or already as accessible as the code that will call it:
+never widen it) and its body, read in its own file, is identical to the copy. Run the guard with
+`--dedup` over the file you change; a literal that only the removed copy carried must still occur
+in the class.
 
 **Copies that differ in a single value, without a duplication report.** Blocks or loops that
 are identical except for one constant or enum member (three `foreach` loops that differ only in
@@ -566,3 +570,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-17 | Choosing the next step: a step that reveals *Large Method* is `WORSE`; do not retry, report the method as blocked. | R2-04 `GetVideoDirectPlayProfile`: reducing it from a Complex Method showed Large Method (81 lines), 7.79 to 8.29 was WORSE. |
 | 2026-10-17 | Rule 1: a single recipe may be applied the same way to several methods of one file in one commit when each application alone is `FLAT` and together they score `UP`, as Recipe D already could. | R3-22 `DynamicHlsHelper.Codecs`: nullable case 3 on `GetOutputVideoCodecLevel` and on `GetOutputAv1BitDepth` was `FLAT` each (the guard terms stay behind), `UP` together (8.54 to 9.09); the agent did not commit it because the rule allowed multi-method commits only for Recipe D. Same shape as R17 `EncodingJobInfo` (one of three methods per commit FLAT, all three UP). Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
 | 2026-10-17 | Recipe S: a split that scores `FLAT` (never `DOWN`) is kept as a pair with the step it enables, when the pair scores `UP` against the score before the split; *Primitive Obsession* counts as a file-level smell for this. | R3-33 `StreamBuilder.VideoStream`: a split of small methods scored FLAT (8.67), and then six extractions that were DOWN before (7.70 to 7.73) scored UP (8.72 to 8.75). R3-27 `ProbeResultNormalizer`: a second split FLAT (8.54), with the predicate step on top 8.79 UP. Both agents correctly did not commit the pair under the old wording. Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
+| 2026-10-17 | Recipe D: an identical copy may call a helper that lives in another part of the same partial class, when the helper is not widened and its body is identical to the copy. | R3-05 `EncodingHelper.IntelFilters`: `GetIntelVidFilterChain` called `IsQsvOclSupported`, `IsIntelDx11OclSupported` and `IsIntelVaapiOclSupported` from `EncodingHelper.HwDecoders.cs` (bodies identical, checked); R2-01 `EncodingHelper` did the same across its split files and asked for a ruling. Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
