@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Emby.Server.Implementations.ScheduledTasks.Tasks;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -13,6 +14,7 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.MediaEncoding.Transcoding;
+using MediaBrowser.Model.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -76,7 +78,19 @@ public sealed class AcceptanceApplicationFactory : JellyfinApplicationFactory
     public async Task<HttpClient> CreateAuthenticatedClientAsync()
     {
         var client = CreateClient();
-        _accessToken ??= await AuthHelper.CompleteStartupAsync(client);
+        if (_accessToken is null)
+        {
+            await _setupLock.WaitAsync(TestContext.Current.CancellationToken);
+            try
+            {
+                _accessToken ??= await CompleteStartupAsync(client);
+            }
+            finally
+            {
+                _setupLock.Release();
+            }
+        }
+
         client.DefaultRequestHeaders.AddAuthHeader(_accessToken);
         return client;
     }
@@ -136,6 +150,43 @@ public sealed class AcceptanceApplicationFactory : JellyfinApplicationFactory
         }
 
         return id;
+    }
+
+    /// <summary>
+    /// Completes the startup wizard and waits for the library scan that completing it queues.
+    /// </summary>
+    /// <remarks>
+    /// The server queues that scan in the background (LibraryManager.ConfigurationUpdated). The
+    /// scan deletes every item whose file it does not find on disk, which is every item
+    /// <see cref="EnsureItemAsync"/> creates, so an item created while it runs could disappear and
+    /// later requests for it return 404. That happened when the machine was loaded and the scan
+    /// was slow; waiting for it to finish before any item is created makes the order fixed.
+    /// </remarks>
+    /// <param name="client">An unauthenticated client.</param>
+    /// <returns>The administrator's access token.</returns>
+    private async Task<string> CompleteStartupAsync(HttpClient client)
+    {
+        var taskManager = Services.GetRequiredService<ITaskManager>();
+        var scanned = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnTaskCompleted(object? sender, TaskCompletionEventArgs e)
+        {
+            if (e.Task.ScheduledTask is RefreshMediaLibraryTask)
+            {
+                scanned.TrySetResult();
+            }
+        }
+
+        taskManager.TaskCompleted += OnTaskCompleted;
+        try
+        {
+            var accessToken = await AuthHelper.CompleteStartupAsync(client);
+            await scanned.Task.WaitAsync(TimeSpan.FromMinutes(5), TestContext.Current.CancellationToken);
+            return accessToken;
+        }
+        finally
+        {
+            taskManager.TaskCompleted -= OnTaskCompleted;
+        }
     }
 
     /// <summary>
