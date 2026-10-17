@@ -359,6 +359,15 @@ namespace Emby.Server.Implementations.Library
                 (allVersions ??= []).AddRange(versions);
             }
 
+            return ResolveResumeDataFromVersionGroups(result, versionGroups, allVersions, user);
+        }
+
+        private IReadOnlyDictionary<Guid, VersionResumeData> ResolveResumeDataFromVersionGroups(
+            Dictionary<Guid, VersionResumeData> result,
+            List<(Guid PrimaryId, IReadOnlyList<Video> Versions)>? versionGroups,
+            List<BaseItem>? allVersions,
+            User user)
+        {
             if (versionGroups is null)
             {
                 return result;
