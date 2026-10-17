@@ -590,13 +590,13 @@ namespace MediaBrowser.Model.Dlna
 
             ArgumentNullException.ThrowIfNull(mediaSource);
 
-            if (!(item.SupportsTranscoding || item.SupportsDirectStream))
+            if (!SupportsTranscodingOrDirectStream(item))
             {
                 return (null, null);
             }
 
             var transcodingProfiles = options.Profile.TranscodingProfiles
-                .Where(i => i.Type == playlistItem.MediaType && i.Context == options.Context);
+                .Where(i => IsTranscodingProfileForItem(i, playlistItem, options));
 
             if (item.UseMostCompatibleTranscodingProfile)
             {
@@ -642,6 +642,16 @@ namespace MediaBrowser.Model.Dlna
             var profileMatch = analyzedProfiles.FirstOrDefault();
 
             return (profileMatch.Profile, profileMatch.PlayMethod);
+        }
+
+        private static bool SupportsTranscodingOrDirectStream(MediaSourceInfo item)
+        {
+            return item.SupportsTranscoding || item.SupportsDirectStream;
+        }
+
+        private static bool IsTranscodingProfileForItem(TranscodingProfile i, StreamInfo playlistItem, MediaOptions options)
+        {
+            return i.Type == playlistItem.MediaType && i.Context == options.Context;
         }
 
         private static bool CanCopyVideoStream([NotNullWhen(true)] MediaStream? videoStream, MediaOptions options, TranscodingProfile transcodingProfile, string? videoCodec)
