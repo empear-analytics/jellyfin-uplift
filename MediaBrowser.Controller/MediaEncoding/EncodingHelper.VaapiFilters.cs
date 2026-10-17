@@ -403,6 +403,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             filters.Add("format=vulkan");
         }
 
+        private static void AddVulkanSwOverlayOutput(List<string> overlayFilters)
+        {
+            overlayFilters.Add("scale_vulkan=format=nv12");
+            overlayFilters.Add("hwdownload");
+            overlayFilters.Add("format=nv12");
+        }
+
         private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
         {
             return isVaapiDecoder && IsIntelVppTonemapAvailable(state, options);
@@ -623,9 +630,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 if (isSwEncoder)
                 {
                     // OUTPUT nv12 surface(memory)
-                    overlayFilters.Add("scale_vulkan=format=nv12");
-                    overlayFilters.Add("hwdownload");
-                    overlayFilters.Add("format=nv12");
+                    AddVulkanSwOverlayOutput(overlayFilters);
                 }
                 else if (isVaapiEncoder)
                 {
