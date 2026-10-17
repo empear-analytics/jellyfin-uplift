@@ -53,20 +53,7 @@ namespace MediaBrowser.Model.Dlna
             // Copy video codec options as a starting point, this applies to transcode and direct-stream
             playlistItem.MaxFramerate = videoStream?.ReferenceFrameRate;
             var qualifier = videoStream?.Codec;
-            if (videoStream?.Level is not null)
-            {
-                playlistItem.SetOption(qualifier, "level", videoStream.Level.Value.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (videoStream?.BitDepth is not null)
-            {
-                playlistItem.SetOption(qualifier, "videobitdepth", videoStream.BitDepth.Value.ToString(CultureInfo.InvariantCulture));
-            }
-
-            if (!string.IsNullOrEmpty(videoStream?.Profile))
-            {
-                playlistItem.SetOption(qualifier, "profile", videoStream.Profile.ToLowerInvariant());
-            }
+            CopyVideoStreamOptions(playlistItem, videoStream, qualifier);
 
             // Prefer matching audio codecs, could do better here
             var audioCodecs = ContainerHelper.Split(audioCodec).ToList();
@@ -199,6 +186,24 @@ namespace MediaBrowser.Model.Dlna
                 audioStream?.Index,
                 playlistItem.SubtitleStreamIndex,
                 playlistItem.TranscodeReasons);
+        }
+
+        private static void CopyVideoStreamOptions(StreamInfo playlistItem, MediaStream? videoStream, string? qualifier)
+        {
+            if (videoStream?.Level is not null)
+            {
+                playlistItem.SetOption(qualifier, "level", videoStream.Level.Value.ToString(CultureInfo.InvariantCulture));
+            }
+
+            if (videoStream?.BitDepth is not null)
+            {
+                playlistItem.SetOption(qualifier, "videobitdepth", videoStream.BitDepth.Value.ToString(CultureInfo.InvariantCulture));
+            }
+
+            if (!string.IsNullOrEmpty(videoStream?.Profile))
+            {
+                playlistItem.SetOption(qualifier, "profile", videoStream.Profile.ToLowerInvariant());
+            }
         }
 
         private static List<string> FilterHlsAudioCodecs(StreamInfo playlistItem, List<string> audioCodecs)
