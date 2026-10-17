@@ -203,46 +203,56 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (IsH265(stream))
             {
-                var filter = "-bsf:v hevc_mp4toannexb";
-
-                // The following checks are not complete because the copy would be rejected
-                // if the encoder cannot remove required metadata.
-                // And if bsf is used, we must already be using copy codec.
-                switch (ShouldRemoveDynamicHdrMetadata(state))
-                {
-                    default:
-                    case DynamicHdrMetadataRemovalPlan.None:
-                        break;
-                    case DynamicHdrMetadataRemovalPlan.RemoveDovi:
-                        filter += _mediaEncoder.SupportsBitStreamFilterWithOption(BitStreamFilterOptionType.HevcMetadataRemoveDovi)
-                            ? ",hevc_metadata=remove_dovi=1"
-                            : ",dovi_rpu=strip=1";
-                        break;
-                    case DynamicHdrMetadataRemovalPlan.RemoveHdr10Plus:
-                        filter += ",hevc_metadata=remove_hdr10plus=1";
-                        break;
-                }
-
-                return filter;
+                return GetHevcBitStreamArgs(state);
             }
 
             if (IsAv1(stream))
             {
-                switch (ShouldRemoveDynamicHdrMetadata(state))
-                {
-                    default:
-                    case DynamicHdrMetadataRemovalPlan.None:
-                        return null;
-                    case DynamicHdrMetadataRemovalPlan.RemoveDovi:
-                        return _mediaEncoder.SupportsBitStreamFilterWithOption(BitStreamFilterOptionType.Av1MetadataRemoveDovi)
-                            ? "-bsf:v av1_metadata=remove_dovi=1"
-                            : "-bsf:v dovi_rpu=strip=1";
-                    case DynamicHdrMetadataRemovalPlan.RemoveHdr10Plus:
-                        return "-bsf:v av1_metadata=remove_hdr10plus=1";
-                }
+                return GetAv1BitStreamArgs(state);
             }
 
             return null;
+        }
+
+        private string GetHevcBitStreamArgs(EncodingJobInfo state)
+        {
+            var filter = "-bsf:v hevc_mp4toannexb";
+
+            // The following checks are not complete because the copy would be rejected
+            // if the encoder cannot remove required metadata.
+            // And if bsf is used, we must already be using copy codec.
+            switch (ShouldRemoveDynamicHdrMetadata(state))
+            {
+                default:
+                case DynamicHdrMetadataRemovalPlan.None:
+                    break;
+                case DynamicHdrMetadataRemovalPlan.RemoveDovi:
+                    filter += _mediaEncoder.SupportsBitStreamFilterWithOption(BitStreamFilterOptionType.HevcMetadataRemoveDovi)
+                        ? ",hevc_metadata=remove_dovi=1"
+                        : ",dovi_rpu=strip=1";
+                    break;
+                case DynamicHdrMetadataRemovalPlan.RemoveHdr10Plus:
+                    filter += ",hevc_metadata=remove_hdr10plus=1";
+                    break;
+            }
+
+            return filter;
+        }
+
+        private string GetAv1BitStreamArgs(EncodingJobInfo state)
+        {
+            switch (ShouldRemoveDynamicHdrMetadata(state))
+            {
+                default:
+                case DynamicHdrMetadataRemovalPlan.None:
+                    return null;
+                case DynamicHdrMetadataRemovalPlan.RemoveDovi:
+                    return _mediaEncoder.SupportsBitStreamFilterWithOption(BitStreamFilterOptionType.Av1MetadataRemoveDovi)
+                        ? "-bsf:v av1_metadata=remove_dovi=1"
+                        : "-bsf:v dovi_rpu=strip=1";
+                case DynamicHdrMetadataRemovalPlan.RemoveHdr10Plus:
+                    return "-bsf:v av1_metadata=remove_hdr10plus=1";
+            }
         }
 
         public string GetAudioBitStreamArguments(EncodingJobInfo state, string segmentContainer, string mediaSourceContainer)
