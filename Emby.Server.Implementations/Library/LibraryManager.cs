@@ -372,7 +372,29 @@ namespace Emby.Server.Implementations.Library
 
             foreach (var (item, internalPaths, pathsToDelete) in pathMaps)
             {
-                DeleteMetadataPaths(item, internalPaths);
+                foreach (var metadataPath in internalPaths)
+                {
+                    if (!Directory.Exists(metadataPath))
+                    {
+                        continue;
+                    }
+
+                    _logger.LogDebug(
+                        "Deleting metadata path, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
+                        item.GetType().Name,
+                        item.Name ?? "Unknown name",
+                        metadataPath,
+                        item.Id);
+
+                    try
+                    {
+                        Directory.Delete(metadataPath, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error deleting {MetadataPath}", metadataPath);
+                    }
+                }
 
                 foreach (var fileSystemInfo in pathsToDelete)
                 {
