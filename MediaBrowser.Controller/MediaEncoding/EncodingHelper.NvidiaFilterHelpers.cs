@@ -46,5 +46,14 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             return isSwDecoder && isNvencEncoder && !isUploadForCuTonemap;
         }
+
+        private void AddNvidiaHwDeinterlaceFilter(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, bool doDeintH2645)
+        {
+            if (doDeintH2645)
+            {
+                var deintFilter = GetHwDeinterlaceFilter(state, options, "cuda");
+                mainFilters.Add(deintFilter);
+            }
+        }
     }
 }

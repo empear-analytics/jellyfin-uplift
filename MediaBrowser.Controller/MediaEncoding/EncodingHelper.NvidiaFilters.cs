@@ -136,11 +136,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // INPUT cuda surface(vram)
                 // hw deint
-                if (doDeintH2645)
-                {
-                    var deintFilter = GetHwDeinterlaceFilter(state, options, "cuda");
-                    mainFilters.Add(deintFilter);
-                }
+                AddNvidiaHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 // hw transpose
                 if (doCuTranspose)
