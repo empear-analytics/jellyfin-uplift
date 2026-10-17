@@ -6843,20 +6843,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isCodecAvailable = _mediaEncoder.SupportsDecoder(decoderName) && options.HardwareDecodingCodecs.Contains(videoCodec, StringComparison.OrdinalIgnoreCase);
 
             // VideoToolbox decoders have built-in SW fallback
-            if (bitDepth == 10
-                && isCodecAvailable
-                && (options.HardwareAccelerationType != HardwareAccelerationType.videotoolbox))
+            if (IsNonVtTenBitCodecAvailable(options, bitDepth, isCodecAvailable))
             {
-                if (string.Equals(videoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
-                    && options.HardwareDecodingCodecs.Contains("hevc", StringComparison.OrdinalIgnoreCase)
-                    && !options.EnableDecodingColorDepth10Hevc)
+                if (IsHevc10BitDecodingDisabled(options, videoCodec))
                 {
                     return null;
                 }
 
-                if (string.Equals(videoCodec, "vp9", StringComparison.OrdinalIgnoreCase)
-                    && options.HardwareDecodingCodecs.Contains("vp9", StringComparison.OrdinalIgnoreCase)
-                    && !options.EnableDecodingColorDepth10Vp9)
+                if (IsVp910BitDecodingDisabled(options, videoCodec))
                 {
                     return null;
                 }
@@ -6878,6 +6872,27 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return isCodecAvailable ? (" -c:v " + decoderName) : null;
+        }
+
+        private static bool IsNonVtTenBitCodecAvailable(EncodingOptions options, int bitDepth, bool isCodecAvailable)
+        {
+            return bitDepth == 10
+                && isCodecAvailable
+                && (options.HardwareAccelerationType != HardwareAccelerationType.videotoolbox);
+        }
+
+        private static bool IsHevc10BitDecodingDisabled(EncodingOptions options, string videoCodec)
+        {
+            return string.Equals(videoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
+                && options.HardwareDecodingCodecs.Contains("hevc", StringComparison.OrdinalIgnoreCase)
+                && !options.EnableDecodingColorDepth10Hevc;
+        }
+
+        private static bool IsVp910BitDecodingDisabled(EncodingOptions options, string videoCodec)
+        {
+            return string.Equals(videoCodec, "vp9", StringComparison.OrdinalIgnoreCase)
+                && options.HardwareDecodingCodecs.Contains("vp9", StringComparison.OrdinalIgnoreCase)
+                && !options.EnableDecodingColorDepth10Vp9;
         }
 
         /// <summary>
