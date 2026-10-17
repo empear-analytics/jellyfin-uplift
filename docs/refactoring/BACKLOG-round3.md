@@ -149,5 +149,5 @@ Update as tasks land.
 | R3-61 | 9.68 | - | not started |
 | R3-62 | 9.68 | - | not started |
 | R3-63 | 9.68 | - | not started |
-| R3-64 | 9.68 | - | not started |
+| R3-64 | 9.68 | 9.68 | Sonnet. No applicable step: GuessLayoutFromChannelCount is one switch expression with constant arms (cc 11); no recipe applies, and a split only relocates it (original 10.00, new file 9.68, no gain over the pre-split score). Candidate: split a large switch expression by arm range, or allow a lookup table for constant-to-constant maps |
 | R3-65 | 9.84 | - | not started |
