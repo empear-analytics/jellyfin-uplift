@@ -139,7 +139,7 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             var param = string.Empty;
             var encoderPreset = preset ?? defaultPreset;
-            if (string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase) || isLibX265)
+            if (IsLibX264OrLibX265(videoEncoder, isLibX265))
             {
                 param = AppendX26xPresetAndCrf(param, encoderPreset, encodingOptions, isLibX265);
             }
@@ -163,14 +163,23 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 param = AppendAmfQuality(param, encoderPreset, videoEncoder);
             }
-            else if (string.Equals(videoEncoder, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase) // h264 (h264_videotoolbox)
-                        || string.Equals(videoEncoder, "hevc_videotoolbox", StringComparison.OrdinalIgnoreCase) // hevc (hevc_videotoolbox)
-            )
+            else if (IsVideoToolboxH26xEncoder(videoEncoder))
             {
                 param = AppendVideoToolboxPrioSpeed(param, encoderPreset);
             }
 
             return param;
+        }
+
+        private static bool IsLibX264OrLibX265(string videoEncoder, bool isLibX265)
+        {
+            return string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase) || isLibX265;
+        }
+
+        private static bool IsVideoToolboxH26xEncoder(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase) // h264 (h264_videotoolbox)
+                        || string.Equals(videoEncoder, "hevc_videotoolbox", StringComparison.OrdinalIgnoreCase); // hevc (hevc_videotoolbox)
         }
 
         private static string AppendX26xPresetAndCrf(string param, EncoderPreset encoderPreset, EncodingOptions encodingOptions, bool isLibX265)
