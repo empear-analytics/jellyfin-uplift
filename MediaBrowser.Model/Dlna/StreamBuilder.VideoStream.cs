@@ -91,15 +91,7 @@ namespace MediaBrowser.Model.Dlna
                 playlistItem.AudioSampleRate = audioStream.SampleRate;
                 playlistItem.SetOption(qualifier, "audiochannels", audioStream.Channels?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
 
-                if (!string.IsNullOrEmpty(audioStream.Profile))
-                {
-                    playlistItem.SetOption(audioStream.Codec, "profile", audioStream.Profile.ToLowerInvariant());
-                }
-
-                if (audioStream.Level.HasValue && audioStream.Level.Value != 0)
-                {
-                    playlistItem.SetOption(audioStream.Codec, "level", audioStream.Level.Value.ToString(CultureInfo.InvariantCulture));
-                }
+                CopyAudioProfileAndLevel(playlistItem, audioStream);
             }
 
             int? width = videoStream?.Width;
@@ -211,6 +203,19 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return videoCodecs;
+        }
+
+        private static void CopyAudioProfileAndLevel(StreamInfo playlistItem, MediaStream audioStream)
+        {
+            if (!string.IsNullOrEmpty(audioStream.Profile))
+            {
+                playlistItem.SetOption(audioStream.Codec, "profile", audioStream.Profile.ToLowerInvariant());
+            }
+
+            if (audioStream.Level.HasValue && audioStream.Level.Value != 0)
+            {
+                playlistItem.SetOption(audioStream.Codec, "level", audioStream.Level.Value.ToString(CultureInfo.InvariantCulture));
+            }
         }
 
         private static List<string> FilterHlsAudioCodecs(StreamInfo playlistItem, List<string> audioCodecs)
