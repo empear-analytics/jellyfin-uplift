@@ -56,13 +56,7 @@ namespace Emby.Server.Implementations.Library
                 }
 
                 var attributeOpener = subStr[attributeIndex - 1];
-                var attributeCloser = attributeOpener switch
-                {
-                    '[' => ']',
-                    '(' => ')',
-                    '{' => '}',
-                    _ => '\0'
-                };
+                var attributeCloser = GetAttributeCloser(attributeOpener);
 
                 if (attributeCloser == '\0')
                 {
@@ -124,6 +118,17 @@ namespace Emby.Server.Implementations.Library
                 _ when attribute.Equals("tvdbid", StringComparison.OrdinalIgnoreCase) => "tvdb",
                 _ when attribute.Equals("imdbid", StringComparison.OrdinalIgnoreCase) => "imdb",
                 _ => ReadOnlySpan<char>.Empty
+            };
+        }
+
+        private static char GetAttributeCloser(char attributeOpener)
+        {
+            return attributeOpener switch
+            {
+                '[' => ']',
+                '(' => ')',
+                '{' => '}',
+                _ => '\0'
             };
         }
     }
