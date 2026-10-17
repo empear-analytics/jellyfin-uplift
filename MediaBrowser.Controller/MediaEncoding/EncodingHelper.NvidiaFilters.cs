@@ -138,8 +138,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // hw transpose
                 AddNvidiaHwTransposeFilter(mainFilters, doCuTranspose, transposeDir);
 
-                var isRext = IsVideoStreamHevcRext(state);
-                var outFormat = doCuTonemap ? (isRext ? "p010" : string.Empty) : "yuv420p";
+                var outFormat = GetNvidiaHwOutFormat(state, doCuTonemap);
                 var hwScaleFilter = GetHwScaleFilter("scale", "cuda", outFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
                 // hw scale
                 mainFilters.Add(hwScaleFilter);

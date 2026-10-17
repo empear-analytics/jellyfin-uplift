@@ -80,5 +80,12 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add("hwupload=derive_device=cuda");
             }
         }
+
+        private string GetNvidiaHwOutFormat(EncodingJobInfo state, bool doCuTonemap)
+        {
+            var isRext = IsVideoStreamHevcRext(state);
+            var outFormat = doCuTonemap ? (isRext ? "p010" : string.Empty) : "yuv420p";
+            return outFormat;
+        }
     }
 }
