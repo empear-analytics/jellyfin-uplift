@@ -335,6 +335,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 _ => " -quality speed"
             };
 
+            return AppendAmfQualityOptions(param, videoEncoder);
+        }
+
+        private string AppendAmfQualityOptions(string param, string videoEncoder)
+        {
             // Enable Variance Based/Context Adaptive Quantization for better subjective visual quality
             if (IsAmfH26xEncoder(videoEncoder))
             {
