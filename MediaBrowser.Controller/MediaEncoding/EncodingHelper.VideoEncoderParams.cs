@@ -552,8 +552,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             var targetVideoCodec = state.ActualOutputVideoCodec;
-            if (string.Equals(targetVideoCodec, "h265", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(targetVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase))
+            if (IsHevcCodecName(targetVideoCodec))
             {
                 targetVideoCodec = "hevc";
             }
@@ -581,8 +580,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // We only transcode to HEVC 8-bit for now, force Main Profile.
-            if (profile.Contains("main10", StringComparison.OrdinalIgnoreCase)
-                || profile.Contains("mainstill", StringComparison.OrdinalIgnoreCase))
+            if (IsMain10OrMainStillProfile(profile))
             {
                 profile = "main";
             }
@@ -594,8 +592,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // Only libx264 support encoding H264 High 10 Profile, otherwise force High Profile.
-            if (!string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("high10", StringComparison.OrdinalIgnoreCase))
+            if (IsHigh10ProfileWithoutLibx264(videoEncoder, profile))
             {
                 profile = "high";
             }
@@ -608,8 +605,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // h264_vaapi does not support Baseline profile, force Constrained Baseline in this case,
             // which is compatible (and ugly).
-            if (string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("baseline", StringComparison.OrdinalIgnoreCase))
+            if (IsVaapiH264BaselineProfile(videoEncoder, profile))
             {
                 profile = "constrained_baseline";
             }
@@ -626,26 +622,22 @@ namespace MediaBrowser.Controller.MediaEncoding
                 profile = "high";
             }
 
-            if (string.Equals(videoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("baseline", StringComparison.OrdinalIgnoreCase))
+            if (IsAmfH264BaselineProfile(videoEncoder, profile))
             {
                 profile = "constrained_baseline";
             }
 
-            if (string.Equals(videoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("constrainedhigh", StringComparison.OrdinalIgnoreCase))
+            if (IsAmfH264ConstrainedHighProfile(videoEncoder, profile))
             {
                 profile = "constrained_high";
             }
 
-            if (string.Equals(videoEncoder, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("constrainedbaseline", StringComparison.OrdinalIgnoreCase))
+            if (IsVideoToolboxH264ConstrainedBaselineProfile(videoEncoder, profile))
             {
                 profile = "constrained_baseline";
             }
 
-            if (string.Equals(videoEncoder, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("constrainedhigh", StringComparison.OrdinalIgnoreCase))
+            if (IsVideoToolboxH264ConstrainedHighProfile(videoEncoder, profile))
             {
                 profile = "constrained_high";
             }
@@ -672,8 +664,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 param = AppendX265Params(param, encodingOptions);
             }
 
-            if (string.Equals(videoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase)
-                && _mediaEncoder.EncoderVersion >= _minFFmpegSvtAv1Params)
+            if (SupportsSvtAv1Params(videoEncoder))
             {
                 param += " -svtav1-params:0 rc=1:tune=0:film-grain=0:enable-overlays=1:enable-tf=0";
             }
@@ -685,6 +676,60 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return param;
+        }
+
+        private static bool IsHevcCodecName(string targetVideoCodec)
+        {
+            return string.Equals(targetVideoCodec, "h265", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(targetVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsMain10OrMainStillProfile(string profile)
+        {
+            return profile.Contains("main10", StringComparison.OrdinalIgnoreCase)
+                || profile.Contains("mainstill", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsHigh10ProfileWithoutLibx264(string videoEncoder, string profile)
+        {
+            return !string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
+                && profile.Contains("high10", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsVaapiH264BaselineProfile(string videoEncoder, string profile)
+        {
+            return string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
+                && profile.Contains("baseline", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsAmfH264BaselineProfile(string videoEncoder, string profile)
+        {
+            return string.Equals(videoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase)
+                && profile.Contains("baseline", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsAmfH264ConstrainedHighProfile(string videoEncoder, string profile)
+        {
+            return string.Equals(videoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase)
+                && profile.Contains("constrainedhigh", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsVideoToolboxH264ConstrainedBaselineProfile(string videoEncoder, string profile)
+        {
+            return string.Equals(videoEncoder, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
+                && profile.Contains("constrainedbaseline", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsVideoToolboxH264ConstrainedHighProfile(string videoEncoder, string profile)
+        {
+            return string.Equals(videoEncoder, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
+                && profile.Contains("constrainedhigh", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool SupportsSvtAv1Params(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase)
+                && _mediaEncoder.EncoderVersion >= _minFFmpegSvtAv1Params;
         }
 
         private bool GetVaapiIntelLowPowerHwEncoding(string videoEncoder, EncodingOptions encodingOptions, bool intelLowPowerHwEncoding)
