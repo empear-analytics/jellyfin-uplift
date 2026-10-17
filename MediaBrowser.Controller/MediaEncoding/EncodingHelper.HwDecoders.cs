@@ -58,6 +58,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return ResolveHwDecoderByType(state, options, videoStream);
+        }
+
+        private string ResolveHwDecoderByType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream)
+        {
             var hardwareAccelerationType = options.HardwareAccelerationType;
 
             if (!string.IsNullOrEmpty(videoStream.Codec) && hardwareAccelerationType != HardwareAccelerationType.none)
