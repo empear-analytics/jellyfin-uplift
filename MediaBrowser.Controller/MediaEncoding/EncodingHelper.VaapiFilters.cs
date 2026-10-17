@@ -472,10 +472,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     // hw scale
                     var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", "nv12", false, inW, inH, reqW, reqH, reqMaxW, reqMaxH);
 
-                    if (ShouldUseFullRangeMjpegScale(hwScaleFilter, isMjpegEncoder, doVkTonemap))
-                    {
-                        hwScaleFilter += ":out_range=pc:mode=hq";
-                    }
+                    hwScaleFilter = ApplyAmdVaapiMjpegFullRange(hwScaleFilter, isMjpegEncoder, doVkTonemap);
 
                     mainFilters.Add(hwScaleFilter);
                 }
@@ -505,10 +502,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // clear the surf->meta_offset and output nv12
                 var hwCscFilter = "scale_vaapi=format=nv12";
 
-                if (!isMjpegEncoder && options.TonemappingRange != TonemappingRange.pc)
-                {
-                    hwCscFilter += ":out_range=tv";
-                }
+                hwCscFilter = ApplyNonMjpegTvOutRange(hwCscFilter, isMjpegEncoder, options);
 
                 mainFilters.Add(hwCscFilter);
 
@@ -578,10 +572,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     // clear the surf->meta_offset and output nv12
                     var hwCscFilter = "scale_vaapi=format=nv12";
 
-                    if (ShouldOutputTvRange(doVkTonemap, options))
-                    {
-                        hwCscFilter += ":out_range=tv";
-                    }
+                    hwCscFilter = ApplyVkTonemapTvOutRange(hwCscFilter, doVkTonemap, options);
 
                     overlayFilters.Add(hwCscFilter);
 
@@ -591,6 +582,36 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static string ApplyAmdVaapiMjpegFullRange(string hwScaleFilter, bool isMjpegEncoder, bool doVkTonemap)
+        {
+            if (ShouldUseFullRangeMjpegScale(hwScaleFilter, isMjpegEncoder, doVkTonemap))
+            {
+                hwScaleFilter += ":out_range=pc:mode=hq";
+            }
+
+            return hwScaleFilter;
+        }
+
+        private static string ApplyNonMjpegTvOutRange(string hwCscFilter, bool isMjpegEncoder, EncodingOptions options)
+        {
+            if (!isMjpegEncoder && options.TonemappingRange != TonemappingRange.pc)
+            {
+                hwCscFilter += ":out_range=tv";
+            }
+
+            return hwCscFilter;
+        }
+
+        private static string ApplyVkTonemapTvOutRange(string hwCscFilter, bool doVkTonemap, EncodingOptions options)
+        {
+            if (ShouldOutputTvRange(doVkTonemap, options))
+            {
+                hwCscFilter += ":out_range=tv";
+            }
+
+            return hwCscFilter;
         }
 
         private static bool NeedsVulkanInterop(bool doVkTranspose, bool doVkTonemap, bool hasSubs)
