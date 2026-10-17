@@ -34,21 +34,7 @@ namespace MediaBrowser.Model.Dlna
             }
             else
             {
-                if (IsDownmixing(targetAudioChannels, audioStream))
-                {
-                    // Reduce the bitrate if we're down mixing.
-                    defaultBitrate = GetDefaultAudioBitrate(targetAudioCodec, targetAudioChannels);
-                }
-                else if (IsAtMostTargetChannels(targetAudioChannels, audioStream.Channels)
-                         && IsNotAnyTargetAudioCodec(audioStream, targetAudioCodecs))
-                {
-                    // Shift the bitrate if we're transcoding to a different audio codec.
-                    defaultBitrate = GetDefaultAudioBitrate(targetAudioCodec, audioStream.Channels.Value);
-                }
-                else
-                {
-                    defaultBitrate = audioStream.BitRate ?? GetDefaultAudioBitrate(targetAudioCodec, targetAudioChannels);
-                }
+                defaultBitrate = GetDefaultBitrateForSource(targetAudioChannels, audioStream, targetAudioCodecs, targetAudioCodec);
 
                 // Seeing webm encoding failures when source has 1 audio channel and 22k bitrate.
                 // Any attempts to transcode over 64k will fail
@@ -80,6 +66,28 @@ namespace MediaBrowser.Model.Dlna
             return targetAudioChannels.HasValue
                 && audioStreamChannels.HasValue
                 && audioStreamChannels.Value <= targetAudioChannels.Value;
+        }
+
+        private static int GetDefaultBitrateForSource(int? targetAudioChannels, MediaStream audioStream, IReadOnlyList<string> targetAudioCodecs, string? targetAudioCodec)
+        {
+            int defaultBitrate;
+            if (IsDownmixing(targetAudioChannels, audioStream))
+            {
+                // Reduce the bitrate if we're down mixing.
+                defaultBitrate = GetDefaultAudioBitrate(targetAudioCodec, targetAudioChannels);
+            }
+            else if (IsAtMostTargetChannels(targetAudioChannels, audioStream.Channels)
+                     && IsNotAnyTargetAudioCodec(audioStream, targetAudioCodecs))
+            {
+                // Shift the bitrate if we're transcoding to a different audio codec.
+                defaultBitrate = GetDefaultAudioBitrate(targetAudioCodec, audioStream.Channels.Value);
+            }
+            else
+            {
+                defaultBitrate = audioStream.BitRate ?? GetDefaultAudioBitrate(targetAudioCodec, targetAudioChannels);
+            }
+
+            return defaultBitrate;
         }
 
         private static bool IsDownmixing(int? targetAudioChannels, MediaStream audioStream)
