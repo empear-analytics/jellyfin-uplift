@@ -219,8 +219,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 // OUTPUT nv12 surface(memory)
                 // prefer hwmap to hwdownload on opencl/vaapi.
-                mainFilters.Add(isHwmapNotUsable ? "hwdownload" : "hwmap=mode=read");
-                mainFilters.Add("format=nv12");
+                AddIntelMemoryOutputFilters(mainFilters, isHwmapNotUsable);
             }
 
             // OUTPUT nv12 surface(memory)
@@ -374,6 +373,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             hwCscFilter = ApplyVkTonemapTvOutRange(hwCscFilter, doVkTonemap, options);
 
             overlayFilters.Add(hwCscFilter);
+        }
+
+        private static void AddIntelMemoryOutputFilters(List<string> mainFilters, bool isHwmapNotUsable)
+        {
+            mainFilters.Add(isHwmapNotUsable ? "hwdownload" : "hwmap=mode=read");
+            mainFilters.Add("format=nv12");
+        }
+
+        private static void AddLimitedMemoryOutputFilters(List<string> mainFilters, bool isHwmapNotUsable)
+        {
+            mainFilters.Add(isHwmapNotUsable ? "hwdownload" : "hwmap");
+            mainFilters.Add("format=nv12");
         }
 
         private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
@@ -815,8 +826,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 // OUTPUT nv12 surface(memory)
                 // prefer hwmap to hwdownload on opencl/vaapi.
-                mainFilters.Add(isHwmapNotUsable ? "hwdownload" : "hwmap");
-                mainFilters.Add("format=nv12");
+                AddLimitedMemoryOutputFilters(mainFilters, isHwmapNotUsable);
             }
 
             // OUTPUT nv12 surface(memory)
