@@ -342,6 +342,22 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
         }
 
+        private static void AddLimitedOpenclMappingIfNeeded(List<string> mainFilters, bool doOclTonemap, bool isVaapiDecoder, bool isi965Driver)
+        {
+            if (NeedsHwToOpenclMapping(doOclTonemap, isVaapiDecoder))
+            {
+                AddLimitedVaapiToOpenclMapping(mainFilters, isi965Driver);
+            }
+        }
+
+        private static void AddLimitedReverseMappingIfNeeded(List<string> mainFilters, bool doOclTonemap, bool isVaInVaOut, bool isi965Driver)
+        {
+            if (NeedsVaapiReverseMapping(doOclTonemap, isVaInVaOut))
+            {
+                AddI965ReverseMapping(mainFilters, isi965Driver);
+            }
+        }
+
         private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
         {
             return isVaapiDecoder && IsIntelVppTonemapAvailable(state, options);
@@ -771,18 +787,12 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add(hwScaleFilter);
             }
 
-            if (NeedsHwToOpenclMapping(doOclTonemap, isVaapiDecoder))
-            {
-                AddLimitedVaapiToOpenclMapping(mainFilters, isi965Driver);
-            }
+            AddLimitedOpenclMappingIfNeeded(mainFilters, doOclTonemap, isVaapiDecoder, isi965Driver);
 
             // ocl tonemap
             AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
-            if (NeedsVaapiReverseMapping(doOclTonemap, isVaInVaOut))
-            {
-                AddI965ReverseMapping(mainFilters, isi965Driver);
-            }
+            AddLimitedReverseMappingIfNeeded(mainFilters, doOclTonemap, isVaInVaOut, isi965Driver);
 
             var memoryOutput = false;
             var isUploadForOclTonemap = NeedsLimitedUploadForOclTonemap(doOclTonemap, isSwDecoder, isVaapiDecoder, isi965Driver);
