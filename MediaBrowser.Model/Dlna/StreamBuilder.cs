@@ -799,10 +799,7 @@ namespace MediaBrowser.Model.Dlna
 
                     // Check video codec
                     string? videoCodec = videoStream?.Codec;
-                    if (!directPlayProfile.SupportsVideoCodec(videoCodec))
-                    {
-                        directPlayProfileReasons |= TranscodeReason.VideoCodecNotSupported;
-                    }
+                    directPlayProfileReasons = AddVideoCodecNotSupportedReason(directPlayProfile, videoCodec, directPlayProfileReasons);
 
                     // Check audio codec
                     MediaStream? selectedAudioStream = null;
@@ -849,12 +846,29 @@ namespace MediaBrowser.Model.Dlna
                 .Select(analysis => analysis.Result)
                 .Where(result => !containerSupported || !result.TranscodeReason.HasFlag(TranscodeReason.ContainerNotSupported))
                 .FirstOrDefault().TranscodeReason;
+            failureReasons = DefaultToDirectPlayError(failureReasons);
+
+            return (Profile: null, PlayMethod: null, AudioStreamIndex: null, TranscodeReasons: failureReasons);
+        }
+
+        private static TranscodeReason AddVideoCodecNotSupportedReason(DirectPlayProfile directPlayProfile, string? videoCodec, TranscodeReason directPlayProfileReasons)
+        {
+            if (!directPlayProfile.SupportsVideoCodec(videoCodec))
+            {
+                directPlayProfileReasons |= TranscodeReason.VideoCodecNotSupported;
+            }
+
+            return directPlayProfileReasons;
+        }
+
+        private static TranscodeReason DefaultToDirectPlayError(TranscodeReason failureReasons)
+        {
             if (failureReasons == 0)
             {
                 failureReasons = TranscodeReason.DirectPlayError;
             }
 
-            return (Profile: null, PlayMethod: null, AudioStreamIndex: null, TranscodeReasons: failureReasons);
+            return failureReasons;
         }
 
         private static TranscodeReason AddCodecProfileReasons(TranscodeReason failureReasons, TranscodeReason videoCodecProfileReasons, TranscodeReason audioCodecProfileReasons)
