@@ -167,14 +167,14 @@ namespace MediaBrowser.Controller.MediaEncoding
         /// <returns>Hardware decoder name.</returns>
         public string GetHwDecoderName(EncodingOptions options, string decoderPrefix, string decoderSuffix, string videoCodec, int bitDepth)
         {
-            if (string.IsNullOrEmpty(decoderPrefix) || string.IsNullOrEmpty(decoderSuffix))
+            if (IsMissingDecoderPrefixOrSuffix(decoderPrefix, decoderSuffix))
             {
                 return null;
             }
 
             var decoderName = decoderPrefix + '_' + decoderSuffix;
 
-            var isCodecAvailable = _mediaEncoder.SupportsDecoder(decoderName) && options.HardwareDecodingCodecs.Contains(videoCodec, StringComparison.OrdinalIgnoreCase);
+            var isCodecAvailable = IsHwDecoderCodecAvailable(options, decoderName, videoCodec);
 
             // VideoToolbox decoders have built-in SW fallback
             if (IsNonVtTenBitCodecAvailable(options, bitDepth, isCodecAvailable))
@@ -190,12 +190,12 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (string.Equals(decoderSuffix, "cuvid", StringComparison.OrdinalIgnoreCase) && options.EnableEnhancedNvdecDecoder)
+            if (IsCuvidSupersededByNvdec(options, decoderSuffix))
             {
                 return null;
             }
 
-            if (string.Equals(decoderSuffix, "qsv", StringComparison.OrdinalIgnoreCase) && options.PreferSystemNativeHwDecoder)
+            if (IsQsvSupersededByNativeDecoder(options, decoderSuffix))
             {
                 return null;
             }
@@ -206,6 +206,26 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return isCodecAvailable ? (" -c:v " + decoderName) : null;
+        }
+
+        private static bool IsMissingDecoderPrefixOrSuffix(string decoderPrefix, string decoderSuffix)
+        {
+            return string.IsNullOrEmpty(decoderPrefix) || string.IsNullOrEmpty(decoderSuffix);
+        }
+
+        private bool IsHwDecoderCodecAvailable(EncodingOptions options, string decoderName, string videoCodec)
+        {
+            return _mediaEncoder.SupportsDecoder(decoderName) && options.HardwareDecodingCodecs.Contains(videoCodec, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsCuvidSupersededByNvdec(EncodingOptions options, string decoderSuffix)
+        {
+            return string.Equals(decoderSuffix, "cuvid", StringComparison.OrdinalIgnoreCase) && options.EnableEnhancedNvdecDecoder;
+        }
+
+        private static bool IsQsvSupersededByNativeDecoder(EncodingOptions options, string decoderSuffix)
+        {
+            return string.Equals(decoderSuffix, "qsv", StringComparison.OrdinalIgnoreCase) && options.PreferSystemNativeHwDecoder;
         }
 
         private static bool IsNonVtTenBitCodecAvailable(EncodingOptions options, int bitDepth, bool isCodecAvailable)
