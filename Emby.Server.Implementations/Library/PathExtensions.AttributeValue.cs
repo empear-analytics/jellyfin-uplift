@@ -71,7 +71,7 @@ namespace Emby.Server.Implementations.Library
 
                 // attributeEnd points at '='.
                 // We need at least 1 more character and the closing bracket after that.
-                if (!(attributeEnd + 2 < subStr.Length && (subStr[attributeEnd] is '=' or '-')))
+                if (!HasAssignmentAfterAttribute(subStr, attributeEnd))
                 {
                     continue;
                 }
@@ -130,6 +130,11 @@ namespace Emby.Server.Implementations.Library
                 '{' => '}',
                 _ => '\0'
             };
+        }
+
+        private static bool HasAssignmentAfterAttribute(ReadOnlySpan<char> subStr, int attributeEnd)
+        {
+            return attributeEnd + 2 < subStr.Length && (subStr[attributeEnd] is '=' or '-');
         }
     }
 }
