@@ -29,31 +29,9 @@ namespace MediaBrowser.MediaEncoding.Probing
 
             AddPerformers(people, tags);
 
-            // In cases where there isn't sufficient information as to which role a writer performed on a recording, tagging software uses the "writer" tag.
-            if (tags.TryGetValue("writer", out var writer) && !string.IsNullOrWhiteSpace(writer))
-            {
-                AddSplitPeople(people, writer, PersonKind.Writer);
-            }
+            AddWritingAndEngineeringCredits(people, tags);
 
-            if (tags.TryGetValue("arranger", out var arranger) && !string.IsNullOrWhiteSpace(arranger))
-            {
-                AddSplitPeople(people, arranger, PersonKind.Arranger);
-            }
-
-            if (tags.TryGetValue("engineer", out var engineer) && !string.IsNullOrWhiteSpace(engineer))
-            {
-                AddSplitPeople(people, engineer, PersonKind.Engineer);
-            }
-
-            if (tags.TryGetValue("mixer", out var mixer) && !string.IsNullOrWhiteSpace(mixer))
-            {
-                AddSplitPeople(people, mixer, PersonKind.Mixer);
-            }
-
-            if (tags.TryGetValue("remixer", out var remixer) && !string.IsNullOrWhiteSpace(remixer))
-            {
-                AddSplitPeople(people, remixer, PersonKind.Remixer);
-            }
+            AddMixingCredits(people, tags);
 
             audio.People = people.ToArray();
 
@@ -97,6 +75,38 @@ namespace MediaBrowser.MediaEncoding.Probing
             if (tags.TryGetValue("lyricist", out var lyricist) && !string.IsNullOrWhiteSpace(lyricist))
             {
                 AddSplitPeople(people, lyricist, PersonKind.Lyricist);
+            }
+        }
+
+        private void AddMixingCredits(List<BaseItemPerson> people, Dictionary<string, string> tags)
+        {
+            if (tags.TryGetValue("mixer", out var mixer) && !string.IsNullOrWhiteSpace(mixer))
+            {
+                AddSplitPeople(people, mixer, PersonKind.Mixer);
+            }
+
+            if (tags.TryGetValue("remixer", out var remixer) && !string.IsNullOrWhiteSpace(remixer))
+            {
+                AddSplitPeople(people, remixer, PersonKind.Remixer);
+            }
+        }
+
+        private void AddWritingAndEngineeringCredits(List<BaseItemPerson> people, Dictionary<string, string> tags)
+        {
+            // In cases where there isn't sufficient information as to which role a writer performed on a recording, tagging software uses the "writer" tag.
+            if (tags.TryGetValue("writer", out var writer) && !string.IsNullOrWhiteSpace(writer))
+            {
+                AddSplitPeople(people, writer, PersonKind.Writer);
+            }
+
+            if (tags.TryGetValue("arranger", out var arranger) && !string.IsNullOrWhiteSpace(arranger))
+            {
+                AddSplitPeople(people, arranger, PersonKind.Arranger);
+            }
+
+            if (tags.TryGetValue("engineer", out var engineer) && !string.IsNullOrWhiteSpace(engineer))
+            {
+                AddSplitPeople(people, engineer, PersonKind.Engineer);
             }
         }
 
