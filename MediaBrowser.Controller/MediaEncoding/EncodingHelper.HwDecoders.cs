@@ -643,8 +643,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (is8bitSwFormatsNvdec)
             {
-                if (string.Equals("avc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals("h264", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (IsH264StreamCodec(videoStream))
                 {
                     return GetHwaccelType(state, options, "h264", bitDepth, hwSurface) + GetHwDecoderName(options, "h264", "cuvid", "h264", bitDepth);
                 }
@@ -685,8 +684,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (is8_10_12bitSwFormatsNvdec)
             {
-                if (string.Equals("hevc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals("h265", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (IsHevcStreamCodec(videoStream))
                 {
                     return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface) + GetHwDecoderName(options, "hevc", "cuvid", "hevc", bitDepth);
                 }
@@ -717,8 +715,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (is8bitSwFormatsAmf)
             {
-                if (string.Equals("avc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals("h264", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (IsH264StreamCodec(videoStream))
                 {
                     return GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
                 }
@@ -736,8 +733,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (is8_10bitSwFormatsAmf)
             {
-                if (string.Equals("hevc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals("h265", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (IsHevcStreamCodec(videoStream))
                 {
                     return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
                 }
@@ -766,14 +762,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hwSurface = HasVaapiHwSurface(state);
             var is8bitSwFormatsVaapi = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsVaapi = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVaapi);
-            var is8_10_12bitSwFormatsVaapi = is8_10bitSwFormatsVaapi
-                || string.Equals("yuv422p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv422p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv422p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+            var is8_10_12bitSwFormatsVaapi = IsQsv8To12BitSwFormat(videoStream, is8_10bitSwFormatsVaapi);
 
             if (is8bitSwFormatsVaapi)
             {
@@ -858,14 +847,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var is8bitSwFormatsVt = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsVt = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVt);
-            var is8_10_12bitSwFormatsVt = is8_10bitSwFormatsVt
-                || string.Equals("yuv422p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv422p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv422p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+            var is8_10_12bitSwFormatsVt = IsQsv8To12BitSwFormat(videoStream, is8_10bitSwFormatsVt);
             var isAv1SupportedSwFormatsVt = is8_10bitSwFormatsVt || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
 
             // The related patches make videotoolbox hardware surface working is only available in jellyfin-ffmpeg 7.0.1 at the moment.
@@ -881,8 +863,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (is8_10bitSwFormatsVt)
             {
-                if (string.Equals("avc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals("h264", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (IsH264StreamCodec(videoStream))
                 {
                     return GetHwaccelType(state, options, "h264", bitDepth, useHwSurface);
                 }
@@ -895,8 +876,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (is8_10_12bitSwFormatsVt)
             {
-                if (string.Equals("hevc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals("h265", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (IsHevcStreamCodec(videoStream))
                 {
                     return GetHwaccelType(state, options, "hevc", bitDepth, useHwSurface);
                 }
