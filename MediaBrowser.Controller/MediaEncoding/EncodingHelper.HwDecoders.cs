@@ -839,8 +839,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         public string GetVideotoolboxVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
         {
-            if (!OperatingSystem.IsMacOS()
-                || options.HardwareAccelerationType != HardwareAccelerationType.videotoolbox)
+            if (IsVideotoolboxDecodingUnavailable(options))
             {
                 return null;
             }
@@ -848,10 +847,10 @@ namespace MediaBrowser.Controller.MediaEncoding
             var is8bitSwFormatsVt = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsVt = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVt);
             var is8_10_12bitSwFormatsVt = IsQsv8To12BitSwFormat(videoStream, is8_10bitSwFormatsVt);
-            var isAv1SupportedSwFormatsVt = is8_10bitSwFormatsVt || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+            var isAv1SupportedSwFormatsVt = IsVtAv1SupportedSwFormat(videoStream, is8_10bitSwFormatsVt);
 
             // The related patches make videotoolbox hardware surface working is only available in jellyfin-ffmpeg 7.0.1 at the moment.
-            bool useHwSurface = (_mediaEncoder.EncoderVersion >= _minFFmpegWorkingVtHwSurface) && IsVideoToolboxFullSupported();
+            bool useHwSurface = CanUseVideotoolboxHwSurface();
 
             if (is8bitSwFormatsVt)
             {
@@ -888,6 +887,22 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private static bool IsVideotoolboxDecodingUnavailable(EncodingOptions options)
+        {
+            return !OperatingSystem.IsMacOS()
+                || options.HardwareAccelerationType != HardwareAccelerationType.videotoolbox;
+        }
+
+        private static bool IsVtAv1SupportedSwFormat(MediaStream videoStream, bool is8_10bitSwFormatsVt)
+        {
+            return is8_10bitSwFormatsVt || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool CanUseVideotoolboxHwSurface()
+        {
+            return (_mediaEncoder.EncoderVersion >= _minFFmpegWorkingVtHwSurface) && IsVideoToolboxFullSupported();
         }
 
         private bool IsVideoToolboxAv1Decodable(MediaStream videoStream, bool isAv1SupportedSwFormatsVt)
