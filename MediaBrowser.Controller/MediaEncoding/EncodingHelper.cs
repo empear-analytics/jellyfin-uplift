@@ -416,18 +416,14 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         private bool IsIntelVppTonemapAvailable(EncodingJobInfo state, EncodingOptions options)
         {
-            if (state.VideoStream is null
-                || !options.EnableVppTonemapping
-                || GetVideoColorBitDepth(state) < 10)
+            if (IsVppTonemapInputUnsupported(state, options))
             {
                 return false;
             }
 
             // prefer 'tonemap_vaapi' over 'vpp_qsv' on Linux for supporting Gen9/KBLx.
             // 'vpp_qsv' requires VPL, which is only supported on Gen12/TGLx and newer.
-            if (OperatingSystem.IsWindows()
-                && options.HardwareAccelerationType == HardwareAccelerationType.qsv
-                && _mediaEncoder.EncoderVersion < _minFFmpegQsvVppTonemapOption)
+            if (IsWindowsQsvVppTonemapUnsupported(options))
             {
                 return false;
             }
@@ -436,6 +432,20 @@ namespace MediaBrowser.Controller.MediaEncoding
                    && (state.VideoStream.VideoRangeType == VideoRangeType.HDR10
                        || IsHdr10Plus(state.VideoStream)
                        || IsDoviWithHdr10Bl(state.VideoStream));
+        }
+
+        private static bool IsVppTonemapInputUnsupported(EncodingJobInfo state, EncodingOptions options)
+        {
+            return state.VideoStream is null
+                || !options.EnableVppTonemapping
+                || GetVideoColorBitDepth(state) < 10;
+        }
+
+        private bool IsWindowsQsvVppTonemapUnsupported(EncodingOptions options)
+        {
+            return OperatingSystem.IsWindows()
+                && options.HardwareAccelerationType == HardwareAccelerationType.qsv
+                && _mediaEncoder.EncoderVersion < _minFFmpegQsvVppTonemapOption;
         }
 
         private bool IsVideoToolboxTonemapAvailable(EncodingJobInfo state, EncodingOptions options)
