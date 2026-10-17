@@ -55,7 +55,7 @@ Update as tasks land.
 | Task | Baseline | Current | Status |
 | --- | --- | --- | --- |
 | R01 | 1.00 | - | not started |
-| R02 | 1.65 | - | not started |
+| R02 | 1.65 | 6.46 | split into five files: TranscodingConditions 4.14 (ApplyTranscodingConditions, 27 bumps, every attempt DOWN or FLAT), Subtitles 7.47, AudioBitrate 8.28, VideoStream 8.62, Compatibility 9.09; seven FLAT steps scored UP after the split; GetTranscodeReasonForFailedCondition (flat switch, cc 28) and threshold chains, no recipe; conditionals blocked by CS8629; Excess Arguments throughout |
 | R03 | 2.03 | - | not started |
 | R04 | 2.18 | 8.41 | split early (Recipe S) once every E/P step scored DOWN on "Number of Functions in a Single Module"; split files .Itunes 7.98, .MediaStream 8.15, .Tags 8.22, .Video 8.67, no recipe applied after the split; Recipe P blocked by CS0177 (out variables assigned on some paths); Recipe G WORSE on three nested methods; GetMediaInfo 5 arguments (public) |
 | R05 | 2.90 | 8.01 | split into .Audio 8.04 and .Video 7.98 (the six endpoints; their Code Duplication is no longer reported because the copies sit in different files); endpoints and GetLiveHlsStream complex through `??` defaults in DTO initializers (cc 12-17), no recipe; GetSegmentResult bumps need a nullable result; Excess Arguments (GetLiveHlsStream 51, new helpers 9 and 5); Constructor Over-Injection (11); Primitive Obsession |
