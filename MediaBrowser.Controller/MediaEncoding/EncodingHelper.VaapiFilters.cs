@@ -173,10 +173,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // keep video at memory except ocl tonemap,
                 // since the overhead caused by hwupload >>> using sw filter.
                 // sw => hw
-                if (doOclTonemap)
-                {
-                    mainFilters.Add("hwupload=derive_device=opencl");
-                }
+                AddOpenclHwupload(mainFilters, doOclTonemap);
             }
             else if (isVaapiDecoder)
             {
@@ -738,10 +735,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // keep video at memory except ocl tonemap,
                 // since the overhead caused by hwupload >>> using sw filter.
                 // sw => hw
-                if (doOclTonemap)
-                {
-                    mainFilters.Add("hwupload=derive_device=opencl");
-                }
+                AddOpenclHwupload(mainFilters, doOclTonemap);
             }
             else if (isVaapiDecoder)
             {
