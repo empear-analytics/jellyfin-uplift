@@ -256,10 +256,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 memoryOutput = true;
             }
 
-            if (memoryOutput)
-            {
-                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
-            }
+            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
             AddQsvReverseMapping(mainFilters, isQsvInQsvOut, doOclTonemap);
 
@@ -432,6 +429,14 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static bool IsSwOrTransposedHwDecode(bool isSwDecoder, bool isD3d11vaDecoder, bool isQsvDecoder, bool doVppTranspose)
         {
             return isSwDecoder || ((isD3d11vaDecoder || isQsvDecoder) && doVppTranspose);
+        }
+
+        private void AddMemoryOutputTextSubtitlesFilter(EncodingJobInfo state, List<string> mainFilters, bool memoryOutput, bool hasTextSubs)
+        {
+            if (memoryOutput)
+            {
+                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
+            }
         }
 
         private static bool NeedsVppPassthrough(string hwScaleFilter, bool isD3d11vaDecoder)
