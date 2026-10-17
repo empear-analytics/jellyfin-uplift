@@ -93,24 +93,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (IsCopyCodec(videoCodec))
             {
-                if (NeedsTsVideoBitStreamFilter(state))
-                {
-                    string bitStreamArgs = GetBitStreamArgs(state, MediaStreamType.Video);
-                    if (!string.IsNullOrEmpty(bitStreamArgs))
-                    {
-                        args += " " + bitStreamArgs;
-                    }
-                }
-
-                if (state.RunTimeTicks.HasValue && state.BaseRequest.CopyTimestamps)
-                {
-                    args += " -copyts -avoid_negative_ts disabled -start_at_zero";
-                }
-
-                if (!state.RunTimeTicks.HasValue)
-                {
-                    args += " -fflags +genpts";
-                }
+                args = AppendStreamCopyVideoArgs(args, state);
             }
             else
             {
@@ -136,17 +119,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 if (state.RunTimeTicks.HasValue && state.BaseRequest.CopyTimestamps)
                 {
-                    if (!hasCopyTs)
-                    {
-                        args += " -copyts";
-                    }
-
-                    args += " -avoid_negative_ts disabled";
-
-                    if (!HasExternalGraphicalSubtitle(state))
-                    {
-                        args += " -start_at_zero";
-                    }
+                    args = AppendCopyTimestampArgs(args, state, hasCopyTs);
                 }
 
                 var qualityParam = GetVideoQualityParam(state, videoCodec, encodingOptions, defaultPreset);
@@ -163,6 +136,47 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             args += GetOutputFFlags(state);
+
+            return args;
+        }
+
+        private string AppendStreamCopyVideoArgs(string args, EncodingJobInfo state)
+        {
+            if (NeedsTsVideoBitStreamFilter(state))
+            {
+                string bitStreamArgs = GetBitStreamArgs(state, MediaStreamType.Video);
+                if (!string.IsNullOrEmpty(bitStreamArgs))
+                {
+                    args += " " + bitStreamArgs;
+                }
+            }
+
+            if (state.RunTimeTicks.HasValue && state.BaseRequest.CopyTimestamps)
+            {
+                args += " -copyts -avoid_negative_ts disabled -start_at_zero";
+            }
+
+            if (!state.RunTimeTicks.HasValue)
+            {
+                args += " -fflags +genpts";
+            }
+
+            return args;
+        }
+
+        private static string AppendCopyTimestampArgs(string args, EncodingJobInfo state, bool hasCopyTs)
+        {
+            if (!hasCopyTs)
+            {
+                args += " -copyts";
+            }
+
+            args += " -avoid_negative_ts disabled";
+
+            if (!HasExternalGraphicalSubtitle(state))
+            {
+                args += " -start_at_zero";
+            }
 
             return args;
         }
