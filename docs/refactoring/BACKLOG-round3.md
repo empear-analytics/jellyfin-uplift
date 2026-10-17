@@ -86,7 +86,7 @@ Update as tasks land.
 
 | Task | Baseline | Current | Status |
 | --- | --- | --- | --- |
-| R3-01 | 4.25 | - | not started |
+| R3-01 | 4.25 | 5.15 | Sonnet. 14 commits (cap 25): rule 7 tails (GetHwDecoderName, GetHardwareVideoDecoder, the decoder methods), rule 9 for the -hwaccel option strings, Recipe G on Rkmpp and Amf, predicates. Honest caveat from the agent: many steps moved smells into new methods (Resolve*AccelType), so later gains are about 0.01 each. Left: GetHwaccelType Brain Method (a tail needs 14 free variables, five or more arguments is WORSE), the Resolve* methods whose nested blocks fall through, Excess Arguments (public API), Primitive Obsession |
 | R3-02 | 4.33 | - | not started |
 | R3-03 | 5.30 | - | not started |
 | R3-04 | 5.60 | - | not started |
