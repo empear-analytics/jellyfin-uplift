@@ -631,14 +631,10 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
-            var hwSurface = IsCudaFullSupported() && _mediaEncoder.SupportsFilter("alphasrc");
+            var hwSurface = HasCudaHwSurface();
             var is8bitSwFormatsNvdec = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsNvdec = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsNvdec);
-            var is8_10_12bitSwFormatsNvdec = is8_10bitSwFormatsNvdec
-                || string.Equals("yuv444p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+            var is8_10_12bitSwFormatsNvdec = IsNvdec8To12BitSwFormat(videoStream, is8_10bitSwFormatsNvdec);
             // TODO: add more 8/10/12bit and 4:4:4 formats for Nvdec after finishing the ffcheck tool
 
             if (is8bitSwFormatsNvdec)
@@ -691,6 +687,20 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private bool HasCudaHwSurface()
+        {
+            return IsCudaFullSupported() && _mediaEncoder.SupportsFilter("alphasrc");
+        }
+
+        private static bool IsNvdec8To12BitSwFormat(MediaStream videoStream, bool is8_10bitSwFormatsNvdec)
+        {
+            return is8_10bitSwFormatsNvdec
+                || string.Equals("yuv444p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("yuv444p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("yuv444p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsNvdecDecodingUnavailable(EncodingOptions options)
