@@ -286,10 +286,7 @@ public static class StreamingHelpers
 
         if (!EncodingHelper.IsCopyCodec(state.OutputVideoCodec) && state.OutputVideoBitrate.HasValue)
         {
-            var isVideoResolutionNotRequested = !state.VideoRequest.Width.HasValue
-                && !state.VideoRequest.Height.HasValue
-                && !state.VideoRequest.MaxWidth.HasValue
-                && !state.VideoRequest.MaxHeight.HasValue;
+            var isVideoResolutionNotRequested = IsVideoResolutionNotRequested(state.VideoRequest);
 
             if (isVideoResolutionNotRequested
                 && IsRequestedBitrateAtLeastSource(state, state.VideoRequest))
@@ -325,6 +322,14 @@ public static class StreamingHelpers
         {
             state.OutputAudioCodec = state.SupportedAudioCodecs.Where(c => !EncodingHelper.LosslessAudioCodecs.Contains(c)).FirstOrDefault(mediaEncoder.CanEncodeToAudioCodec);
         }
+    }
+
+    private static bool IsVideoResolutionNotRequested(VideoRequestDto videoRequest)
+    {
+        return !videoRequest.Width.HasValue
+            && !videoRequest.Height.HasValue
+            && !videoRequest.MaxWidth.HasValue
+            && !videoRequest.MaxHeight.HasValue;
     }
 
     private static bool IsRequestedBitrateAtLeastSource(StreamState state, VideoRequestDto videoRequest)
