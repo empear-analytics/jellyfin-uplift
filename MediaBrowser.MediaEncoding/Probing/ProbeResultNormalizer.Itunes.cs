@@ -163,14 +163,7 @@ namespace MediaBrowser.MediaEncoding.Probing
                                 continue;
                             }
 
-                            using (var subtree = reader.ReadSubtree())
-                            {
-                                var dict = GetNameValuePair(subtree);
-                                if (dict is not null)
-                                {
-                                    pairs.Add(dict);
-                                }
-                            }
+                            AddDictPair(reader, pairs);
 
                             break;
                         default:
@@ -185,6 +178,18 @@ namespace MediaBrowser.MediaEncoding.Probing
             }
 
             return pairs;
+        }
+
+        private static void AddDictPair(XmlReader reader, List<NameValuePair> pairs)
+        {
+            using (var subtree = reader.ReadSubtree())
+            {
+                var dict = GetNameValuePair(subtree);
+                if (dict is not null)
+                {
+                    pairs.Add(dict);
+                }
+            }
         }
     }
 }
