@@ -856,6 +856,13 @@ namespace MediaBrowser.Model.Dlna
                 .ToArray()
                 .ToLookup(analysis => analysis.Result.PlayMethod is not null);
 
+            return SelectDirectPlayProfileMatch(analyzedProfiles, containerSupported);
+        }
+
+        private static (DirectPlayProfile? Profile, PlayMethod? PlayMethod, int? AudioStreamIndex, TranscodeReason TranscodeReasons) SelectDirectPlayProfileMatch(
+            ILookup<bool, ((DirectPlayProfile Profile, PlayMethod? PlayMethod, int? AudioStreamIndex, TranscodeReason TranscodeReason) Result, int Order, int Rank)> analyzedProfiles,
+            bool containerSupported)
+        {
             var profileMatch = analyzedProfiles[true]
                 .Select(analysis => analysis.Result)
                 .FirstOrDefault();
