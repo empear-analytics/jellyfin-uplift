@@ -94,9 +94,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doCuTonemap = IsHwTonemapAvailable(state, options);
 
-            var hasSubs = state.SubtitleStream is not null && ShouldEncodeSubtitle(state);
-            var hasTextSubs = hasSubs && state.SubtitleStream.IsTextSubtitleStream;
-            var hasGraphicalSubs = hasSubs && !state.SubtitleStream.IsTextSubtitleStream;
+            var hasSubs = HasSubtitlesToEncode(state);
+            var hasTextSubs = HasTextSubtitles(state, hasSubs);
+            var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
             var hasAssSubs = hasSubs
                 && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
@@ -119,11 +119,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // INPUT sw surface(memory)
                 // sw deint
-                if (doDeintH2645)
-                {
-                    var swDeintFilter = GetSwDeinterlaceFilter(state, options);
-                    mainFilters.Add(swDeintFilter);
-                }
+                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 var outFormat = doCuTonemap ? "p010le" : "yuv420p";
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
@@ -187,12 +183,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (memoryOutput)
             {
-                // text subtitles
-                if (hasTextSubs)
-                {
-                    var textSubtitlesFilter = GetTextSubtitlesFilter(state, false, false);
-                    mainFilters.Add(textSubtitlesFilter);
-                }
+                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
             }
 
             // OUTPUT cuda(yuv420p) surface(vram)
