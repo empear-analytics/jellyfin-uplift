@@ -784,6 +784,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return ResolveAmfAccelType(state, options, videoStream, bitDepth);
+        }
+
+        private string ResolveAmfAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
+        {
             var hwSurface = HasD3d11OclHwSurface();
             var is8bitSwFormatsAmf = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsAmf = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsAmf);
