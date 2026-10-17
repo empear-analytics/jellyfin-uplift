@@ -123,7 +123,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var rotation = state.VideoStream?.Rotation ?? 0;
             var transposeDir = GetTransposeDirection(state, rotation);
             var doVppTranspose = !string.IsNullOrEmpty(transposeDir);
-            var swapWAndH = Math.Abs(rotation) == 90 && (isSwDecoder || ((isD3d11vaDecoder || isQsvDecoder) && doVppTranspose));
+            var swapWAndH = Math.Abs(rotation) == 90 && IsSwOrTransposedHwDecode(isSwDecoder, isD3d11vaDecoder, isQsvDecoder, doVppTranspose);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
@@ -427,6 +427,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 mainFilters.Add(GetOverwriteColorPropertiesParam(state, false));
             }
+        }
+
+        private static bool IsSwOrTransposedHwDecode(bool isSwDecoder, bool isD3d11vaDecoder, bool isQsvDecoder, bool doVppTranspose)
+        {
+            return isSwDecoder || ((isD3d11vaDecoder || isQsvDecoder) && doVppTranspose);
         }
 
         private static bool NeedsVppPassthrough(string hwScaleFilter, bool isD3d11vaDecoder)
