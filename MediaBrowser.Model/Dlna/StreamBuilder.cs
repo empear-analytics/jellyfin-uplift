@@ -362,7 +362,7 @@ namespace MediaBrowser.Model.Dlna
             LogDirectPlayEligibility(item, options, isEligibleForDirectPlay, isEligibleForDirectStream);
 
             DirectPlayProfile? directPlayProfile = null;
-            if (isEligibleForDirectPlay || isEligibleForDirectStream)
+            if (IsEligibleForAnyDirectMethod(isEligibleForDirectPlay, isEligibleForDirectStream))
             {
                 // See if it can be direct played
                 var directPlayInfo = GetVideoDirectPlayProfile(options, item, videoStream, audioStream, candidateAudioStreams, subtitleStream, isEligibleForDirectPlay, isEligibleForDirectStream);
@@ -410,6 +410,11 @@ namespace MediaBrowser.Model.Dlna
 
             item.Container = NormalizeMediaSourceFormatIntoSingleContainer(item.Container, options.Profile, DlnaProfileType.Video, directPlayProfile);
             return playlistItem;
+        }
+
+        private static bool IsEligibleForAnyDirectMethod(bool isEligibleForDirectPlay, bool isEligibleForDirectStream)
+        {
+            return isEligibleForDirectPlay || isEligibleForDirectStream;
         }
 
         private static MediaStream? GetSelectedSubtitleStream(MediaSourceInfo item, StreamInfo playlistItem)
