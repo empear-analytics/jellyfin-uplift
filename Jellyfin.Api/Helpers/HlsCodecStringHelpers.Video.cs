@@ -88,20 +88,7 @@ public static partial class HlsCodecStringHelpers
         // refer: https://www.webmproject.org/vp9/mp4/
         StringBuilder result = new StringBuilder("vp09", 13);
 
-        var profileString = pixelFormat switch
-        {
-            "yuv420p" => "00",
-            "yuvj420p" => "00",
-            "yuv422p" => "01",
-            "yuv444p" => "01",
-            "yuv420p10le" => "02",
-            "yuv420p12le" => "02",
-            "yuv422p10le" => "03",
-            "yuv422p12le" => "03",
-            "yuv444p10le" => "03",
-            "yuv444p12le" => "03",
-            _ => "00"
-        };
+        var profileString = GetVp9ProfileString(pixelFormat);
 
         var lumaPictureSize = width * height;
         var lumaSampleRate = lumaPictureSize * framerate;
@@ -196,6 +183,24 @@ public static partial class HlsCodecStringHelpers
             .AppendFormat(CultureInfo.InvariantCulture, "{0:D2}", dvLevel);
 
         return result.ToString();
+    }
+
+    private static string GetVp9ProfileString(string pixelFormat)
+    {
+        return pixelFormat switch
+        {
+            "yuv420p" => "00",
+            "yuvj420p" => "00",
+            "yuv422p" => "01",
+            "yuv444p" => "01",
+            "yuv420p10le" => "02",
+            "yuv420p12le" => "02",
+            "yuv422p10le" => "03",
+            "yuv422p12le" => "03",
+            "yuv444p10le" => "03",
+            "yuv444p12le" => "03",
+            _ => "00"
+        };
     }
 
     private static string GetVp9LevelString(int lumaPictureSize, float lumaSampleRate)
