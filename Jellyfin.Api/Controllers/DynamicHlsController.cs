@@ -275,6 +275,11 @@ public partial class DynamicHlsController : BaseJellyfinApiController
             AlwaysBurnInSubtitleWhenTranscoding = alwaysBurnInSubtitleWhenTranscoding
         };
 
+        return await ServeLivePlaylist(streamingRequest).ConfigureAwait(false);
+    }
+
+    private async Task<ActionResult> ServeLivePlaylist(VideoRequestDto streamingRequest)
+    {
         // CTS lifecycle is managed internally.
         var cancellationTokenSource = new CancellationTokenSource();
         // Due to CTS.Token calling ThrowIfDisposed (https://github.com/dotnet/runtime/issues/29970) we have to "cache" the token
@@ -306,7 +311,7 @@ public partial class DynamicHlsController : BaseJellyfinApiController
                     // If the playlist doesn't already exist, startup ffmpeg
                     job = await StartLiveTranscoding(state, playlistPath, cancellationTokenSource).ConfigureAwait(false);
 
-                    minSegments = state.MinSegments;
+                    int? minSegments = state.MinSegments;
                     await WaitForMinimumLiveSegments(playlistPath, minSegments, cancellationToken).ConfigureAwait(false);
                 }
             }
