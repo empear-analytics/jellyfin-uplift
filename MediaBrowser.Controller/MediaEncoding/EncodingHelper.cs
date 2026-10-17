@@ -2980,9 +2980,7 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static double GetVideoBitrateScaleFactor(string codec)
         {
             // hevc & vp9 - 40% more efficient than h.264
-            if (string.Equals(codec, "h265", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "hevc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "vp9", StringComparison.OrdinalIgnoreCase))
+            if (IsHevcOrVp9Codec(codec))
             {
                 return .6;
             }
@@ -2994,6 +2992,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return 1;
+        }
+
+        private static bool IsHevcOrVp9Codec(string codec)
+        {
+            return string.Equals(codec, "h265", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(codec, "hevc", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(codec, "vp9", StringComparison.OrdinalIgnoreCase);
         }
 
         public static int ScaleBitrate(int bitrate, string inputVideoCodec, string outputVideoCodec)
