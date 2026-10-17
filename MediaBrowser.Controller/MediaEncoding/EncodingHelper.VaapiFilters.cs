@@ -275,9 +275,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     subFilters.Add("hwupload=derive_device=vaapi");
 
                     var (overlayW, overlayH) = GetFixedOutputSize(swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                    var overlaySize = HasFixedOverlaySize(overlayW, overlayH)
-                        ? $":w={overlayW.Value}:h={overlayH.Value}"
-                        : string.Empty;
+                    var overlaySize = GetOverlaySizeOption(overlayW, overlayH);
                     var overlayVaapiFilter = string.Format(
                         CultureInfo.InvariantCulture,
                         "overlay_vaapi=eof_action=pass:repeatlast=0{0}",
