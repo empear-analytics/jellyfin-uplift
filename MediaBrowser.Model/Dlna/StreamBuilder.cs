@@ -1217,15 +1217,20 @@ namespace MediaBrowser.Model.Dlna
 
             if (isMediaSource)
             {
-                if (options.AudioStreamIndex.HasValue && string.IsNullOrEmpty(options.MediaSourceId))
-                {
-                    throw new ArgumentException("MediaSourceId is required when a specific audio stream is requested");
-                }
+                ValidateMediaSourceIdForStreamIndexes(options);
+            }
+        }
 
-                if (options.SubtitleStreamIndex.HasValue && string.IsNullOrEmpty(options.MediaSourceId))
-                {
-                    throw new ArgumentException("MediaSourceId is required when a specific subtitle stream is requested");
-                }
+        private static void ValidateMediaSourceIdForStreamIndexes(MediaOptions options)
+        {
+            if (options.AudioStreamIndex.HasValue && string.IsNullOrEmpty(options.MediaSourceId))
+            {
+                throw new ArgumentException("MediaSourceId is required when a specific audio stream is requested");
+            }
+
+            if (options.SubtitleStreamIndex.HasValue && string.IsNullOrEmpty(options.MediaSourceId))
+            {
+                throw new ArgumentException("MediaSourceId is required when a specific subtitle stream is requested");
             }
         }
 
