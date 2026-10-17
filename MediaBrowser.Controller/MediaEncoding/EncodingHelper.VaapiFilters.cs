@@ -210,11 +210,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // ocl tonemap
-            if (doOclTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "opencl", "nv12", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
             if (NeedsVaapiReverseMapping(doOclTonemap, isVaInVaOut))
             {
@@ -757,11 +753,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // ocl tonemap
-            if (doOclTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "opencl", "nv12", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
             if (NeedsVaapiReverseMapping(doOclTonemap, isVaInVaOut))
             {
