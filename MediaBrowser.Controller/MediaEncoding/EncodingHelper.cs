@@ -653,7 +653,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 arg.Append(canvasArgs);
             }
 
-            if (state.MediaSource.VideoType == VideoType.Dvd || state.MediaSource.VideoType == VideoType.BluRay)
+            if (IsDvdOrBluRaySource(state))
             {
                 AppendConcatInput(state, arg);
             }
@@ -666,7 +666,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (NeedsExternalSubtitleMuxing(state))
             {
                 var subtitlePath = state.SubtitleStream.Path;
-                var isGraphicalBurnIn = ShouldEncodeSubtitle(state) && !state.SubtitleStream.IsTextSubtitleStream;
+                var isGraphicalBurnIn = IsGraphicalSubtitleBurnIn(state);
 
                 // dvdsub/vobsub graphical subtitles use .sub+.idx pairs
                 subtitlePath = GetIdxSubtitlePath(subtitlePath);
@@ -700,7 +700,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 arg.Append(" -i file:\"").Append(subtitlePath.EscapeProcessArgument()).Append('\"');
             }
 
-            if (state.AudioStream is not null && state.AudioStream.IsExternal)
+            if (HasExternalAudioStream(state))
             {
                 AppendExternalAudioInput(state, options, segmentContainer, arg);
             }
@@ -713,6 +713,21 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return arg.ToString();
+        }
+
+        private static bool IsDvdOrBluRaySource(EncodingJobInfo state)
+        {
+            return state.MediaSource.VideoType == VideoType.Dvd || state.MediaSource.VideoType == VideoType.BluRay;
+        }
+
+        private static bool IsGraphicalSubtitleBurnIn(EncodingJobInfo state)
+        {
+            return ShouldEncodeSubtitle(state) && !state.SubtitleStream.IsTextSubtitleStream;
+        }
+
+        private static bool HasExternalAudioStream(EncodingJobInfo state)
+        {
+            return state.AudioStream is not null && state.AudioStream.IsExternal;
         }
 
         private void AppendConcatInput(EncodingJobInfo state, StringBuilder arg)
