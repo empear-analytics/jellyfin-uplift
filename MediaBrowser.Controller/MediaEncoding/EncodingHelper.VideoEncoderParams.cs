@@ -75,28 +75,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (IsQsvVideoEncoder(videoCodec))
             {
-                // TODO: probe QSV encoders' capabilities and enable more tuning options
-                // See also https://github.com/intel/media-delivery/blob/master/doc/quality.rst
-
-                // Some less powerful H.264 HW decoders require strict CPB size
-                // So bufsize optimizations should not be applied to them
-                int factor = 2;
-                var codec = state.ActualOutputVideoCodec;
-                var level = state.GetRequestedLevel(codec);
-                if (IsH264BelowLevel51(codec, level))
-                {
-                    factor = 1;
-                }
-
-                // Set (maxrate == bitrate + 1) to trigger VBR for better bitrate allocation
-                // Set (rc_init_occupancy == 2 * bitrate) and (bufsize == 4 * bitrate) to deal with drastic scene changes
-                // Use long arithmetic and clamp to int.MaxValue to prevent int32 overflow
-                // (e.g. bitrate * 4 wraps to a negative value for bitrates above ~537 million)
-                int qsvMaxrate = (int)Math.Min((long)bitrate + 1, int.MaxValue);
-                int qsvInitOcc = (int)Math.Min((long)bitrate * 1 * factor, int.MaxValue);
-                int qsvBufsize = (int)Math.Min((long)bitrate * 2 * factor, int.MaxValue);
-
-                return string.Create(CultureInfo.InvariantCulture, $" -b:v {bitrate} -maxrate {qsvMaxrate} -rc_init_occupancy {qsvInitOcc} -bufsize {qsvBufsize}");
+                return GetQsvVideoBitrateParam(state, bitrate);
             }
 
             if (string.Equals(videoCodec, "h264_amf", StringComparison.OrdinalIgnoreCase)
@@ -108,13 +87,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (IsVaapiVideoEncoder(videoCodec))
             {
-                // VBR in i965 driver may result in pixelated output.
-                if (_mediaEncoder.IsVaapiDeviceInteli965)
-                {
-                    return FormattableString.Invariant($" -rc_mode CBR -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
-                }
-
-                return FormattableString.Invariant($" -rc_mode VBR -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
+                return GetVaapiVideoBitrateParam(bitrate, bufsize);
             }
 
             if (string.Equals(videoCodec, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
@@ -126,6 +99,43 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return FormattableString.Invariant($" -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
+        }
+
+        private static string GetQsvVideoBitrateParam(EncodingJobInfo state, int bitrate)
+        {
+            // TODO: probe QSV encoders' capabilities and enable more tuning options
+            // See also https://github.com/intel/media-delivery/blob/master/doc/quality.rst
+
+            // Some less powerful H.264 HW decoders require strict CPB size
+            // So bufsize optimizations should not be applied to them
+            int factor = 2;
+            var codec = state.ActualOutputVideoCodec;
+            var level = state.GetRequestedLevel(codec);
+            if (IsH264BelowLevel51(codec, level))
+            {
+                factor = 1;
+            }
+
+            // Set (maxrate == bitrate + 1) to trigger VBR for better bitrate allocation
+            // Set (rc_init_occupancy == 2 * bitrate) and (bufsize == 4 * bitrate) to deal with drastic scene changes
+            // Use long arithmetic and clamp to int.MaxValue to prevent int32 overflow
+            // (e.g. bitrate * 4 wraps to a negative value for bitrates above ~537 million)
+            int qsvMaxrate = (int)Math.Min((long)bitrate + 1, int.MaxValue);
+            int qsvInitOcc = (int)Math.Min((long)bitrate * 1 * factor, int.MaxValue);
+            int qsvBufsize = (int)Math.Min((long)bitrate * 2 * factor, int.MaxValue);
+
+            return string.Create(CultureInfo.InvariantCulture, $" -b:v {bitrate} -maxrate {qsvMaxrate} -rc_init_occupancy {qsvInitOcc} -bufsize {qsvBufsize}");
+        }
+
+        private string GetVaapiVideoBitrateParam(int bitrate, int bufsize)
+        {
+            // VBR in i965 driver may result in pixelated output.
+            if (_mediaEncoder.IsVaapiDeviceInteli965)
+            {
+                return FormattableString.Invariant($" -rc_mode CBR -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
+            }
+
+            return FormattableString.Invariant($" -rc_mode VBR -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
         }
 
         private static bool IsH264BelowLevel51(string codec, string level)
