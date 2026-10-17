@@ -40,8 +40,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return false;
             }
 
-            if (videoStream.IsInterlaced
-                && state.DeInterlace(videoStream.Codec, false))
+            if (IsInterlacedToBeDeinterlaced(state, videoStream))
             {
                 return false;
             }
@@ -83,8 +82,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 var requestedProfile = requestedProfiles[0];
                 // strip spaces because they may be stripped out on the query string as well
-                if (!string.IsNullOrEmpty(videoStream.Profile)
-                    && !requestedProfiles.Contains(videoStream.Profile.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase))
+                if (IsProfileNotRequested(videoStream, requestedProfiles))
                 {
                     var currentScore = GetVideoProfileScore(videoStream.Codec, videoStream.Profile);
                     var requestedScore = GetVideoProfileScore(videoStream.Codec, requestedProfile);
@@ -183,7 +181,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (ExceedsMaxVideoBitRate(request, videoStream))
             {
                 // For LiveTV that has no bitrate, let's try copy if other conditions are met
-                if (string.IsNullOrWhiteSpace(request.LiveStreamId) || videoStream.BitRate.HasValue)
+                if (IsNotBitratelessLiveStream(request, videoStream))
                 {
                     return false;
                 }
@@ -226,6 +224,23 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return true;
+        }
+
+        private static bool IsInterlacedToBeDeinterlaced(EncodingJobInfo state, MediaStream videoStream)
+        {
+            return videoStream.IsInterlaced
+                && state.DeInterlace(videoStream.Codec, false);
+        }
+
+        private static bool IsProfileNotRequested(MediaStream videoStream, string[] requestedProfiles)
+        {
+            return !string.IsNullOrEmpty(videoStream.Profile)
+                && !requestedProfiles.Contains(videoStream.Profile.Replace(" ", string.Empty, StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsNotBitratelessLiveStream(BaseEncodingJobOptions request, MediaStream videoStream)
+        {
+            return string.IsNullOrWhiteSpace(request.LiveStreamId) || videoStream.BitRate.HasValue;
         }
 
         private static bool IsBurningInSubtitles(EncodingJobInfo state, BaseEncodingJobOptions request)
