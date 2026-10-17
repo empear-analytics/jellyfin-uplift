@@ -280,6 +280,11 @@ namespace MediaBrowser.Model.Dlna
                 }
             }
 
+            return GetAudioDirectStreamPlayMethod(item, options, directPlayProfile, transcodeReasons);
+        }
+
+        private (DirectPlayProfile? Profile, PlayMethod? PlayMethod, TranscodeReason TranscodeReasons) GetAudioDirectStreamPlayMethod(MediaSourceInfo item, MediaOptions options, DirectPlayProfile? directPlayProfile, TranscodeReason transcodeReasons)
+        {
             // While options takes the network and other factors into account. Only applies to direct stream
             if (item.SupportsDirectStream)
             {
