@@ -336,6 +336,19 @@ an earlier step extracted from the same file, instead of getting a second helper
 body. The copy must be identical to the helper's body, character for character, apart from
 the names of the variables passed in.
 
+**Copies that differ only in a type** (the same body, once for `int` and once for `double`)
+become one generic `private` helper. Its constraints provide exactly the operations the copies
+use and nothing else (for example `IEquatable<T>` for `.Equals`, `IComparisonOperators<T, T,
+bool>` for `>=` and `<=`). The body stays character for character. Only when every operation
+resolves, for each of the original types, to the same member it called before: `IEquatable<T>.Equals`
+is `int.Equals(int)` and `double.Equals(double)`, and the operator interfaces are the types' own
+operators. Anything that would need a conversion, a cast or a different overload is not covered.
+
+```csharp
+private static bool Compare<T>(ProfileCondition condition, ProfileConditionType conditionType, T currentValue, T expected)
+    where T : IEquatable<T>, IComparisonOperators<T, T, bool>
+```
+
 Removing a copy removes its literals, so check this recipe with
 `python tools/refactor_guard.py --dedup <file>`: a literal may occur fewer times, as long as
 it still occurs, and no value new to the file may appear.
@@ -438,3 +451,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-17 | Recipe S: also when *Number of Functions in a Single Module* blocks Recipes E and P; never first, but no longer only last; steps continue on the split-off files. | R04 `ProbeResultNormalizer`: every E or P step after step 5 scored DOWN on that smell; the split scored UP (4.83 to 8.41). R05 `DynamicHlsController` and R02 `StreamBuilder` split likewise; in R02, seven steps that were FLAT before the split scored UP after it. R01 `GetHwaccelType` (E WORSE twice) and R03 stalled on the same smell without a split. Decided by the campaign owner. |
 | 2026-10-17 | Recipe E: a block that sets a flag on some paths passes the flag in and returns it; a trailing loop whose `return` statements end the method moves with the final `return`. | R03 `SavePeopleMetadataAsync` and `FillMissingEpisodeNumbersFromPath`; R02 `SelectMostEfficientSubtitleStreamIndex` and `SelectFirstSupportedContainer`. Both shapes were reviewed as equivalent and landed in part 3 (#11). Decided by the campaign owner. |
 | 2026-10-17 | Rule 2: a step that creates a method with *Excess Number of Function Arguments* is `WORSE`. | R07 added helpers with 6 and 7 arguments (`AppendBitrateVariantPlaylists`, `AppendCompatibilityPlaylists`), R05 one with 9 (`StartTranscodingForSegment`), R01 one with 5 (`HasMissingScaleInput`). They passed as UP because the file already had the category. Decided by the campaign owner. |
+| 2026-10-17 | Recipe D: copies that differ only in a type become one generic helper whose constraints provide exactly the operations the copies use. | R2-06 `ConditionProcessor`: `CompareInt` and `CompareDouble` were identical apart from `int`/`double`; one `Compare<T>` with `IEquatable<T>` and `IComparisonOperators<T, T, bool>` scored UP (7.35 to 7.57) with all checks passing. Decided by the campaign owner. |
