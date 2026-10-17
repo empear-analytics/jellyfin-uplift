@@ -254,6 +254,11 @@ namespace Emby.Server.Implementations.Library
                 return MediaProtocol.File;
             }
 
+            return GetProtocolFromPathPrefix(path);
+        }
+
+        private MediaProtocol GetProtocolFromPathPrefix(string path)
+        {
             if (path.StartsWith("Rtsp", StringComparison.OrdinalIgnoreCase))
             {
                 return MediaProtocol.Rtsp;
