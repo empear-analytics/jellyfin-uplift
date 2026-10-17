@@ -651,7 +651,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else if (isVaapiDecoder || isQsvDecoder)
             {
-                var hwFilterSuffix = isVaapiDecoder ? "vaapi" : "qsv";
+                var hwFilterSuffix = GetHwFilterSuffix(isVaapiDecoder);
                 var isRext = IsVideoStreamHevcRext(state);
                 var doVppFullRangeOut = CanDoQsvVppFullRangeOut(isMjpegEncoder);
                 var doVppScaleModeHq = CanDoQsvVppScaleModeHq(isMjpegEncoder);
@@ -669,13 +669,10 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 var outFormat = GetHwScaleOutputFormat(doTonemap, isQsvDecoder, doVppTranspose, isRext);
                 var swapOutputWandH = NeedsQsvOutputSwap(isQsvDecoder, doVppTranspose, swapWAndH);
-                var hwScalePrefix = isQsvDecoder ? "vpp" : "scale";
+                var hwScalePrefix = GetHwScalePrefix(isQsvDecoder);
                 var hwScaleFilter = GetHwScaleFilter(hwScalePrefix, hwFilterSuffix, outFormat, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
 
-                if (ShouldAppendQsvVppTranspose(hwScaleFilter, isQsvDecoder, doVppTranspose))
-                {
-                    hwScaleFilter += $":transpose={transposeDir}";
-                }
+                hwScaleFilter = AppendQsvVppTransposeOption(hwScaleFilter, isQsvDecoder, doVppTranspose, transposeDir);
 
                 if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
                 {
@@ -684,10 +681,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
 
                 // allocate extra pool sizes for vaapi vpp scale
-                if (NeedsVaapiExtraHwFrames(hwScaleFilter, isVaapiDecoder))
-                {
-                    hwScaleFilter += ":extra_hw_frames=24";
-                }
+                hwScaleFilter = AppendVaapiExtraHwFramesOption(hwScaleFilter, isVaapiDecoder);
 
                 // hw transpose(qsv vpp) & scale
                 mainFilters.Add(hwScaleFilter);
@@ -816,6 +810,36 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // map from qsv to opencl via qsv(vaapi)-opencl interop.
                 mainFilters.Add("hwmap=derive_device=opencl:mode=read");
             }
+        }
+
+        private static string AppendQsvVppTransposeOption(string hwScaleFilter, bool isQsvDecoder, bool doVppTranspose, string transposeDir)
+        {
+            if (ShouldAppendQsvVppTranspose(hwScaleFilter, isQsvDecoder, doVppTranspose))
+            {
+                hwScaleFilter += $":transpose={transposeDir}";
+            }
+
+            return hwScaleFilter;
+        }
+
+        private static string AppendVaapiExtraHwFramesOption(string hwScaleFilter, bool isVaapiDecoder)
+        {
+            if (NeedsVaapiExtraHwFrames(hwScaleFilter, isVaapiDecoder))
+            {
+                hwScaleFilter += ":extra_hw_frames=24";
+            }
+
+            return hwScaleFilter;
+        }
+
+        private static string GetHwFilterSuffix(bool isVaapiDecoder)
+        {
+            return isVaapiDecoder ? "vaapi" : "qsv";
+        }
+
+        private static string GetHwScalePrefix(bool isQsvDecoder)
+        {
+            return isQsvDecoder ? "vpp" : "scale";
         }
 
         private static bool NeedsVaapiTranspose(bool isVaapiDecoder, bool doVppTranspose)
