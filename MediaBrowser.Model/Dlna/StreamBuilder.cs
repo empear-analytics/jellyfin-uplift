@@ -340,7 +340,7 @@ namespace MediaBrowser.Model.Dlna
 
             var videoStream = item.VideoStream;
 
-            var bitrateLimitExceeded = IsBitrateLimitExceeded(item, options.GetMaxBitrate(false) ?? 0);
+            var bitrateLimitExceeded = IsVideoItemBitrateLimitExceeded(item, options);
             var isEligibleForDirectPlay = IsEligibleForDirectPlay(options, bitrateLimitExceeded);
             var isEligibleForDirectStream = IsEligibleForDirectStream(options, bitrateLimitExceeded);
             TranscodeReason transcodeReasons = 0;
@@ -427,6 +427,11 @@ namespace MediaBrowser.Model.Dlna
         {
             playlistItem.AudioStreamIndex = audioStream?.Index;
             SetDirectStreamAudioCodecs(playlistItem, audioStream, directPlayProfile);
+        }
+
+        private bool IsVideoItemBitrateLimitExceeded(MediaSourceInfo item, MediaOptions options)
+        {
+            return IsBitrateLimitExceeded(item, options.GetMaxBitrate(false) ?? 0);
         }
 
         private static bool IsEligibleForAnyDirectMethod(bool isEligibleForDirectPlay, bool isEligibleForDirectStream)
