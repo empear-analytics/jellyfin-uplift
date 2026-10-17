@@ -75,10 +75,7 @@ namespace Emby.Server.Implementations.Library
                     continue;
                 }
 
-                if (shortAttr.Length > 0
-                    && attributeEnd + 1 < subStr.Length
-                    && (subStr[attributeEnd] is 'i' or 'I')
-                    && (subStr[attributeEnd + 1] is 'd' or 'D'))
+                if (IsAliasFollowedById(shortAttr, subStr, attributeEnd))
                 {
                     // We were searching for a shortened attribute, but it's followed by "id" - let's skip it.
                     attributeEnd += 2;
@@ -115,6 +112,14 @@ namespace Emby.Server.Implementations.Library
             }
 
             return null;
+        }
+
+        private static bool IsAliasFollowedById(ReadOnlySpan<char> shortAttr, ReadOnlySpan<char> subStr, int attributeEnd)
+        {
+            return shortAttr.Length > 0
+                && attributeEnd + 1 < subStr.Length
+                && (subStr[attributeEnd] is 'i' or 'I')
+                && (subStr[attributeEnd + 1] is 'd' or 'D');
         }
     }
 }
