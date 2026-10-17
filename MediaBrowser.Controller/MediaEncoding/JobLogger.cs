@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace MediaBrowser.Controller.MediaEncoding
 {
-    public class JobLogger
+    public partial class JobLogger
     {
         private readonly ILogger _logger;
 
@@ -122,60 +122,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 state.ReportTranscodingProgress(transcodingPosition, framerate, percent, bytesTranscoded, bitRate);
             }
-        }
-
-        private static float? ParseFramerate(string rate, float? framerate)
-        {
-            if (float.TryParse(rate, CultureInfo.InvariantCulture, out var val))
-            {
-                framerate = val;
-            }
-
-            return framerate;
-        }
-
-        private static long? ParseBytesTranscoded(string part, long? bytesTranscoded)
-        {
-            var size = part.Split('=', 2)[^1];
-
-            int? scale = null;
-            if (size.Contains("kb", StringComparison.OrdinalIgnoreCase))
-            {
-                scale = 1024;
-                size = size.Replace("kb", string.Empty, StringComparison.OrdinalIgnoreCase);
-            }
-
-            if (scale.HasValue)
-            {
-                if (long.TryParse(size, CultureInfo.InvariantCulture, out var val))
-                {
-                    bytesTranscoded = val * scale.Value;
-                }
-            }
-
-            return bytesTranscoded;
-        }
-
-        private static int? ParseBitRate(string part, int? bitRate)
-        {
-            var rate = part.Split('=', 2)[^1];
-
-            int? scale = null;
-            if (rate.Contains("kbits/s", StringComparison.OrdinalIgnoreCase))
-            {
-                scale = 1024;
-                rate = rate.Replace("kbits/s", string.Empty, StringComparison.OrdinalIgnoreCase);
-            }
-
-            if (scale.HasValue)
-            {
-                if (float.TryParse(rate, CultureInfo.InvariantCulture, out var val))
-                {
-                    bitRate = (int)Math.Ceiling(val * scale.Value);
-                }
-            }
-
-            return bitRate;
         }
     }
 }
