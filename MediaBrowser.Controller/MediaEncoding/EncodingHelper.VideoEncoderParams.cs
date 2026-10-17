@@ -62,6 +62,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             // Use long arithmetic to prevent int32 overflow for very high bitrate values.
             int bufsize = (int)Math.Min((long)bitrate * 2, int.MaxValue);
 
+            return GetVideoEncoderRateControlParam(state, videoCodec, bitrate, bufsize);
+        }
+
+        private string GetVideoEncoderRateControlParam(EncodingJobInfo state, string videoCodec, int bitrate, int bufsize)
+        {
             if (string.Equals(videoCodec, "libsvtav1", StringComparison.OrdinalIgnoreCase))
             {
                 return FormattableString.Invariant($" -b:v {bitrate} -bufsize {bufsize}");
