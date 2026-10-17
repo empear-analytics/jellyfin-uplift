@@ -60,8 +60,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 #pragma warning restore SA1008
             }
 
-            if (string.Equals(audioCodec, "dts", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "dca", StringComparison.OrdinalIgnoreCase))
+            if (IsDtsAudioCodec(audioCodec))
             {
 #pragma warning disable SA1008
                 return (inputChannels, outputChannels) switch
@@ -78,6 +77,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             // Default audio bitrate to 128K per channel if we don't have codec specific defaults
             // https://ffmpeg.org/ffmpeg-codecs.html#toc-Codec-Options
             return 128000 * (outputAudioChannels ?? audioStream.Channels ?? 2);
+        }
+
+        private static bool IsDtsAudioCodec(string audioCodec)
+        {
+            return string.Equals(audioCodec, "dts", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(audioCodec, "dca", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsDefaultOrCommonLossyAudioCodec(string audioCodec)
