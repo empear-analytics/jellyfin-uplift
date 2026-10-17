@@ -428,7 +428,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var rotation = state.VideoStream?.Rotation ?? 0;
             var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
             var doVkTranspose = isVaapiDecoder && !string.IsNullOrEmpty(transposeDir);
-            var swapWAndH = Math.Abs(rotation) == 90 && (isSwDecoder || (isVaapiDecoder && doVkTranspose));
+            var swapWAndH = NeedsVaapiSwapWAndH(rotation, isSwDecoder, isVaapiDecoder, doVkTranspose);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
@@ -770,7 +770,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add(tonemapFilter);
             }
 
-            if (doOclTonemap && isVaInVaOut)
+            if (NeedsVaapiReverseMapping(doOclTonemap, isVaInVaOut))
             {
                 if (isi965Driver)
                 {
@@ -797,7 +797,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT nv12 surface(memory)
-            if (isSwDecoder && isVaapiEncoder)
+            if (IsSwDecodeToVaapiEncode(isSwDecoder, isVaapiEncoder))
             {
                 memoryOutput = true;
             }
@@ -812,7 +812,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add("hwmap");
                 mainFilters.Add("format=vaapi");
             }
-            else if (memoryOutput && isVaapiEncoder)
+            else if (NeedsVaapiUploadFromMemory(memoryOutput, isVaapiEncoder))
             {
                 AddVaapiHwupload(mainFilters, hasGraphicalSubs);
             }
