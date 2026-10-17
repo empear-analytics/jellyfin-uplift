@@ -231,21 +231,5 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             return (mainFilters, subFilters, overlayFilters);
         }
-
-        private string GetNvidiaOverlayAlphaFormatOption()
-        {
-            return _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayCudaAlphaFormat)
-                ? ":alpha_format=premultiplied" : string.Empty;
-        }
-
-        private static bool NeedsCudaMemoryOutput(bool isNvDecoder, bool isSwEncoder, bool isUploadForCuTonemap, bool hasSubs)
-        {
-            return (isNvDecoder && isSwEncoder) || (isUploadForCuTonemap && hasSubs);
-        }
-
-        private static bool NeedsNvencHwUpload(bool isSwDecoder, bool isNvencEncoder, bool isUploadForCuTonemap)
-        {
-            return isSwDecoder && isNvencEncoder && !isUploadForCuTonemap;
-        }
     }
 }
