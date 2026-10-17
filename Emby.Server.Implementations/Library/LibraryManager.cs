@@ -3362,24 +3362,17 @@ namespace Emby.Server.Implementations.Library
 
             if (!episode.ParentIndexNumber.HasValue)
             {
-                changed = FillParentIndexNumberFromSeason(episode, changed);
-            }
+                var season = episode.Season;
 
-            return changed;
-        }
+                if (season is not null)
+                {
+                    episode.ParentIndexNumber = season.IndexNumber;
+                }
 
-        private static bool FillParentIndexNumberFromSeason(Episode episode, bool changed)
-        {
-            var season = episode.Season;
-
-            if (season is not null)
-            {
-                episode.ParentIndexNumber = season.IndexNumber;
-            }
-
-            if (episode.ParentIndexNumber.HasValue)
-            {
-                changed = true;
+                if (episode.ParentIndexNumber.HasValue)
+                {
+                    changed = true;
+                }
             }
 
             return changed;
