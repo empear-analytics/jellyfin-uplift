@@ -29,20 +29,7 @@ namespace MediaBrowser.Model.Dlna
             string? videoCodec,
             string? audioCodec)
         {
-            // Prefer matching video codecs
-            var videoCodecs = ContainerHelper.Split(videoCodec).ToList();
-
-            if (videoCodecs.Count == 0 && videoStream is not null)
-            {
-                // Add the original codec if no codec is specified
-                videoCodecs.Add(videoStream.Codec);
-            }
-
-            // Enforce HLS video codec restrictions
-            if (playlistItem.SubProtocol == MediaStreamProtocol.hls)
-            {
-                videoCodecs = videoCodecs.Where(codec => _supportedHlsVideoCodecs.Contains(codec)).ToList();
-            }
+            var videoCodecs = GetPreferredVideoCodecs(playlistItem, videoStream, videoCodec);
 
             playlistItem.VideoCodecs = videoCodecs;
             if (videoStream is not null && !ContainerHelper.ContainsContainer(videoCodecs, false, videoStream.Codec))
@@ -204,6 +191,26 @@ namespace MediaBrowser.Model.Dlna
             {
                 playlistItem.SetOption(qualifier, "profile", videoStream.Profile.ToLowerInvariant());
             }
+        }
+
+        private static List<string> GetPreferredVideoCodecs(StreamInfo playlistItem, MediaStream? videoStream, string? videoCodec)
+        {
+            // Prefer matching video codecs
+            var videoCodecs = ContainerHelper.Split(videoCodec).ToList();
+
+            if (videoCodecs.Count == 0 && videoStream is not null)
+            {
+                // Add the original codec if no codec is specified
+                videoCodecs.Add(videoStream.Codec);
+            }
+
+            // Enforce HLS video codec restrictions
+            if (playlistItem.SubProtocol == MediaStreamProtocol.hls)
+            {
+                videoCodecs = videoCodecs.Where(codec => _supportedHlsVideoCodecs.Contains(codec)).ToList();
+            }
+
+            return videoCodecs;
         }
 
         private static List<string> FilterHlsAudioCodecs(StreamInfo playlistItem, List<string> audioCodecs)
