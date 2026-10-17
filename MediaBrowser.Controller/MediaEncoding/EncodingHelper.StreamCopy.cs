@@ -177,6 +177,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenVideoBitRate(state, request, videoStream);
+        }
+
+        private static bool CanCopyGivenVideoBitRate(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             // Video bitrate must fall within requested value
             if (ExceedsMaxVideoBitRate(request, videoStream))
             {
