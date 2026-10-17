@@ -471,14 +471,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 AddFpsFilter(state, mainFilters, framerate);
             }
 
-            var mainStr = string.Empty;
-            if (mainFilters?.Count > 0)
-            {
-                mainStr = string.Format(
-                    CultureInfo.InvariantCulture,
-                    "{0}",
-                    string.Join(',', mainFilters));
-            }
+            var mainStr = JoinMainFiltersForVideoProcessing(mainFilters);
 
             if (overlayFilters?.Count == 0)
             {
@@ -506,16 +499,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 if (hasSubs)
                 {
                     // -filter_complex "[0:s]scale=s[sub]..."
-                    var filterStr = string.IsNullOrEmpty(mainStr)
-                        ? " -filter_complex \"[{0}:{1}]{4}[sub];[0:{2}][sub]{5}\""
-                        : " -filter_complex \"[{0}:{1}]{4}[sub];[0:{2}]{3}[main];[main][sub]{5}\"";
-
-                    if (hasTextSubs)
-                    {
-                        filterStr = string.IsNullOrEmpty(mainStr)
-                            ? " -filter_complex \"{4}[sub];[0:{2}][sub]{5}\""
-                            : " -filter_complex \"{4}[sub];[0:{2}]{3}[main];[main][sub]{5}\"";
-                    }
+                    var filterStr = GetSubtitleFilterComplexTemplate(mainStr, hasTextSubs);
 
                     return string.Format(
                         CultureInfo.InvariantCulture,
@@ -530,6 +514,36 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static string JoinMainFiltersForVideoProcessing(List<string> mainFilters)
+        {
+            var mainStr = string.Empty;
+            if (mainFilters?.Count > 0)
+            {
+                mainStr = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0}",
+                    string.Join(',', mainFilters));
+            }
+
+            return mainStr;
+        }
+
+        private static string GetSubtitleFilterComplexTemplate(string mainStr, bool hasTextSubs)
+        {
+            var filterStr = string.IsNullOrEmpty(mainStr)
+                ? " -filter_complex \"[{0}:{1}]{4}[sub];[0:{2}][sub]{5}\""
+                : " -filter_complex \"[{0}:{1}]{4}[sub];[0:{2}]{3}[main];[main][sub]{5}\"";
+
+            if (hasTextSubs)
+            {
+                filterStr = string.IsNullOrEmpty(mainStr)
+                    ? " -filter_complex \"{4}[sub];[0:{2}][sub]{5}\""
+                    : " -filter_complex \"{4}[sub];[0:{2}]{3}[main];[main][sub]{5}\"";
+            }
+
+            return filterStr;
         }
 
         private static void AddFpsFilter(EncodingJobInfo state, List<string> mainFilters, double? framerate)
