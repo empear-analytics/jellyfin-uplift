@@ -237,12 +237,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 if (isD3d11vaDecoder)
                 {
-                    if (!string.IsNullOrEmpty(hwScaleFilter) || doDeintH2645)
-                    {
-                        // INPUT d3d11 surface(vram)
-                        // map from d3d11va to qsv.
-                        mainFilters.Add("hwmap=derive_device=qsv");
-                    }
+                    AddD3d11vaToQsvHwmap(mainFilters, hwScaleFilter, doDeintH2645);
                 }
 
                 // hw deint
@@ -303,12 +298,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (memoryOutput)
             {
-                // text subtitles
-                if (hasTextSubs)
-                {
-                    var textSubtitlesFilter = GetTextSubtitlesFilter(state, false, false);
-                    mainFilters.Add(textSubtitlesFilter);
-                }
+                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
             }
 
             if (isQsvInQsvOut && doOclTonemap)
@@ -372,6 +362,26 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void AddTextSubtitlesFilter(EncodingJobInfo state, List<string> mainFilters, bool hasTextSubs)
+        {
+            // text subtitles
+            if (hasTextSubs)
+            {
+                var textSubtitlesFilter = GetTextSubtitlesFilter(state, false, false);
+                mainFilters.Add(textSubtitlesFilter);
+            }
+        }
+
+        private static void AddD3d11vaToQsvHwmap(List<string> mainFilters, string hwScaleFilter, bool doDeintH2645)
+        {
+            if (!string.IsNullOrEmpty(hwScaleFilter) || doDeintH2645)
+            {
+                // INPUT d3d11 surface(vram)
+                // map from d3d11va to qsv.
+                mainFilters.Add("hwmap=derive_device=qsv");
+            }
         }
 
         private static bool HasAssSubtitles(EncodingJobInfo state, bool hasSubs)
