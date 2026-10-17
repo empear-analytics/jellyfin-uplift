@@ -155,6 +155,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenWidthHeightAndFrameRate(state, request, videoStream);
+        }
+
+        private static bool CanCopyGivenWidthHeightAndFrameRate(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             // Video width must fall within requested value
             if (ExceedsMaxWidth(request, videoStream))
             {
