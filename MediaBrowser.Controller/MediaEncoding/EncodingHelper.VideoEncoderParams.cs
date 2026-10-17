@@ -322,19 +322,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             };
 
             // Enable Variance Based/Context Adaptive Quantization for better subjective visual quality
-            if (string.Equals(videoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoEncoder, "hevc_amf", StringComparison.OrdinalIgnoreCase))
+            if (IsAmfH26xEncoder(videoEncoder))
             {
                 param += " -vbaq 1";
             }
-            else if (string.Equals(videoEncoder, "av1_amf", StringComparison.OrdinalIgnoreCase)
-                     && _mediaEncoder.EncoderVersion >= _minFFmpegAmfAv1EncCAQ)
+            else if (SupportsAmfAv1Caq(videoEncoder))
             {
                 param += " -aq_mode caq";
             }
 
-            if (string.Equals(videoEncoder, "hevc_amf", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoEncoder, "av1_amf", StringComparison.OrdinalIgnoreCase))
+            if (IsAmfHevcOrAv1Encoder(videoEncoder))
             {
                 param += " -header_insertion_mode gop";
             }
@@ -345,6 +342,24 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return param;
+        }
+
+        private static bool IsAmfH26xEncoder(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoEncoder, "hevc_amf", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool SupportsAmfAv1Caq(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "av1_amf", StringComparison.OrdinalIgnoreCase)
+                && _mediaEncoder.EncoderVersion >= _minFFmpegAmfAv1EncCAQ;
+        }
+
+        private static bool IsAmfHevcOrAv1Encoder(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "hevc_amf", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoEncoder, "av1_amf", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string AppendVideoToolboxPrioSpeed(string param, EncoderPreset encoderPreset)
