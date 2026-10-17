@@ -7352,15 +7352,20 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return GetHwaccelType(state, options, "hevc", bitDepth, useHwSurface);
                 }
 
-                if (string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                    && isAv1SupportedSwFormatsVt
-                    && _mediaEncoder.IsVideoToolboxAv1DecodeAvailable)
+                if (IsVideoToolboxAv1Decodable(videoStream, isAv1SupportedSwFormatsVt))
                 {
                     return GetHwaccelType(state, options, "av1", bitDepth, useHwSurface);
                 }
             }
 
             return null;
+        }
+
+        private bool IsVideoToolboxAv1Decodable(MediaStream videoStream, bool isAv1SupportedSwFormatsVt)
+        {
+            return string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
+                && isAv1SupportedSwFormatsVt
+                && _mediaEncoder.IsVideoToolboxAv1DecodeAvailable;
         }
 
         public string GetRkmppVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
