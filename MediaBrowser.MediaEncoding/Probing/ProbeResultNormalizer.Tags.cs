@@ -25,20 +25,7 @@ namespace MediaBrowser.MediaEncoding.Probing
         private void SetAudioInfoFromTags(MediaInfo audio, Dictionary<string, string> tags)
         {
             var people = new List<BaseItemPerson>();
-            if (tags.TryGetValue("composer", out var composer) && !string.IsNullOrWhiteSpace(composer))
-            {
-                AddSplitPeople(people, composer, PersonKind.Composer);
-            }
-
-            if (tags.TryGetValue("conductor", out var conductor) && !string.IsNullOrWhiteSpace(conductor))
-            {
-                AddSplitPeople(people, conductor, PersonKind.Conductor);
-            }
-
-            if (tags.TryGetValue("lyricist", out var lyricist) && !string.IsNullOrWhiteSpace(lyricist))
-            {
-                AddSplitPeople(people, lyricist, PersonKind.Lyricist);
-            }
+            AddMusicalCredits(people, tags);
 
             AddPerformers(people, tags);
 
@@ -92,6 +79,24 @@ namespace MediaBrowser.MediaEncoding.Probing
             foreach (var person in Split(names, false))
             {
                 people.Add(new BaseItemPerson { Name = person, Type = kind });
+            }
+        }
+
+        private void AddMusicalCredits(List<BaseItemPerson> people, Dictionary<string, string> tags)
+        {
+            if (tags.TryGetValue("composer", out var composer) && !string.IsNullOrWhiteSpace(composer))
+            {
+                AddSplitPeople(people, composer, PersonKind.Composer);
+            }
+
+            if (tags.TryGetValue("conductor", out var conductor) && !string.IsNullOrWhiteSpace(conductor))
+            {
+                AddSplitPeople(people, conductor, PersonKind.Conductor);
+            }
+
+            if (tags.TryGetValue("lyricist", out var lyricist) && !string.IsNullOrWhiteSpace(lyricist))
+            {
+                AddSplitPeople(people, lyricist, PersonKind.Lyricist);
             }
         }
 
