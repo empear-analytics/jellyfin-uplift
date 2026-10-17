@@ -694,6 +694,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return ResolveNvdecAccelType(state, options, videoStream, bitDepth);
+        }
+
+        private string ResolveNvdecAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
+        {
             var hwSurface = HasCudaHwSurface();
             var is8bitSwFormatsNvdec = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsNvdec = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsNvdec);
