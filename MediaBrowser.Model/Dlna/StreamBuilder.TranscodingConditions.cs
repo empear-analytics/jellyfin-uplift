@@ -446,58 +446,5 @@ namespace MediaBrowser.Model.Dlna
                 }
             }
         }
-
-        private static void ApplyAvcCondition(StreamInfo item, ProfileCondition condition, string value)
-        {
-            if (bool.TryParse(value, out var isAvc))
-            {
-                if (isAvc && condition.Condition == ProfileConditionType.Equals)
-                {
-                    item.RequireAvc = true;
-                }
-                else if (!isAvc && condition.Condition == ProfileConditionType.NotEquals)
-                {
-                    item.RequireAvc = true;
-                }
-            }
-        }
-
-        private static void ApplyVideoFramerateCondition(StreamInfo item, ProfileCondition condition, string value)
-        {
-            if (float.TryParse(value, CultureInfo.InvariantCulture, out var num))
-            {
-                if (condition.Condition == ProfileConditionType.Equals)
-                {
-                    item.MaxFramerate = num;
-                }
-                else if (condition.Condition == ProfileConditionType.LessThanEqual)
-                {
-                    item.MaxFramerate = Math.Min(num, item.MaxFramerate ?? num);
-                }
-                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                {
-                    item.MaxFramerate = Math.Max(num, item.MaxFramerate ?? num);
-                }
-            }
-        }
-
-        private static void ApplyWidthCondition(StreamInfo item, ProfileCondition condition, string value)
-        {
-            if (int.TryParse(value, CultureInfo.InvariantCulture, out var num))
-            {
-                if (condition.Condition == ProfileConditionType.Equals)
-                {
-                    item.MaxWidth = num;
-                }
-                else if (condition.Condition == ProfileConditionType.LessThanEqual)
-                {
-                    item.MaxWidth = Math.Min(num, item.MaxWidth ?? num);
-                }
-                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                {
-                    item.MaxWidth = Math.Max(num, item.MaxWidth ?? num);
-                }
-            }
-        }
     }
 }
