@@ -242,7 +242,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (optHwaccelType == HardwareAccelerationType.vaapi)
             {
-                if (!isLinux || !_mediaEncoder.SupportsHwaccel("vaapi"))
+                if (IsVaapiHwaccelUnsupported(isLinux))
                 {
                     return string.Empty;
                 }
@@ -296,7 +296,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else if (optHwaccelType == HardwareAccelerationType.amf)
             {
-                if (!isWindows || !_mediaEncoder.SupportsHwaccel("d3d11va"))
+                if (IsAmfHwaccelUnsupported(isWindows))
                 {
                     return string.Empty;
                 }
@@ -312,7 +312,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else if (optHwaccelType == HardwareAccelerationType.videotoolbox)
             {
-                if (!isMacOS || !_mediaEncoder.SupportsHwaccel("videotoolbox"))
+                if (IsVideotoolboxHwaccelUnsupported(isMacOS))
                 {
                     return string.Empty;
                 }
@@ -329,7 +329,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else if (optHwaccelType == HardwareAccelerationType.rkmpp)
             {
-                if (!isLinux || !_mediaEncoder.SupportsHwaccel("rkmpp"))
+                if (IsRkmppHwaccelUnsupported(isLinux))
                 {
                     return string.Empty;
                 }
@@ -350,6 +350,26 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return args.ToString().Trim();
+        }
+
+        private bool IsVaapiHwaccelUnsupported(bool isLinux)
+        {
+            return !isLinux || !_mediaEncoder.SupportsHwaccel("vaapi");
+        }
+
+        private bool IsAmfHwaccelUnsupported(bool isWindows)
+        {
+            return !isWindows || !_mediaEncoder.SupportsHwaccel("d3d11va");
+        }
+
+        private bool IsVideotoolboxHwaccelUnsupported(bool isMacOS)
+        {
+            return !isMacOS || !_mediaEncoder.SupportsHwaccel("videotoolbox");
+        }
+
+        private bool IsRkmppHwaccelUnsupported(bool isLinux)
+        {
+            return !isLinux || !_mediaEncoder.SupportsHwaccel("rkmpp");
         }
 
         private bool IsQsvHwaccelUnsupported(bool isLinux, bool isWindows)
