@@ -711,15 +711,12 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         public string GetAmfVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
         {
-            if (!OperatingSystem.IsWindows()
-                || options.HardwareAccelerationType != HardwareAccelerationType.amf)
+            if (IsAmfDecodingUnavailable(options))
             {
                 return null;
             }
 
-            var hwSurface = _mediaEncoder.SupportsHwaccel("d3d11va")
-                && IsOpenclFullSupported()
-                && _mediaEncoder.SupportsFilter("alphasrc");
+            var hwSurface = HasD3d11OclHwSurface();
             var is8bitSwFormatsAmf = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsAmf = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsAmf);
 
@@ -760,6 +757,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private static bool IsAmfDecodingUnavailable(EncodingOptions options)
+        {
+            return !OperatingSystem.IsWindows()
+                || options.HardwareAccelerationType != HardwareAccelerationType.amf;
+        }
+
+        private bool HasD3d11OclHwSurface()
+        {
+            return _mediaEncoder.SupportsHwaccel("d3d11va")
+                && IsOpenclFullSupported()
+                && _mediaEncoder.SupportsFilter("alphasrc");
         }
 
         public string GetVaapiVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
