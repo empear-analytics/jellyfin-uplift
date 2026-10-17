@@ -326,6 +326,22 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
         }
 
+        private static void AddVulkanTransposeIfNeeded(List<string> mainFilters, bool doVkTranspose, string transposeDir)
+        {
+            if (doVkTranspose)
+            {
+                AddVulkanTransposeFilter(mainFilters, transposeDir);
+            }
+        }
+
+        private static void AddVaapiHwUploadUnlessTonemap(List<string> mainFilters, bool isSwDecoder, bool isVaapiEncoder, bool doVkTonemap)
+        {
+            if (NeedsVaapiHwUpload(isSwDecoder, isVaapiEncoder, doVkTonemap))
+            {
+                mainFilters.Add("hwupload_vaapi");
+            }
+        }
+
         private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
         {
             return isVaapiDecoder && IsIntelVppTonemapAvailable(state, options);
@@ -484,10 +500,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // vk transpose
-            if (doVkTranspose)
-            {
-                AddVulkanTransposeFilter(mainFilters, transposeDir);
-            }
+            AddVulkanTransposeIfNeeded(mainFilters, doVkTranspose, transposeDir);
 
             // vk libplacebo
             if (doVkTonemap || hasSubs)
@@ -519,10 +532,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // OUTPUT nv12 surface(memory)
                 AddVulkanHwDownload(mainFilters, isSwEncoder, doVkTonemap, isVaapiDecoder);
 
-                if (NeedsVaapiHwUpload(isSwDecoder, isVaapiEncoder, doVkTonemap))
-                {
-                    mainFilters.Add("hwupload_vaapi");
-                }
+                AddVaapiHwUploadUnlessTonemap(mainFilters, isSwDecoder, isVaapiEncoder, doVkTonemap);
             }
 
             /* Make sub and overlay filters for subtitle stream */
