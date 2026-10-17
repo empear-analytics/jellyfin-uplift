@@ -48,7 +48,7 @@ namespace MediaBrowser.Model.Dlna
 
             var channelsExceedsLimit = IsAudioChannelLimitExceeded(audioStreamWithSupportedCodec, playlistItem);
 
-            var directAudioFailures = audioStreamWithSupportedCodec is null ? default : GetCompatibilityAudioCodec(options, item, container ?? string.Empty, audioStreamWithSupportedCodec, null, true, false);
+            var directAudioFailures = GetDirectAudioFailures(options, item, container, audioStreamWithSupportedCodec);
 
             playlistItem.TranscodeReasons |= directAudioFailures;
             if (audioStream is not null && audioStreamWithSupportedCodec is null)
@@ -171,6 +171,11 @@ namespace MediaBrowser.Model.Dlna
         private static bool IsAudioChannelLimitExceeded(MediaStream? audioStreamWithSupportedCodec, StreamInfo playlistItem)
         {
             return audioStreamWithSupportedCodec is not null && audioStreamWithSupportedCodec.Channels > (playlistItem.TranscodingMaxAudioChannels ?? int.MaxValue);
+        }
+
+        private TranscodeReason GetDirectAudioFailures(MediaOptions options, MediaSourceInfo item, string? container, MediaStream? audioStreamWithSupportedCodec)
+        {
+            return audioStreamWithSupportedCodec is null ? default : GetCompatibilityAudioCodec(options, item, container ?? string.Empty, audioStreamWithSupportedCodec, null, true, false);
         }
 
         private void LogTranscodeResult(MediaOptions options, MediaSourceInfo item, StreamInfo playlistItem, MediaStream? audioStream)
