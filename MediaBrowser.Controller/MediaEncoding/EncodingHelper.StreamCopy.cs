@@ -196,6 +196,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenRefFramesLevelAndContainer(state, videoStream);
+        }
+
+        private static bool CanCopyGivenRefFramesLevelAndContainer(EncodingJobInfo state, MediaStream videoStream)
+        {
             var maxRefFrames = state.GetRequestedMaxRefFrames(videoStream.Codec);
             if (ExceedsMaxRefFrames(maxRefFrames, videoStream))
             {
