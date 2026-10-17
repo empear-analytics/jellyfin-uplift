@@ -124,16 +124,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 var outFormat = doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-                if (isMjpegEncoder && !doOclTonemap)
-                {
-                    // sw decoder + hw mjpeg encoder
-                    swScaleFilter = string.IsNullOrEmpty(swScaleFilter) ? "scale=out_range=pc" : $"{swScaleFilter}:out_range=pc";
-                }
-
-                if (!string.IsNullOrEmpty(swScaleFilter))
-                {
-                    swScaleFilter += ":flags=fast_bilinear";
-                }
+                swScaleFilter = AppendRkmppSwScaleOptions(swScaleFilter, isMjpegEncoder, doOclTonemap);
 
                 // sw scale
                 mainFilters.Add(swScaleFilter);
@@ -181,16 +172,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                         mainFilters.Add(hwScaleFilterFirstPass);
                     }
 
-                    if (!string.IsNullOrEmpty(hwScaleFilter) && doRkVppTranspose)
-                    {
-                        hwScaleFilter += $":transpose={transposeDir}";
-                    }
-
-                    // try enabling AFBC to save DDR bandwidth
-                    if (!string.IsNullOrEmpty(hwScaleFilter) && isFullAfbcPipeline)
-                    {
-                        hwScaleFilter += ":afbc=1";
-                    }
+                    hwScaleFilter = AppendRkmppHwScaleOptions(hwScaleFilter, doRkVppTranspose, transposeDir, isFullAfbcPipeline);
 
                     // hw transpose & scale
                     mainFilters.Add(hwScaleFilter);
@@ -294,6 +276,38 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static string AppendRkmppSwScaleOptions(string swScaleFilter, bool isMjpegEncoder, bool doOclTonemap)
+        {
+            if (isMjpegEncoder && !doOclTonemap)
+            {
+                // sw decoder + hw mjpeg encoder
+                swScaleFilter = string.IsNullOrEmpty(swScaleFilter) ? "scale=out_range=pc" : $"{swScaleFilter}:out_range=pc";
+            }
+
+            if (!string.IsNullOrEmpty(swScaleFilter))
+            {
+                swScaleFilter += ":flags=fast_bilinear";
+            }
+
+            return swScaleFilter;
+        }
+
+        private static string AppendRkmppHwScaleOptions(string hwScaleFilter, bool doRkVppTranspose, string transposeDir, bool isFullAfbcPipeline)
+        {
+            if (!string.IsNullOrEmpty(hwScaleFilter) && doRkVppTranspose)
+            {
+                hwScaleFilter += $":transpose={transposeDir}";
+            }
+
+            // try enabling AFBC to save DDR bandwidth
+            if (!string.IsNullOrEmpty(hwScaleFilter) && isFullAfbcPipeline)
+            {
+                hwScaleFilter += ":afbc=1";
+            }
+
+            return hwScaleFilter;
         }
     }
 }
