@@ -108,20 +108,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (string.Equals(encoder, "libmp3lame", StringComparison.OrdinalIgnoreCase))
             {
-                // lame's VBR is only good for a certain bitrate range
-                // For very low and very high bitrate, use abr mode
-                if (bitratePerChannel is < 122500 and > 48000)
-                {
-                    return " -qscale:a " + bitratePerChannel switch
-                    {
-                        < 64000 => "6",
-                        < 88000 => "4",
-                        < 112000 => "2",
-                        _ => "0"
-                    };
-                }
-
-                return " -abr:a 1" + " -b:a " + bitrate;
+                return GetLameVbrModeParam(bitrate, bitratePerChannel);
             }
 
             if (string.Equals(encoder, "aac_at", StringComparison.OrdinalIgnoreCase))
@@ -143,6 +130,24 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private static string GetLameVbrModeParam(int bitrate, int bitratePerChannel)
+        {
+            // lame's VBR is only good for a certain bitrate range
+            // For very low and very high bitrate, use abr mode
+            if (bitratePerChannel is < 122500 and > 48000)
+            {
+                return " -qscale:a " + bitratePerChannel switch
+                {
+                    < 64000 => "6",
+                    < 88000 => "4",
+                    < 112000 => "2",
+                    _ => "0"
+                };
+            }
+
+            return " -abr:a 1" + " -b:a " + bitrate;
         }
 
         public string GetAudioFilterParam(EncodingJobInfo state, EncodingOptions encodingOptions)
