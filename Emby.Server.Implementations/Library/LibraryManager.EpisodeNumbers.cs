@@ -64,7 +64,7 @@ namespace Emby.Server.Implementations.Library
 
             if (!episode.PremiereDate.HasValue)
             {
-                if (episodeInfo.Year.HasValue && episodeInfo.Month.HasValue && episodeInfo.Day.HasValue)
+                if (HasFullDate(episodeInfo.Year, episodeInfo.Month, episodeInfo.Day))
                 {
                     episode.PremiereDate = new DateTime(episodeInfo.Year.Value, episodeInfo.Month.Value, episodeInfo.Day.Value).ToUniversalTime();
                 }
@@ -86,6 +86,11 @@ namespace Emby.Server.Implementations.Library
             }
 
             return changed;
+        }
+
+        private static bool HasFullDate([NotNullWhen(true)] int? year, [NotNullWhen(true)] int? month, [NotNullWhen(true)] int? day)
+        {
+            return year.HasValue && month.HasValue && day.HasValue;
         }
     }
 }
