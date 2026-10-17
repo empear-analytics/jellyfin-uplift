@@ -3155,8 +3155,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 // Avoid transcoding to audio channels other than 1ch, 2ch, 6ch (5.1 layout) and 8ch (7.1 layout).
                 // https://developer.apple.com/documentation/http_live_streaming/hls_authoring_specification_for_apple_devices
-                if (state.TranscodingType != TranscodingJobType.Progressive
-                    && ((resultChannels > 2 && resultChannels < 6) || resultChannels == 7))
+                if (HasUnsupportedHlsChannelLayout(state, resultChannels))
                 {
                     // We can let FFMpeg supply an extra LFE channel for 5ch and 7ch to make them 5.1 and 7.1
                     if (resultChannels == 5)
@@ -3176,6 +3175,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return resultChannels;
+        }
+
+        private static bool HasUnsupportedHlsChannelLayout(EncodingJobInfo state, int? resultChannels)
+        {
+            return state.TranscodingType != TranscodingJobType.Progressive
+                && ((resultChannels > 2 && resultChannels < 6) || resultChannels == 7);
         }
 
         /// <summary>
