@@ -110,7 +110,7 @@ Update as tasks land.
 | R3-22 | 8.03 | 8.81 | Sonnet. Split into DynamicHlsHelper.Codecs.cs (9.09 after the second commit) and DynamicHlsHelper.cs (8.81). The second commit applies nullable case 3 to two methods together (rule 1 exception: each alone FLAT, together UP); the predicates are trivial wrappers of `.HasValue`. GetPlaylistAudioCodecs tails FLAT or DOWN alone and in pairs; Excess Arguments and Constructor Over-Injection (11) have no recipe |
 | R3-23 | 8.04 | - | not started |
 | R3-24 | 8.15 | 8.15 | Sonnet. No step scores UP (four probes DOWN or FLAT). The two Complex Conditionals (GetAspectRatio, IsNearSquarePixelSar) need `out` variables assigned only on some paths (CS0177, not covered); rule 7 clears GetAspectRatio's Complex Method but the new cc-12 method is flagged (8.13, DOWN) |
-| R3-25 | 8.22 | - | not started |
+| R3-25 | 8.22 | 10.00 | Sonnet. Four commits, three recipes: D merged the eight PersonKind loops (one value, no duplication report); E rule 9 grouped the credit blocks (composer, conductor, lyricist; writer, arranger, engineer; mixer, remixer); S moved the helpers to ProbeResultNormalizer.People.cs (10.00). Tags.cs 10.00; no smell left. The order of the people list is unchanged (checked). Order matters: measured before D, the grouped extractions were DOWN; after D they were UP |
 | R3-26 | 8.28 | - | not started |
 | R3-27 | 8.41 | - | not started |
 | R3-28 | 8.41 | - | not started |
