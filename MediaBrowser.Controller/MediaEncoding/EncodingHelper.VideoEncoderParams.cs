@@ -875,24 +875,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else if (string.Equals(videoEncoder, "hevc_qsv", StringComparison.OrdinalIgnoreCase))
             {
-                // hevc_qsv use -level 51 instead of -level 153.
-                if (double.TryParse(level, CultureInfo.InvariantCulture, out double hevcLevel))
-                {
-                    param += " -level " + (hevcLevel / 3);
-                }
+                param = AppendHevcQsvLevel(param, level);
             }
             else if (string.Equals(videoEncoder, "av1_qsv", StringComparison.OrdinalIgnoreCase)
                      || string.Equals(videoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase))
             {
-                // libsvtav1 and av1_qsv use -level 60 instead of -level 16
-                // https://aomedia.org/av1/specification/annex-a/
-                if (int.TryParse(level, NumberStyles.Any, CultureInfo.InvariantCulture, out int av1Level))
-                {
-                    var x = 2 + (av1Level >> 2);
-                    var y = av1Level & 3;
-                    var res = (x * 10) + y;
-                    param += " -level " + res;
-                }
+                param = AppendAv1Level(param, level);
             }
             else if (IsAmfVideoEncoder(videoEncoder))
             {
@@ -905,11 +893,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else if (IsVaapiVideoEncoder(videoEncoder))
             {
-                // level option may cause corrupted frames on AMD VAAPI.
-                if (_mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965)
-                {
-                    param += " -level " + level;
-                }
+                param = AppendVaapiLevel(param, level);
             }
             else if (string.Equals(videoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase)
                      || string.Equals(videoEncoder, "hevc_rkmpp", StringComparison.OrdinalIgnoreCase))
@@ -917,6 +901,43 @@ namespace MediaBrowser.Controller.MediaEncoding
                 param += " -level " + level;
             }
             else if (!string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase))
+            {
+                param += " -level " + level;
+            }
+
+            return param;
+        }
+
+        private static string AppendHevcQsvLevel(string param, string level)
+        {
+            // hevc_qsv use -level 51 instead of -level 153.
+            if (double.TryParse(level, CultureInfo.InvariantCulture, out double hevcLevel))
+            {
+                param += " -level " + (hevcLevel / 3);
+            }
+
+            return param;
+        }
+
+        private static string AppendAv1Level(string param, string level)
+        {
+            // libsvtav1 and av1_qsv use -level 60 instead of -level 16
+            // https://aomedia.org/av1/specification/annex-a/
+            if (int.TryParse(level, NumberStyles.Any, CultureInfo.InvariantCulture, out int av1Level))
+            {
+                var x = 2 + (av1Level >> 2);
+                var y = av1Level & 3;
+                var res = (x * 10) + y;
+                param += " -level " + res;
+            }
+
+            return param;
+        }
+
+        private string AppendVaapiLevel(string param, string level)
+        {
+            // level option may cause corrupted frames on AMD VAAPI.
+            if (_mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965)
             {
                 param += " -level " + level;
             }
