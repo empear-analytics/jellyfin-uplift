@@ -127,27 +127,32 @@ namespace MediaBrowser.Model.Dlna
 
                 SetStreamInfoOptionsFromTranscodingProfile(item, playlistItem, transcodingProfile);
 
-                var inputAudioChannels = audioStream.Channels;
-                var inputAudioBitrate = audioStream.BitRate;
-                var inputAudioSampleRate = audioStream.SampleRate;
-                var inputAudioBitDepth = audioStream.BitDepth;
-
-                var audioTranscodingConditions = GetProfileConditionsForAudio(options.Profile.CodecProfiles, transcodingProfile.Container, transcodingProfile.AudioCodec, inputAudioChannels, inputAudioBitrate, inputAudioSampleRate, inputAudioBitDepth, false).ToArray();
-                ApplyTranscodingConditions(playlistItem, audioTranscodingConditions, null, true, true);
-
-                // Honor requested max channels
-                playlistItem.GlobalMaxAudioChannels = options.MaxAudioChannels;
-
-                SetAudioTranscodingBitrate(options, playlistItem);
-
-                // Pure audio transcoding does not support comma separated list of transcoding codec at the moment.
-                // So just use the AudioCodec as is would be safe enough as the _transcoderSupport.CanEncodeToAudioCodec
-                // would fail so this profile will not even be picked up.
-                SetTranscodingAudioCodecIfMissing(playlistItem, transcodingProfile);
+                ApplyAudioTranscodingProfileSettings(options, audioStream, playlistItem, transcodingProfile);
             }
 
             playlistItem.TranscodeReasons = transcodeReasons;
             return playlistItem;
+        }
+
+        private void ApplyAudioTranscodingProfileSettings(MediaOptions options, MediaStream audioStream, StreamInfo playlistItem, TranscodingProfile transcodingProfile)
+        {
+            var inputAudioChannels = audioStream.Channels;
+            var inputAudioBitrate = audioStream.BitRate;
+            var inputAudioSampleRate = audioStream.SampleRate;
+            var inputAudioBitDepth = audioStream.BitDepth;
+
+            var audioTranscodingConditions = GetProfileConditionsForAudio(options.Profile.CodecProfiles, transcodingProfile.Container, transcodingProfile.AudioCodec, inputAudioChannels, inputAudioBitrate, inputAudioSampleRate, inputAudioBitDepth, false).ToArray();
+            ApplyTranscodingConditions(playlistItem, audioTranscodingConditions, null, true, true);
+
+            // Honor requested max channels
+            playlistItem.GlobalMaxAudioChannels = options.MaxAudioChannels;
+
+            SetAudioTranscodingBitrate(options, playlistItem);
+
+            // Pure audio transcoding does not support comma separated list of transcoding codec at the moment.
+            // So just use the AudioCodec as is would be safe enough as the _transcoderSupport.CanEncodeToAudioCodec
+            // would fail so this profile will not even be picked up.
+            SetTranscodingAudioCodecIfMissing(playlistItem, transcodingProfile);
         }
 
         private static string? GetAudioRemuxContainer(MediaSourceInfo item, (DirectPlayProfile? Profile, PlayMethod? PlayMethod, TranscodeReason TranscodeReasons) directPlayInfo)
