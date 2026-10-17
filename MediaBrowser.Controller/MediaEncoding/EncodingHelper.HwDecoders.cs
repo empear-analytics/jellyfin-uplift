@@ -501,33 +501,19 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
-            var isQsvOclSupported = _mediaEncoder.SupportsHwaccel("qsv") && IsOpenclFullSupported();
-            var isIntelDx11OclSupported = isWindows
-                && _mediaEncoder.SupportsHwaccel("d3d11va")
-                && isQsvOclSupported;
-            var isIntelVaapiOclSupported = isLinux
-                && IsVaapiSupported(state)
-                && isQsvOclSupported;
-            var hwSurface = (isIntelDx11OclSupported || isIntelVaapiOclSupported)
-                && _mediaEncoder.SupportsFilter("alphasrc");
+            var isQsvOclSupported = IsQsvOclSupported();
+            var isIntelDx11OclSupported = IsIntelDx11OclSupported(isWindows, isQsvOclSupported);
+            var isIntelVaapiOclSupported = IsIntelVaapiOclSupported(state, isLinux, isQsvOclSupported);
+            var hwSurface = HasQsvHwSurface(isIntelDx11OclSupported, isIntelVaapiOclSupported);
 
-            var is8bitSwFormatsQsv = string.Equals("yuv420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                                     || string.Equals("yuvj420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-            var is8_10bitSwFormatsQsv = is8bitSwFormatsQsv || string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-            var is8_10_12bitSwFormatsQsv = is8_10bitSwFormatsQsv
-                || string.Equals("yuv422p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv422p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv422p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+            var is8bitSwFormatsQsv = Is8BitYuv420SwFormat(videoStream);
+            var is8_10bitSwFormatsQsv = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsQsv);
+            var is8_10_12bitSwFormatsQsv = IsQsv8To12BitSwFormat(videoStream, is8_10bitSwFormatsQsv);
             // TODO: add more 8/10bit and 4:4:4 formats for Qsv after finishing the ffcheck tool
 
             if (is8bitSwFormatsQsv)
             {
-                if (string.Equals(videoStream.Codec, "avc", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase))
+                if (IsAvcOrH264Codec(videoStream))
                 {
                     return GetHwaccelType(state, options, "h264", bitDepth, hwSurface) + GetHwDecoderName(options, "h264", "qsv", "h264", bitDepth);
                 }
@@ -563,14 +549,73 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (is8_10_12bitSwFormatsQsv)
             {
-                if (string.Equals(videoStream.Codec, "hevc", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(videoStream.Codec, "h265", StringComparison.OrdinalIgnoreCase))
+                if (IsHevcOrH265Codec(videoStream))
                 {
                     return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface) + GetHwDecoderName(options, "hevc", "qsv", "hevc", bitDepth);
                 }
             }
 
             return null;
+        }
+
+        private bool IsQsvOclSupported()
+        {
+            return _mediaEncoder.SupportsHwaccel("qsv") && IsOpenclFullSupported();
+        }
+
+        private bool IsIntelDx11OclSupported(bool isWindows, bool isQsvOclSupported)
+        {
+            return isWindows
+                && _mediaEncoder.SupportsHwaccel("d3d11va")
+                && isQsvOclSupported;
+        }
+
+        private bool IsIntelVaapiOclSupported(EncodingJobInfo state, bool isLinux, bool isQsvOclSupported)
+        {
+            return isLinux
+                && IsVaapiSupported(state)
+                && isQsvOclSupported;
+        }
+
+        private bool HasQsvHwSurface(bool isIntelDx11OclSupported, bool isIntelVaapiOclSupported)
+        {
+            return (isIntelDx11OclSupported || isIntelVaapiOclSupported)
+                && _mediaEncoder.SupportsFilter("alphasrc");
+        }
+
+        private static bool Is8BitYuv420SwFormat(MediaStream videoStream)
+        {
+            return string.Equals("yuv420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("yuvj420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool Is8Or10BitYuv420SwFormat(MediaStream videoStream, bool is8bitSwFormats)
+        {
+            return is8bitSwFormats || string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsQsv8To12BitSwFormat(MediaStream videoStream, bool is8_10bitSwFormatsQsv)
+        {
+            return is8_10bitSwFormatsQsv
+                || string.Equals("yuv422p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("yuv444p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("yuv422p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("yuv444p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("yuv422p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("yuv444p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsAvcOrH264Codec(MediaStream videoStream)
+        {
+            return string.Equals(videoStream.Codec, "avc", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsHevcOrH265Codec(MediaStream videoStream)
+        {
+            return string.Equals(videoStream.Codec, "hevc", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoStream.Codec, "h265", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsQsvDecodingUnavailable(bool isWindows, bool isLinux, EncodingOptions options)
