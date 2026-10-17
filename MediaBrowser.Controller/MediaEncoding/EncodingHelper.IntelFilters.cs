@@ -203,23 +203,23 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 // d3d11va doesn't support dynamic pool size, use vpp filter ctx to relay
                 // to prevent encoder async and bframes from exhausting the decoder pool.
-                if (!string.IsNullOrEmpty(hwScaleFilter) && isD3d11vaDecoder)
+                if (NeedsVppPassthrough(hwScaleFilter, isD3d11vaDecoder))
                 {
                     hwScaleFilter += ":passthrough=0";
                 }
 
-                if (!string.IsNullOrEmpty(hwScaleFilter) && doVppTranspose)
+                if (NeedsVppTransposeOption(hwScaleFilter, doVppTranspose))
                 {
                     hwScaleFilter += $":transpose={transposeDir}";
                 }
 
-                if (!string.IsNullOrEmpty(hwScaleFilter) && isMjpegEncoder)
+                if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
                 {
                     hwScaleFilter += (doVppFullRangeOut && !doOclTonemap) ? ":out_range=pc" : string.Empty;
                     hwScaleFilter += doVppScaleModeHq ? ":scale_mode=hq" : string.Empty;
                 }
 
-                if (!string.IsNullOrEmpty(hwScaleFilter) && doVppTonemap)
+                if (NeedsVppTonemapOptions(hwScaleFilter, doVppTonemap))
                 {
                     hwScaleFilter += doVppProcamp ? procampParams : (twoPassVppTonemap ? string.Empty : ":tonemap=1");
                 }
@@ -240,7 +240,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add(hwScaleFilter);
 
                 // hw tonemap(w/ procamp)
-                if (doVppTonemap && twoPassVppTonemap)
+                if (NeedsTwoPassVppTonemap(doVppTonemap, twoPassVppTonemap))
                 {
                     mainFilters.Add("vpp_qsv=tonemap=1:format=nv12:async_depth=2");
                 }
@@ -252,7 +252,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (doOclTonemap && isHwDecoder)
+            if (NeedsHwToOpenclMapping(doOclTonemap, isHwDecoder))
             {
                 // map from qsv to opencl via qsv(d3d11)-opencl interop.
                 mainFilters.Add("hwmap=derive_device=opencl:mode=read");
@@ -280,7 +280,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT nv12 surface(memory)
-            if (isSwDecoder && isQsvEncoder)
+            if (IsSwDecodeToQsvEncode(isSwDecoder, isQsvEncoder))
             {
                 memoryOutput = true;
             }
@@ -290,7 +290,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
             }
 
-            if (isQsvInQsvOut && doOclTonemap)
+            if (NeedsQsvReverseMapping(isQsvInQsvOut, doOclTonemap))
             {
                 // OUTPUT qsv(nv12) surface(vram)
                 // reverse-mapping via qsv(d3d11)-opencl interop.
@@ -351,6 +351,46 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool NeedsVppPassthrough(string hwScaleFilter, bool isD3d11vaDecoder)
+        {
+            return !string.IsNullOrEmpty(hwScaleFilter) && isD3d11vaDecoder;
+        }
+
+        private static bool NeedsVppTransposeOption(string hwScaleFilter, bool doVppTranspose)
+        {
+            return !string.IsNullOrEmpty(hwScaleFilter) && doVppTranspose;
+        }
+
+        private static bool NeedsVppMjpegOptions(string hwScaleFilter, bool isMjpegEncoder)
+        {
+            return !string.IsNullOrEmpty(hwScaleFilter) && isMjpegEncoder;
+        }
+
+        private static bool NeedsVppTonemapOptions(string hwScaleFilter, bool doVppTonemap)
+        {
+            return !string.IsNullOrEmpty(hwScaleFilter) && doVppTonemap;
+        }
+
+        private static bool NeedsTwoPassVppTonemap(bool doVppTonemap, bool twoPassVppTonemap)
+        {
+            return doVppTonemap && twoPassVppTonemap;
+        }
+
+        private static bool NeedsHwToOpenclMapping(bool doOclTonemap, bool isHwDecoder)
+        {
+            return doOclTonemap && isHwDecoder;
+        }
+
+        private static bool IsSwDecodeToQsvEncode(bool isSwDecoder, bool isQsvEncoder)
+        {
+            return isSwDecoder && isQsvEncoder;
+        }
+
+        private static bool NeedsQsvReverseMapping(bool isQsvInQsvOut, bool doOclTonemap)
+        {
+            return isQsvInQsvOut && doOclTonemap;
         }
 
         private bool NeedsOclTonemap(EncodingJobInfo state, EncodingOptions options, bool doVppTonemap)
