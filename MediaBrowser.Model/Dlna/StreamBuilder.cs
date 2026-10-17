@@ -442,6 +442,11 @@ namespace MediaBrowser.Model.Dlna
                 return inputContainer;
             }
 
+            return SelectFirstSupportedContainer(inputContainer, profile, type, playProfile);
+        }
+
+        private static string? SelectFirstSupportedContainer(string inputContainer, DeviceProfile profile, DlnaProfileType type, DirectPlayProfile? playProfile)
+        {
             var formats = ContainerHelper.Split(inputContainer);
             var playProfiles = playProfile is null ? profile.DirectPlayProfiles : [playProfile];
             foreach (var format in formats)
