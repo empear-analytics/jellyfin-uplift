@@ -203,11 +203,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add(tonemapFilter);
             }
 
-            if (NeedsHwToOpenclMapping(doOclTonemap, isVaapiDecoder))
-            {
-                // map from vaapi to opencl via vaapi-opencl interop(Intel only).
-                mainFilters.Add("hwmap=derive_device=opencl:mode=read");
-            }
+            AddVaapiToOpenclMapping(mainFilters, doOclTonemap, isVaapiDecoder);
 
             // ocl tonemap
             AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
@@ -299,6 +295,15 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static void AddVaapiToOpenclMapping(List<string> mainFilters, bool doOclTonemap, bool isVaapiDecoder)
+        {
+            if (NeedsHwToOpenclMapping(doOclTonemap, isVaapiDecoder))
+            {
+                // map from vaapi to opencl via vaapi-opencl interop(Intel only).
+                mainFilters.Add("hwmap=derive_device=opencl:mode=read");
+            }
         }
 
         private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
