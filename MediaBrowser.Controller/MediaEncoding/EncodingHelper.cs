@@ -4661,9 +4661,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && isQsvOclSupported;
 
             // legacy qsv pipeline(copy-back)
-            if ((isSwDecoder && isSwEncoder)
-                || (!isIntelVaapiOclSupported && !isIntelDx11OclSupported)
-                || !_mediaEncoder.SupportsFilter("alphasrc"))
+            if (UseLegacyQsvPipeline(isSwDecoder, isSwEncoder, isIntelVaapiOclSupported, isIntelDx11OclSupported))
             {
                 return GetSwVidFilterChain(state, options, vidEncoder);
             }
@@ -4681,6 +4679,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (null, null, null);
+        }
+
+        private bool UseLegacyQsvPipeline(bool isSwDecoder, bool isSwEncoder, bool isIntelVaapiOclSupported, bool isIntelDx11OclSupported)
+        {
+            return (isSwDecoder && isSwEncoder)
+                || (!isIntelVaapiOclSupported && !isIntelDx11OclSupported)
+                || !_mediaEncoder.SupportsFilter("alphasrc");
         }
 
         public (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetIntelQsvDx11VidFiltersPrefered(
