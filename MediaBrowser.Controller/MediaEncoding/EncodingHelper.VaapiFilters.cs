@@ -397,6 +397,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             overlayFilters.Add(overlayVaapiFilter);
         }
 
+        private static void AddVulkanHwupload(List<string> filters)
+        {
+            filters.Add("hwupload=derive_device=vulkan");
+            filters.Add("format=vulkan");
+        }
+
         private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
         {
             return isVaapiDecoder && IsIntelVppTonemapAvailable(state, options);
@@ -522,8 +528,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 if (doVkTonemap || hasSubs)
                 {
                     // sw => hw
-                    mainFilters.Add("hwupload=derive_device=vulkan");
-                    mainFilters.Add("format=vulkan");
+                    AddVulkanHwupload(mainFilters);
                 }
                 else
                 {
@@ -611,8 +616,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     subFilters.Add(subTextSubtitlesFilter);
                 }
 
-                subFilters.Add("hwupload=derive_device=vulkan");
-                subFilters.Add("format=vulkan");
+                AddVulkanHwupload(subFilters);
 
                 overlayFilters.Add("overlay_vulkan=eof_action=pass:repeatlast=0");
 
