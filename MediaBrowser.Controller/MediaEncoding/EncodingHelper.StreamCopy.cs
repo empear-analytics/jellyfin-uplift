@@ -94,6 +94,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenRangeRotationSizeAndFrameRate(state, request, videoStream);
+        }
+
+        private bool CanCopyGivenRangeRotationSizeAndFrameRate(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             var requestedRangeTypes = state.GetRequestedRangeTypes(videoStream.Codec);
             if (requestedRangeTypes.Length > 0)
             {
