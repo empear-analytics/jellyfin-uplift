@@ -26,10 +26,7 @@ namespace Emby.Server.Implementations.Library
         {
             newPath = null;
 
-            if (string.IsNullOrEmpty(path)
-                || string.IsNullOrEmpty(subPath)
-                || string.IsNullOrEmpty(newSubPath)
-                || subPath.Length > path.Length)
+            if (IsMissingOrLongerThanPath(path, subPath, newSubPath))
             {
                 return false;
             }
@@ -58,6 +55,14 @@ namespace Emby.Server.Implementations.Library
             newPath = string.Concat(newSubPathTrimmed, path.AsSpan(idx));
 
             return true;
+        }
+
+        private static bool IsMissingOrLongerThanPath([NotNullWhen(false)] string? path, [NotNullWhen(false)] string? subPath, [NotNullWhen(false)] string? newSubPath)
+        {
+            return string.IsNullOrEmpty(path)
+                || string.IsNullOrEmpty(subPath)
+                || string.IsNullOrEmpty(newSubPath)
+                || subPath.Length > path.Length;
         }
 
         /// <summary>
