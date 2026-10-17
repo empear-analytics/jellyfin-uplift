@@ -437,11 +437,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 else
                 {
                     // hw deint
-                    if (doDeintH2645)
-                    {
-                        var deintFilter = GetHwDeinterlaceFilter(state, options, "vaapi");
-                        mainFilters.Add(deintFilter);
-                    }
+                    AddVaapiHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                     // hw scale
                     var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", "nv12", false, inW, inH, reqW, reqH, reqMaxW, reqMaxH);
@@ -487,11 +483,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add(hwCscFilter);
 
                 // hw deint
-                if (doDeintH2645)
-                {
-                    var deintFilter = GetHwDeinterlaceFilter(state, options, "vaapi");
-                    mainFilters.Add(deintFilter);
-                }
+                AddVaapiHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
             }
 
             if (!hasSubs)
@@ -564,11 +556,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     overlayFilters.Add(hwCscFilter);
 
                     // hw deint
-                    if (doDeintH2645)
-                    {
-                        var deintFilter = GetHwDeinterlaceFilter(state, options, "vaapi");
-                        overlayFilters.Add(deintFilter);
-                    }
+                    AddVaapiHwDeinterlaceFilter(state, options, overlayFilters, doDeintH2645);
                 }
             }
 
@@ -716,26 +704,15 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // INPUT vaapi surface(vram)
                 // hw deint
-                if (doDeintH2645)
-                {
-                    var deintFilter = GetHwDeinterlaceFilter(state, options, "vaapi");
-                    mainFilters.Add(deintFilter);
-                }
+                AddVaapiHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 outFormat = doOclTonemap ? string.Empty : "nv12";
                 var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", outFormat, false, inW, inH, reqW, reqH, reqMaxW, reqMaxH);
 
-                if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
-                {
-                    hwScaleFilter += doOclTonemap ? string.Empty : ":out_range=pc";
-                    hwScaleFilter += ":mode=hq";
-                }
+                hwScaleFilter = ApplyVaapiMjpegScaleOptions(hwScaleFilter, isMjpegEncoder, doOclTonemap);
 
                 // allocate extra pool sizes for vaapi vpp
-                if (!string.IsNullOrEmpty(hwScaleFilter))
-                {
-                    hwScaleFilter += ":extra_hw_frames=24";
-                }
+                hwScaleFilter = ApplyVaapiExtraHwFrames(hwScaleFilter);
 
                 // hw scale
                 mainFilters.Add(hwScaleFilter);
@@ -807,10 +784,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else if (memoryOutput && isVaapiEncoder)
             {
-                if (!hasGraphicalSubs)
-                {
-                    mainFilters.Add("hwupload_vaapi");
-                }
+                AddVaapiHwupload(mainFilters, hasGraphicalSubs);
             }
 
             /* Make sub and overlay filters for subtitle stream */
