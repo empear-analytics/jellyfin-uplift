@@ -284,8 +284,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // pcm_* codec also strips the RIFF header from a `stream.wav` request, which then serves
             // headerless PCM behind an audio/wav content type.
             var audioEncoder = GetAudioEncoder(state);
-            if (audioEncoder.StartsWith("pcm_", StringComparison.Ordinal)
-                && string.Equals(state.OutputContainer, "pcm", StringComparison.OrdinalIgnoreCase))
+            if (IsRawPcmOutput(state, audioEncoder))
             {
                 audioTranscodeParams.Add(string.Concat("-f ", audioEncoder.AsSpan(4)));
             }
@@ -326,6 +325,12 @@ namespace MediaBrowser.Controller.MediaEncoding
                 string.Empty,
                 string.Empty,
                 string.Empty).Trim();
+        }
+
+        private static bool IsRawPcmOutput(EncodingJobInfo state, string audioEncoder)
+        {
+            return audioEncoder.StartsWith("pcm_", StringComparison.Ordinal)
+                && string.Equals(state.OutputContainer, "pcm", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void AddAudioSampleRateParam(List<string> audioTranscodeParams, int? sampleRate, string outputCodec)
