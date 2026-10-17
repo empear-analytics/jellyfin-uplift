@@ -249,7 +249,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 var isVaapiDecoder = vidDecoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
                 var isVaapiEncoder = vidEncoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
-                if (!isVaapiDecoder && !isVaapiEncoder)
+                if (IsHwDeviceUnused(isVaapiDecoder, isVaapiEncoder))
                 {
                     return string.Empty;
                 }
@@ -268,7 +268,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 var isQsvDecoder = vidDecoder.Contains("qsv", StringComparison.OrdinalIgnoreCase);
                 var isQsvEncoder = vidEncoder.Contains("qsv", StringComparison.OrdinalIgnoreCase);
                 var isHwDecoder = isQsvDecoder || isVaapiDecoder || isD3d11vaDecoder;
-                if (!isHwDecoder && !isQsvEncoder)
+                if (IsHwDeviceUnused(isHwDecoder, isQsvEncoder))
                 {
                     return string.Empty;
                 }
@@ -286,7 +286,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 var isNvdecDecoder = vidDecoder.Contains("cuda", StringComparison.OrdinalIgnoreCase);
                 var isNvencEncoder = vidEncoder.Contains("nvenc", StringComparison.OrdinalIgnoreCase);
                 var isHwDecoder = isNvdecDecoder || isCuvidDecoder;
-                if (!isHwDecoder && !isNvencEncoder)
+                if (IsHwDeviceUnused(isHwDecoder, isNvencEncoder))
                 {
                     return string.Empty;
                 }
@@ -303,7 +303,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 var isD3d11vaDecoder = vidDecoder.Contains("d3d11va", StringComparison.OrdinalIgnoreCase);
                 var isAmfEncoder = vidEncoder.Contains("amf", StringComparison.OrdinalIgnoreCase);
-                if (!isD3d11vaDecoder && !isAmfEncoder)
+                if (IsHwDeviceUnused(isD3d11vaDecoder, isAmfEncoder))
                 {
                     return string.Empty;
                 }
@@ -319,7 +319,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 var isVideotoolboxDecoder = vidDecoder.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase);
                 var isVideotoolboxEncoder = vidEncoder.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase);
-                if (!isVideotoolboxDecoder && !isVideotoolboxEncoder)
+                if (IsHwDeviceUnused(isVideotoolboxDecoder, isVideotoolboxEncoder))
                 {
                     return string.Empty;
                 }
@@ -336,7 +336,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 var isRkmppDecoder = vidDecoder.Contains("rkmpp", StringComparison.OrdinalIgnoreCase);
                 var isRkmppEncoder = vidEncoder.Contains("rkmpp", StringComparison.OrdinalIgnoreCase);
-                if (!isRkmppDecoder && !isRkmppEncoder)
+                if (IsHwDeviceUnused(isRkmppDecoder, isRkmppEncoder))
                 {
                     return string.Empty;
                 }
@@ -350,6 +350,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return args.ToString().Trim();
+        }
+
+        private static bool IsHwDeviceUnused(bool isHwDecoder, bool isHwEncoder)
+        {
+            return !isHwDecoder && !isHwEncoder;
         }
 
         private bool IsVaapiHwaccelUnsupported(bool isLinux)
