@@ -188,32 +188,18 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 // INPUT vaapi surface(vram)
                 // hw deint
-                if (doDeintH2645)
-                {
-                    var deintFilter = GetHwDeinterlaceFilter(state, options, "vaapi");
-                    mainFilters.Add(deintFilter);
-                }
+                AddVaapiHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 // hw transpose
-                if (doVaVppTranspose)
-                {
-                    mainFilters.Add($"transpose_vaapi=dir={transposeDir}");
-                }
+                AddVaapiTransposeFilter(mainFilters, transposeDir, doVaVppTranspose);
 
                 var outFormat = doTonemap ? (isRext ? "p010" : string.Empty) : "nv12";
                 var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", outFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
 
-                if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
-                {
-                    hwScaleFilter += doOclTonemap ? string.Empty : ":out_range=pc";
-                    hwScaleFilter += ":mode=hq";
-                }
+                hwScaleFilter = ApplyVaapiMjpegScaleOptions(hwScaleFilter, isMjpegEncoder, doOclTonemap);
 
                 // allocate extra pool sizes for vaapi vpp
-                if (!string.IsNullOrEmpty(hwScaleFilter))
-                {
-                    hwScaleFilter += ":extra_hw_frames=24";
-                }
+                hwScaleFilter = ApplyVaapiExtraHwFrames(hwScaleFilter);
 
                 // hw scale
                 mainFilters.Add(hwScaleFilter);
@@ -273,10 +259,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (memoryOutput && isVaapiEncoder)
             {
-                if (!hasGraphicalSubs)
-                {
-                    mainFilters.Add("hwupload_vaapi");
-                }
+                AddVaapiHwupload(mainFilters, hasGraphicalSubs);
             }
 
             /* Make sub and overlay filters for subtitle stream */
@@ -334,6 +317,52 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void AddVaapiHwDeinterlaceFilter(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, bool doDeintH2645)
+        {
+            if (doDeintH2645)
+            {
+                var deintFilter = GetHwDeinterlaceFilter(state, options, "vaapi");
+                mainFilters.Add(deintFilter);
+            }
+        }
+
+        private static void AddVaapiTransposeFilter(List<string> mainFilters, string transposeDir, bool doVaVppTranspose)
+        {
+            if (doVaVppTranspose)
+            {
+                mainFilters.Add($"transpose_vaapi=dir={transposeDir}");
+            }
+        }
+
+        private static string ApplyVaapiMjpegScaleOptions(string hwScaleFilter, bool isMjpegEncoder, bool doOclTonemap)
+        {
+            if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
+            {
+                hwScaleFilter += doOclTonemap ? string.Empty : ":out_range=pc";
+                hwScaleFilter += ":mode=hq";
+            }
+
+            return hwScaleFilter;
+        }
+
+        private static string ApplyVaapiExtraHwFrames(string hwScaleFilter)
+        {
+            if (!string.IsNullOrEmpty(hwScaleFilter))
+            {
+                hwScaleFilter += ":extra_hw_frames=24";
+            }
+
+            return hwScaleFilter;
+        }
+
+        private static void AddVaapiHwupload(List<string> mainFilters, bool hasGraphicalSubs)
+        {
+            if (!hasGraphicalSubs)
+            {
+                mainFilters.Add("hwupload_vaapi");
+            }
         }
 
         public (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetAmdVaapiFullVidFiltersPrefered(
