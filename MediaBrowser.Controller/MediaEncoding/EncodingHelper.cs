@@ -7989,9 +7989,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (IsCopyCodec(videoCodec))
             {
-                if (state.VideoStream is not null
-                    && string.Equals(state.OutputContainer, "ts", StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(state.VideoStream.NalLengthSize, "0", StringComparison.OrdinalIgnoreCase))
+                if (NeedsTsVideoBitStreamFilter(state))
                 {
                     string bitStreamArgs = GetBitStreamArgs(state, MediaStreamType.Video);
                     if (!string.IsNullOrEmpty(bitStreamArgs))
@@ -8041,7 +8039,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                     args += " -avoid_negative_ts disabled";
 
-                    if (!(state.SubtitleStream is not null && state.SubtitleStream.IsExternal && !state.SubtitleStream.IsTextSubtitleStream))
+                    if (!HasExternalGraphicalSubtitle(state))
                     {
                         args += " -start_at_zero";
                     }
@@ -8063,6 +8061,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             args += GetOutputFFlags(state);
 
             return args;
+        }
+
+        private static bool NeedsTsVideoBitStreamFilter(EncodingJobInfo state)
+        {
+            return state.VideoStream is not null
+                && string.Equals(state.OutputContainer, "ts", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(state.VideoStream.NalLengthSize, "0", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool HasExternalGraphicalSubtitle(EncodingJobInfo state)
+        {
+            return state.SubtitleStream is not null && state.SubtitleStream.IsExternal && !state.SubtitleStream.IsTextSubtitleStream;
         }
 
         public string GetProgressiveVideoAudioArguments(EncodingJobInfo state, EncodingOptions encodingOptions)
