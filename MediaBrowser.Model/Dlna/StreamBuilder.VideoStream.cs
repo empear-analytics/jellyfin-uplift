@@ -66,10 +66,7 @@ namespace MediaBrowser.Model.Dlna
                 playlistItem.TranscodeReasons |= TranscodeReason.AudioCodecNotSupported;
             }
 
-            var directAudioStreamSatisfied = audioStreamWithSupportedCodec is not null && !channelsExceedsLimit
-                && directAudioFailures == 0;
-
-            directAudioStreamSatisfied = directAudioStreamSatisfied && !playlistItem.TranscodeReasons.HasFlag(TranscodeReason.ContainerBitrateExceedsLimit);
+            var directAudioStreamSatisfied = IsDirectAudioStreamSatisfied(audioStreamWithSupportedCodec, channelsExceedsLimit, directAudioFailures, playlistItem);
 
             var directAudioStream = directAudioStreamSatisfied ? audioStreamWithSupportedCodec : null;
 
@@ -153,6 +150,15 @@ namespace MediaBrowser.Model.Dlna
             ApplyMaxVideoBitrate(playlistItem, maxBitrateSetting);
 
             LogTranscodeResult(options, item, playlistItem, audioStream);
+        }
+
+        private static bool IsDirectAudioStreamSatisfied(MediaStream? audioStreamWithSupportedCodec, bool channelsExceedsLimit, TranscodeReason directAudioFailures, StreamInfo playlistItem)
+        {
+            var directAudioStreamSatisfied = audioStreamWithSupportedCodec is not null && !channelsExceedsLimit
+                && directAudioFailures == 0;
+
+            directAudioStreamSatisfied = directAudioStreamSatisfied && !playlistItem.TranscodeReasons.HasFlag(TranscodeReason.ContainerBitrateExceedsLimit);
+            return directAudioStreamSatisfied;
         }
 
         private void LogTranscodeResult(MediaOptions options, MediaSourceInfo item, StreamInfo playlistItem, MediaStream? audioStream)
