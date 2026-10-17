@@ -322,6 +322,15 @@ namespace Emby.Server.Implementations.Library
                 }
             }
 
+            return ResolveResumeDataFromCandidates(result, candidates, localProbeIds, user);
+        }
+
+        private IReadOnlyDictionary<Guid, VersionResumeData> ResolveResumeDataFromCandidates(
+            Dictionary<Guid, VersionResumeData> result,
+            List<Video>? candidates,
+            List<Guid>? localProbeIds,
+            User user)
+        {
             if (candidates is null)
             {
                 return result;
