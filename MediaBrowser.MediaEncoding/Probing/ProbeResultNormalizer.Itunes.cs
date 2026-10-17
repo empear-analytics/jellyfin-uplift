@@ -120,13 +120,7 @@ namespace MediaBrowser.MediaEncoding.Probing
                                 continue;
                             }
 
-                            using (var subtree = reader.ReadSubtree())
-                            {
-                                if (!string.IsNullOrWhiteSpace(currentKey))
-                                {
-                                    pairs.AddRange(ReadValueArray(subtree));
-                                }
-                            }
+                            AddArrayPairs(reader, currentKey, pairs);
 
                             break;
                         default:
@@ -137,6 +131,17 @@ namespace MediaBrowser.MediaEncoding.Probing
                 else
                 {
                     reader.Read();
+                }
+            }
+        }
+
+        private void AddArrayPairs(XmlReader reader, string currentKey, List<NameValuePair> pairs)
+        {
+            using (var subtree = reader.ReadSubtree())
+            {
+                if (!string.IsNullOrWhiteSpace(currentKey))
+                {
+                    pairs.AddRange(ReadValueArray(subtree));
                 }
             }
         }
