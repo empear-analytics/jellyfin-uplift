@@ -53,13 +53,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             var vidDecoder = GetHardwareVideoDecoder(state, options) ?? string.Empty;
             var isSwDecoder = string.IsNullOrEmpty(vidDecoder);
             var isSwEncoder = !vidEncoder.Contains("qsv", StringComparison.OrdinalIgnoreCase);
-            var isQsvOclSupported = _mediaEncoder.SupportsHwaccel("qsv") && IsOpenclFullSupported();
-            var isIntelDx11OclSupported = isWindows
-                && _mediaEncoder.SupportsHwaccel("d3d11va")
-                && isQsvOclSupported;
-            var isIntelVaapiOclSupported = isLinux
-                && IsVaapiSupported(state)
-                && isQsvOclSupported;
+            var isQsvOclSupported = IsQsvOclSupported();
+            var isIntelDx11OclSupported = IsIntelDx11OclSupported(isWindows, isQsvOclSupported);
+            var isIntelVaapiOclSupported = IsIntelVaapiOclSupported(state, isLinux, isQsvOclSupported);
 
             // legacy qsv pipeline(copy-back)
             if (UseLegacyQsvPipeline(isSwDecoder, isSwEncoder, isIntelVaapiOclSupported, isIntelDx11OclSupported))
