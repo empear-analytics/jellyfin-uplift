@@ -210,9 +210,7 @@ namespace MediaBrowser.Model.Dlna
             TranscodingProfile? transcodingProfile = null;
             foreach (var tcProfile in options.Profile.TranscodingProfiles)
             {
-                if (tcProfile.Type == playlistItem.MediaType
-                    && tcProfile.Context == options.Context
-                    && _transcoderSupport.CanEncodeToAudioCodec(tcProfile.AudioCodec ?? tcProfile.Container))
+                if (IsEncodableAudioTranscodingProfile(tcProfile, playlistItem, options))
                 {
                     transcodingProfile = tcProfile;
                     break;
@@ -220,6 +218,13 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return transcodingProfile;
+        }
+
+        private bool IsEncodableAudioTranscodingProfile(TranscodingProfile tcProfile, StreamInfo playlistItem, MediaOptions options)
+        {
+            return tcProfile.Type == playlistItem.MediaType
+                && tcProfile.Context == options.Context
+                && _transcoderSupport.CanEncodeToAudioCodec(tcProfile.AudioCodec ?? tcProfile.Container);
         }
 
         private static void SetAudioTranscodingBitrate(MediaOptions options, StreamInfo playlistItem)
