@@ -811,22 +811,24 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (is8_10bitSwFormatsAmf)
+            if (!is8_10bitSwFormatsAmf)
             {
-                if (IsHevcStreamCodec(videoStream))
-                {
-                    return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
-                }
+                return null;
+            }
 
-                if (string.Equals("vp9", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
-                }
+            if (IsHevcStreamCodec(videoStream))
+            {
+                return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
+            }
 
-                if (string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
-                }
+            if (string.Equals("vp9", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+            {
+                return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
+            }
+
+            if (string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+            {
+                return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
             }
 
             return null;
