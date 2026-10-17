@@ -4272,18 +4272,20 @@ namespace Emby.Server.Implementations.Library
             // Update in-memory LinkedChildren and re-save metadata (NFO) for affected parents
             foreach (var parentId in affectedParentIds)
             {
-                if (GetItemById(parentId) is Folder parent)
+                if (GetItemById(parentId) is not Folder parent)
                 {
-                    foreach (var lc in parent.LinkedChildren)
-                    {
-                        if (lc.ItemId.HasValue && lc.ItemId.Value.Equals(fromChildId))
-                        {
-                            lc.ItemId = toChildId;
-                        }
-                    }
-
-                    await RunMetadataSavers(parent, ItemUpdateType.MetadataEdit).ConfigureAwait(false);
+                    continue;
                 }
+
+                foreach (var lc in parent.LinkedChildren)
+                {
+                    if (lc.ItemId.HasValue && lc.ItemId.Value.Equals(fromChildId))
+                    {
+                        lc.ItemId = toChildId;
+                    }
+                }
+
+                await RunMetadataSavers(parent, ItemUpdateType.MetadataEdit).ConfigureAwait(false);
             }
         }
 
