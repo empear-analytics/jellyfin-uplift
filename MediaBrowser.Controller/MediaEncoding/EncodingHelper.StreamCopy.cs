@@ -145,6 +145,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenRotationAndLaterLimits(state, request, videoStream);
+        }
+
+        private static bool CanCopyGivenRotationAndLaterLimits(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             var requestedRotations = state.GetRequestedRotations(videoStream.Codec);
             if (requestedRotations.Length > 0)
             {
