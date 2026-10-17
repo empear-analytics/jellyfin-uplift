@@ -277,23 +277,22 @@ namespace MediaBrowser.Controller.MediaEncoding
                 {
                     if (IsVideoStreamHevcRext(state))
                     {
-                        if (bitDepth <= 10 && !options.EnableDecodingColorDepth10HevcRext)
+                        if (IsHevcRext10BitDecodingDisabled(options, bitDepth))
                         {
                             return null;
                         }
 
-                        if (bitDepth == 12 && !options.EnableDecodingColorDepth12HevcRext)
+                        if (IsHevcRext12BitDecodingDisabled(options, bitDepth))
                         {
                             return null;
                         }
 
-                        if (hardwareAccelerationType == HardwareAccelerationType.vaapi
-                            && !_mediaEncoder.IsVaapiDeviceInteliHD)
+                        if (IsNonIHDVaapi(hardwareAccelerationType))
                         {
                             return null;
                         }
                     }
-                    else if (bitDepth == 10 && !options.EnableDecodingColorDepth10Hevc)
+                    else if (IsHevcTenBitDecodingDisabled(options, bitDepth))
                     {
                         return null;
                     }
@@ -390,6 +389,27 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             return string.Equals(videoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
                 && options.HardwareDecodingCodecs.Contains("hevc", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsHevcRext10BitDecodingDisabled(EncodingOptions options, int bitDepth)
+        {
+            return bitDepth <= 10 && !options.EnableDecodingColorDepth10HevcRext;
+        }
+
+        private static bool IsHevcRext12BitDecodingDisabled(EncodingOptions options, int bitDepth)
+        {
+            return bitDepth == 12 && !options.EnableDecodingColorDepth12HevcRext;
+        }
+
+        private bool IsNonIHDVaapi(HardwareAccelerationType hardwareAccelerationType)
+        {
+            return hardwareAccelerationType == HardwareAccelerationType.vaapi
+                && !_mediaEncoder.IsVaapiDeviceInteliHD;
+        }
+
+        private static bool IsHevcTenBitDecodingDisabled(EncodingOptions options, int bitDepth)
+        {
+            return bitDepth == 10 && !options.EnableDecodingColorDepth10Hevc;
         }
 
         private static bool IsVp9TenBitHwDecodingDisabled(EncodingOptions options, string videoCodec, int bitDepth)
