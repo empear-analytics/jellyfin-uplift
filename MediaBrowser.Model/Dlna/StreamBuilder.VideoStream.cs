@@ -42,17 +42,7 @@ namespace MediaBrowser.Model.Dlna
             var qualifier = videoStream?.Codec;
             CopyVideoStreamOptions(playlistItem, videoStream, qualifier);
 
-            // Prefer matching audio codecs, could do better here
-            var audioCodecs = ContainerHelper.Split(audioCodec).ToList();
-
-            if (audioCodecs.Count == 0 && audioStream is not null)
-            {
-                // Add the original codec if no codec is specified
-                audioCodecs.Add(audioStream.Codec);
-            }
-
-            // Enforce HLS audio codec restrictions
-            audioCodecs = FilterHlsAudioCodecs(playlistItem, audioCodecs);
+            var audioCodecs = GetPreferredAudioCodecs(playlistItem, audioStream, audioCodec);
 
             var audioStreamWithSupportedCodec = candidateAudioStreams.Where(stream => ContainerHelper.ContainsContainer(audioCodecs, false, stream.Codec)).FirstOrDefault();
 
@@ -159,6 +149,23 @@ namespace MediaBrowser.Model.Dlna
 
             directAudioStreamSatisfied = directAudioStreamSatisfied && !playlistItem.TranscodeReasons.HasFlag(TranscodeReason.ContainerBitrateExceedsLimit);
             return directAudioStreamSatisfied;
+        }
+
+        private static List<string> GetPreferredAudioCodecs(StreamInfo playlistItem, MediaStream? audioStream, string? audioCodec)
+        {
+            // Prefer matching audio codecs, could do better here
+            var audioCodecs = ContainerHelper.Split(audioCodec).ToList();
+
+            if (audioCodecs.Count == 0 && audioStream is not null)
+            {
+                // Add the original codec if no codec is specified
+                audioCodecs.Add(audioStream.Codec);
+            }
+
+            // Enforce HLS audio codec restrictions
+            audioCodecs = FilterHlsAudioCodecs(playlistItem, audioCodecs);
+
+            return audioCodecs;
         }
 
         private void LogTranscodeResult(MediaOptions options, MediaSourceInfo item, StreamInfo playlistItem, MediaStream? audioStream)
