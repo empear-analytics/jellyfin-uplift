@@ -74,8 +74,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 {
                     bool hasHardwareHi10P = HasHardwareHi10PDecoder(hardwareAccelerationType);
 
-                    if (!hasHardwareHi10P
-                        && string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase))
+                    if (IsH264WithoutHwHi10P(hasHardwareHi10P, videoStream))
                     {
                         return null;
                     }
@@ -110,6 +109,12 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // leave blank so ffmpeg will decide
             return null;
+        }
+
+        private static bool IsH264WithoutHwHi10P(bool hasHardwareHi10P, MediaStream videoStream)
+        {
+            return !hasHardwareHi10P
+                && string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsAppleSiliconVideoToolbox(HardwareAccelerationType hardwareAccelerationType)
