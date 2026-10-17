@@ -450,9 +450,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         private bool IsVideoToolboxTonemapAvailable(EncodingJobInfo state, EncodingOptions options)
         {
-            if (state.VideoStream is null
-                || !options.EnableVideoToolboxTonemapping
-                || GetVideoColorBitDepth(state) < 10)
+            if (IsVideoToolboxTonemapInputUnsupported(state, options))
             {
                 return false;
             }
@@ -465,6 +463,13 @@ namespace MediaBrowser.Controller.MediaEncoding
                        || IsDoviWithHdr10Bl(state.VideoStream)
                        || state.VideoStream.VideoRangeType == VideoRangeType.HLG
                        || state.VideoStream.VideoRangeType == VideoRangeType.DOVIInvalid);
+        }
+
+        private static bool IsVideoToolboxTonemapInputUnsupported(EncodingJobInfo state, EncodingOptions options)
+        {
+            return state.VideoStream is null
+                || !options.EnableVideoToolboxTonemapping
+                || GetVideoColorBitDepth(state) < 10;
         }
 
         private static bool IsDeinterlaceAvailable(EncodingJobInfo state)
