@@ -295,19 +295,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // If fixed dimensions were supplied
             if (requestedWidth.HasValue && requestedHeight.HasValue)
             {
-                if (isV4l2)
-                {
-                    var widthParam = requestedWidth.Value.ToString(CultureInfo.InvariantCulture);
-                    var heightParam = requestedHeight.Value.ToString(CultureInfo.InvariantCulture);
-
-                    return string.Format(
-                            CultureInfo.InvariantCulture,
-                            "scale=trunc({0}/64)*64:trunc({1}/2)*2",
-                            widthParam,
-                            heightParam);
-                }
-
-                return GetFixedSwScaleFilter(threedFormat, requestedWidth.Value, requestedHeight.Value);
+                return GetFixedDimensionsSwScaleFilter(threedFormat, requestedWidth, requestedHeight, isV4l2);
             }
 
             // If Max dimensions were supplied, for width selects lowest even number between input width and width req size and selects lowest even number from in width*display aspect and requested size
@@ -329,19 +317,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // If a fixed width was requested
             if (requestedWidth.HasValue)
             {
-                if (threedFormat.HasValue)
-                {
-                    // This method can handle 0 being passed in for the requested height
-                    return GetFixedSwScaleFilter(threedFormat, requestedWidth.Value, 0);
-                }
-
-                var widthParam = requestedWidth.Value.ToString(CultureInfo.InvariantCulture);
-
-                return string.Format(
-                    CultureInfo.InvariantCulture,
-                    "scale={0}:trunc(ow/{1}/2)*2",
-                    widthParam,
-                    targetAr);
+                return GetFixedWidthSwScaleFilter(threedFormat, requestedWidth, targetAr);
             }
 
             // If a fixed height was requested
@@ -384,6 +360,40 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static string GetFixedDimensionsSwScaleFilter(Video3DFormat? threedFormat, int? requestedWidth, int? requestedHeight, bool isV4l2)
+        {
+            if (isV4l2)
+            {
+                var widthParam = requestedWidth.Value.ToString(CultureInfo.InvariantCulture);
+                var heightParam = requestedHeight.Value.ToString(CultureInfo.InvariantCulture);
+
+                return string.Format(
+                        CultureInfo.InvariantCulture,
+                        "scale=trunc({0}/64)*64:trunc({1}/2)*2",
+                        widthParam,
+                        heightParam);
+            }
+
+            return GetFixedSwScaleFilter(threedFormat, requestedWidth.Value, requestedHeight.Value);
+        }
+
+        private static string GetFixedWidthSwScaleFilter(Video3DFormat? threedFormat, int? requestedWidth, string targetAr)
+        {
+            if (threedFormat.HasValue)
+            {
+                // This method can handle 0 being passed in for the requested height
+                return GetFixedSwScaleFilter(threedFormat, requestedWidth.Value, 0);
+            }
+
+            var widthParam = requestedWidth.Value.ToString(CultureInfo.InvariantCulture);
+
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "scale={0}:trunc(ow/{1}/2)*2",
+                widthParam,
+                targetAr);
         }
 
         private static string GetFixedSwScaleFilter(Video3DFormat? threedFormat, int requestedWidth, int requestedHeight)
