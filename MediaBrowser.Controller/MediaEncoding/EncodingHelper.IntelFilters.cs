@@ -619,22 +619,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // vaapi vpp tonemap
             if (doVaVppTonemap && isHwDecoder)
             {
-                if (isQsvDecoder)
-                {
-                    // map from qsv to vaapi.
-                    mainFilters.Add("hwmap=derive_device=vaapi");
-                    mainFilters.Add("format=vaapi");
-                }
-
-                var tonemapFilter = GetHwTonemapFilter(options, "vaapi", "nv12", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-
-                if (isQsvDecoder)
-                {
-                    // map from vaapi to qsv.
-                    mainFilters.Add("hwmap=derive_device=qsv");
-                    mainFilters.Add("format=qsv");
-                }
+                AddVaapiVppTonemapFilters(options, mainFilters, isQsvDecoder, isMjpegEncoder);
             }
 
             if (NeedsHwToOpenclMapping(doOclTonemap, isHwDecoder))
@@ -677,19 +662,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (isQsvInQsvOut)
             {
-                if (doOclTonemap)
-                {
-                    // OUTPUT qsv(nv12) surface(vram)
-                    // reverse-mapping via qsv(vaapi)-opencl interop.
-                    // add extra pool size to avoid the 'cannot allocate memory' error on hevc_qsv.
-                    mainFilters.Add("hwmap=derive_device=qsv:mode=write:reverse=1:extra_hw_frames=16");
-                    mainFilters.Add("format=qsv");
-                }
-                else if (isVaapiDecoder)
-                {
-                    mainFilters.Add("hwmap=derive_device=qsv");
-                    mainFilters.Add("format=qsv");
-                }
+                AddQsvOutputMapping(mainFilters, doOclTonemap, isVaapiDecoder);
             }
 
             /* Make sub and overlay filters for subtitle stream */
@@ -744,6 +717,43 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void AddVaapiVppTonemapFilters(EncodingOptions options, List<string> mainFilters, bool isQsvDecoder, bool isMjpegEncoder)
+        {
+            if (isQsvDecoder)
+            {
+                // map from qsv to vaapi.
+                mainFilters.Add("hwmap=derive_device=vaapi");
+                mainFilters.Add("format=vaapi");
+            }
+
+            var tonemapFilter = GetHwTonemapFilter(options, "vaapi", "nv12", isMjpegEncoder);
+            mainFilters.Add(tonemapFilter);
+
+            if (isQsvDecoder)
+            {
+                // map from vaapi to qsv.
+                mainFilters.Add("hwmap=derive_device=qsv");
+                mainFilters.Add("format=qsv");
+            }
+        }
+
+        private static void AddQsvOutputMapping(List<string> mainFilters, bool doOclTonemap, bool isVaapiDecoder)
+        {
+            if (doOclTonemap)
+            {
+                // OUTPUT qsv(nv12) surface(vram)
+                // reverse-mapping via qsv(vaapi)-opencl interop.
+                // add extra pool size to avoid the 'cannot allocate memory' error on hevc_qsv.
+                mainFilters.Add("hwmap=derive_device=qsv:mode=write:reverse=1:extra_hw_frames=16");
+                mainFilters.Add("format=qsv");
+            }
+            else if (isVaapiDecoder)
+            {
+                mainFilters.Add("hwmap=derive_device=qsv");
+                mainFilters.Add("format=qsv");
+            }
         }
 
         private static bool ShouldAppendQsvVppTranspose(string hwScaleFilter, bool isQsvDecoder, bool doVppTranspose)
