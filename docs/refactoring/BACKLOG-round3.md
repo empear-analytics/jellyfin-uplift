@@ -121,7 +121,7 @@ Update as tasks land.
 | R3-33 | 8.62 | 9.26 | Sonnet. 17 commits, four of them FLAT splits kept as pairs with the step they enable (the new pair rule): StreamBuilder.CodecProfileConditions, .VideoStreamOptions, .VideoStreamAudio, .VideoStreamLimits (all 10.00, 43 to 72 lines of code each). Group score of the five files by lines of code: 9.75; BuildStreamVideoItem cc 41 to 13. The last pair gained only +0.01. First commit (rule 9: the LogDebug call with `??` to LogTranscodeResult). The file is at a cliff: a 7th method brings Overall Code Complexity and Code Duplication; six candidate steps all DOWN alone, all UP (8.72 to 8.75) after a split that is itself FLAT. Excess Arguments (BuildStreamVideoItem 9, no recipe) |
 | R3-34 | 8.64 | - | not started |
 | R3-35 | 8.67 | - | not started |
-| R3-36 | 8.69 | - | not started |
+| R3-36 | 8.69 | 9.24 | Sonnet. Three commits, all rule 7: the tails of GetResumeUserDataBatch moved verbatim into ResolveResumeDataFromCandidates, ...FromAlternates, ...FromVersionGroups (GetResumeUserDataBatch no longer flagged; every collaborator call and its order unchanged). Left: UpdatePlayState (3 bumps, cc 10): every block writes two outer variables, the chain is not a tail; SaveUserData 5 arguments (public). Not mutation-tested |
 | R3-37 | 8.88 | - | not started |
 | R3-38 | 8.96 | - | not started |
 | R3-39 | 9.04 | 9.53 | Sonnet. Three commits: rule 7 twice on GetAudioDirectPlayProfile (cleared), rule 9 on GetOptimalAudioStream (an instance method, since it calls ApplyTranscodingConditions). Every step chosen by measuring candidates alone. Left: GetOptimalAudioStream (3 bumps, cc 9): the remaining tails need 5 to 7 arguments (WORSE), blocks write several outer variables |
