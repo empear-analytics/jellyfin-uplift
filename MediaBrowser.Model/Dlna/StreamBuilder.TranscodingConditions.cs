@@ -236,27 +236,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            // Change from split by | to comma
-                            // Strip spaces to avoid having to encode
-                            var values = value
-                                .Split('|', StringSplitOptions.RemoveEmptyEntries);
-
-                            if (condition.Condition == ProfileConditionType.Equals)
-                            {
-                                item.SetOption(qualifier, "profile", string.Join(',', values));
-                            }
-                            else if (condition.Condition == ProfileConditionType.EqualsAny)
-                            {
-                                var currentValue = item.GetOption(qualifier, "profile");
-                                if (!string.IsNullOrEmpty(currentValue) && values.Any(value => value == currentValue))
-                                {
-                                    item.SetOption(qualifier, "profile", currentValue);
-                                }
-                                else
-                                {
-                                    item.SetOption(qualifier, "profile", string.Join(',', values));
-                                }
-                            }
+                            ApplyVideoProfileCondition(item, condition, value, qualifier);
 
                             break;
                         }
@@ -359,6 +339,31 @@ namespace MediaBrowser.Model.Dlna
 
                     default:
                         break;
+                }
+            }
+        }
+
+        private static void ApplyVideoProfileCondition(StreamInfo item, ProfileCondition condition, string conditionValue, string? qualifier)
+        {
+            // Change from split by | to comma
+            // Strip spaces to avoid having to encode
+            var values = conditionValue
+                .Split('|', StringSplitOptions.RemoveEmptyEntries);
+
+            if (condition.Condition == ProfileConditionType.Equals)
+            {
+                item.SetOption(qualifier, "profile", string.Join(',', values));
+            }
+            else if (condition.Condition == ProfileConditionType.EqualsAny)
+            {
+                var currentValue = item.GetOption(qualifier, "profile");
+                if (!string.IsNullOrEmpty(currentValue) && values.Any(value => value == currentValue))
+                {
+                    item.SetOption(qualifier, "profile", currentValue);
+                }
+                else
+                {
+                    item.SetOption(qualifier, "profile", string.Join(',', values));
                 }
             }
         }
