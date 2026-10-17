@@ -1269,18 +1269,23 @@ namespace Emby.Server.Implementations.Library
                     // Alternate version doesn't exist, resolve and create it
                     // ensuring it has the same type as the primary video
                     var altVideo = ResolveAlternateVersion(path, videoType, parentFolder, parentCollectionType);
-                    if (altVideo is not null)
-                    {
-                        altVideo.OwnerId = video.Id;
-                        altVideo.SetPrimaryVersionId(video.Id);
-                        altVideo.IsInMixedFolder = video.IsInMixedFolder;
-                        // ResolveAlternateVersion only sees the alternate's primary file.
-                        // If the alternate is itself a stack (e.g. 1080p part1 + part2),
-                        // detect its parts from sibling files so its AdditionalParts persist.
-                        SetAdditionalPartsFromStack(altVideo, path);
-                        allItems.Add(altVideo);
-                    }
+                    AddResolvedAlternateVersion(video, altVideo, path, allItems);
                 }
+            }
+        }
+
+        private void AddResolvedAlternateVersion(Video video, Video? altVideo, string path, List<BaseItem> allItems)
+        {
+            if (altVideo is not null)
+            {
+                altVideo.OwnerId = video.Id;
+                altVideo.SetPrimaryVersionId(video.Id);
+                altVideo.IsInMixedFolder = video.IsInMixedFolder;
+                // ResolveAlternateVersion only sees the alternate's primary file.
+                // If the alternate is itself a stack (e.g. 1080p part1 + part2),
+                // detect its parts from sibling files so its AdditionalParts persist.
+                SetAdditionalPartsFromStack(altVideo, path);
+                allItems.Add(altVideo);
             }
         }
 
