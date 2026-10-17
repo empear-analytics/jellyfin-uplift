@@ -729,10 +729,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
             }
 
-            if (isQsvInQsvOut)
-            {
-                AddQsvOutputMapping(mainFilters, doOclTonemap, isVaapiDecoder);
-            }
+            AddQsvInQsvOutMapping(mainFilters, isQsvInQsvOut, doOclTonemap, isVaapiDecoder);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
@@ -851,6 +848,14 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static bool IsSwOrTransposedVaapiOrQsvDecode(bool isSwDecoder, bool isVaapiDecoder, bool isQsvDecoder, bool doVppTranspose)
         {
             return isSwDecoder || ((isVaapiDecoder || isQsvDecoder) && doVppTranspose);
+        }
+
+        private static void AddQsvInQsvOutMapping(List<string> mainFilters, bool isQsvInQsvOut, bool doOclTonemap, bool isVaapiDecoder)
+        {
+            if (isQsvInQsvOut)
+            {
+                AddQsvOutputMapping(mainFilters, doOclTonemap, isVaapiDecoder);
+            }
         }
 
         private static bool NeedsVaapiTranspose(bool isVaapiDecoder, bool doVppTranspose)
