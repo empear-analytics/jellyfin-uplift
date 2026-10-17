@@ -7100,10 +7100,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     }
                 }
 
-                if (string.Equals(videoCodec, "vp9", StringComparison.OrdinalIgnoreCase)
-                    && options.HardwareDecodingCodecs.Contains("vp9", StringComparison.OrdinalIgnoreCase)
-                    && bitDepth == 10
-                    && !options.EnableDecodingColorDepth10Vp9)
+                if (IsVp9TenBitHwDecodingDisabled(options, videoCodec, bitDepth))
                 {
                     return null;
                 }
@@ -7163,31 +7160,54 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // Vaapi
-            if (hardwareAccelerationType == HardwareAccelerationType.vaapi
-                && isVaapiSupported
-                && isCodecAvailable)
+            if (IsVaapiHwaccelUsable(hardwareAccelerationType, isVaapiSupported, isCodecAvailable))
             {
                 return " -hwaccel vaapi" + (outputHwSurface ? " -hwaccel_output_format vaapi -noautorotate" + stripRotationDataArgs : string.Empty)
                     + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + (isAv1 ? " -c:v av1" : string.Empty);
             }
 
             // Apple videotoolbox
-            if (hardwareAccelerationType == HardwareAccelerationType.videotoolbox
-                && isVideotoolboxSupported
-                && isCodecAvailable)
+            if (IsVideotoolboxHwaccelUsable(hardwareAccelerationType, isVideotoolboxSupported, isCodecAvailable))
             {
                 return " -hwaccel videotoolbox" + (outputHwSurface ? " -hwaccel_output_format videotoolbox_vld" : string.Empty) + " -noautorotate" + stripRotationDataArgs;
             }
 
             // Rockchip rkmpp
-            if (hardwareAccelerationType == HardwareAccelerationType.rkmpp
-                && isRkmppSupported
-                && isCodecAvailable)
+            if (IsRkmppHwaccelUsable(hardwareAccelerationType, isRkmppSupported, isCodecAvailable))
             {
                 return " -hwaccel rkmpp" + (outputHwSurface ? " -hwaccel_output_format drm_prime -noautorotate" + stripRotationDataArgs : string.Empty);
             }
 
             return null;
+        }
+
+        private static bool IsVp9TenBitHwDecodingDisabled(EncodingOptions options, string videoCodec, int bitDepth)
+        {
+            return string.Equals(videoCodec, "vp9", StringComparison.OrdinalIgnoreCase)
+                && options.HardwareDecodingCodecs.Contains("vp9", StringComparison.OrdinalIgnoreCase)
+                && bitDepth == 10
+                && !options.EnableDecodingColorDepth10Vp9;
+        }
+
+        private static bool IsVaapiHwaccelUsable(HardwareAccelerationType hardwareAccelerationType, bool isVaapiSupported, bool isCodecAvailable)
+        {
+            return hardwareAccelerationType == HardwareAccelerationType.vaapi
+                && isVaapiSupported
+                && isCodecAvailable;
+        }
+
+        private static bool IsVideotoolboxHwaccelUsable(HardwareAccelerationType hardwareAccelerationType, bool isVideotoolboxSupported, bool isCodecAvailable)
+        {
+            return hardwareAccelerationType == HardwareAccelerationType.videotoolbox
+                && isVideotoolboxSupported
+                && isCodecAvailable;
+        }
+
+        private static bool IsRkmppHwaccelUsable(HardwareAccelerationType hardwareAccelerationType, bool isRkmppSupported, bool isCodecAvailable)
+        {
+            return hardwareAccelerationType == HardwareAccelerationType.rkmpp
+                && isRkmppSupported
+                && isCodecAvailable;
         }
 
         public string GetQsvHwVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
