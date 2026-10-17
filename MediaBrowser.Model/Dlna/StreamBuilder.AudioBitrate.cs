@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using Jellyfin.Data.Enums;
@@ -38,9 +39,7 @@ namespace MediaBrowser.Model.Dlna
                     // Reduce the bitrate if we're down mixing.
                     defaultBitrate = GetDefaultAudioBitrate(targetAudioCodec, targetAudioChannels);
                 }
-                else if (targetAudioChannels.HasValue
-                         && audioStream.Channels.HasValue
-                         && audioStream.Channels.Value <= targetAudioChannels.Value
+                else if (IsAtMostTargetChannels(targetAudioChannels, audioStream.Channels)
                          && IsNotAnyTargetAudioCodec(audioStream, targetAudioCodecs))
                 {
                     // Shift the bitrate if we're transcoding to a different audio codec.
@@ -74,6 +73,13 @@ namespace MediaBrowser.Model.Dlna
                 && targetAudioCodecs is not null
                 && targetAudioCodecs.Count > 0
                 && !targetAudioCodecs.Any(elem => string.Equals(audioStream.Codec, elem, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool IsAtMostTargetChannels(int? targetAudioChannels, [NotNullWhen(true)] int? audioStreamChannels)
+        {
+            return targetAudioChannels.HasValue
+                && audioStreamChannels.HasValue
+                && audioStreamChannels.Value <= targetAudioChannels.Value;
         }
 
         private static bool IsDownmixing(int? targetAudioChannels, MediaStream audioStream)
