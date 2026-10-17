@@ -260,16 +260,13 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 // Only enable VA-API MJPEG encoder on Intel iHD driver.
                 // Legacy platforms supported ONLY by i965 do not support MJPEG encoder.
-                if (hwType == HardwareAccelerationType.vaapi
-                    && !_mediaEncoder.IsVaapiDeviceInteliHD)
+                if (IsNonIHDVaapi(hwType))
                 {
                     return _defaultMjpegEncoder;
                 }
 
-                if (hwType != HardwareAccelerationType.none
-                    && encodingOptions.EnableHardwareEncoding
-                    && _mjpegCodecMap.TryGetValue(hwType, out var preferredEncoder)
-                    && _mediaEncoder.SupportsEncoder(preferredEncoder))
+                if (IsHardwareEncodingEnabled(hwType, encodingOptions)
+                    && TryGetSupportedEncoder(_mjpegCodecMap, hwType, out var preferredEncoder))
                 {
                     return preferredEncoder;
                 }
