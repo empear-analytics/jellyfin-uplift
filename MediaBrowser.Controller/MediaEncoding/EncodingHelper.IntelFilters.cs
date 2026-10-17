@@ -120,9 +120,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasSubs = state.SubtitleStream is not null && ShouldEncodeSubtitle(state);
             var hasTextSubs = hasSubs && state.SubtitleStream.IsTextSubtitleStream;
             var hasGraphicalSubs = hasSubs && !state.SubtitleStream.IsTextSubtitleStream;
-            var hasAssSubs = hasSubs
-                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+            var hasAssSubs = HasAssSubtitles(state, hasSubs);
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
@@ -172,10 +170,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 var isRext = IsVideoStreamHevcRext(state);
                 var twoPassVppTonemap = false;
-                var doVppFullRangeOut = isMjpegEncoder
-                    && _mediaEncoder.EncoderVersion >= _minFFmpegQsvVppOutRangeOption;
-                var doVppScaleModeHq = isMjpegEncoder
-                    && _mediaEncoder.EncoderVersion >= _minFFmpegQsvVppScaleModeOption;
+                var doVppFullRangeOut = CanDoQsvVppFullRangeOut(isMjpegEncoder);
+                var doVppScaleModeHq = CanDoQsvVppScaleModeHq(isMjpegEncoder);
                 var doVppProcamp = false;
                 var procampParams = string.Empty;
                 var procampParamsString = string.Empty;
@@ -193,8 +189,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                         twoPassVppTonemap = doVppProcamp = true;
                     }
 
-                    if (options.VppTonemappingContrast > 1
-                        && options.VppTonemappingContrast <= 10)
+                    if (IsVppTonemappingContrastInRange(options))
                     {
                         procampParamsString += ":contrast={1}";
                         twoPassVppTonemap = doVppProcamp = true;
@@ -377,6 +372,31 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool HasAssSubtitles(EncodingJobInfo state, bool hasSubs)
+        {
+            return hasSubs
+                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private bool CanDoQsvVppFullRangeOut(bool isMjpegEncoder)
+        {
+            return isMjpegEncoder
+                && _mediaEncoder.EncoderVersion >= _minFFmpegQsvVppOutRangeOption;
+        }
+
+        private bool CanDoQsvVppScaleModeHq(bool isMjpegEncoder)
+        {
+            return isMjpegEncoder
+                && _mediaEncoder.EncoderVersion >= _minFFmpegQsvVppScaleModeOption;
+        }
+
+        private static bool IsVppTonemappingContrastInRange(EncodingOptions options)
+        {
+            return options.VppTonemappingContrast > 1
+                && options.VppTonemappingContrast <= 10;
         }
 
         private static bool IsVppTonemappingBrightnessInRange(EncodingOptions options)
