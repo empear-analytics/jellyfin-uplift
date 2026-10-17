@@ -265,11 +265,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                     var (overlayW, overlayH) = GetFixedOutputSize(swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
                     var overlaySize = GetOverlaySizeOption(overlayW, overlayH);
-                    var overlayVaapiFilter = string.Format(
-                        CultureInfo.InvariantCulture,
-                        "overlay_vaapi=eof_action=pass:repeatlast=0{0}",
-                        overlaySize);
-                    overlayFilters.Add(overlayVaapiFilter);
+                    AddOverlayVaapiFilter(overlayFilters, overlaySize);
                 }
             }
             else if (memoryOutput)
@@ -390,6 +386,15 @@ namespace MediaBrowser.Controller.MediaEncoding
         private bool IsVaapiFullSupportedOnLinux(EncodingJobInfo state, bool isLinux)
         {
             return isLinux && IsVaapiSupported(state) && IsVaapiFullSupported();
+        }
+
+        private static void AddOverlayVaapiFilter(List<string> overlayFilters, string overlaySize)
+        {
+            var overlayVaapiFilter = string.Format(
+                CultureInfo.InvariantCulture,
+                "overlay_vaapi=eof_action=pass:repeatlast=0{0}",
+                overlaySize);
+            overlayFilters.Add(overlayVaapiFilter);
         }
 
         private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
