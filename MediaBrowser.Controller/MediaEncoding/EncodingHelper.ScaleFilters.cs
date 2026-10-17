@@ -151,10 +151,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 requestedMaxHeight);
 
             var isFormatFixed = !string.IsNullOrEmpty(videoFormat);
-            var isSizeFixed = !videoWidth.HasValue
-                || outWidth.Value != videoWidth.Value
-                || !videoHeight.HasValue
-                || outHeight.Value != videoHeight.Value;
+            var isSizeFixed = IsOutputSizeChanged(videoWidth, videoHeight, outWidth, outHeight);
 
             var swpOutW = swapOutputWandH ? outHeight.Value : outWidth.Value;
             var swpOutH = swapOutputWandH ? outWidth.Value : outHeight.Value;
@@ -178,6 +175,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static bool IsOutputSizeChanged(int? videoWidth, int? videoHeight, int? outWidth, int? outHeight)
+        {
+            return !videoWidth.HasValue
+                || outWidth.Value != videoWidth.Value
+                || !videoHeight.HasValue
+                || outHeight.Value != videoHeight.Value;
         }
 
         private static bool NeedsHwScaleFilter(string hwScaleSuffix, bool isSizeFixed, bool isFormatFixed)
