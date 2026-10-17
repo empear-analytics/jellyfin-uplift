@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using Jellyfin.Data.Enums;
@@ -33,14 +34,18 @@ namespace MediaBrowser.Model.Dlna
             foreach (var stream in item.MediaStreams)
             {
                 if (stream.Type == MediaStreamType.Subtitle
-                    && stream.Score.HasValue
-                    && stream.Score.Value > highestScore)
+                    && IsScoreAbove(stream.Score, highestScore))
                 {
                     highestScore = stream.Score.Value;
                 }
             }
 
             return highestScore;
+        }
+
+        private static bool IsScoreAbove([NotNullWhen(true)] int? score, int highestScore)
+        {
+            return score.HasValue && score.Value > highestScore;
         }
 
         private static List<MediaStream> GetTopScoringSubtitleStreams(MediaSourceInfo item, int highestScore)
