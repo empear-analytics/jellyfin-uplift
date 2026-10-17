@@ -969,26 +969,7 @@ namespace MediaBrowser.Model.Dlna
                         // the transcoding conditions, then the one does not satisfy the transcoding conditions.
                         // For example: A client can support both aac and flac, but flac only supports 2 channels while aac supports 6.
                         // When the source audio is 6 channel flac, we should transcode to 6 channel aac, instead of down-mix to 2 channel flac.
-                        var transcodingAudioCodecs = ContainerHelper.Split(transcodingProfile.AudioCodec);
-
-                        foreach (var transcodingAudioCodec in transcodingAudioCodecs)
-                        {
-                            var failures = GetCompatibilityAudioCodec(options, mediaSource, container, audioStream, transcodingAudioCodec, true, false);
-
-                            var rankAudio = 3;
-
-                            if (failures == 0)
-                            {
-                                rankAudio = string.Equals(transcodingAudioCodec, audioCodec, StringComparison.OrdinalIgnoreCase) ? 1 : 2;
-                            }
-
-                            rank.Audio = Math.Min(rank.Audio, rankAudio);
-
-                            if (rank.Audio == 1)
-                            {
-                                break;
-                            }
-                        }
+                        rank.Audio = GetAudioCopyRank(options, mediaSource, container, audioStream, transcodingProfile, audioCodec, rank.Audio);
                     }
 
                     PlayMethod playMethod = PlayMethod.Transcode;
@@ -1005,6 +986,32 @@ namespace MediaBrowser.Model.Dlna
             var profileMatch = analyzedProfiles.FirstOrDefault();
 
             return (profileMatch.Profile, profileMatch.PlayMethod);
+        }
+
+        private int GetAudioCopyRank(MediaOptions options, MediaSourceInfo mediaSource, string container, MediaStream audioStream, TranscodingProfile transcodingProfile, string? audioCodec, int audioRank)
+        {
+            var transcodingAudioCodecs = ContainerHelper.Split(transcodingProfile.AudioCodec);
+
+            foreach (var transcodingAudioCodec in transcodingAudioCodecs)
+            {
+                var failures = GetCompatibilityAudioCodec(options, mediaSource, container, audioStream, transcodingAudioCodec, true, false);
+
+                var rankAudio = 3;
+
+                if (failures == 0)
+                {
+                    rankAudio = string.Equals(transcodingAudioCodec, audioCodec, StringComparison.OrdinalIgnoreCase) ? 1 : 2;
+                }
+
+                audioRank = Math.Min(audioRank, rankAudio);
+
+                if (audioRank == 1)
+                {
+                    break;
+                }
+            }
+
+            return audioRank;
         }
 
         private (DirectPlayProfile? Profile, PlayMethod? PlayMethod, int? AudioStreamIndex, TranscodeReason TranscodeReasons) GetVideoDirectPlayProfile(
