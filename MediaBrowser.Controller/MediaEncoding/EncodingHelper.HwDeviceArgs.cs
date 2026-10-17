@@ -416,38 +416,11 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (_mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965)
             {
-                if (doOclTonemap && !isVaapiDecoder)
-                {
-                    args.Append(GetOpenclDeviceArgs(0, null, VaapiAlias, OpenclAlias));
-                    filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-                }
+                filterDevArgs = AppendVaapiIntelOpenclDeviceArgs(args, doOclTonemap, isVaapiDecoder, filterDevArgs);
             }
             else if (_mediaEncoder.IsVaapiDeviceAmd)
             {
-                // Disable AMD EFC feature since it's still unstable in upstream Mesa.
-                Environment.SetEnvironmentVariable("AMD_DEBUG", "noefc");
-
-                if (IsAmdVulkanDrmInteropUsable())
-                {
-                    args.Append(GetDrmDeviceArgs(options.VaapiDevice, DrmAlias));
-                    args.Append(GetVaapiDeviceArgs(null, null, null, null, DrmAlias, VaapiAlias));
-                    args.Append(GetVulkanDeviceArgs(0, null, DrmAlias, VulkanAlias));
-
-                    // libplacebo wants an explicitly set vulkan filter device.
-                    filterDevArgs = GetFilterHwDeviceArgs(VulkanAlias);
-                }
-                else
-                {
-                    args.Append(GetVaapiDeviceArgs(options.VaapiDevice, null, null, null, null, VaapiAlias));
-                    filterDevArgs = GetFilterHwDeviceArgs(VaapiAlias);
-
-                    if (doOclTonemap)
-                    {
-                        // ROCm/ROCr OpenCL runtime
-                        args.Append(GetOpenclDeviceArgs(0, "Advanced Micro Devices", null, OpenclAlias));
-                        filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-                    }
-                }
+                filterDevArgs = AppendVaapiAmdHwDeviceArgs(args, options, doOclTonemap);
             }
             else if (doOclTonemap)
             {
@@ -456,6 +429,49 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             args.Append(filterDevArgs);
+        }
+
+        private string AppendVaapiIntelOpenclDeviceArgs(StringBuilder args, bool doOclTonemap, bool isVaapiDecoder, string filterDevArgs)
+        {
+            if (doOclTonemap && !isVaapiDecoder)
+            {
+                args.Append(GetOpenclDeviceArgs(0, null, VaapiAlias, OpenclAlias));
+                filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
+            }
+
+            return filterDevArgs;
+        }
+
+        private string AppendVaapiAmdHwDeviceArgs(StringBuilder args, EncodingOptions options, bool doOclTonemap)
+        {
+            string filterDevArgs;
+
+            // Disable AMD EFC feature since it's still unstable in upstream Mesa.
+            Environment.SetEnvironmentVariable("AMD_DEBUG", "noefc");
+
+            if (IsAmdVulkanDrmInteropUsable())
+            {
+                args.Append(GetDrmDeviceArgs(options.VaapiDevice, DrmAlias));
+                args.Append(GetVaapiDeviceArgs(null, null, null, null, DrmAlias, VaapiAlias));
+                args.Append(GetVulkanDeviceArgs(0, null, DrmAlias, VulkanAlias));
+
+                // libplacebo wants an explicitly set vulkan filter device.
+                filterDevArgs = GetFilterHwDeviceArgs(VulkanAlias);
+            }
+            else
+            {
+                args.Append(GetVaapiDeviceArgs(options.VaapiDevice, null, null, null, null, VaapiAlias));
+                filterDevArgs = GetFilterHwDeviceArgs(VaapiAlias);
+
+                if (doOclTonemap)
+                {
+                    // ROCm/ROCr OpenCL runtime
+                    args.Append(GetOpenclDeviceArgs(0, "Advanced Micro Devices", null, OpenclAlias));
+                    filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
+                }
+            }
+
+            return filterDevArgs;
         }
 
         private bool IsAmdVulkanDrmInteropUsable()
