@@ -7098,8 +7098,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         public string GetNvdecVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
         {
-            if ((!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux())
-                || options.HardwareAccelerationType != HardwareAccelerationType.nvenc)
+            if (IsNvdecDecodingUnavailable(options))
             {
                 return null;
             }
@@ -7167,6 +7166,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private static bool IsNvdecDecodingUnavailable(EncodingOptions options)
+        {
+            return (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux())
+                || options.HardwareAccelerationType != HardwareAccelerationType.nvenc;
         }
 
         public string GetAmfVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
