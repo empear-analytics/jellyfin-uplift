@@ -1603,15 +1603,20 @@ namespace Emby.Server.Implementations.Library
                     continue;
                 }
 
-                foreach (var lc in parent.LinkedChildren)
-                {
-                    if (lc.ItemId.HasValue && lc.ItemId.Value.Equals(fromChildId))
-                    {
-                        lc.ItemId = toChildId;
-                    }
-                }
+                RerouteInMemoryLinkedChildren(parent, fromChildId, toChildId);
 
                 await RunMetadataSavers(parent, ItemUpdateType.MetadataEdit).ConfigureAwait(false);
+            }
+        }
+
+        private static void RerouteInMemoryLinkedChildren(Folder parent, Guid fromChildId, Guid toChildId)
+        {
+            foreach (var lc in parent.LinkedChildren)
+            {
+                if (lc.ItemId.HasValue && lc.ItemId.Value.Equals(fromChildId))
+                {
+                    lc.ItemId = toChildId;
+                }
             }
         }
 
