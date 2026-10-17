@@ -131,24 +131,7 @@ namespace MediaBrowser.Model.Dlna
                 // If the container specified for the profile is an HLS supported container, use that container instead, overriding the preference
                 // The client should be responsible to ensure this container is compatible
                 remuxContainer = Array.Exists(supportedHlsContainers, element => string.Equals(element, directPlayInfo.Profile?.Container, StringComparison.OrdinalIgnoreCase)) ? directPlayInfo.Profile?.Container : remuxContainer;
-                bool codeIsSupported;
-                if (item.TranscodingSubProtocol == MediaStreamProtocol.hls)
-                {
-                    // Enforce HLS audio codec restrictions
-                    if (string.Equals(remuxContainer, "mp4", StringComparison.OrdinalIgnoreCase))
-                    {
-                        codeIsSupported = _supportedHlsAudioCodecsMp4.Contains(directPlayInfo.Profile?.AudioCodec ?? directPlayInfo.Profile?.Container);
-                    }
-                    else
-                    {
-                        codeIsSupported = _supportedHlsAudioCodecsTs.Contains(directPlayInfo.Profile?.AudioCodec ?? directPlayInfo.Profile?.Container);
-                    }
-                }
-                else
-                {
-                    // Let's assume the client has given a correct container for http
-                    codeIsSupported = true;
-                }
+                bool codeIsSupported = IsRemuxAudioCodecSupported(item, remuxContainer, directPlayInfo.Profile);
 
                 if (codeIsSupported)
                 {
@@ -164,17 +147,7 @@ namespace MediaBrowser.Model.Dlna
                 playlistItem.TranscodeReasons = transcodeReasons;
             }
 
-            TranscodingProfile? transcodingProfile = null;
-            foreach (var tcProfile in options.Profile.TranscodingProfiles)
-            {
-                if (tcProfile.Type == playlistItem.MediaType
-                    && tcProfile.Context == options.Context
-                    && _transcoderSupport.CanEncodeToAudioCodec(tcProfile.AudioCodec ?? tcProfile.Container))
-                {
-                    transcodingProfile = tcProfile;
-                    break;
-                }
-            }
+            TranscodingProfile? transcodingProfile = FindAudioTranscodingProfile(options, playlistItem);
 
             if (transcodingProfile is not null)
             {
@@ -196,32 +169,83 @@ namespace MediaBrowser.Model.Dlna
                 // Honor requested max channels
                 playlistItem.GlobalMaxAudioChannels = options.MaxAudioChannels;
 
-                var configuredBitrate = options.GetMaxBitrate(true);
-
-                long transcodingBitrate = options.AudioTranscodingBitrate
-                    ?? (options.Context == EncodingContext.Streaming ? options.Profile.MusicStreamingTranscodingBitrate : null)
-                    ?? configuredBitrate
-                    ?? 128000;
-
-                if (configuredBitrate.HasValue)
-                {
-                    transcodingBitrate = Math.Min(configuredBitrate.Value, transcodingBitrate);
-                }
-
-                var longBitrate = Math.Min(transcodingBitrate, playlistItem.AudioBitrate ?? transcodingBitrate);
-                playlistItem.AudioBitrate = longBitrate > int.MaxValue ? int.MaxValue : Convert.ToInt32(longBitrate);
+                SetAudioTranscodingBitrate(options, playlistItem);
 
                 // Pure audio transcoding does not support comma separated list of transcoding codec at the moment.
                 // So just use the AudioCodec as is would be safe enough as the _transcoderSupport.CanEncodeToAudioCodec
                 // would fail so this profile will not even be picked up.
-                if (playlistItem.AudioCodecs.Count == 0 && !string.IsNullOrWhiteSpace(transcodingProfile.AudioCodec))
-                {
-                    playlistItem.AudioCodecs = [transcodingProfile.AudioCodec];
-                }
+                SetTranscodingAudioCodecIfMissing(playlistItem, transcodingProfile);
             }
 
             playlistItem.TranscodeReasons = transcodeReasons;
             return playlistItem;
+        }
+
+        private static bool IsRemuxAudioCodecSupported(MediaSourceInfo item, string? remuxContainer, DirectPlayProfile? directPlayProfile)
+        {
+            bool codeIsSupported;
+            if (item.TranscodingSubProtocol == MediaStreamProtocol.hls)
+            {
+                // Enforce HLS audio codec restrictions
+                if (string.Equals(remuxContainer, "mp4", StringComparison.OrdinalIgnoreCase))
+                {
+                    codeIsSupported = _supportedHlsAudioCodecsMp4.Contains(directPlayProfile?.AudioCodec ?? directPlayProfile?.Container);
+                }
+                else
+                {
+                    codeIsSupported = _supportedHlsAudioCodecsTs.Contains(directPlayProfile?.AudioCodec ?? directPlayProfile?.Container);
+                }
+            }
+            else
+            {
+                // Let's assume the client has given a correct container for http
+                codeIsSupported = true;
+            }
+
+            return codeIsSupported;
+        }
+
+        private TranscodingProfile? FindAudioTranscodingProfile(MediaOptions options, StreamInfo playlistItem)
+        {
+            TranscodingProfile? transcodingProfile = null;
+            foreach (var tcProfile in options.Profile.TranscodingProfiles)
+            {
+                if (tcProfile.Type == playlistItem.MediaType
+                    && tcProfile.Context == options.Context
+                    && _transcoderSupport.CanEncodeToAudioCodec(tcProfile.AudioCodec ?? tcProfile.Container))
+                {
+                    transcodingProfile = tcProfile;
+                    break;
+                }
+            }
+
+            return transcodingProfile;
+        }
+
+        private static void SetAudioTranscodingBitrate(MediaOptions options, StreamInfo playlistItem)
+        {
+            var configuredBitrate = options.GetMaxBitrate(true);
+
+            long transcodingBitrate = options.AudioTranscodingBitrate
+                ?? (options.Context == EncodingContext.Streaming ? options.Profile.MusicStreamingTranscodingBitrate : null)
+                ?? configuredBitrate
+                ?? 128000;
+
+            if (configuredBitrate.HasValue)
+            {
+                transcodingBitrate = Math.Min(configuredBitrate.Value, transcodingBitrate);
+            }
+
+            var longBitrate = Math.Min(transcodingBitrate, playlistItem.AudioBitrate ?? transcodingBitrate);
+            playlistItem.AudioBitrate = longBitrate > int.MaxValue ? int.MaxValue : Convert.ToInt32(longBitrate);
+        }
+
+        private static void SetTranscodingAudioCodecIfMissing(StreamInfo playlistItem, TranscodingProfile transcodingProfile)
+        {
+            if (playlistItem.AudioCodecs.Count == 0 && !string.IsNullOrWhiteSpace(transcodingProfile.AudioCodec))
+            {
+                playlistItem.AudioCodecs = [transcodingProfile.AudioCodec];
+            }
         }
 
         /// <summary>
