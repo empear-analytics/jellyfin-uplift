@@ -50,11 +50,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 var useBwdif = CanUseCudaBwdif(options);
 
-                return string.Format(
-                    CultureInfo.InvariantCulture,
-                    "{0}_cuda={1}:-1:0",
-                    useBwdif ? "bwdif" : "yadif",
-                    doubleRateDeint ? "1" : "0");
+                return FormatBwdifYadifDeinterlaceFilter("{0}_cuda={1}:-1:0", useBwdif, doubleRateDeint);
             }
 
             if (hwDeintSuffix.Contains("opencl", StringComparison.OrdinalIgnoreCase))
@@ -63,11 +59,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 if (SupportsOpenclDeinterlaceFilters())
                 {
-                    return string.Format(
-                        CultureInfo.InvariantCulture,
-                        "{0}_opencl={1}:-1:0",
-                        useBwdif ? "bwdif" : "yadif",
-                        doubleRateDeint ? "1" : "0");
+                    return FormatBwdifYadifDeinterlaceFilter("{0}_opencl={1}:-1:0", useBwdif, doubleRateDeint);
                 }
             }
 
@@ -88,14 +80,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 var useBwdif = CanUseVideotoolboxBwdif(options);
 
-                return string.Format(
-                    CultureInfo.InvariantCulture,
-                    "{0}_videotoolbox={1}:-1:0",
-                    useBwdif ? "bwdif" : "yadif",
-                    doubleRateDeint ? "1" : "0");
+                return FormatBwdifYadifDeinterlaceFilter("{0}_videotoolbox={1}:-1:0", useBwdif, doubleRateDeint);
             }
 
             return string.Empty;
+        }
+
+        private static string FormatBwdifYadifDeinterlaceFilter(string format, bool useBwdif, bool doubleRateDeint)
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                format,
+                useBwdif ? "bwdif" : "yadif",
+                doubleRateDeint ? "1" : "0");
         }
 
         private static bool IsHwDoubleRateDeinterlace(EncodingJobInfo state, EncodingOptions options)
