@@ -622,7 +622,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var rotation = state.VideoStream?.Rotation ?? 0;
             var transposeDir = GetTransposeDirection(state, rotation);
             var doVppTranspose = !string.IsNullOrEmpty(transposeDir);
-            var swapWAndH = Math.Abs(rotation) == 90 && (isSwDecoder || ((isVaapiDecoder || isQsvDecoder) && doVppTranspose));
+            var swapWAndH = Math.Abs(rotation) == 90 && IsSwOrTransposedVaapiOrQsvDecode(isSwDecoder, isVaapiDecoder, isQsvDecoder, doVppTranspose);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
@@ -841,6 +841,11 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static string GetHwScalePrefix(bool isQsvDecoder)
         {
             return isQsvDecoder ? "vpp" : "scale";
+        }
+
+        private static bool IsSwOrTransposedVaapiOrQsvDecode(bool isSwDecoder, bool isVaapiDecoder, bool isQsvDecoder, bool doVppTranspose)
+        {
+            return isSwDecoder || ((isVaapiDecoder || isQsvDecoder) && doVppTranspose);
         }
 
         private static bool NeedsVaapiTranspose(bool isVaapiDecoder, bool doVppTranspose)
