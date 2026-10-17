@@ -256,6 +256,11 @@ namespace MediaBrowser.Model.Dlna
                 }
             }
 
+            return GetAudioPlayMethodFromProfile(item, options, directPlayProfile, transcodeReasons);
+        }
+
+        private (DirectPlayProfile? Profile, PlayMethod? PlayMethod, TranscodeReason TranscodeReasons) GetAudioPlayMethodFromProfile(MediaSourceInfo item, MediaOptions options, DirectPlayProfile? directPlayProfile, TranscodeReason transcodeReasons)
+        {
             // The profile describes what the device supports
             // If device requirements are satisfied then allow both direct stream and direct play
             // Note: As of 10.10 codebase, SupportsDirectPlay is always true because the MediaSourceInfo initializes this key as true
