@@ -211,10 +211,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 requestedMaxHeight);
 
             var isFormatFixed = !string.IsNullOrEmpty(videoFormat);
-            var isSizeFixed = !videoWidth.HasValue
-                || outWidth.Value != videoWidth.Value
-                || !videoHeight.HasValue
-                || outHeight.Value != videoHeight.Value;
+            var isSizeFixed = IsOutputSizeChanged(videoWidth, videoHeight, outWidth, outHeight);
 
             var sizeArg = isSizeFixed ? (":w=" + outWidth.Value + ":h=" + outHeight.Value) : string.Empty;
             var formatArg = isFormatFixed ? (":format=" + videoFormat) : string.Empty;
