@@ -370,7 +370,7 @@ namespace Emby.Server.Implementations.Library
 
         private void DeleteItemPath(BaseItem item, bool isRequiredForDelete, FileSystemMetadata fileSystemInfo)
         {
-            if (Directory.Exists(fileSystemInfo.FullName) || File.Exists(fileSystemInfo.FullName))
+            if (FileSystemEntryExists(fileSystemInfo))
             {
                 try
                 {
@@ -416,6 +416,11 @@ namespace Emby.Server.Implementations.Library
                     }
                 }
             }
+        }
+
+        private static bool FileSystemEntryExists(FileSystemMetadata fileSystemInfo)
+        {
+            return Directory.Exists(fileSystemInfo.FullName) || File.Exists(fileSystemInfo.FullName);
         }
 
         private static void DeleteFileSystemEntry(FileSystemMetadata fileSystemInfo)
