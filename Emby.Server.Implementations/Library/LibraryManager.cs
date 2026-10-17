@@ -4148,9 +4148,7 @@ namespace Emby.Server.Implementations.Library
 
             foreach (var contentType in _configurationManager.Configuration.ContentTypes)
             {
-                if (string.IsNullOrWhiteSpace(contentType.Name)
-                    || _fileSystem.AreEqual(path, contentType.Name)
-                    || _fileSystem.ContainsSubPath(path, contentType.Name))
+                if (IsContentTypeOverrideOf(path, contentType))
                 {
                     (removeList ??= new()).Add(contentType);
                 }
@@ -4164,6 +4162,13 @@ namespace Emby.Server.Implementations.Library
 
                 _configurationManager.SaveConfiguration();
             }
+        }
+
+        private bool IsContentTypeOverrideOf(string path, NameValuePair contentType)
+        {
+            return string.IsNullOrWhiteSpace(contentType.Name)
+                    || _fileSystem.AreEqual(path, contentType.Name)
+                    || _fileSystem.ContainsSubPath(path, contentType.Name);
         }
 
         public void RemoveMediaPath(string virtualFolderName, string mediaPath)
