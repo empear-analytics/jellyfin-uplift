@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using Jellyfin.Data.Enums;
@@ -979,16 +980,13 @@ namespace MediaBrowser.Model.Dlna
 
                     var container = transcodingProfile.Container;
 
-                    if (videoStream is not null
-                        && options.AllowVideoStreamCopy
-                        && ContainerHelper.ContainsContainer(transcodingProfile.VideoCodec, videoCodec))
+                    if (CanCopyVideoStream(videoStream, options, transcodingProfile, videoCodec))
                     {
                         var failures = GetCompatibilityVideoCodec(options, mediaSource, container, videoStream);
                         rank.Video = failures == 0 ? 1 : 2;
                     }
 
-                    if (audioStream is not null
-                        && options.AllowAudioStreamCopy)
+                    if (CanCopyAudioStream(audioStream, options))
                     {
                         // For Audio stream, we prefer the audio codec that can be directly copied, then the codec that can otherwise satisfies
                         // the transcoding conditions, then the one does not satisfy the transcoding conditions.
@@ -1011,6 +1009,19 @@ namespace MediaBrowser.Model.Dlna
             var profileMatch = analyzedProfiles.FirstOrDefault();
 
             return (profileMatch.Profile, profileMatch.PlayMethod);
+        }
+
+        private static bool CanCopyVideoStream([NotNullWhen(true)] MediaStream? videoStream, MediaOptions options, TranscodingProfile transcodingProfile, string? videoCodec)
+        {
+            return videoStream is not null
+                && options.AllowVideoStreamCopy
+                && ContainerHelper.ContainsContainer(transcodingProfile.VideoCodec, videoCodec);
+        }
+
+        private static bool CanCopyAudioStream([NotNullWhen(true)] MediaStream? audioStream, MediaOptions options)
+        {
+            return audioStream is not null
+                && options.AllowAudioStreamCopy;
         }
 
         private int GetAudioCopyRank(MediaOptions options, MediaSourceInfo mediaSource, string container, MediaStream audioStream, TranscodingProfile transcodingProfile, string? audioCodec, int audioRank)
