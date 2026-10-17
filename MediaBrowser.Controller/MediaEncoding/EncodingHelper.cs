@@ -1402,7 +1402,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var path = mediaSource.Path;
             var protocol = mediaSource.Protocol;
 
-            if (!string.IsNullOrEmpty(mediaSource.EncoderPath) && mediaSource.EncoderProtocol.HasValue)
+            if (HasEncoderPathAndProtocol(mediaSource))
             {
                 path = mediaSource.EncoderPath;
                 protocol = mediaSource.EncoderProtocol.Value;
@@ -1431,8 +1431,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 state.InputAudioSync = "1";
             }
 
-            if (string.Equals(mediaSource.Container, "wma", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(mediaSource.Container, "asf", StringComparison.OrdinalIgnoreCase))
+            if (IsWmaOrAsfContainer(mediaSource))
             {
                 // Seeing some stuttering when transcoding wma to audio-only HLS
                 state.InputAudioSync = "1";
@@ -1492,6 +1491,17 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 request.VideoCodec = state.SupportedVideoCodecs.FirstOrDefault();
             }
+        }
+
+        private static bool HasEncoderPathAndProtocol(MediaSourceInfo mediaSource)
+        {
+            return !string.IsNullOrEmpty(mediaSource.EncoderPath) && mediaSource.EncoderProtocol.HasValue;
+        }
+
+        private static bool IsWmaOrAsfContainer(MediaSourceInfo mediaSource)
+        {
+            return string.Equals(mediaSource.Container, "wma", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mediaSource.Container, "asf", StringComparison.OrdinalIgnoreCase);
         }
 
         private void InferRequestedVideoCodec(BaseEncodingJobOptions videoRequest, string requestedUrl)
