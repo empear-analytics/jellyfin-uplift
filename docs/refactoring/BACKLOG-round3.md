@@ -118,7 +118,7 @@ Update as tasks land.
 | R3-30 | 8.45 | 8.83 | Sonnet. Three commits: the level switch extracted (8.69), Recipe S moved the video codec strings to HlsCodecStringHelpers.Video.cs (original 10.00, video part 8.17), then the profile switch (8.19). Group score by lines of code: 8.83 (84 LoC at 10.00, 155 LoC at 8.19). Left in the Video part: two mapping switches (cc 13 each, no recipe), Overall Code Complexity, GetVp9String 5 arguments (public), Primitive Obsession |
 | R3-31 | 8.47 | - | not started |
 | R3-32 | 8.62 | - | not started |
-| R3-33 | 8.62 | 8.67 | Sonnet. One commit (rule 9: the LogDebug call with `??` to LogTranscodeResult). The file is at a cliff: a 7th method brings Overall Code Complexity and Code Duplication; six candidate steps all DOWN alone, all UP (8.72 to 8.75) after a split that is itself FLAT. Excess Arguments (BuildStreamVideoItem 9, no recipe) |
+| R3-33 | 8.62 | 9.26 | Sonnet. 17 commits, four of them FLAT splits kept as pairs with the step they enable (the new pair rule): StreamBuilder.CodecProfileConditions, .VideoStreamOptions, .VideoStreamAudio, .VideoStreamLimits (all 10.00, 43 to 72 lines of code each). Group score of the five files by lines of code: 9.75; BuildStreamVideoItem cc 41 to 13. The last pair gained only +0.01. First commit (rule 9: the LogDebug call with `??` to LogTranscodeResult). The file is at a cliff: a 7th method brings Overall Code Complexity and Code Duplication; six candidate steps all DOWN alone, all UP (8.72 to 8.75) after a split that is itself FLAT. Excess Arguments (BuildStreamVideoItem 9, no recipe) |
 | R3-34 | 8.64 | - | not started |
 | R3-35 | 8.67 | - | not started |
 | R3-36 | 8.69 | - | not started |
