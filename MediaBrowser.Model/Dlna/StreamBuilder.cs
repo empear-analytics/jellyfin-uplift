@@ -771,36 +771,50 @@ namespace MediaBrowser.Model.Dlna
             if (!item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.User) && (options.AudioStreamIndex is null or < 0))
             {
                 // When user has no preferences allow stream selection on all streams.
-                if (item.DefaultAudioIndexSource == AudioIndexSource.None && audioStream is not null)
-                {
-                    candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio).ToArray();
-                    if (audioStream.IsDefault)
-                    {
-                        // If default is picked, only allow selection within default streams.
-                        candidateAudioStreams = candidateAudioStreams.Where(stream => stream.IsDefault).ToArray();
-                    }
-                }
+                candidateAudioStreams = SelectCandidatesWithoutPreference(item, audioStream, candidateAudioStreams);
 
-                if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Language))
-                {
-                    // If user has language preference, only allow stream selection within the same language.
-                    candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.Language == audioStream?.Language).ToArray();
-                    if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Default))
-                    {
-                        var defaultStreamsInPreferredLanguage = candidateAudioStreams.Where(stream => stream.IsDefault).ToArray();
+                candidateAudioStreams = SelectCandidatesByLanguageOrDefault(item, audioStream, candidateAudioStreams);
+            }
 
-                        // If the user also prefers default streams, try limit selection within default tracks in the same language.
-                        // If there is no default stream in the preferred language, allow selection on all default streams to match the "Play default audio track regardless of language" setting.
-                        candidateAudioStreams = defaultStreamsInPreferredLanguage.Length > 0
-                            ? defaultStreamsInPreferredLanguage
-                            : item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.IsDefault).ToArray();
-                    }
-                }
-                else if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Default))
+            return candidateAudioStreams;
+        }
+
+        private static ICollection<MediaStream> SelectCandidatesWithoutPreference(MediaSourceInfo item, MediaStream? audioStream, ICollection<MediaStream> candidateAudioStreams)
+        {
+            if (item.DefaultAudioIndexSource == AudioIndexSource.None && audioStream is not null)
+            {
+                candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio).ToArray();
+                if (audioStream.IsDefault)
                 {
-                    // If user prefers default streams, only allow stream selection on default streams.
-                    candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.IsDefault).ToArray();
+                    // If default is picked, only allow selection within default streams.
+                    candidateAudioStreams = candidateAudioStreams.Where(stream => stream.IsDefault).ToArray();
                 }
+            }
+
+            return candidateAudioStreams;
+        }
+
+        private static ICollection<MediaStream> SelectCandidatesByLanguageOrDefault(MediaSourceInfo item, MediaStream? audioStream, ICollection<MediaStream> candidateAudioStreams)
+        {
+            if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Language))
+            {
+                // If user has language preference, only allow stream selection within the same language.
+                candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.Language == audioStream?.Language).ToArray();
+                if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Default))
+                {
+                    var defaultStreamsInPreferredLanguage = candidateAudioStreams.Where(stream => stream.IsDefault).ToArray();
+
+                    // If the user also prefers default streams, try limit selection within default tracks in the same language.
+                    // If there is no default stream in the preferred language, allow selection on all default streams to match the "Play default audio track regardless of language" setting.
+                    candidateAudioStreams = defaultStreamsInPreferredLanguage.Length > 0
+                        ? defaultStreamsInPreferredLanguage
+                        : item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.IsDefault).ToArray();
+                }
+            }
+            else if (item.DefaultAudioIndexSource.HasFlag(AudioIndexSource.Default))
+            {
+                // If user prefers default streams, only allow stream selection on default streams.
+                candidateAudioStreams = item.MediaStreams.Where(stream => stream.Type == MediaStreamType.Audio && stream.IsDefault).ToArray();
             }
 
             return candidateAudioStreams;
