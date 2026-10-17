@@ -77,8 +77,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 var part = parts[i];
 
-                if (string.Equals(part, "fps=", StringComparison.OrdinalIgnoreCase) &&
-                    (i + 1 < parts.Length))
+                if (IsFpsLabelWithValue(part, i, parts))
                 {
                     var rate = parts[i + 1];
 
@@ -90,8 +89,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                     framerate = ParseFramerate(rate, framerate);
                 }
-                else if (state.RunTimeTicks.HasValue &&
-                    part.StartsWith("time=", StringComparison.OrdinalIgnoreCase))
+                else if (IsTimeFieldWithRuntime(state, part))
                 {
                     var time = part.Split('=', 2)[^1];
 
@@ -132,6 +130,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             return state.BaseRequest.StartTimeTicks.HasValue
                 ? TimeSpan.FromTicks(state.BaseRequest.StartTimeTicks.Value).TotalMilliseconds
                 : 0;
+        }
+
+        private static bool IsFpsLabelWithValue(string part, int i, string[] parts)
+        {
+            return string.Equals(part, "fps=", StringComparison.OrdinalIgnoreCase) &&
+                    (i + 1 < parts.Length);
+        }
+
+        private static bool IsTimeFieldWithRuntime(EncodingJobInfo state, string part)
+        {
+            return state.RunTimeTicks.HasValue &&
+                    part.StartsWith("time=", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
