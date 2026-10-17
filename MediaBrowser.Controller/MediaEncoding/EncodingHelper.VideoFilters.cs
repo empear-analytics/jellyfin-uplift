@@ -427,19 +427,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var framerate = GetFramerateParam(state);
             if (mainFilters is not null && framerate.HasValue)
             {
-                var doDeintH2645 = IsDeinterlaceAvailable(state);
-                var fpsFilter = string.Format(CultureInfo.InvariantCulture, "fps={0}", framerate.Value);
-
-                // For filter chain containing the deinterlace filter,
-                // place the fps filter at the end to preserve temporal info.
-                if (doDeintH2645)
-                {
-                    mainFilters.Add(fpsFilter);
-                }
-                else
-                {
-                    mainFilters.Insert(0, fpsFilter);
-                }
+                AddFpsFilter(state, mainFilters, framerate);
             }
 
             var mainStr = string.Empty;
@@ -501,6 +489,23 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static void AddFpsFilter(EncodingJobInfo state, List<string> mainFilters, double? framerate)
+        {
+            var doDeintH2645 = IsDeinterlaceAvailable(state);
+            var fpsFilter = string.Format(CultureInfo.InvariantCulture, "fps={0}", framerate.Value);
+
+            // For filter chain containing the deinterlace filter,
+            // place the fps filter at the end to preserve temporal info.
+            if (doDeintH2645)
+            {
+                mainFilters.Add(fpsFilter);
+            }
+            else
+            {
+                mainFilters.Insert(0, fpsFilter);
+            }
         }
 
         private static bool HasSubtitleOverlay(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters)
