@@ -240,21 +240,28 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // https://developer.apple.com/documentation/http_live_streaming/hls_authoring_specification_for_apple_devices
                 if (HasUnsupportedHlsChannelLayout(state, resultChannels))
                 {
-                    // We can let FFMpeg supply an extra LFE channel for 5ch and 7ch to make them 5.1 and 7.1
-                    if (resultChannels == 5)
-                    {
-                        resultChannels = 6;
-                    }
-                    else if (resultChannels == 7)
-                    {
-                        resultChannels = 8;
-                    }
-                    else
-                    {
-                        // For other weird layout, just downmix to stereo for compatibility
-                        resultChannels = 2;
-                    }
+                    resultChannels = GetHlsCompatibleChannelCount(resultChannels);
                 }
+            }
+
+            return resultChannels;
+        }
+
+        private static int? GetHlsCompatibleChannelCount(int? resultChannels)
+        {
+            // We can let FFMpeg supply an extra LFE channel for 5ch and 7ch to make them 5.1 and 7.1
+            if (resultChannels == 5)
+            {
+                resultChannels = 6;
+            }
+            else if (resultChannels == 7)
+            {
+                resultChannels = 8;
+            }
+            else
+            {
+                // For other weird layout, just downmix to stereo for compatibility
+                resultChannels = 2;
             }
 
             return resultChannels;
