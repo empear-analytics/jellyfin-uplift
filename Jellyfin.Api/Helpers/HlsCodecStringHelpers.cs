@@ -253,20 +253,7 @@ public static class HlsCodecStringHelpers
 
         var lumaPictureSize = width * height;
         var lumaSampleRate = lumaPictureSize * framerate;
-        var levelString = lumaPictureSize switch
-        {
-            <= 0 => "00",
-            <= 36864 => "10",
-            <= 73728 => "11",
-            <= 122880 => "20",
-            <= 245760 => "21",
-            <= 552960 => "30",
-            <= 983040 => "31",
-            <= 2228224 => lumaSampleRate <= 83558400 ? "40" : "41",
-            <= 8912896 => lumaSampleRate <= 311951360 ? "50" : (lumaSampleRate <= 588251136 ? "51" : "52"),
-            <= 35651584 => lumaSampleRate <= 1176502272 ? "60" : (lumaSampleRate <= 4706009088 ? "61" : "62"),
-            _ => "00" // This should not happen
-        };
+        var levelString = GetVp9LevelString(lumaPictureSize, lumaSampleRate);
 
         if (IsUnsupportedBitDepth(bitDepth))
         {
@@ -357,6 +344,24 @@ public static class HlsCodecStringHelpers
             .AppendFormat(CultureInfo.InvariantCulture, "{0:D2}", dvLevel);
 
         return result.ToString();
+    }
+
+    private static string GetVp9LevelString(int lumaPictureSize, float lumaSampleRate)
+    {
+        return lumaPictureSize switch
+        {
+            <= 0 => "00",
+            <= 36864 => "10",
+            <= 73728 => "11",
+            <= 122880 => "20",
+            <= 245760 => "21",
+            <= 552960 => "30",
+            <= 983040 => "31",
+            <= 2228224 => lumaSampleRate <= 83558400 ? "40" : "41",
+            <= 8912896 => lumaSampleRate <= 311951360 ? "50" : (lumaSampleRate <= 588251136 ? "51" : "52"),
+            <= 35651584 => lumaSampleRate <= 1176502272 ? "60" : (lumaSampleRate <= 4706009088 ? "61" : "62"),
+            _ => "00" // This should not happen
+        };
     }
 
     private static bool IsDtsCoreProfile(string? profile)
