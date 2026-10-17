@@ -346,14 +346,19 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         private bool IsSwTonemapAvailable(EncodingJobInfo state, EncodingOptions options)
         {
-            if (state.VideoStream is null
-                || GetVideoColorBitDepth(state) < 10
-                || !_mediaEncoder.SupportsFilter("tonemapx"))
+            if (IsSwTonemapInputUnsupported(state))
             {
                 return false;
             }
 
             return state.VideoStream.VideoRange == VideoRange.HDR;
+        }
+
+        private bool IsSwTonemapInputUnsupported(EncodingJobInfo state)
+        {
+            return state.VideoStream is null
+                || GetVideoColorBitDepth(state) < 10
+                || !_mediaEncoder.SupportsFilter("tonemapx");
         }
 
         private bool IsHwTonemapAvailable(EncodingJobInfo state, EncodingOptions options)
