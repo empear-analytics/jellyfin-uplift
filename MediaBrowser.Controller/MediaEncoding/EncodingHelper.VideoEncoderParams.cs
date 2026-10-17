@@ -658,6 +658,13 @@ namespace MediaBrowser.Controller.MediaEncoding
                 param += string.Format(CultureInfo.InvariantCulture, " -r {0}", framerate.Value.ToString(CultureInfo.InvariantCulture));
             }
 
+            param = AppendVideoProfileAndLevelParams(param, state, videoEncoder);
+
+            return AppendVideoEncoderSpecificParams(param, videoEncoder, encodingOptions);
+        }
+
+        private string AppendVideoProfileAndLevelParams(string param, EncodingJobInfo state, string videoEncoder)
+        {
             var targetVideoCodec = state.ActualOutputVideoCodec;
             if (IsHevcCodecName(targetVideoCodec))
             {
@@ -683,7 +690,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 param = AppendLevelParam(param, videoEncoder, level);
             }
 
-            return AppendVideoEncoderSpecificParams(param, videoEncoder, encodingOptions);
+            return param;
         }
 
         private string AppendVideoEncoderSpecificParams(string param, string videoEncoder, EncodingOptions encodingOptions)
