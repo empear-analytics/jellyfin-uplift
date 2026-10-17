@@ -724,10 +724,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 memoryOutput = true;
             }
 
-            if (memoryOutput)
-            {
-                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
-            }
+            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
             AddQsvInQsvOutMapping(mainFilters, isQsvInQsvOut, doOclTonemap, isVaapiDecoder);
 
