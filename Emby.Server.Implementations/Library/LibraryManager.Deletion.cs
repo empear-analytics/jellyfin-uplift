@@ -374,32 +374,17 @@ namespace Emby.Server.Implementations.Library
             {
                 try
                 {
-                    _logger.LogInformation(
-                        "Deleting item path, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
-                        item.GetType().Name,
-                        item.Name ?? "Unknown name",
-                        fileSystemInfo.FullName,
-                        item.Id);
+                    LogDeletingItemPath(item, fileSystemInfo);
 
                     DeleteFileSystemEntry(fileSystemInfo);
                 }
                 catch (DirectoryNotFoundException)
                 {
-                    _logger.LogInformation(
-                        "Directory not found, only removing from database, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
-                        item.GetType().Name,
-                        item.Name ?? "Unknown name",
-                        fileSystemInfo.FullName,
-                        item.Id);
+                    LogItemDirectoryNotFound(item, fileSystemInfo);
                 }
                 catch (FileNotFoundException)
                 {
-                    _logger.LogInformation(
-                        "File not found, only removing from database, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
-                        item.GetType().Name,
-                        item.Name ?? "Unknown name",
-                        fileSystemInfo.FullName,
-                        item.Id);
+                    LogItemFileNotFound(item, fileSystemInfo);
                 }
                 catch (IOException)
                 {
@@ -416,6 +401,36 @@ namespace Emby.Server.Implementations.Library
                     }
                 }
             }
+        }
+
+        private void LogDeletingItemPath(BaseItem item, FileSystemMetadata fileSystemInfo)
+        {
+            _logger.LogInformation(
+                "Deleting item path, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
+                item.GetType().Name,
+                item.Name ?? "Unknown name",
+                fileSystemInfo.FullName,
+                item.Id);
+        }
+
+        private void LogItemDirectoryNotFound(BaseItem item, FileSystemMetadata fileSystemInfo)
+        {
+            _logger.LogInformation(
+                "Directory not found, only removing from database, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
+                item.GetType().Name,
+                item.Name ?? "Unknown name",
+                fileSystemInfo.FullName,
+                item.Id);
+        }
+
+        private void LogItemFileNotFound(BaseItem item, FileSystemMetadata fileSystemInfo)
+        {
+            _logger.LogInformation(
+                "File not found, only removing from database, Type: {Type}, Name: {Name}, Path: {Path}, Id: {Id}",
+                item.GetType().Name,
+                item.Name ?? "Unknown name",
+                fileSystemInfo.FullName,
+                item.Id);
         }
 
         private static bool FileSystemEntryExists(FileSystemMetadata fileSystemInfo)
