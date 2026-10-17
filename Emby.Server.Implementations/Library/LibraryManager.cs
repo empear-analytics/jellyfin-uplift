@@ -1772,14 +1772,7 @@ namespace Emby.Server.Implementations.Library
 
         public IReadOnlyList<BaseItem> GetItemList(InternalItemsQuery query, bool allowExternalContent)
         {
-            if (query.Recursive && !query.ParentId.IsEmpty())
-            {
-                var parent = GetItemById(query.ParentId);
-                if (parent is not null)
-                {
-                    SetTopParentIdsOrAncestors(query, [parent]);
-                }
-            }
+            SetTopParentIdsFromParentId(query);
 
             if (query.User is not null)
             {
@@ -1796,14 +1789,7 @@ namespace Emby.Server.Implementations.Library
 
         public int GetCount(InternalItemsQuery query)
         {
-            if (query.Recursive && !query.ParentId.IsEmpty())
-            {
-                var parent = GetItemById(query.ParentId);
-                if (parent is not null)
-                {
-                    SetTopParentIdsOrAncestors(query, [parent]);
-                }
-            }
+            SetTopParentIdsFromParentId(query);
 
             if (query.User is not null)
             {
@@ -1815,14 +1801,7 @@ namespace Emby.Server.Implementations.Library
 
         public ItemCounts GetItemCounts(InternalItemsQuery query)
         {
-            if (query.Recursive && !query.ParentId.IsEmpty())
-            {
-                var parent = GetItemById(query.ParentId);
-                if (parent is not null)
-                {
-                    SetTopParentIdsOrAncestors(query, [parent]);
-                }
-            }
+            SetTopParentIdsFromParentId(query);
 
             if (query.User is not null)
             {
@@ -1924,20 +1903,7 @@ namespace Emby.Server.Implementations.Library
 
         public QueryResult<BaseItem> QueryItems(InternalItemsQuery query)
         {
-            if (query.User is not null)
-            {
-                AddUserToQuery(query, query.User);
-            }
-
-            if (query.EnableTotalRecordCount)
-            {
-                return _itemRepository.GetItems(query);
-            }
-
-            return new QueryResult<BaseItem>(
-                query.StartIndex,
-                null,
-                _itemRepository.GetItemList(query));
+            return QueryItemsForUser(query);
         }
 
         public IReadOnlyList<Guid> GetItemIds(InternalItemsQuery query)
@@ -2048,15 +2014,13 @@ namespace Emby.Server.Implementations.Library
 
         public QueryResult<BaseItem> GetItemsResult(InternalItemsQuery query)
         {
-            if (query.Recursive && !query.ParentId.IsEmpty())
-            {
-                var parent = GetItemById(query.ParentId);
-                if (parent is not null)
-                {
-                    SetTopParentIdsOrAncestors(query, [parent]);
-                }
-            }
+            SetTopParentIdsFromParentId(query);
 
+            return QueryItemsForUser(query);
+        }
+
+        private QueryResult<BaseItem> QueryItemsForUser(InternalItemsQuery query)
+        {
             if (query.User is not null)
             {
                 AddUserToQuery(query, query.User);
@@ -2071,6 +2035,18 @@ namespace Emby.Server.Implementations.Library
                 query.StartIndex,
                 null,
                 _itemRepository.GetItemList(query));
+        }
+
+        private void SetTopParentIdsFromParentId(InternalItemsQuery query)
+        {
+            if (query.Recursive && !query.ParentId.IsEmpty())
+            {
+                var parent = GetItemById(query.ParentId);
+                if (parent is not null)
+                {
+                    SetTopParentIdsOrAncestors(query, [parent]);
+                }
+            }
         }
 
         private void SetTopParentIdsOrAncestors(InternalItemsQuery query, IReadOnlyCollection<BaseItem> parents)
