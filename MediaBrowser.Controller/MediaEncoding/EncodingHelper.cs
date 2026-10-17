@@ -1649,12 +1649,7 @@ namespace MediaBrowser.Controller.MediaEncoding
         // Important: make sure not to use it with wtv because it breaks seeking
         private string GetCopiedAudioTrimBsf(EncodingJobInfo state)
         {
-            if (state.TranscodingType is not TranscodingJobType.Hls
-                || !state.IsVideoRequest
-                || IsCopyCodec(state.OutputVideoCodec)
-                || !IsCopyCodec(state.OutputAudioCodec)
-                || string.Equals(state.InputContainer, "wtv", StringComparison.OrdinalIgnoreCase)
-                || _mediaEncoder.EncoderVersion < _minFFmpegNoiseBsfDrop)
+            if (IsCopiedAudioTrimUnsupported(state))
             {
                 return null;
             }
@@ -1670,6 +1665,16 @@ namespace MediaBrowser.Controller.MediaEncoding
                 CultureInfo.InvariantCulture,
                 "noise=drop='lt(pts*tb\\,{0:F3})'",
                 seekSeconds);
+        }
+
+        private bool IsCopiedAudioTrimUnsupported(EncodingJobInfo state)
+        {
+            return state.TranscodingType is not TranscodingJobType.Hls
+                || !state.IsVideoRequest
+                || IsCopyCodec(state.OutputVideoCodec)
+                || !IsCopyCodec(state.OutputAudioCodec)
+                || string.Equals(state.InputContainer, "wtv", StringComparison.OrdinalIgnoreCase)
+                || _mediaEncoder.EncoderVersion < _minFFmpegNoiseBsfDrop;
         }
 
         public static string GetSegmentFileExtension(string segmentContainer)
