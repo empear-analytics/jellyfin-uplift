@@ -2413,15 +2413,11 @@ namespace Emby.Server.Implementations.Library
                 }
                 else if (orderedItems is null)
                 {
-                    orderedItems = sortOrder == SortOrder.Descending
-                        ? items.OrderByDescending(i => i, orderBy)
-                        : items.OrderBy(i => i, orderBy);
+                    orderedItems = OrderItems(items, orderBy, sortOrder);
                 }
                 else
                 {
-                    orderedItems = sortOrder == SortOrder.Descending
-                        ? orderedItems!.ThenByDescending(i => i, orderBy)
-                        : orderedItems!.ThenBy(i => i, orderBy); // orderedItems is set during the first iteration
+                    orderedItems = ThenOrderItems(orderedItems, orderBy, sortOrder);
                 }
             }
 
@@ -2451,19 +2447,29 @@ namespace Emby.Server.Implementations.Library
                 }
                 else if (orderedItems is null)
                 {
-                    orderedItems = sortOrder == SortOrder.Descending
-                        ? items.OrderByDescending(i => i, comparer)
-                        : items.OrderBy(i => i, comparer);
+                    orderedItems = OrderItems(items, comparer, sortOrder);
                 }
                 else
                 {
-                    orderedItems = sortOrder == SortOrder.Descending
-                        ? orderedItems!.ThenByDescending(i => i, comparer)
-                        : orderedItems!.ThenBy(i => i, comparer); // orderedItems is set during the first iteration
+                    orderedItems = ThenOrderItems(orderedItems, comparer, sortOrder);
                 }
             }
 
             return orderedItems ?? items;
+        }
+
+        private static IOrderedEnumerable<BaseItem> OrderItems(IEnumerable<BaseItem> items, IBaseItemComparer? comparer, SortOrder sortOrder)
+        {
+            return sortOrder == SortOrder.Descending
+                ? items.OrderByDescending(i => i, comparer)
+                : items.OrderBy(i => i, comparer);
+        }
+
+        private static IOrderedEnumerable<BaseItem> ThenOrderItems(IOrderedEnumerable<BaseItem> orderedItems, IBaseItemComparer? comparer, SortOrder sortOrder)
+        {
+            return sortOrder == SortOrder.Descending
+                ? orderedItems!.ThenByDescending(i => i, comparer)
+                : orderedItems!.ThenBy(i => i, comparer); // orderedItems is set during the first iteration
         }
 
         /// <summary>
