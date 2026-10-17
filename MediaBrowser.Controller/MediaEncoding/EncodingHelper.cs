@@ -230,8 +230,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     { HardwareAccelerationType.rkmpp,                hwEncoder + "_rkmpp" },
                 };
 
-                if (hwType != HardwareAccelerationType.none
-                    && encodingOptions.EnableHardwareEncoding
+                if (IsHardwareEncodingEnabled(hwType, encodingOptions)
                     && codecMap.TryGetValue(hwType, out var preferredEncoder)
                     && _mediaEncoder.SupportsEncoder(preferredEncoder))
                 {
@@ -240,6 +239,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return defaultEncoder;
+        }
+
+        private static bool IsHardwareEncodingEnabled(HardwareAccelerationType hwType, EncodingOptions encodingOptions)
+        {
+            return hwType != HardwareAccelerationType.none
+                && encodingOptions.EnableHardwareEncoding;
         }
 
         private string GetMjpegEncoder(EncodingJobInfo state, EncodingOptions encodingOptions)
