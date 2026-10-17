@@ -196,7 +196,7 @@ namespace MediaBrowser.Controller.MediaEncoding
         public string GetProgressiveVideoAudioArguments(EncodingJobInfo state, EncodingOptions encodingOptions)
         {
             // If the video doesn't have an audio stream, return a default.
-            if (state.AudioStream is null && state.VideoStream is not null)
+            if (IsVideoWithoutAudio(state))
             {
                 return string.Empty;
             }
@@ -214,9 +214,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var channels = state.OutputAudioChannels;
 
             // Must match the condition under which GetAudioFilterParam emits the downmix filter.
-            var useDownMixAlgorithm = channels == 2
-                                      && state.AudioStream?.Channels > 2
-                                      && DownMixAlgorithmsHelper.AlgorithmFilterStrings.ContainsKey((encodingOptions.DownMixStereoAlgorithm, DownMixAlgorithmsHelper.InferChannelLayout(state.AudioStream)));
+            var useDownMixAlgorithm = UsesDownMixAlgorithm(state, encodingOptions, channels);
 
             if (channels.HasValue && !useDownMixAlgorithm)
             {
@@ -245,6 +243,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             args += GetAudioFilterParam(state, encodingOptions);
 
             return args;
+        }
+
+        private static bool UsesDownMixAlgorithm(EncodingJobInfo state, EncodingOptions encodingOptions, int? channels)
+        {
+            return channels == 2
+                && state.AudioStream?.Channels > 2
+                && DownMixAlgorithmsHelper.AlgorithmFilterStrings.ContainsKey((encodingOptions.DownMixStereoAlgorithm, DownMixAlgorithmsHelper.InferChannelLayout(state.AudioStream)));
+        }
+
+        private static bool IsVideoWithoutAudio(EncodingJobInfo state)
+        {
+            return state.AudioStream is null && state.VideoStream is not null;
         }
 
         public string GetProgressiveAudioFullCommandLine(EncodingJobInfo state, EncodingOptions encodingOptions, string outputPath)
