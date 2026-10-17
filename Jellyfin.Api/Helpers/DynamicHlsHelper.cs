@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -630,7 +631,7 @@ public class DynamicHlsHelper
                 _ => string.Empty // Don't label Dovi with EL and SDR due to compatability issues, ignore invalid configurations
             };
 
-            if (dvProfile is null || dvLevel is null || string.IsNullOrEmpty(dvRangeString))
+            if (IsIncompleteDvSignal(dvProfile, dvLevel, dvRangeString))
             {
                 return;
             }
@@ -662,6 +663,11 @@ public class DynamicHlsHelper
                 .Append("cdm4")
                 .Append('"');
         }
+    }
+
+    private static bool IsIncompleteDvSignal([NotNullWhen(false)] int? dvProfile, [NotNullWhen(false)] int? dvLevel, string dvRangeString)
+    {
+        return dvProfile is null || dvLevel is null || string.IsNullOrEmpty(dvRangeString);
     }
 
     /// <summary>
