@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -246,7 +247,7 @@ namespace MediaBrowser.MediaEncoding.Probing
 
         internal static int? GetEstimatedAudioBitrate(string codec, string profile, int? channels)
         {
-            if (!channels.HasValue || channels.Value < 1 || string.IsNullOrEmpty(codec))
+            if (IsAudioBitrateNotEstimable(codec, channels))
             {
                 return null;
             }
@@ -267,6 +268,11 @@ namespace MediaBrowser.MediaEncoding.Probing
                 "truehd" or "mlp" => channelCount * 700000,
                 _ => null
             };
+        }
+
+        private static bool IsAudioBitrateNotEstimable(string codec, [NotNullWhen(false)] int? channels)
+        {
+            return !channels.HasValue || channels.Value < 1 || string.IsNullOrEmpty(codec);
         }
 
         private static bool IsDtsLossless(string profile)
