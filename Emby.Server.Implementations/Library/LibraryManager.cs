@@ -711,16 +711,7 @@ namespace Emby.Server.Implementations.Library
                 return false;
             }
 
-            var pathToCheck = item switch
-            {
-                Genre => _configurationManager.ApplicationPaths.GenrePath,
-                MusicArtist => _configurationManager.ApplicationPaths.ArtistsPath,
-                MusicGenre => _configurationManager.ApplicationPaths.MusicGenrePath,
-                Person => _configurationManager.ApplicationPaths.PeoplePath,
-                Studio => _configurationManager.ApplicationPaths.StudioPath,
-                Year => _configurationManager.ApplicationPaths.YearPath,
-                _ => null
-            };
+            var pathToCheck = GetInternalItemsPath(item);
 
             var itemPath = item.Path;
             if (!string.IsNullOrEmpty(pathToCheck) && !string.IsNullOrEmpty(itemPath))
@@ -732,6 +723,20 @@ namespace Emby.Server.Implementations.Library
             }
 
             return false;
+        }
+
+        private string? GetInternalItemsPath(BaseItem item)
+        {
+            return item switch
+            {
+                Genre => _configurationManager.ApplicationPaths.GenrePath,
+                MusicArtist => _configurationManager.ApplicationPaths.ArtistsPath,
+                MusicGenre => _configurationManager.ApplicationPaths.MusicGenrePath,
+                Person => _configurationManager.ApplicationPaths.PeoplePath,
+                Studio => _configurationManager.ApplicationPaths.StudioPath,
+                Year => _configurationManager.ApplicationPaths.YearPath,
+                _ => null
+            };
         }
 
         private List<string> GetMetadataPaths(BaseItem item, IEnumerable<BaseItem> children)
