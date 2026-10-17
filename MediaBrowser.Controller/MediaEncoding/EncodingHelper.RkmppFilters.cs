@@ -95,9 +95,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doOclTonemap = IsHwTonemapAvailable(state, options);
 
-            var hasSubs = state.SubtitleStream is not null && ShouldEncodeSubtitle(state);
-            var hasTextSubs = hasSubs && state.SubtitleStream.IsTextSubtitleStream;
-            var hasGraphicalSubs = hasSubs && !state.SubtitleStream.IsTextSubtitleStream;
+            var hasSubs = HasSubtitlesToEncode(state);
+            var hasTextSubs = HasTextSubtitles(state, hasSubs);
+            var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
             var hasAssSubs = hasSubs
                 && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
@@ -120,11 +120,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // INPUT sw surface(memory)
                 // sw deint
-                if (doDeintH2645)
-                {
-                    var swDeintFilter = GetSwDeinterlaceFilter(state, options);
-                    mainFilters.Add(swDeintFilter);
-                }
+                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 var outFormat = doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
@@ -201,7 +197,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (doOclTonemap && isRkmppDecoder)
+            if (NeedsHwToOpenclMapping(doOclTonemap, isRkmppDecoder))
             {
                 // map from rkmpp/drm to opencl via drm-opencl interop.
                 mainFilters.Add("hwmap=derive_device=opencl");
@@ -233,12 +229,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (memoryOutput)
             {
-                // text subtitles
-                if (hasTextSubs)
-                {
-                    var textSubtitlesFilter = GetTextSubtitlesFilter(state, false, false);
-                    mainFilters.Add(textSubtitlesFilter);
-                }
+                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
             }
 
             if (isDrmInDrmOut)
