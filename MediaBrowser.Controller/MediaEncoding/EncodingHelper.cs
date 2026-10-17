@@ -1057,13 +1057,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else
             {
-                var user = state.User;
-
-                // If the user doesn't have access to transcoding, then force stream copy, regardless of whether it will be compatible or not
-                if (user is not null && !user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding))
-                {
-                    state.OutputVideoCodec = "copy";
-                }
+                ApplyVideoCopyFallback(state);
             }
 
             var preventHlsAudioCopy = state.TranscodingType is TranscodingJobType.Hls
@@ -1080,20 +1074,36 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else
             {
-                var user = state.User;
+                ApplyAudioCopyFallback(state, audioCopyFailureReasons);
+            }
+        }
 
-                // If the user doesn't have access to transcoding, then force stream copy, regardless of whether it will be compatible or not
-                if (user is not null && !user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding))
-                {
-                    state.OutputAudioCodec = "copy";
-                }
-                else if (state.AudioStream is not null && !IsCopyCodec(state.OutputAudioCodec))
-                {
-                    // Audio is actually being re-encoded although the playback determination may have considered the source copyable.
-                    // Only carry the primary "cannot be passed through" cause - the codec mismatch.
-                    // Bitrate/channels/sample-rate/bit-depth copy refusals are consequences of the chosen transcode target.
-                    state.AddTranscodeReason(audioCopyFailureReasons & TranscodeReason.AudioCodecNotSupported);
-                }
+        private static void ApplyVideoCopyFallback(EncodingJobInfo state)
+        {
+            var user = state.User;
+
+            // If the user doesn't have access to transcoding, then force stream copy, regardless of whether it will be compatible or not
+            if (user is not null && !user.HasPermission(PermissionKind.EnableVideoPlaybackTranscoding))
+            {
+                state.OutputVideoCodec = "copy";
+            }
+        }
+
+        private static void ApplyAudioCopyFallback(EncodingJobInfo state, TranscodeReason audioCopyFailureReasons)
+        {
+            var user = state.User;
+
+            // If the user doesn't have access to transcoding, then force stream copy, regardless of whether it will be compatible or not
+            if (user is not null && !user.HasPermission(PermissionKind.EnableAudioPlaybackTranscoding))
+            {
+                state.OutputAudioCodec = "copy";
+            }
+            else if (state.AudioStream is not null && !IsCopyCodec(state.OutputAudioCodec))
+            {
+                // Audio is actually being re-encoded although the playback determination may have considered the source copyable.
+                // Only carry the primary "cannot be passed through" cause - the codec mismatch.
+                // Bitrate/channels/sample-rate/bit-depth copy refusals are consequences of the chosen transcode target.
+                state.AddTranscodeReason(audioCopyFailureReasons & TranscodeReason.AudioCodecNotSupported);
             }
         }
 
