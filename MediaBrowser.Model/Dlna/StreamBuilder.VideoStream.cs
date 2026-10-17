@@ -116,8 +116,7 @@ namespace MediaBrowser.Model.Dlna
             // Honor requested max channels
             playlistItem.GlobalMaxAudioChannels = channelsExceedsLimit ? playlistItem.TranscodingMaxAudioChannels : options.MaxAudioChannels;
 
-            int audioBitrate = GetAudioBitrate(options.GetMaxBitrate(true) ?? 0, playlistItem.TargetAudioCodec, audioStream, playlistItem);
-            playlistItem.AudioBitrate = Math.Min(playlistItem.AudioBitrate ?? audioBitrate, audioBitrate);
+            ApplyAudioBitrateLimit(options, playlistItem, audioStream);
 
             bool? isSecondaryAudio = audioStream is null ? null : item.IsSecondaryAudio(audioStream);
             int? inputAudioBitrate = audioStream?.BitRate;
@@ -140,6 +139,12 @@ namespace MediaBrowser.Model.Dlna
             ApplyMaxVideoBitrate(playlistItem, maxBitrateSetting);
 
             LogTranscodeResult(options, item, playlistItem, audioStream);
+        }
+
+        private void ApplyAudioBitrateLimit(MediaOptions options, StreamInfo playlistItem, MediaStream? audioStream)
+        {
+            int audioBitrate = GetAudioBitrate(options.GetMaxBitrate(true) ?? 0, playlistItem.TargetAudioCodec, audioStream, playlistItem);
+            playlistItem.AudioBitrate = Math.Min(playlistItem.AudioBitrate ?? audioBitrate, audioBitrate);
         }
 
         private void LogTranscodeResult(MediaOptions options, MediaSourceInfo item, StreamInfo playlistItem, MediaStream? audioStream)
