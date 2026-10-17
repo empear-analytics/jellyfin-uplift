@@ -568,6 +568,11 @@ namespace MediaBrowser.Model.Dlna
                 }
             }
 
+            return GetUnsupportedReasons(containerSupported, videoSupported, audioSupported);
+        }
+
+        private static TranscodeReason GetUnsupportedReasons(bool containerSupported, bool videoSupported, bool audioSupported)
+        {
             TranscodeReason reasons = 0;
             if (!containerSupported)
             {
