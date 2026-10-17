@@ -8433,7 +8433,7 @@ namespace MediaBrowser.Controller.MediaEncoding
         public static int GetSubtitleStreamIndexForFfmpeg(MediaSourceInfo mediaSource, MediaStream subtitleStream)
         {
             var index = FindIndex(mediaSource.MediaStreams, subtitleStream);
-            if (index == -1 || subtitleStream.IsExternal || mediaSource.VideoType != VideoType.BluRay)
+            if (IsIndexUnaffectedByBluRayHiddenStreams(index, mediaSource, subtitleStream))
             {
                 return index;
             }
@@ -8446,6 +8446,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && s.Index < subtitleStream.Index);
 
             return index + hiddenStreamsBefore;
+        }
+
+        private static bool IsIndexUnaffectedByBluRayHiddenStreams(int index, MediaSourceInfo mediaSource, MediaStream subtitleStream)
+        {
+            return index == -1 || subtitleStream.IsExternal || mediaSource.VideoType != VideoType.BluRay;
         }
 
         public static bool IsCopyCodec(string codec)
