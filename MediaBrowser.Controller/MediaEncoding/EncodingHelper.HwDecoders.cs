@@ -306,13 +306,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 if (options.PreferSystemNativeHwDecoder)
                 {
-                    if (isVaapiSupported && isCodecAvailable)
+                    if (IsHwaccelAvailable(isVaapiSupported, isCodecAvailable))
                     {
                         return " -hwaccel vaapi" + (outputHwSurface ? " -hwaccel_output_format vaapi -noautorotate" + stripRotationDataArgs : string.Empty)
                             + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + (isAv1 ? " -c:v av1" : string.Empty);
                     }
 
-                    if (isD3d11Supported && isCodecAvailable)
+                    if (IsHwaccelAvailable(isD3d11Supported, isCodecAvailable))
                     {
                         return " -hwaccel d3d11va" + (outputHwSurface ? " -hwaccel_output_format d3d11 -noautorotate" + stripRotationDataArgs : string.Empty)
                             + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + " -threads 2" + (isAv1 ? " -c:v av1" : string.Empty);
@@ -320,7 +320,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
                 else
                 {
-                    if (isQsvSupported && isCodecAvailable)
+                    if (IsHwaccelAvailable(isQsvSupported, isCodecAvailable))
                     {
                         return " -hwaccel qsv" + (outputHwSurface ? " -hwaccel_output_format qsv -noautorotate" + stripRotationDataArgs : string.Empty);
                     }
@@ -330,7 +330,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // Nvidia cuda
             if (hardwareAccelerationType == HardwareAccelerationType.nvenc)
             {
-                if (isCudaSupported && isCodecAvailable)
+                if (IsHwaccelAvailable(isCudaSupported, isCodecAvailable))
                 {
                     if (options.EnableEnhancedNvdecDecoder)
                     {
@@ -347,7 +347,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // Amd d3d11va
             if (hardwareAccelerationType == HardwareAccelerationType.amf)
             {
-                if (isD3d11Supported && isCodecAvailable)
+                if (IsHwaccelAvailable(isD3d11Supported, isCodecAvailable))
                 {
                     return " -hwaccel d3d11va" + (outputHwSurface ? " -hwaccel_output_format d3d11 -noautorotate" + stripRotationDataArgs : string.Empty)
                         + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + " -threads 2" + (isAv1 ? " -c:v av1" : string.Empty);
@@ -374,6 +374,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private static bool IsHwaccelAvailable(bool isHwaccelSupported, bool isCodecAvailable)
+        {
+            return isHwaccelSupported && isCodecAvailable;
         }
 
         private bool IsD3d11HwaccelSupported(bool isWindows)
