@@ -742,6 +742,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 profile = "main";
             }
 
+            return NormalizeH264EncoderProfile(videoEncoder, profile);
+        }
+
+        private static string NormalizeH264EncoderProfile(string videoEncoder, string profile)
+        {
             // h264_vaapi does not support Baseline profile, force Constrained Baseline in this case,
             // which is compatible (and ugly).
             if (IsVaapiH264BaselineProfile(videoEncoder, profile))
