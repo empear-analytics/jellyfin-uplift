@@ -45,10 +45,10 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         public string GetHwDeinterlaceFilter(EncodingJobInfo state, EncodingOptions options, string hwDeintSuffix)
         {
-            var doubleRateDeint = options.DeinterlaceDoubleRate && (state.VideoStream?.ReferenceFrameRate ?? 60) <= 30;
+            var doubleRateDeint = IsHwDoubleRateDeinterlace(state, options);
             if (hwDeintSuffix.Contains("cuda", StringComparison.OrdinalIgnoreCase))
             {
-                var useBwdif = options.DeinterlaceMethod == DeinterlaceMethod.bwdif && _mediaEncoder.SupportsFilter("bwdif_cuda");
+                var useBwdif = CanUseCudaBwdif(options);
 
                 return string.Format(
                     CultureInfo.InvariantCulture,
@@ -61,8 +61,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 var useBwdif = options.DeinterlaceMethod == DeinterlaceMethod.bwdif;
 
-                if (_mediaEncoder.SupportsFilter("yadif_opencl")
-                    && _mediaEncoder.SupportsFilter("bwdif_opencl"))
+                if (SupportsOpenclDeinterlaceFilters())
                 {
                     return string.Format(
                         CultureInfo.InvariantCulture,
@@ -87,7 +86,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (hwDeintSuffix.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase))
             {
-                var useBwdif = options.DeinterlaceMethod == DeinterlaceMethod.bwdif && _mediaEncoder.SupportsFilter("bwdif_videotoolbox");
+                var useBwdif = CanUseVideotoolboxBwdif(options);
 
                 return string.Format(
                     CultureInfo.InvariantCulture,
@@ -97,6 +96,27 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static bool IsHwDoubleRateDeinterlace(EncodingJobInfo state, EncodingOptions options)
+        {
+            return options.DeinterlaceDoubleRate && (state.VideoStream?.ReferenceFrameRate ?? 60) <= 30;
+        }
+
+        private bool CanUseCudaBwdif(EncodingOptions options)
+        {
+            return options.DeinterlaceMethod == DeinterlaceMethod.bwdif && _mediaEncoder.SupportsFilter("bwdif_cuda");
+        }
+
+        private bool SupportsOpenclDeinterlaceFilters()
+        {
+            return _mediaEncoder.SupportsFilter("yadif_opencl")
+                && _mediaEncoder.SupportsFilter("bwdif_opencl");
+        }
+
+        private bool CanUseVideotoolboxBwdif(EncodingOptions options)
+        {
+            return options.DeinterlaceMethod == DeinterlaceMethod.bwdif && _mediaEncoder.SupportsFilter("bwdif_videotoolbox");
         }
 
         private string GetHwTonemapFilter(EncodingOptions options, string hwTonemapSuffix, string videoFormat, bool forceFullRange)
