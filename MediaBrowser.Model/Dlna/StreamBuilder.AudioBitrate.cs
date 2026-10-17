@@ -94,10 +94,7 @@ namespace MediaBrowser.Model.Dlna
                 else if (targetAudioChannels.HasValue
                          && audioStream.Channels.HasValue
                          && audioStream.Channels.Value <= targetAudioChannels.Value
-                         && !string.IsNullOrEmpty(audioStream.Codec)
-                         && targetAudioCodecs is not null
-                         && targetAudioCodecs.Count > 0
-                         && !targetAudioCodecs.Any(elem => string.Equals(audioStream.Codec, elem, StringComparison.OrdinalIgnoreCase)))
+                         && IsNotAnyTargetAudioCodec(audioStream, targetAudioCodecs))
                 {
                     // Shift the bitrate if we're transcoding to a different audio codec.
                     defaultBitrate = GetDefaultAudioBitrate(targetAudioCodec, audioStream.Channels.Value);
@@ -122,6 +119,14 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return Math.Min(defaultBitrate, encoderAudioBitrateLimit);
+        }
+
+        private static bool IsNotAnyTargetAudioCodec(MediaStream audioStream, IReadOnlyList<string> targetAudioCodecs)
+        {
+            return !string.IsNullOrEmpty(audioStream.Codec)
+                && targetAudioCodecs is not null
+                && targetAudioCodecs.Count > 0
+                && !targetAudioCodecs.Any(elem => string.Equals(audioStream.Codec, elem, StringComparison.OrdinalIgnoreCase));
         }
 
         private static bool IsDownmixing(int? targetAudioChannels, MediaStream audioStream)
