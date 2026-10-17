@@ -120,17 +120,17 @@ Update as tasks land.
 | R3-32 | 8.62 | - | not started |
 | R3-33 | 8.62 | 9.26 | Sonnet. 17 commits, four of them FLAT splits kept as pairs with the step they enable (the new pair rule): StreamBuilder.CodecProfileConditions, .VideoStreamOptions, .VideoStreamAudio, .VideoStreamLimits (all 10.00, 43 to 72 lines of code each). Group score of the five files by lines of code: 9.75; BuildStreamVideoItem cc 41 to 13. The last pair gained only +0.01. First commit (rule 9: the LogDebug call with `??` to LogTranscodeResult). The file is at a cliff: a 7th method brings Overall Code Complexity and Code Duplication; six candidate steps all DOWN alone, all UP (8.72 to 8.75) after a split that is itself FLAT. Excess Arguments (BuildStreamVideoItem 9, no recipe) |
 | R3-34 | 8.64 | - | not started |
-| R3-35 | 8.67 | - | not started |
+| R3-35 | 8.67 | 9.38 | Sonnet. Two commits, both Recipe P: IsNotMpegTransportStreamContainer (8.95) and IsZeroPacketHeader (9.38), exact copies. Left: Overall Code Complexity only. The SetWtvDates upstream bug untouched |
 | R3-36 | 8.69 | 9.24 | Sonnet. Three commits, all rule 7: the tails of GetResumeUserDataBatch moved verbatim into ResolveResumeDataFromCandidates, ...FromAlternates, ...FromVersionGroups (GetResumeUserDataBatch no longer flagged; every collaborator call and its order unchanged). Left: UpdatePlayState (3 bumps, cc 10): every block writes two outer variables, the chain is not a tail; SaveUserData 5 arguments (public). Not mutation-tested |
-| R3-37 | 8.88 | - | not started |
-| R3-38 | 8.96 | - | not started |
+| R3-37 | 8.88 | 9.26 | Sonnet. Ten commits: Recipe D reuse of five identical helpers from IntelFilters.cs, E, a FLAT split into EncodingHelper.AmdFilterSteps.cs (9.68; Primitive Obsession) kept as a pair, then E and P. GetAmdDx11VidFiltersPrefered cc 36 to 18, bumps 4 to 2. Left: the subtitle sub/overlay section (8 to 12 parameters) |
+| R3-38 | 8.96 | 9.25 | Sonnet. Nine commits: Recipe D reuse of identical private helpers from IntelFilters.cs and VaapiFilters.cs (HasAssSubtitles, GetSubtitleFramerate, NeedsVaapiSwapWAndH, GetTransposeDirection), a FLAT split of helpers to EncodingHelper.NvidiaFilterHelpers.cs (9.68; Primitive Obsession) kept as a pair, then E five times. Left: GetNvidiaVidFiltersPrefered cc 20, 2 bumps (blocks need 9 to 13 arguments) |
 | R3-39 | 9.04 | 9.53 | Sonnet. Three commits: rule 7 twice on GetAudioDirectPlayProfile (cleared), rule 9 on GetOptimalAudioStream (an instance method, since it calls ApplyTranscodingConditions). Every step chosen by measuring candidates alone. Left: GetOptimalAudioStream (3 bumps, cc 9): the remaining tails need 5 to 7 arguments (WORSE), blocks write several outer variables |
 | R3-40 | 9.06 | - | not started |
 | R3-41 | 9.09 | - | not started |
 | R3-42 | 9.09 | - | not started |
 | R3-43 | 9.09 | - | not started |
 | R3-44 | 9.09 | - | not started |
-| R3-45 | 9.09 | - | not started |
+| R3-45 | 9.09 | 10.00 | Sonnet. Five commits, two splits: UpdateEpisodeNumbers and UpdateDateBasedEpisodeNumbers to LibraryManager.EpisodeNumbers.cs, then the date method to LibraryManager.EpisodeDates.cs (all three files 10.00). P with nullable case 3 (HasFullDate with [NotNullWhen(true)] on three parameters; no guard terms left since episodeInfo is never null), E rule 6 (three helpers that take and return `changed`), E (FillPremiereDate, FillProductionYear). No smell left in any of the three files |
 | R3-46 | 9.09 | - | not started |
 | R3-47 | 9.38 | - | not started |
 | R3-48 | 9.38 | 9.38 | Sonnet. No applicable step: the Complex Conditional in OrderViews declares a pattern variable (`i is UserView view`) that the code after the condition uses (not covered); GetUserView has 6 arguments (public, no recipe). Candidate: Recipe P for a pattern variable used afterwards |
