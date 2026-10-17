@@ -553,17 +553,22 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         private static bool IsGopOnlyKeyFrameEncoder(string codec)
         {
+            return IsGopOnlyH264OrHevcKeyFrameEncoder(codec)
+                || string.Equals(codec, "av1_qsv", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(codec, "av1_nvenc", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(codec, "av1_amf", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(codec, "libsvtav1", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsGopOnlyH264OrHevcKeyFrameEncoder(string codec)
+        {
             return string.Equals(codec, "h264_qsv", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(codec, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(codec, "h264_amf", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(codec, "h264_rkmpp", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(codec, "hevc_qsv", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(codec, "hevc_nvenc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "hevc_rkmpp", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "av1_qsv", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "av1_nvenc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "av1_amf", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "libsvtav1", StringComparison.OrdinalIgnoreCase);
+                || string.Equals(codec, "hevc_rkmpp", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsForcedKeyFrameEncoder(string codec)
