@@ -1058,7 +1058,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // TODO: add more 8/10bit and 4:2:2 formats for Rkmpp after finishing the ffcheck tool
             var is8bitSwFormatsRkmpp = Is8BitYuv420SwFormat(videoStream);
             var is10bitSwFormatsRkmpp = string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-            var is8_10bitSwFormatsRkmpp = is8bitSwFormatsRkmpp || is10bitSwFormatsRkmpp;
+            var is8_10bitSwFormatsRkmpp = Is8Or10BitRkmppSwFormat(is8bitSwFormatsRkmpp, is10bitSwFormatsRkmpp);
 
             // nv15 and nv20 are bit-stream only formats
             if (IsRkmppBitstreamOnlyFormat(is10bitSwFormatsRkmpp, hwSurface))
@@ -1119,6 +1119,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private static bool Is8Or10BitRkmppSwFormat(bool is8bitSwFormatsRkmpp, bool is10bitSwFormatsRkmpp)
+        {
+            return is8bitSwFormatsRkmpp || is10bitSwFormatsRkmpp;
         }
 
         private static bool IsRkmppDecodingUnavailable(EncodingOptions options, bool isLinux)
