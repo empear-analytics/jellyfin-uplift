@@ -293,21 +293,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var sampleRate = state.OutputAudioSampleRate;
             if (sampleRate.HasValue)
             {
-                var sampleRateValue = sampleRate.Value;
-                if (string.Equals(outputCodec, "opus", StringComparison.OrdinalIgnoreCase))
-                {
-                    // opus only supports specific sampling rates
-                    sampleRateValue = sampleRate.Value switch
-                    {
-                        <= 8000 => 8000,
-                        <= 12000 => 12000,
-                        <= 16000 => 16000,
-                        <= 24000 => 24000,
-                        _ => 48000
-                    };
-                }
-
-                audioTranscodeParams.Add("-ar " + sampleRateValue.ToString(CultureInfo.InvariantCulture));
+                AddAudioSampleRateParam(audioTranscodeParams, sampleRate, outputCodec);
             }
 
             // Without the downmix filter, -ac 2 alone drops the LFE channel.
@@ -340,6 +326,25 @@ namespace MediaBrowser.Controller.MediaEncoding
                 string.Empty,
                 string.Empty,
                 string.Empty).Trim();
+        }
+
+        private static void AddAudioSampleRateParam(List<string> audioTranscodeParams, int? sampleRate, string outputCodec)
+        {
+            var sampleRateValue = sampleRate.Value;
+            if (string.Equals(outputCodec, "opus", StringComparison.OrdinalIgnoreCase))
+            {
+                // opus only supports specific sampling rates
+                sampleRateValue = sampleRate.Value switch
+                {
+                    <= 8000 => 8000,
+                    <= 12000 => 12000,
+                    <= 16000 => 16000,
+                    <= 24000 => 24000,
+                    _ => 48000
+                };
+            }
+
+            audioTranscodeParams.Add("-ar " + sampleRateValue.ToString(CultureInfo.InvariantCulture));
         }
 
         private static bool IsAudioVbrEnabled(EncodingJobInfo state, EncodingOptions encodingOptions, string vbrParam)
