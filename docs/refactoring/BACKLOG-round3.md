@@ -112,7 +112,7 @@ Update as tasks land.
 | R3-24 | 8.15 | 8.15 | Sonnet. No step scores UP (four probes DOWN or FLAT). The two Complex Conditionals (GetAspectRatio, IsNearSquarePixelSar) need `out` variables assigned only on some paths (CS0177, not covered); rule 7 clears GetAspectRatio's Complex Method but the new cc-12 method is flagged (8.13, DOWN) |
 | R3-25 | 8.22 | 10.00 | Sonnet. Four commits, three recipes: D merged the eight PersonKind loops (one value, no duplication report); E rule 9 grouped the credit blocks (composer, conductor, lyricist; writer, arranger, engineer; mixer, remixer); S moved the helpers to ProbeResultNormalizer.People.cs (10.00). Tags.cs 10.00; no smell left. The order of the people list is unchanged (checked). Order matters: measured before D, the grouped extractions were DOWN; after D they were UP |
 | R3-26 | 8.28 | - | not started |
-| R3-27 | 8.41 | - | not started |
+| R3-27 | 8.41 | 8.54 | Sonnet. Two commits: Recipe S moved NormalizeFormat and its helper to ProbeResultNormalizer.Format.cs (8.41 to 8.54), then E extracted NormalizeSingleFormat (Format.cs 10.00). GetEstimatedAudioBitrate (frozen internal): P and E both DOWN (every new method brings Primitive Obsession). Found: a second split scores FLAT alone but unblocks a P step that scores UP (8.79 together); the playbook does not allow keeping a FLAT split. GetMediaInfo (5 arguments, public) has no recipe |
 | R3-28 | 8.41 | - | not started |
 | R3-29 | 8.44 | - | not started |
 | R3-30 | 8.45 | - | not started |
