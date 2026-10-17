@@ -111,6 +111,11 @@ namespace MediaBrowser.Model.Dlna
                 return 640000;
             }
 
+            return GetMaxAudioBitrateForHighTotalBitrate(totalBitrate);
+        }
+
+        private static int GetMaxAudioBitrateForHighTotalBitrate(long totalBitrate)
+        {
             if (totalBitrate <= 5000000)
             {
                 return 768000;
