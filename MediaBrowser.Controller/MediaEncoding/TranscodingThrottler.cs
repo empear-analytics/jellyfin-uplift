@@ -148,8 +148,8 @@ public class TranscodingThrottler : IDisposable
     private bool IsThrottleAllowed(TranscodingJob job, int thresholdSeconds)
     {
         var bytesDownloaded = job.BytesDownloaded;
-        var transcodingPositionTicks = job.TranscodingPositionTicks ?? 0;
-        var downloadPositionTicks = job.DownloadPositionTicks ?? 0;
+        var transcodingPositionTicks = GetTranscodingPositionOrZero(job);
+        var downloadPositionTicks = GetDownloadPositionOrZero(job);
 
         var path = job.Path ?? throw new ArgumentException("Path can't be null.");
 
@@ -179,6 +179,16 @@ public class TranscodingThrottler : IDisposable
 
         _logger.LogDebug("No throttle data for {Path}", path);
         return false;
+    }
+
+    private static long GetTranscodingPositionOrZero(TranscodingJob job)
+    {
+        return job.TranscodingPositionTicks ?? 0;
+    }
+
+    private static long GetDownloadPositionOrZero(TranscodingJob job)
+    {
+        return job.DownloadPositionTicks ?? 0;
     }
 
     private bool IsTimeBasedThrottleAllowed(long transcodingPositionTicks, long downloadPositionTicks, long gapLengthInTicks)
