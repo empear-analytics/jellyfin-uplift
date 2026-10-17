@@ -116,7 +116,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
 
                 // If the client does not support DOVI and the video stream is DOVI without fallback, we should not copy it.
-                if (!requestHasDOVI && videoStream.VideoRangeType == VideoRangeType.DOVI)
+                if (IsUnsupportedDoviStream(requestHasDOVI, videoStream))
                 {
                     return false;
                 }
@@ -190,7 +190,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var maxBitDepth = state.GetRequestedVideoBitDepth(videoStream.Codec);
             if (maxBitDepth.HasValue)
             {
-                if (videoStream.BitDepth.HasValue && videoStream.BitDepth.Value > maxBitDepth.Value)
+                if (ExceedsMaxBitDepth(videoStream, maxBitDepth))
                 {
                     return false;
                 }
@@ -211,7 +211,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     // return false;
                 }
 
-                if (videoStream.Level.HasValue && videoStream.Level.Value > requestLevel)
+                if (ExceedsRequestedLevel(videoStream, requestLevel))
                 {
                     return false;
                 }
@@ -224,6 +224,21 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return true;
+        }
+
+        private static bool IsUnsupportedDoviStream(bool requestHasDOVI, MediaStream videoStream)
+        {
+            return !requestHasDOVI && videoStream.VideoRangeType == VideoRangeType.DOVI;
+        }
+
+        private static bool ExceedsMaxBitDepth(MediaStream videoStream, int? maxBitDepth)
+        {
+            return videoStream.BitDepth.HasValue && videoStream.BitDepth.Value > maxBitDepth.Value;
+        }
+
+        private static bool ExceedsRequestedLevel(MediaStream videoStream, double requestLevel)
+        {
+            return videoStream.Level.HasValue && videoStream.Level.Value > requestLevel;
         }
 
         private static bool IsInterlacedToBeDeinterlaced(EncodingJobInfo state, MediaStream videoStream)
