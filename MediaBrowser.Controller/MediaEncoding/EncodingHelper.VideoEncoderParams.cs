@@ -67,8 +67,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return FormattableString.Invariant($" -b:v {bitrate} -bufsize {bufsize}");
             }
 
-            if (string.Equals(videoCodec, "libx264", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoCodec, "libx265", StringComparison.OrdinalIgnoreCase))
+            if (IsLibX26xEncoder(videoCodec))
             {
                 return FormattableString.Invariant($" -maxrate {bitrate} -bufsize {bufsize}");
             }
@@ -90,8 +89,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return GetVaapiVideoBitrateParam(bitrate, bufsize);
             }
 
-            if (string.Equals(videoCodec, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoCodec, "hevc_videotoolbox", StringComparison.OrdinalIgnoreCase))
+            if (IsVideoToolboxH26xCodec(videoCodec))
             {
                 // The `maxrate` and `bufsize` options can potentially lead to performance regression
                 // and even encoder hangs, especially when the value is very high.
@@ -99,6 +97,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return FormattableString.Invariant($" -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
+        }
+
+        private static bool IsLibX26xEncoder(string videoCodec)
+        {
+            return string.Equals(videoCodec, "libx264", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoCodec, "libx265", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsVideoToolboxH26xCodec(string videoCodec)
+        {
+            return string.Equals(videoCodec, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(videoCodec, "hevc_videotoolbox", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetQsvVideoBitrateParam(EncodingJobInfo state, int bitrate)
