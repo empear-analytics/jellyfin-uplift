@@ -3649,7 +3649,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 arg2 = (isSizeFixed ? ':' : '=') + arg2;
             }
 
-            if (!string.IsNullOrEmpty(hwScaleSuffix) && (isSizeFixed || isFormatFixed))
+            if (NeedsHwScaleFilter(hwScaleSuffix, isSizeFixed, isFormatFixed))
             {
                 return string.Format(
                     CultureInfo.InvariantCulture,
@@ -3661,6 +3661,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static bool NeedsHwScaleFilter(string hwScaleSuffix, bool isSizeFixed, bool isFormatFixed)
+        {
+            return !string.IsNullOrEmpty(hwScaleSuffix) && (isSizeFixed || isFormatFixed);
         }
 
         public static string GetGraphicalSubPreProcessFilters(
