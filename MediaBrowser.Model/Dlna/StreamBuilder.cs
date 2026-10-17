@@ -507,7 +507,7 @@ namespace MediaBrowser.Model.Dlna
             // Need to check additionally for current transcode reasons
             if (CanDirectPlayWithoutReasons(item, transcodeReasons))
             {
-                if (!IsBitrateLimitExceeded(item, options.GetMaxBitrate(true) ?? 0))
+                if (!IsAudioBitrateLimitExceeded(item, options))
                 {
                     if (options.EnableDirectPlay)
                     {
@@ -540,6 +540,11 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return (directPlayProfile, null, transcodeReasons);
+        }
+
+        private bool IsAudioBitrateLimitExceeded(MediaSourceInfo item, MediaOptions options)
+        {
+            return IsBitrateLimitExceeded(item, options.GetMaxBitrate(true) ?? 0);
         }
 
         private void LogNoAudioDirectPlayProfile(MediaSourceInfo item, MediaStream audioStream, MediaOptions options)
