@@ -93,9 +93,7 @@ namespace Emby.Server.Implementations.Library
         {
             ArgumentNullException.ThrowIfNull(item);
 
-            var outdated = forceUpdate
-                ? item.ImageInfos.Where(i => i.Path is not null).ToArray()
-                : item.ImageInfos.Where(ImageNeedsRefresh).ToArray();
+            var outdated = GetOutdatedImages(item, forceUpdate);
 
             var parentItem = item.GetParent();
             var isLiveTvShow = IsLiveTvShow(item, parentItem);
@@ -159,6 +157,13 @@ namespace Emby.Server.Implementations.Library
             await _persistenceService.SaveImagesAsync(item).ConfigureAwait(false);
 
             RegisterItem(item);
+        }
+
+        private ItemImageInfo[] GetOutdatedImages(BaseItem item, bool forceUpdate)
+        {
+            return forceUpdate
+                ? item.ImageInfos.Where(i => i.Path is not null).ToArray()
+                : item.ImageInfos.Where(ImageNeedsRefresh).ToArray();
         }
 
         private static bool IsLiveTvShow(BaseItem item, BaseItem parentItem)
