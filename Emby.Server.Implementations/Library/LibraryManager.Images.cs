@@ -99,7 +99,7 @@ namespace Emby.Server.Implementations.Library
             var isLiveTvShow = IsLiveTvShow(item, parentItem);
 
             // Skip image processing if current or live tv show
-            if (outdated.Length == 0 || isLiveTvShow)
+            if (ShouldSkipImageProcessing(outdated, isLiveTvShow))
             {
                 RegisterItem(item);
                 return;
@@ -164,6 +164,11 @@ namespace Emby.Server.Implementations.Library
             return forceUpdate
                 ? item.ImageInfos.Where(i => i.Path is not null).ToArray()
                 : item.ImageInfos.Where(ImageNeedsRefresh).ToArray();
+        }
+
+        private static bool ShouldSkipImageProcessing(ItemImageInfo[] outdated, bool isLiveTvShow)
+        {
+            return outdated.Length == 0 || isLiveTvShow;
         }
 
         private static bool IsLiveTvShow(BaseItem item, BaseItem parentItem)
