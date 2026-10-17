@@ -231,14 +231,19 @@ namespace MediaBrowser.Controller.MediaEncoding
                 };
 
                 if (IsHardwareEncodingEnabled(hwType, encodingOptions)
-                    && codecMap.TryGetValue(hwType, out var preferredEncoder)
-                    && _mediaEncoder.SupportsEncoder(preferredEncoder))
+                    && TryGetSupportedEncoder(codecMap, hwType, out var preferredEncoder))
                 {
                     return preferredEncoder;
                 }
             }
 
             return defaultEncoder;
+        }
+
+        private bool TryGetSupportedEncoder(Dictionary<HardwareAccelerationType, string> codecMap, HardwareAccelerationType hwType, out string preferredEncoder)
+        {
+            return codecMap.TryGetValue(hwType, out preferredEncoder)
+                && _mediaEncoder.SupportsEncoder(preferredEncoder);
         }
 
         private static bool IsHardwareEncodingEnabled(HardwareAccelerationType hwType, EncodingOptions encodingOptions)
