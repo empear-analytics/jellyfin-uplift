@@ -400,8 +400,9 @@ body. The copy must be identical to the helper's body, character for character, 
 the names of the variables passed in. The helper may also live in **another part of the same
 partial class**, when it is `private` (or already as accessible as the code that will call it:
 never widen it) and its body, read in its own file, is identical to the copy. Run the guard with
-`--dedup` over the file you change; a literal that only the removed copy carried must still occur
-in the class.
+`--dedup` over the file you change, **and `--together` with the file that holds the helper** (the
+guard otherwise sees the helper's literals only in the other file and rejects the step); a literal
+that only the removed copy carried must still occur in the class.
 
 **Copies that differ in a single value, without a duplication report.** Blocks or loops that
 are identical except for one constant or enum member (three `foreach` loops that differ only in
