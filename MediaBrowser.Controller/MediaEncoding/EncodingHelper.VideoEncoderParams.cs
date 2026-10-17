@@ -560,6 +560,48 @@ namespace MediaBrowser.Controller.MediaEncoding
             var profile = state.GetRequestedProfiles(targetVideoCodec).FirstOrDefault() ?? string.Empty;
             profile = WhiteSpaceRegex().Replace(profile, string.Empty).ToLowerInvariant();
 
+            var videoProfiles = GetVideoProfiles(targetVideoCodec);
+
+            profile = NormalizeVideoProfile(videoEncoder, profile, videoProfiles);
+
+            if (!string.IsNullOrEmpty(profile))
+            {
+                param = AppendProfileParam(param, videoEncoder, profile);
+            }
+
+            var level = NormalizeTranscodingLevel(state, state.GetRequestedLevel(targetVideoCodec));
+
+            if (!string.IsNullOrEmpty(level))
+            {
+                param = AppendLevelParam(param, videoEncoder, level);
+            }
+
+            if (string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase))
+            {
+                param += " -x264opts:0 subme=0:me_range=16:rc_lookahead=10:me=hex:open_gop=0";
+            }
+
+            if (string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase))
+            {
+                param = AppendX265Params(param, encodingOptions);
+            }
+
+            if (SupportsSvtAv1Params(videoEncoder))
+            {
+                param += " -svtav1-params:0 rc=1:tune=0:film-grain=0:enable-overlays=1:enable-tf=0";
+            }
+
+            /* Access unit too large: 8192 < 20880 error */
+            if (SupportsVaapiA53CcSei(videoEncoder))
+            {
+                param += " -sei -a53_cc";
+            }
+
+            return param;
+        }
+
+        private static string[] GetVideoProfiles(string targetVideoCodec)
+        {
             var videoProfiles = Array.Empty<string>();
             if (string.Equals("h264", targetVideoCodec, StringComparison.OrdinalIgnoreCase))
             {
@@ -574,6 +616,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 videoProfiles = _videoProfilesAv1;
             }
 
+            return videoProfiles;
+        }
+
+        private static string NormalizeVideoProfile(string videoEncoder, string profile, string[] videoProfiles)
+        {
             if (!videoProfiles.Contains(profile, StringComparison.OrdinalIgnoreCase))
             {
                 profile = string.Empty;
@@ -642,40 +689,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 profile = "constrained_high";
             }
 
-            if (!string.IsNullOrEmpty(profile))
-            {
-                param = AppendProfileParam(param, videoEncoder, profile);
-            }
-
-            var level = NormalizeTranscodingLevel(state, state.GetRequestedLevel(targetVideoCodec));
-
-            if (!string.IsNullOrEmpty(level))
-            {
-                param = AppendLevelParam(param, videoEncoder, level);
-            }
-
-            if (string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase))
-            {
-                param += " -x264opts:0 subme=0:me_range=16:rc_lookahead=10:me=hex:open_gop=0";
-            }
-
-            if (string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase))
-            {
-                param = AppendX265Params(param, encodingOptions);
-            }
-
-            if (SupportsSvtAv1Params(videoEncoder))
-            {
-                param += " -svtav1-params:0 rc=1:tune=0:film-grain=0:enable-overlays=1:enable-tf=0";
-            }
-
-            /* Access unit too large: 8192 < 20880 error */
-            if (SupportsVaapiA53CcSei(videoEncoder))
-            {
-                param += " -sei -a53_cc";
-            }
-
-            return param;
+            return profile;
         }
 
         private static bool IsHevcCodecName(string targetVideoCodec)
