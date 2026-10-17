@@ -340,7 +340,7 @@ namespace MediaBrowser.Model.Dlna
                 AlwaysBurnInSubtitleWhenTranscoding = options.AlwaysBurnInSubtitleWhenTranscoding
             };
 
-            var subtitleStream = playlistItem.SubtitleStreamIndex.HasValue ? item.GetMediaStream(MediaStreamType.Subtitle, playlistItem.SubtitleStreamIndex.Value) : null;
+            var subtitleStream = GetSelectedSubtitleStream(item, playlistItem);
 
             var audioStream = item.GetDefaultAudioStream(options.AudioStreamIndex ?? item.DefaultAudioStreamIndex);
             SetDefaultAudioStreamIndex(playlistItem, audioStream);
@@ -374,15 +374,11 @@ namespace MediaBrowser.Model.Dlna
                     directPlayProfile = directPlayInfo.Profile;
                     playlistItem.PlayMethod = directPlay.Value;
                     playlistItem.Container = NormalizeMediaSourceFormatIntoSingleContainer(item.Container, options.Profile, DlnaProfileType.Video, directPlayProfile);
-                    var videoCodec = videoStream?.Codec;
-                    playlistItem.VideoCodecs = videoCodec is null ? [] : [videoCodec];
+                    SetDirectPlayVideoCodecs(playlistItem, videoStream);
 
                     if (directPlay == PlayMethod.DirectPlay)
                     {
-                        playlistItem.SubProtocol = MediaStreamProtocol.http;
-
-                        var audioStreamIndex = directPlayInfo.AudioStreamIndex ?? audioStream?.Index;
-                        SetDirectPlayAudioStream(playlistItem, item, audioStreamIndex);
+                        SetDirectPlayAudioFromProfile(playlistItem, item, audioStream, directPlayInfo);
                     }
                     else if (directPlay == PlayMethod.DirectStream)
                     {
@@ -414,6 +410,25 @@ namespace MediaBrowser.Model.Dlna
 
             item.Container = NormalizeMediaSourceFormatIntoSingleContainer(item.Container, options.Profile, DlnaProfileType.Video, directPlayProfile);
             return playlistItem;
+        }
+
+        private static MediaStream? GetSelectedSubtitleStream(MediaSourceInfo item, StreamInfo playlistItem)
+        {
+            return playlistItem.SubtitleStreamIndex.HasValue ? item.GetMediaStream(MediaStreamType.Subtitle, playlistItem.SubtitleStreamIndex.Value) : null;
+        }
+
+        private static void SetDirectPlayVideoCodecs(StreamInfo playlistItem, MediaStream? videoStream)
+        {
+            var videoCodec = videoStream?.Codec;
+            playlistItem.VideoCodecs = videoCodec is null ? [] : [videoCodec];
+        }
+
+        private static void SetDirectPlayAudioFromProfile(StreamInfo playlistItem, MediaSourceInfo item, MediaStream? audioStream, (DirectPlayProfile? Profile, PlayMethod? PlayMethod, int? AudioStreamIndex, TranscodeReason TranscodeReasons) directPlayInfo)
+        {
+            playlistItem.SubProtocol = MediaStreamProtocol.http;
+
+            var audioStreamIndex = directPlayInfo.AudioStreamIndex ?? audioStream?.Index;
+            SetDirectPlayAudioStream(playlistItem, item, audioStreamIndex);
         }
 
         private static void SetDefaultAudioStreamIndex(StreamInfo playlistItem, MediaStream? audioStream)
