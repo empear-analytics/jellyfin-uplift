@@ -292,10 +292,7 @@ public static class StreamingHelpers
                 && !state.VideoRequest.MaxHeight.HasValue;
 
             if (isVideoResolutionNotRequested
-                && state.VideoStream is not null
-                && state.VideoRequest.VideoBitRate.HasValue
-                && state.VideoStream.BitRate.HasValue
-                && state.VideoRequest.VideoBitRate.Value >= state.VideoStream.BitRate.Value)
+                && IsRequestedBitrateAtLeastSource(state, state.VideoRequest))
             {
                 // Don't downscale the resolution if the width/height/MaxWidth/MaxHeight is not requested,
                 // and the requested video bitrate is greater than source video bitrate.
@@ -328,6 +325,14 @@ public static class StreamingHelpers
         {
             state.OutputAudioCodec = state.SupportedAudioCodecs.Where(c => !EncodingHelper.LosslessAudioCodecs.Contains(c)).FirstOrDefault(mediaEncoder.CanEncodeToAudioCodec);
         }
+    }
+
+    private static bool IsRequestedBitrateAtLeastSource(StreamState state, VideoRequestDto videoRequest)
+    {
+        return state.VideoStream is not null
+            && videoRequest.VideoBitRate.HasValue
+            && state.VideoStream.BitRate.HasValue
+            && videoRequest.VideoBitRate.Value >= state.VideoStream.BitRate.Value;
     }
 
     private static bool IsAudioReencodedToSameCodec(StreamState state)
