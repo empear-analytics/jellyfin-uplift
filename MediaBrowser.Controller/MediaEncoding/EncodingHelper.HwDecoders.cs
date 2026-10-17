@@ -1084,31 +1084,33 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (is8_10bitSwFormatsRkmpp)
+            if (!is8_10bitSwFormatsRkmpp)
             {
-                if (IsAvcOrH264Codec(videoStream))
-                {
-                    var accelType = GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
-                    return AppendAfbcRgaOption(accelType, isAfbcSupported);
-                }
+                return null;
+            }
 
-                if (IsHevcOrH265Codec(videoStream))
-                {
-                    var accelType = GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
-                    return AppendAfbcRgaOption(accelType, isAfbcSupported);
-                }
+            if (IsAvcOrH264Codec(videoStream))
+            {
+                var accelType = GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
+                return AppendAfbcRgaOption(accelType, isAfbcSupported);
+            }
 
-                if (string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
-                {
-                    var accelType = GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
-                    return AppendAfbcRgaOption(accelType, isAfbcSupported);
-                }
+            if (IsHevcOrH265Codec(videoStream))
+            {
+                var accelType = GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
+                return AppendAfbcRgaOption(accelType, isAfbcSupported);
+            }
 
-                if (string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
-                {
-                    // there's an issue about AV1 AFBC on RK3588, disable it for now until it's fixed upstream
-                    return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
-                }
+            if (string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
+            {
+                var accelType = GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
+                return AppendAfbcRgaOption(accelType, isAfbcSupported);
+            }
+
+            if (string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
+            {
+                // there's an issue about AV1 AFBC on RK3588, disable it for now until it's fixed upstream
+                return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
             }
 
             return null;
