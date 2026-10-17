@@ -595,7 +595,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subH = state.SubtitleStream?.Height;
 
             var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+            var transposeDir = GetTransposeDirection(state, rotation);
             var doVppTranspose = !string.IsNullOrEmpty(transposeDir);
             var swapWAndH = Math.Abs(rotation) == 90 && (isSwDecoder || ((isVaapiDecoder || isQsvDecoder) && doVppTranspose));
             var swpInW = swapWAndH ? inH : inW;
@@ -612,7 +612,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // sw deint
                 AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
-                var outFormat = doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
+                var outFormat = GetSwDecoderOutputFormat(doOclTonemap, hasGraphicalSubs);
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
                 swScaleFilter = ApplyMjpegFullRangeSwScale(swScaleFilter, isMjpegEncoder, doOclTonemap);
 
@@ -678,11 +678,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             AddQsvVaapiToOpenclMapping(mainFilters, doOclTonemap, isHwDecoder);
 
             // ocl tonemap
-            if (doOclTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "opencl", "nv12", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
             var memoryOutput = false;
             var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
@@ -731,7 +727,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     else if (hasTextSubs)
                     {
                         var framerate = state.VideoStream?.RealFrameRate;
-                        var subFramerate = hasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
+                        var subFramerate = GetSubtitleFramerate(hasAssSubs, framerate);
 
                         var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, 1080, subFramerate);
                         var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
@@ -745,9 +741,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     subFilters.Add("hwupload=derive_device=qsv:extra_hw_frames=64");
 
                     var (overlayW, overlayH) = GetFixedOutputSize(swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                    var overlaySize = HasFixedOverlaySize(overlayW, overlayH)
-                        ? $":w={overlayW.Value}:h={overlayH.Value}"
-                        : string.Empty;
+                    var overlaySize = GetOverlaySizeOption(overlayW, overlayH);
                     var overlayQsvFilter = string.Format(
                         CultureInfo.InvariantCulture,
                         "overlay_qsv=eof_action=pass:repeatlast=0{0}",
