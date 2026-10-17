@@ -7825,7 +7825,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             var supportedVideoCodecs = state.SupportedVideoCodecs;
-            if (request is not null && supportedVideoCodecs is not null && supportedVideoCodecs.Length > 0)
+            if (HasSupportedCodecs(request, supportedVideoCodecs))
             {
                 var supportedVideoCodecsList = supportedVideoCodecs.ToList();
 
