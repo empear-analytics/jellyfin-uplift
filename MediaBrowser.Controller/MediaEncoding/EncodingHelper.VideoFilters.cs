@@ -347,14 +347,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var outFormat = isSwDecoder ? "yuv420p" : "nv12";
             var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-            if (isVaapiEncoder)
-            {
-                outFormat = "nv12";
-            }
-            else if (isV4l2Encoder)
-            {
-                outFormat = "yuv420p";
-            }
+            outFormat = ResolveSwOutputFormat(outFormat, isVaapiEncoder, isV4l2Encoder);
 
             // sw scale
             mainFilters.Add(swScaleFilter);
@@ -389,6 +382,20 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static string ResolveSwOutputFormat(string outFormat, bool isVaapiEncoder, bool isV4l2Encoder)
+        {
+            if (isVaapiEncoder)
+            {
+                outFormat = "nv12";
+            }
+            else if (isV4l2Encoder)
+            {
+                outFormat = "yuv420p";
+            }
+
+            return outFormat;
         }
 
         private static void AddSwTonemapFilter(EncodingOptions options, List<string> mainFilters, bool requireDoviReshaping, string outFormat)
