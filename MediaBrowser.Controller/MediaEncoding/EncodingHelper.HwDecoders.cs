@@ -901,8 +901,7 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             var isLinux = OperatingSystem.IsLinux();
 
-            if (!isLinux
-                || options.HardwareAccelerationType != HardwareAccelerationType.rkmpp)
+            if (IsRkmppDecodingUnavailable(options, isLinux))
             {
                 return null;
             }
@@ -920,9 +919,8 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
-            var isRkmppOclSupported = IsRkmppFullSupported() && IsOpenclFullSupported();
-            var hwSurface = isRkmppOclSupported
-                && _mediaEncoder.SupportsFilter("alphasrc");
+            var isRkmppOclSupported = IsRkmppOclSupported();
+            var hwSurface = HasRkmppHwSurface(isRkmppOclSupported);
 
             // rkrga RGA3 supports range from 1/8 to 8
             var isAfbcSupported = hwSurface && IsScaleRatioSupported(inW, inH, reqW, reqH, reqMaxW, reqMaxH, 8.0f);
@@ -933,7 +931,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var is8_10bitSwFormatsRkmpp = is8bitSwFormatsRkmpp || is10bitSwFormatsRkmpp;
 
             // nv15 and nv20 are bit-stream only formats
-            if (is10bitSwFormatsRkmpp && !hwSurface)
+            if (IsRkmppBitstreamOnlyFormat(is10bitSwFormatsRkmpp, hwSurface))
             {
                 return null;
             }
@@ -966,19 +964,19 @@ namespace MediaBrowser.Controller.MediaEncoding
                 if (IsAvcOrH264Codec(videoStream))
                 {
                     var accelType = GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
-                    return accelType + ((!string.IsNullOrEmpty(accelType) && isAfbcSupported) ? " -afbc rga" : string.Empty);
+                    return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
                 }
 
                 if (IsHevcOrH265Codec(videoStream))
                 {
                     var accelType = GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
-                    return accelType + ((!string.IsNullOrEmpty(accelType) && isAfbcSupported) ? " -afbc rga" : string.Empty);
+                    return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
                 }
 
                 if (string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
                 {
                     var accelType = GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
-                    return accelType + ((!string.IsNullOrEmpty(accelType) && isAfbcSupported) ? " -afbc rga" : string.Empty);
+                    return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
                 }
 
                 if (string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
@@ -989,6 +987,33 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private static bool IsRkmppDecodingUnavailable(EncodingOptions options, bool isLinux)
+        {
+            return !isLinux
+                || options.HardwareAccelerationType != HardwareAccelerationType.rkmpp;
+        }
+
+        private bool IsRkmppOclSupported()
+        {
+            return IsRkmppFullSupported() && IsOpenclFullSupported();
+        }
+
+        private bool HasRkmppHwSurface(bool isRkmppOclSupported)
+        {
+            return isRkmppOclSupported
+                && _mediaEncoder.SupportsFilter("alphasrc");
+        }
+
+        private static bool IsRkmppBitstreamOnlyFormat(bool is10bitSwFormatsRkmpp, bool hwSurface)
+        {
+            return is10bitSwFormatsRkmpp && !hwSurface;
+        }
+
+        private static bool CanUseAfbcRga(string accelType, bool isAfbcSupported)
+        {
+            return !string.IsNullOrEmpty(accelType) && isAfbcSupported;
         }
     }
 }
