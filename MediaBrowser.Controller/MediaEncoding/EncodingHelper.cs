@@ -1633,11 +1633,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var segmentFormat = GetSegmentFileExtension(segmentContainer).TrimStart('.');
 
             // Apply aac_adtstoasc bitstream filter when media source is in mpegts.
-            if (string.Equals(segmentFormat, "mp4", StringComparison.OrdinalIgnoreCase)
-                && (string.Equals(mediaSourceContainer, "ts", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(mediaSourceContainer, "aac", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(mediaSourceContainer, "hls", StringComparison.OrdinalIgnoreCase))
-                && IsAAC(state.AudioStream))
+            if (NeedsAacAdtsToAsc(state, segmentFormat, mediaSourceContainer))
             {
                 filters.Add("aac_adtstoasc");
             }
@@ -1645,6 +1641,15 @@ namespace MediaBrowser.Controller.MediaEncoding
             return filters.Count == 0
                 ? string.Empty
                 : " -bsf:a " + string.Join(',', filters);
+        }
+
+        private static bool NeedsAacAdtsToAsc(EncodingJobInfo state, string segmentFormat, string mediaSourceContainer)
+        {
+            return string.Equals(segmentFormat, "mp4", StringComparison.OrdinalIgnoreCase)
+                && (string.Equals(mediaSourceContainer, "ts", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(mediaSourceContainer, "aac", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(mediaSourceContainer, "hls", StringComparison.OrdinalIgnoreCase))
+                && IsAAC(state.AudioStream);
         }
 
         // When video is transcoded, accurate_seek (the default) trims video to the
