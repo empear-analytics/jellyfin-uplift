@@ -2673,7 +2673,7 @@ namespace Emby.Server.Implementations.Library
                     }
                 }
 
-                if (string.IsNullOrEmpty(image.Path) || !File.Exists(image.Path))
+                if (IsMissingImageFile(image))
                 {
                     _logger.LogWarning(
                         "{ImageType} image for {ItemName} ({ItemId}) not found at \"{ImagePath}\", source was {SourcePath}",
@@ -2705,6 +2705,11 @@ namespace Emby.Server.Implementations.Library
             return item.SourceType != SourceType.Library &&
                    parentItem is not null &&
                    parentItem.SourceType != SourceType.Library; // not a channel
+        }
+
+        private static bool IsMissingImageFile(ItemImageInfo image)
+        {
+            return string.IsNullOrEmpty(image.Path) || !File.Exists(image.Path);
         }
 
         private ImageDimensions UpdateImageDimensions(BaseItem item, ItemImageInfo image)
