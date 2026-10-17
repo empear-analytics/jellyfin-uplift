@@ -94,6 +94,21 @@ def regressions(before: dict, after: dict) -> list[str]:
     return found
 
 
+# A parameter declared with a verbatim identifier, `bool? @static,` (a type, then @name). Calls
+# pass `@static` after `(` or `,`, so they do not match.
+VERBATIM_PARAMETER = re.compile(r"[\w>\]?]\s+@[A-Za-z_]\w*\s*[,)=]")
+
+
+def verbatim_parameters(text: str) -> int:
+    """How many verbatim-identifier parameters the file declares.
+
+    CodeScene's C# parser silently drops a method whose parameter list contains such a name
+    (found in R2-10: a 53-argument extraction vanished from the review and scored UP), so an
+    extraction that adds one would be scored without it.
+    """
+    return len(VERBATIM_PARAMETER.findall(text))
+
+
 def show(score) -> str:
     return "none (no functions)" if score is None else f"{score:.2f}"
 
@@ -128,6 +143,12 @@ def main() -> int:
         return 1
     if new > old:
         worse = regressions(before, after)
+        old_text = subprocess.run(["git", "show", args.base + ":" + rel], cwd=REPO, capture_output=True,
+                                  text=True, encoding="utf-8", errors="replace").stdout
+        new_text = (REPO / rel).read_text(encoding="utf-8-sig", errors="replace")
+        if verbatim_parameters(new_text) > verbatim_parameters(old_text):
+            worse.append("a new parameter named with @ (such as `bool? @static`): CodeScene skips such "
+                         "methods, so the score cannot be trusted")
         if worse:
             for line in worse:
                 print("  ! " + line)
