@@ -365,32 +365,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // sw tonemap
             if (doToneMap)
             {
-                // tonemapx requires yuv420p10 input for dovi reshaping, let ffmpeg convert the frame when necessary
-                var tonemapFormat = requireDoviReshaping ? "yuv420p" : outFormat;
-                var tonemapArgString = "tonemapx=tonemap={0}:desat={1}:peak={2}:t=bt709:m=bt709:p=bt709:format={3}";
-
-                if (options.TonemappingParam != 0)
-                {
-                    tonemapArgString += ":param={4}";
-                }
-
-                var range = options.TonemappingRange;
-                if (range == TonemappingRange.tv || range == TonemappingRange.pc)
-                {
-                    tonemapArgString += ":range={5}";
-                }
-
-                var tonemapArgs = string.Format(
-                    CultureInfo.InvariantCulture,
-                    tonemapArgString,
-                    options.TonemappingAlgorithm,
-                    options.TonemappingDesat,
-                    options.TonemappingPeak,
-                    tonemapFormat,
-                    options.TonemappingParam,
-                    options.TonemappingRange);
-
-                mainFilters.Add(tonemapArgs);
+                AddSwTonemapFilter(options, mainFilters, requireDoviReshaping, outFormat);
             }
             else
             {
@@ -417,6 +392,36 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static void AddSwTonemapFilter(EncodingOptions options, List<string> mainFilters, bool requireDoviReshaping, string outFormat)
+        {
+            // tonemapx requires yuv420p10 input for dovi reshaping, let ffmpeg convert the frame when necessary
+            var tonemapFormat = requireDoviReshaping ? "yuv420p" : outFormat;
+            var tonemapArgString = "tonemapx=tonemap={0}:desat={1}:peak={2}:t=bt709:m=bt709:p=bt709:format={3}";
+
+            if (options.TonemappingParam != 0)
+            {
+                tonemapArgString += ":param={4}";
+            }
+
+            var range = options.TonemappingRange;
+            if (range == TonemappingRange.tv || range == TonemappingRange.pc)
+            {
+                tonemapArgString += ":range={5}";
+            }
+
+            var tonemapArgs = string.Format(
+                CultureInfo.InvariantCulture,
+                tonemapArgString,
+                options.TonemappingAlgorithm,
+                options.TonemappingDesat,
+                options.TonemappingPeak,
+                tonemapFormat,
+                options.TonemappingParam,
+                options.TonemappingRange);
+
+            mainFilters.Add(tonemapArgs);
         }
 
         /// <summary>
