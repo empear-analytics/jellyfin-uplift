@@ -1848,45 +1848,21 @@ namespace Emby.Server.Implementations.Library
 
         public IReadOnlyList<BaseItem> GetItemList(InternalItemsQuery query, List<BaseItem> parents)
         {
-            SetTopParentIdsOrAncestors(query, parents);
-
-            if (query.AncestorIds.Length == 0 && query.TopParentIds.Length == 0)
-            {
-                if (query.User is not null)
-                {
-                    AddUserToQuery(query, query.User);
-                }
-            }
+            ScopeQueryToParents(query, parents);
 
             return _itemRepository.GetItemList(query);
         }
 
         public IReadOnlyList<BaseItem> GetLatestItemList(InternalItemsQuery query, IReadOnlyList<BaseItem> parents, CollectionType collectionType)
         {
-            SetTopParentIdsOrAncestors(query, parents);
-
-            if (query.AncestorIds.Length == 0 && query.TopParentIds.Length == 0)
-            {
-                if (query.User is not null)
-                {
-                    AddUserToQuery(query, query.User);
-                }
-            }
+            ScopeQueryToParents(query, parents);
 
             return _itemRepository.GetLatestItemList(query, collectionType);
         }
 
         public IReadOnlyList<string> GetNextUpSeriesKeys(InternalItemsQuery query, IReadOnlyCollection<BaseItem> parents, DateTime dateCutoff)
         {
-            SetTopParentIdsOrAncestors(query, parents);
-
-            if (query.AncestorIds.Length == 0 && query.TopParentIds.Length == 0)
-            {
-                if (query.User is not null)
-                {
-                    AddUserToQuery(query, query.User);
-                }
-            }
+            ScopeQueryToParents(query, parents);
 
             return _nextUpService.GetNextUpSeriesKeys(query, dateCutoff);
         }
@@ -2045,6 +2021,19 @@ namespace Emby.Server.Implementations.Library
                 if (parent is not null)
                 {
                     SetTopParentIdsOrAncestors(query, [parent]);
+                }
+            }
+        }
+
+        private void ScopeQueryToParents(InternalItemsQuery query, IReadOnlyCollection<BaseItem> parents)
+        {
+            SetTopParentIdsOrAncestors(query, parents);
+
+            if (query.AncestorIds.Length == 0 && query.TopParentIds.Length == 0)
+            {
+                if (query.User is not null)
+                {
+                    AddUserToQuery(query, query.User);
                 }
             }
         }
