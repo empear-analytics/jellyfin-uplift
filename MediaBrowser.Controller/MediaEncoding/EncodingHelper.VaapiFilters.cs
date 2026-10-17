@@ -130,7 +130,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isMjpegEncoder = vidEncoder.Contains("mjpeg", StringComparison.OrdinalIgnoreCase);
             var isVaInVaOut = isVaapiDecoder && isVaapiEncoder;
 
-            var doVaVppTonemap = isVaapiDecoder && IsIntelVppTonemapAvailable(state, options);
+            var doVaVppTonemap = CanDoVaapiVppTonemap(state, options, isVaapiDecoder);
             var doOclTonemap = NeedsOclTonemap(state, options, doVaVppTonemap);
             var doTonemap = doVaVppTonemap || doOclTonemap;
             var doDeintH2645 = IsDeinterlaceAvailable(state);
@@ -147,7 +147,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var rotation = state.VideoStream?.Rotation ?? 0;
             var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
             var doVaVppTranspose = !string.IsNullOrEmpty(transposeDir);
-            var swapWAndH = Math.Abs(rotation) == 90 && (isSwDecoder || (isVaapiDecoder && doVaVppTranspose));
+            var swapWAndH = NeedsVaapiSwapWAndH(rotation, isSwDecoder, isVaapiDecoder, doVaVppTranspose);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
@@ -225,7 +225,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add(tonemapFilter);
             }
 
-            if (doOclTonemap && isVaInVaOut)
+            if (NeedsVaapiReverseMapping(doOclTonemap, isVaInVaOut))
             {
                 // OUTPUT vaapi(nv12) surface(vram)
                 // reverse-mapping via vaapi-opencl interop.
@@ -235,7 +235,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var memoryOutput = false;
             var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
-            var isHwmapNotUsable = isUploadForOclTonemap && isVaapiEncoder;
+            var isHwmapNotUsable = IsHwmapNotUsableForVaapi(isUploadForOclTonemap, isVaapiEncoder);
             if (NeedsMemoryOutput(isVaapiDecoder, isSwEncoder, isUploadForOclTonemap))
             {
                 memoryOutput = true;
@@ -247,7 +247,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT nv12 surface(memory)
-            if (isSwDecoder && isVaapiEncoder)
+            if (IsSwDecodeToVaapiEncode(isSwDecoder, isVaapiEncoder))
             {
                 memoryOutput = true;
             }
@@ -257,7 +257,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
             }
 
-            if (memoryOutput && isVaapiEncoder)
+            if (NeedsVaapiUploadFromMemory(memoryOutput, isVaapiEncoder))
             {
                 AddVaapiHwupload(mainFilters, hasGraphicalSubs);
             }
@@ -317,6 +317,36 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
+        {
+            return isVaapiDecoder && IsIntelVppTonemapAvailable(state, options);
+        }
+
+        private static bool NeedsVaapiSwapWAndH(int rotation, bool isSwDecoder, bool isVaapiDecoder, bool doVaVppTranspose)
+        {
+            return Math.Abs(rotation) == 90 && (isSwDecoder || (isVaapiDecoder && doVaVppTranspose));
+        }
+
+        private static bool NeedsVaapiReverseMapping(bool doOclTonemap, bool isVaInVaOut)
+        {
+            return doOclTonemap && isVaInVaOut;
+        }
+
+        private static bool IsHwmapNotUsableForVaapi(bool isUploadForOclTonemap, bool isVaapiEncoder)
+        {
+            return isUploadForOclTonemap && isVaapiEncoder;
+        }
+
+        private static bool IsSwDecodeToVaapiEncode(bool isSwDecoder, bool isVaapiEncoder)
+        {
+            return isSwDecoder && isVaapiEncoder;
+        }
+
+        private static bool NeedsVaapiUploadFromMemory(bool memoryOutput, bool isVaapiEncoder)
+        {
+            return memoryOutput && isVaapiEncoder;
         }
 
         private void AddVaapiHwDeinterlaceFilter(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, bool doDeintH2645)
