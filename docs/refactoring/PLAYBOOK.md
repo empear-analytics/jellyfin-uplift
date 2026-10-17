@@ -72,13 +72,27 @@ blocks of nested logic). Each "bump" is a missing method.
    produces a single value. Pass the flag in and return it:
    `changed = FillParentIndexNumber(episode, changed);`. The new method starts from the value
    passed in, so a path that does not set the flag returns it unchanged.
-7. **A loop at the end of a method whose `return` statements end the method** may be
-   extracted together with the method's final `return`. The call becomes
-   `return FindFirstSupportedContainer(...);`. Every `return` inside the loop, and the final
-   one, move unchanged. This applies only when nothing follows the loop but that final
-   `return`.
+7. **A tail of the method whose every path ends in `return` or `throw`** may be extracted as
+   one method, and the call becomes `return M(...);`. The tail is the last statements of the
+   method body: a loop followed by the final `return`, a chain of `if (...) { return X; }`
+   statements followed by a final `return` or `throw`, or a nested block that returns on every
+   path. Every statement of the tail moves unchanged, in the same order, so the checks are
+   made in the same order as before. Further conditions:
+   - the tail does not assign an `out` or `ref` parameter of the original method, and it
+     contains no `yield`;
+   - a variable the tail assigns before it reads it, and that nothing outside the tail reads
+     (nothing can: the tail ends the method), is declared inside the new method with its
+     original type, for example `string args = ...;` where the original had `args = ...;`. If
+     the tail reads the variable's earlier value, pass it in as for any other variable;
+   - a tail that moves only part of a chain moves the last statements of the chain, never a
+     middle part.
 8. If the block reads a nullable value that the code before it has checked, see
    [Nullable flow analysis](#nullable-flow-analysis-recipes-e-and-p).
+9. **The block need not be nested.** A run of consecutive statements that forms one step
+   (a log call, building one string, computing one value) may be extracted under the rules
+   above when it produces a single value or none. Keep the statements and their order as they
+   were. This is allowed because a single complex statement can carry the complexity (for
+   example many `??` operators); the step must still score `UP`.
 
 **Before:**
 
@@ -198,6 +212,10 @@ compound boolean expressions.
 needs instance members) whose name states the intent. This usually needs no other change,
 and it is the safest recipe in the catalogue.
 
+The expression need not be built from `&&` and `||`: a boolean expression that carries its
+complexity in `??`, `?:` or `?.` operators (for example `IsBitrateLimitExceeded(item,
+options.GetMaxBitrate(true) ?? 0)`) is a predicate too. The step must still score `UP`.
+
 **Before:**
 
 ```csharp
@@ -262,7 +280,7 @@ private static bool IsParsableDate(string val, out DateTime dateTime)
 The build treats nullable warnings as errors. Moving a null check into a predicate, or moving
 code away from the check that guards it, hides that check from the compiler: CS8629
 (`Nullable value type may be null`) or CS8602 (`Dereference of a possibly null reference`).
-Two changes are allowed to make such a step compile. Nothing else is: never add `!`, never
+Three changes are allowed to make such a step compile. Nothing else is: never add `!`, never
 add a null check, never change a type.
 
 **1. A null check on a parameter of the predicate.** When the predicate's expression checks
@@ -312,6 +330,48 @@ private static bool IsRequestedBitrateAtLeastSource(VideoRequestDto videoRequest
 }
 ```
 
+**3. A property of an object, null-checked inside the expression.** When the expression checks
+a nullable-valued property of an object (`state.VideoStream.Level.HasValue`) and the code after
+the condition reads that property's `.Value`, move only the part that checks the property, and
+pass the property as a parameter marked `[NotNullWhen(true)]` (or `[NotNullWhen(false)]`, as
+in rule 1):
+
+- the leading terms of the expression that guard the object itself (`state.VideoStream is not
+  null &&`) **stay at the call site, unchanged and first**, so the property is read only when
+  the guard allows it, exactly as before;
+- the terms that move are the remaining terms of the same `&&` (or `||`) chain, character for
+  character, except that the property path is replaced by the parameter's name;
+- the property is read with no side effects (read its getter), as in rule 2;
+- if the expression has no guard term (the object cannot be null at that point), the whole
+  expression moves with the property as a parameter.
+
+```csharp
+// Before
+if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
+    && state.VideoStream is not null
+    && state.VideoStream.Level.HasValue
+    && state.VideoStream.Level > 150)
+{
+    use(state.VideoStream.Level.Value);
+}
+
+// After
+if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
+    && state.VideoStream is not null
+    && IsLevelAbove150(state.VideoStream.Level))
+{
+    use(state.VideoStream.Level.Value);
+}
+
+private static bool IsLevelAbove150([NotNullWhen(true)] int? level)
+{
+    return level.HasValue && level > 150;
+}
+```
+
+The step is kept only if it still scores `UP`: a smaller conditional that leaves the guard
+terms behind may not lower the method's complexity enough.
+
 Still not covered, so still reported: an `out` variable the expression assigns only on some
 paths (CS0177), an `out` argument that writes to an existing variable, and a pattern variable
 (`is Video video`) that the code after the condition uses.
@@ -336,6 +396,15 @@ an earlier step extracted from the same file, instead of getting a second helper
 body. The copy must be identical to the helper's body, character for character, apart from
 the names of the variables passed in.
 
+**Copies that differ in a single value, without a duplication report.** Blocks or loops that
+are identical except for one constant or enum member (three `foreach` loops that differ only in
+a `PersonKind` value) may be merged into one `private` helper that takes that value as a
+parameter, even when CodeScene reports no *Code Duplication*. The step must still score `UP`,
+and the other conditions of this recipe hold: the copies are identical character for character
+apart from that one value and the names of the variables passed in, and each call site passes
+the value its copy used. The value moves from the body to the call sites, so the guard is run
+with `--dedup` and every value must still occur.
+
 **Copies that differ only in a type** (the same body, once for `int` and once for `double`)
 become one generic `private` helper. Its constraints provide exactly the operations the copies
 use and nothing else (for example `IEquatable<T>` for `.Equals`, `IComparisonOperators<T, T,
@@ -359,11 +428,17 @@ it still occurs, and no value new to the file may appear.
 
 **Use when:** CodeScene reports *Lines of Code in a Single File* or *Number of Functions in a
 Single Module*, or when Recipe E or P steps score `DOWN` or `WORSE` only because they would
-bring *Number of Functions in a Single Module*.
+bring *Number of Functions in a Single Module* or *Overall Code Complexity* (the average
+complexity of the file's methods: one more method pushes it over, and every later step then
+scores `DOWN`).
 
 **Never the first recipe.** Work through the task's steps once first; the file often drops
-below the limit without a split. Split when the remaining steps stall on the file's size: the
-smells above are reported, or E and P steps fail on *Number of Functions in a Single Module*.
+below the limit without a split. Split when the remaining steps stall on the file's size or
+on those file-level smells.
+
+**A split has a floor.** Some groupings bring *Low Cohesion* instead of clearing the smell
+(R2-03). Try at most two groupings; keep the first one under which the original file scores
+`UP`. If none does, revert and report the file as blocked.
 
 **After the split, keep going.** Work the remaining steps, and retry the steps that were
 `FLAT`, `DOWN` or `WORSE` before the split, on whichever file now holds each method. Measure
@@ -399,6 +474,10 @@ smell (*Overall Code Complexity*, *Number of Functions in a Single Module*), eac
 uses up room that later steps need. Then measure the candidate applications on their own
 first: apply one, run `codehealth_check.py`, revert, and so on for each. Commit the one with
 the highest `UP` score, after all four checks. Say in your report that you chose this way.
+
+A method that stops being a *Complex Method* can reveal *Large Method*, which was hidden while
+the first smell was reported (R2-04 `GetVideoDirectPlayProfile`); a step that does so is `WORSE`
+by the usual rule. Do not retry it; report the method as blocked until its line count falls.
 
 ---
 
@@ -464,3 +543,9 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-17 | Recipe D: copies that differ only in a type become one generic helper whose constraints provide exactly the operations the copies use. | R2-06 `ConditionProcessor`: `CompareInt` and `CompareDouble` were identical apart from `int`/`double`; one `Compare<T>` with `IEquatable<T>` and `IComparisonOperators<T, T, bool>` scored UP (7.35 to 7.57) with all checks passing. Decided by the campaign owner. |
 | 2026-10-17 | Choosing the next step: near a file-level smell, measure the candidate applications alone and commit the best `UP` one, instead of strict task order. | R2-11 `ProbeResultNormalizer.Itunes`: the file had room for one more method before *Overall Code Complexity*; step 1 used it for +0.02 (7.98 to 8.00), while step 4 alone measured 8.18. Every later step was then DOWN. R2-02 likewise found any 3 of 17 extractions, never 4, could score UP. Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
 | 2026-10-17 | `codehealth_check.py`: a step that adds a parameter named with `@` (verbatim identifier) is `WORSE`, because CodeScene skips such methods and the score cannot be trusted. | R2-10 `DynamicHlsController.Video`: extracting a DTO initializer into a 53-argument helper with `bool? @static` and `string? @params` measured UP (7.98 to 8.52) because the method was missing from the review; renamed on a scratch copy it measured 8.01 with the helper flagged. The agent caught it and reverted. No landed step has such a parameter (checked over the whole campaign diff). |
+| 2026-10-17 | Recipe E rule 7 generalised: a tail of the method whose every path ends in `return` or `throw` (a loop plus the final return, a chain of `if (...) { return X; }`, a block that returns on every path) may be extracted as one method called as `return M(...)`; a variable the tail assigns before reading it is declared inside the new method with its original type. Rule 9: the extracted block need not be nested; a run of statements forming one step is enough. | Trailing `if` chains blocked work in R07 `GetPlaylistAudioCodecs`, R2-05 `GetOutputFileExtension`, R2-08 `GetPathProtocol`, R2-09 `GetPlaylistAudioCodecs`, R2-03 `RegisterItem`, R2-04 `GetOptimalAudioStream` and `GetAudioDirectPlayProfile`. R2-01 already extracted return-on-every-path blocks (`GetAudioVbrModeParam`, `GetBitStreamArgs`, `GetSwScaleFilter`, `GetVideoBitrateParam`, `GetHwTonemapFilter`, where `args = ...` became a declaration) and asked for a ruling. R2-04 and R2-03 (`LogDirectPlayEligibility`, `DeleteItemPath`) extracted single statements that carried `??` complexity. Adopted by the campaign owner. |
+| 2026-10-17 | Recipe P: the expression need not be built from `&&` and `||`; a boolean that carries its complexity in `??`, `?:` or `?.` is a predicate. | R2-04 `IsAudioBitrateLimitExceeded` wraps `IsBitrateLimitExceeded(item, options.GetMaxBitrate(true) ?? 0)`; it scored UP. Adopted by the campaign owner. |
+| 2026-10-17 | Nullable flow analysis, case 3: for a nullable-valued property null-checked inside the expression, the guard terms of the object stay first at the call site and the property is passed as a `[NotNullWhen]` parameter. Compile-tested in a scratch project: it builds with warnings as errors, and without the attribute fails with CS8629. | R2-09 `GetOutputVideoCodecLevel` (`state.VideoStream.Level`) and `GetOutputAv1BitDepth` (`state.VideoStream.BitDepth`); R2-03 `UpdateDateBasedEpisodeNumbers` (`episode.Year`, `Month`, `Day`). Adopted by the campaign owner. |
+| 2026-10-17 | Recipe S: also when *Overall Code Complexity* blocks every new method; at most two groupings, and a file with no grouping that scores `UP` is reported as blocked. | R2-11 `ProbeResultNormalizer.Itunes`: the file had room for one more method, then every E or P step scored DOWN. R2-02 `ApplyTranscodingConditions`: a fourth extraction brings three smells at once. R2-03: every grouping that clears *Number of Functions* brought *Low Cohesion*. Adopted by the campaign owner. |
+| 2026-10-17 | Recipe D: blocks or loops that differ in a single constant or enum member may be merged into one helper taking that value, even when CodeScene reports no *Code Duplication*. | R2-11 `ProcessPairs`: three `foreach` loops that differ only in `PersonKind`. Adopted by the campaign owner. |
+| 2026-10-17 | Choosing the next step: a step that reveals *Large Method* is `WORSE`; do not retry, report the method as blocked. | R2-04 `GetVideoDirectPlayProfile`: reducing it from a Complex Method showed Large Method (81 lines), 7.79 to 8.29 was WORSE. |
