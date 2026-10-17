@@ -490,7 +490,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (overlayFilters?.Count == 0)
             {
                 // -vf "scale..."
-                return string.IsNullOrEmpty(mainStr) ? string.Empty : " -vf \"" + mainStr + "\"";
+                return GetMainOnlyVideoFilterParam(mainStr);
             }
 
             if (HasSubtitleOverlay(state, subFilters, overlayFilters))
@@ -563,6 +563,11 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static bool ShouldAddFpsFilter(List<string> mainFilters, double? framerate)
         {
             return mainFilters is not null && framerate.HasValue;
+        }
+
+        private static string GetMainOnlyVideoFilterParam(string mainStr)
+        {
+            return string.IsNullOrEmpty(mainStr) ? string.Empty : " -vf \"" + mainStr + "\"";
         }
 
         private static void AddFpsFilter(EncodingJobInfo state, List<string> mainFilters, double? framerate)
