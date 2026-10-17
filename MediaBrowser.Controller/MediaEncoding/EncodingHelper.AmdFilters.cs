@@ -133,11 +133,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add("hwmap=derive_device=opencl:mode=read");
 
                 // hw deint
-                if (doDeintH2645)
-                {
-                    var deintFilter = GetHwDeinterlaceFilter(state, options, "opencl");
-                    mainFilters.Add(deintFilter);
-                }
+                AddAmdOclHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 // hw transpose
                 if (doOclTranspose)

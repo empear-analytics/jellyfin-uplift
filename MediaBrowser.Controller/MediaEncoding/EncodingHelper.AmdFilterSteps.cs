@@ -70,5 +70,14 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add("hwmap=derive_device=opencl:mode=read");
             }
         }
+
+        private void AddAmdOclHwDeinterlaceFilter(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, bool doDeintH2645)
+        {
+            if (doDeintH2645)
+            {
+                var deintFilter = GetHwDeinterlaceFilter(state, options, "opencl");
+                mainFilters.Add(deintFilter);
+            }
+        }
     }
 }
