@@ -19,7 +19,8 @@ recipes are the protection; the tests are the backstop.
    several methods (see Recipe D).
 2. **Re-measure after every step, before committing it.** If the Code Health score did not
    improve, revert. A step that raises the score but brings a smell category new to the file,
-   or makes an already flagged method worse, is reverted too (verdict `WORSE`).
+   makes an already flagged method worse, or creates a method with *Excess Number of Function
+   Arguments*, is reverted too (verdict `WORSE`).
 3. **When in doubt, stop and report.** An unfinished task is fine. A silently broken
    media server is not.
 
@@ -67,6 +68,17 @@ blocks of nested logic). Each "bump" is a missing method.
    bump. Do not invent `out` parameters, tuples, or a result class.
 5. If the block contains `await`, the new method is `async` and the call is awaited where
    the block was. Keep every `.ConfigureAwait(false)` exactly as it was.
+6. **A block that sets a flag only on some paths** (`changed = true;` inside an `if`) still
+   produces a single value. Pass the flag in and return it:
+   `changed = FillParentIndexNumber(episode, changed);`. The new method starts from the value
+   passed in, so a path that does not set the flag returns it unchanged.
+7. **A loop at the end of a method whose `return` statements end the method** may be
+   extracted together with the method's final `return`. The call becomes
+   `return FindFirstSupportedContainer(...);`. Every `return` inside the loop, and the final
+   one, move unchanged. This applies only when nothing follows the loop but that final
+   `return`.
+8. If the block reads a nullable value that the code before it has checked, see
+   [Nullable flow analysis](#nullable-flow-analysis-recipes-e-and-p).
 
 **Before:**
 
@@ -213,6 +225,10 @@ Copy the expression **character for character**. Do not "simplify" the boolean a
 and do not reorder the operands - `&&` and `?.` short-circuit, so reordering can change
 which side effects run and can introduce null dereferences.
 
+If the build then fails with CS8602 or CS8629, because the code after the condition relied
+on a null check inside it, see
+[Nullable flow analysis](#nullable-flow-analysis-recipes-e-and-p).
+
 **An `out` variable the expression already declares** becomes an `out` parameter of the
 predicate, when the code after the condition uses it. This is not the invented `out`
 parameter Recipe E forbids: the expression had it already. Declare it as an `out` parameter
@@ -241,6 +257,67 @@ private static bool IsParsableDate(string val, out DateTime dateTime)
 
 ---
 
+## Nullable flow analysis (Recipes E and P)
+
+The build treats nullable warnings as errors. Moving a null check into a predicate, or moving
+code away from the check that guards it, hides that check from the compiler: CS8629
+(`Nullable value type may be null`) or CS8602 (`Dereference of a possibly null reference`).
+Two changes are allowed to make such a step compile. Nothing else is: never add `!`, never
+add a null check, never change a type.
+
+**1. A null check on a parameter of the predicate.** When the predicate's expression checks
+one of its own parameters (`bitrate.HasValue && ...`, `dvProfile is null || ...`), mark that
+parameter with `[NotNullWhen(...)]` from `System.Diagnostics.CodeAnalysis`:
+
+- `[NotNullWhen(true)]` when the predicate can return `true` only if the parameter is not null
+  (`x.HasValue && ...`, `x is not null && ...`);
+- `[NotNullWhen(false)]` when it can return `false` only if the parameter is not null
+  (`x is null || ...`, `!x.HasValue || ...`).
+
+The attribute is read only by the compiler. The expression stays character for character.
+
+```csharp
+if (IsLossyAudioBitrate(bitrate, codec))
+{
+    args += " -ab " + bitrate.Value.ToString(CultureInfo.InvariantCulture);
+}
+
+private static bool IsLossyAudioBitrate([NotNullWhen(true)] int? bitrate, string codec)
+{
+    return bitrate.HasValue && !EncodingHelper.LosslessAudioCodecs.Contains(codec, StringComparison.OrdinalIgnoreCase);
+}
+```
+
+**2. A member path checked before the moved code.** When the moved expression or block reads
+a path such as `state.VideoRequest` that the code before it has already checked for null
+(`if (state.VideoRequest is null) { return; }`), pass that path as its own parameter, with its
+non-nullable type, and replace exactly that path by the parameter's name inside the moved code.
+Every other character stays as it was. Only when all of these hold:
+
+- the moved code only reads the path; it never assigns to it or to any part of it;
+- the path is a field or a property whose getter has no side effects (read its definition;
+  a computed getter that only reads is fine);
+- nothing between the check and the call can change the path.
+
+```csharp
+// Before, after `if (state.VideoRequest is null) { return; }`
+if (state.VideoRequest.VideoBitRate.HasValue && state.VideoRequest.VideoBitRate >= sourceBitrate)
+
+// After
+if (IsRequestedBitrateAtLeastSource(state.VideoRequest, sourceBitrate))
+
+private static bool IsRequestedBitrateAtLeastSource(VideoRequestDto videoRequest, int sourceBitrate)
+{
+    return videoRequest.VideoBitRate.HasValue && videoRequest.VideoBitRate >= sourceBitrate;
+}
+```
+
+Still not covered, so still reported: an `out` variable the expression assigns only on some
+paths (CS0177), an `out` argument that writes to an existing variable, and a pattern variable
+(`is Video video`) that the code after the condition uses.
+
+---
+
 ## Recipe D - Deduplicate
 
 **Use when:** CodeScene reports *Code Duplication*.
@@ -259,6 +336,19 @@ an earlier step extracted from the same file, instead of getting a second helper
 body. The copy must be identical to the helper's body, character for character, apart from
 the names of the variables passed in.
 
+**Copies that differ only in a type** (the same body, once for `int` and once for `double`)
+become one generic `private` helper. Its constraints provide exactly the operations the copies
+use and nothing else (for example `IEquatable<T>` for `.Equals`, `IComparisonOperators<T, T,
+bool>` for `>=` and `<=`). The body stays character for character. Only when every operation
+resolves, for each of the original types, to the same member it called before: `IEquatable<T>.Equals`
+is `int.Equals(int)` and `double.Equals(double)`, and the operator interfaces are the types' own
+operators. Anything that would need a conversion, a cast or a different overload is not covered.
+
+```csharp
+private static bool Compare<T>(ProfileCondition condition, ProfileConditionType conditionType, T currentValue, T expected)
+    where T : IEquatable<T>, IComparisonOperators<T, T, bool>
+```
+
 Removing a copy removes its literals, so check this recipe with
 `python tools/refactor_guard.py --dedup <file>`: a literal may occur fewer times, as long as
 it still occurs, and no value new to the file may appear.
@@ -267,10 +357,17 @@ it still occurs, and no value new to the file may appear.
 
 ## Recipe S - Split File
 
-**Use when:** CodeScene reports *Lines of Code in a Single File*.
+**Use when:** CodeScene reports *Lines of Code in a Single File* or *Number of Functions in a
+Single Module*, or when Recipe E or P steps score `DOWN` or `WORSE` only because they would
+bring *Number of Functions in a Single Module*.
 
-**This is the last recipe you apply, never the first.** Reduce method complexity first;
-the file often drops below the limit without needing a split at all.
+**Never the first recipe.** Work through the task's steps once first; the file often drops
+below the limit without a split. Split when the remaining steps stall on the file's size: the
+smells above are reported, or E and P steps fail on *Number of Functions in a Single Module*.
+
+**After the split, keep going.** Work the remaining steps, and retry the steps that were
+`FLAT`, `DOWN` or `WORSE` before the split, on whichever file now holds each method. Measure
+each later step on the file it changes.
 
 **How:**
 
@@ -282,10 +379,26 @@ the file often drops below the limit without needing a split at all.
 4. Re-run `dotnet build Jellyfin.sln` and confirm the analyzers accept the new file.
 5. Check the literals of the original and the new files as one unit:
    `python tools/refactor_guard.py --together <original> <new files>`.
+6. Keep the split when the original file scores `UP`. On `WORSE`, `FLAT` or `DOWN`, try
+   another grouping, or revert. Measure each new file with
+   `python tools/codehealth_check.py <new file>` and list its score in your report.
+
+The new files are part of the campaign's scope from then on. When you report a score for a
+file you split, give the original file's score and each new file's score.
 
 Do not split a file if it would require making a `private` member `internal` or `public`,
 or moving members to another class. Widening accessibility is a behaviour change in the
 sense that matters here: it changes what the rest of the program can reach.
+
+---
+
+## Choosing the next step
+
+Work the task file's steps in order, with one exception. When a file is close to a file-level
+smell (*Overall Code Complexity*, *Number of Functions in a Single Module*), each new method
+uses up room that later steps need. Then measure the candidate applications on their own
+first: apply one, run `codehealth_check.py`, revert, and so on for each. Commit the one with
+the highest `UP` score, after all four checks. Say in your report that you chose this way.
 
 ---
 
@@ -322,7 +435,7 @@ and ends with a verdict:
 | Tests fail | `git checkout -- <file>`. No exceptions. Never change a test. |
 | Guard FAILs | `git checkout -- <file>`. No exceptions. |
 | `UP` | Keep it. Commit. Next method. |
-| `WORSE` | The score rose, but a smell is new or a method got worse. `git checkout -- <file>`. Next method. |
+| `WORSE` | The score rose, but a smell is new, a method got worse, or a new method has too many arguments. `git checkout -- <file>`. Next method. |
 | `FLAT` or `DOWN` | `git checkout -- <file>`. Next method. |
 
 The guard checks constants, not control flow, and the tests catch only some behaviour
@@ -344,3 +457,10 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-16 | Rule 1: one commit may apply the same recipe several times within the same method. | First backlog batches: agents already made several extractions per method and commit (R13, R19, R22). R14's first agent expected its two mapping `switch` expressions to score UP only if extracted together; the rerun under this rule measured FLAT (each extracted switch is itself a Complex Method), so R14 is not evidence for it. Decided by the campaign owner. |
 | 2026-10-16 | Recipe D: a duplicate spread over several methods is deduplicated in one commit; an identical copy CodeScene does not report may reuse a helper extracted earlier from the same file. | R17 `EncodingJobInfo`: deduplicating one of three methods per commit is FLAT, all three at once UP (8.54 to 9.09). R18 `DotIgnoreIgnoreRule` and R14 `HlsCodecStringHelpers`: identical copies needed a second helper with the same body, because reuse counted as Recipe D without a duplication report. Decided by the campaign owner. |
 | 2026-10-16 | Rule 2: a step that raises the score but brings a smell category new to the file, or raises the number of an already flagged method, is reverted (`codehealth_check.py` verdict `WORSE`). | CodeScene's PR gate on part 1 (#9) rejected two such steps although each file improved: R15 `PathExtensions` (Complex Method in `GetAttributeValue`, cc 27 to 31) and R14 `HlsCodecStringHelpers` (new String Heavy Function Arguments). Decided by the campaign owner; the two steps stay. |
+| 2026-10-17 | Nullable flow analysis: a predicate parameter that the expression null-checks gets `[NotNullWhen]`; a member path checked before the moved code is passed as its own non-nullable parameter. | Recipes P and E failed to compile on CS8629 or CS8602 in R01, R02, R03, R04, R06 and R07 (for example R07 `AppendDvString` and `GetOutputVideoCodecLevel`, R06 `ApplyVideoOutputSettings`, R03 `DeleteItem`). R05 applied `[NotNullWhen(true)]` to `IsLossyAudioBitrate`, which compiled and passed all checks; R06 proposed passing `state.VideoRequest` as a parameter. Decided by the campaign owner. |
+| 2026-10-17 | Recipe S: also when *Number of Functions in a Single Module* blocks Recipes E and P; never first, but no longer only last; steps continue on the split-off files. | R04 `ProbeResultNormalizer`: every E or P step after step 5 scored DOWN on that smell; the split scored UP (4.83 to 8.41). R05 `DynamicHlsController` and R02 `StreamBuilder` split likewise; in R02, seven steps that were FLAT before the split scored UP after it. R01 `GetHwaccelType` (E WORSE twice) and R03 stalled on the same smell without a split. Decided by the campaign owner. |
+| 2026-10-17 | Recipe E: a block that sets a flag on some paths passes the flag in and returns it; a trailing loop whose `return` statements end the method moves with the final `return`. | R03 `SavePeopleMetadataAsync` and `FillMissingEpisodeNumbersFromPath`; R02 `SelectMostEfficientSubtitleStreamIndex` and `SelectFirstSupportedContainer`. Both shapes were reviewed as equivalent and landed in part 3 (#11). Decided by the campaign owner. |
+| 2026-10-17 | Rule 2: a step that creates a method with *Excess Number of Function Arguments* is `WORSE`. | R07 added helpers with 6 and 7 arguments (`AppendBitrateVariantPlaylists`, `AppendCompatibilityPlaylists`), R05 one with 9 (`StartTranscodingForSegment`), R01 one with 5 (`HasMissingScaleInput`). They passed as UP because the file already had the category. Decided by the campaign owner. |
+| 2026-10-17 | Recipe D: copies that differ only in a type become one generic helper whose constraints provide exactly the operations the copies use. | R2-06 `ConditionProcessor`: `CompareInt` and `CompareDouble` were identical apart from `int`/`double`; one `Compare<T>` with `IEquatable<T>` and `IComparisonOperators<T, T, bool>` scored UP (7.35 to 7.57) with all checks passing. Decided by the campaign owner. |
+| 2026-10-17 | Choosing the next step: near a file-level smell, measure the candidate applications alone and commit the best `UP` one, instead of strict task order. | R2-11 `ProbeResultNormalizer.Itunes`: the file had room for one more method before *Overall Code Complexity*; step 1 used it for +0.02 (7.98 to 8.00), while step 4 alone measured 8.18. Every later step was then DOWN. R2-02 likewise found any 3 of 17 extractions, never 4, could score UP. Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
+| 2026-10-17 | `codehealth_check.py`: a step that adds a parameter named with `@` (verbatim identifier) is `WORSE`, because CodeScene skips such methods and the score cannot be trusted. | R2-10 `DynamicHlsController.Video`: extracting a DTO initializer into a 53-argument helper with `bool? @static` and `string? @params` measured UP (7.98 to 8.52) because the method was missing from the review; renamed on a scratch copy it measured 8.01 with the helper flagged. The agent caught it and reverted. No landed step has such a parameter (checked over the whole campaign diff). |

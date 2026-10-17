@@ -133,3 +133,7 @@ These were found while recording. The tests record the current behaviour, and no
 - `ProbeResultNormalizer.FetchWtvInfo` (now `SetWtvDates` in `ProbeResultNormalizer.Video.cs`):
   `PremiereDate` is parsed from `year`; `premiereDateString` is read and never used. (Reported by
   the R04 agent.)
+- `StreamBuilder.ApplyTranscodingConditions` (now in `StreamBuilder.TranscodingConditions.cs`):
+  every `condition.Condition == ProfileConditionType.GreaterThanEqual` branch inside the switch is
+  unreachable, because the loop skips conditions of that type before the switch. (Reported by the
+  R2-02 agent.)

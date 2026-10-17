@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Numerics;
 using Jellyfin.Data.Enums;
 using Jellyfin.Extensions;
 using MediaBrowser.Model.MediaInfo;
@@ -203,7 +204,7 @@ namespace MediaBrowser.Model.Dlna
 
             if (int.TryParse(condition.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var expected))
             {
-                return CompareInt(condition, conditionType, currentValue.Value, expected);
+                return Compare(condition, conditionType, currentValue.Value, expected);
             }
 
             return false;
@@ -223,7 +224,8 @@ namespace MediaBrowser.Model.Dlna
             return false;
         }
 
-        private static bool CompareInt(ProfileCondition condition, ProfileConditionType conditionType, int currentValue, int expected)
+        private static bool Compare<T>(ProfileCondition condition, ProfileConditionType conditionType, T currentValue, T expected)
+            where T : IEquatable<T>, IComparisonOperators<T, T, bool>
         {
             switch (conditionType)
             {
@@ -312,27 +314,10 @@ namespace MediaBrowser.Model.Dlna
 
             if (double.TryParse(condition.Value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var expected))
             {
-                return CompareDouble(condition, conditionType, currentValue.Value, expected);
+                return Compare(condition, conditionType, currentValue.Value, expected);
             }
 
             return false;
-        }
-
-        private static bool CompareDouble(ProfileCondition condition, ProfileConditionType conditionType, double currentValue, double expected)
-        {
-            switch (conditionType)
-            {
-                case ProfileConditionType.Equals:
-                    return currentValue.Equals(expected);
-                case ProfileConditionType.GreaterThanEqual:
-                    return currentValue >= expected;
-                case ProfileConditionType.LessThanEqual:
-                    return currentValue <= expected;
-                case ProfileConditionType.NotEquals:
-                    return !currentValue.Equals(expected);
-                default:
-                    throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition);
-            }
         }
 
         private static bool IsConditionSatisfied(ProfileCondition condition, TransportStreamTimestamp? timestamp)

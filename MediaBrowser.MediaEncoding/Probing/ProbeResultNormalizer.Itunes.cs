@@ -110,15 +110,7 @@ namespace MediaBrowser.MediaEncoding.Probing
                             pairs = new List<NameValuePair>();
                             break;
                         case "string":
-                            var value = reader.ReadElementContentAsString();
-                            if (!string.IsNullOrWhiteSpace(value))
-                            {
-                                pairs.Add(new NameValuePair
-                                {
-                                    Name = value,
-                                    Value = value
-                                });
-                            }
+                            AddStringValuePair(reader, pairs);
 
                             break;
                         case "array":
@@ -146,6 +138,19 @@ namespace MediaBrowser.MediaEncoding.Probing
                 {
                     reader.Read();
                 }
+            }
+        }
+
+        private static void AddStringValuePair(XmlReader reader, List<NameValuePair> pairs)
+        {
+            var value = reader.ReadElementContentAsString();
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                pairs.Add(new NameValuePair
+                {
+                    Name = value,
+                    Value = value
+                });
             }
         }
 

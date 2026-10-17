@@ -14,6 +14,7 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import subprocess
@@ -32,7 +33,8 @@ RECIPES = {
     "Brain Method": "G, E, P",
     "Large Method": "E",
     "Code Duplication": "D",
-    "Lines of Code in a Single File": "S (last)",
+    "Lines of Code in a Single File": "S (not first)",
+    "Number of Functions in a Single Module": "S (not first)",
     "Overall Code Complexity": "follows the functions",
 }
 
@@ -49,7 +51,8 @@ PLUGIN_API = ("MediaBrowser.Controller/", "MediaBrowser.Model/")
 
 # Internal members that the existing tests call directly; see test-harness.md, "What the tests freeze".
 FROZEN_INTERNALS = {
-    "MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.cs": ["GetEstimatedAudioBitrate", "GetFrameRate", "IsNearSquarePixelSar"],
+    "MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.cs": ["GetEstimatedAudioBitrate"],
+    "MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.MediaStream.cs": ["GetFrameRate", "IsNearSquarePixelSar"],
     "MediaBrowser.Model/Dlna/StreamBuilder.cs": ["ContainerReasons"],
     "Jellyfin.Api/Controllers/DynamicHlsController.cs": ["GetDolbyVisionHevcCodecTag", "GetSegmentLengthsInternal", "WaitForActiveTranscodingRequests"],
     "Jellyfin.Api/Helpers/MediaInfoHelper.cs": ["GetPublishedLiveStreamPath"],
@@ -160,7 +163,7 @@ def task_text(task_id: str, entry: dict) -> str:
     stem = Path(rel).stem
     part, tests = PARTS[str(Path(rel).parent).replace("\\", "/")]
     rows = entry["functions"]
-    recipes = sorted({r for s in entry["smells"] for r in RECIPES.get(s["category"], "").replace(" (last)", "").split(", ") if len(r) == 1})
+    recipes = sorted({r for s in entry["smells"] for r in RECIPES.get(s["category"], "").replace(" (not first)", "").split(", ") if len(r) == 1})
     uncovered = sorted({s["category"] for s in entry["smells"]} - set(RECIPES))
 
     out = [f"# {task_id} - refactor `{rel}`", ""]
@@ -196,9 +199,12 @@ def task_text(task_id: str, entry: dict) -> str:
     for s in sorted(entry["smells"], key=lambda s: -(s.get("indication") or 0)):
         out += [f"| {s['category']} | {s.get('indication')} | {RECIPES.get(s['category'], 'none - report it')} |"]
     out += [""]
-    if any(s["category"] == "Lines of Code in a Single File" for s in entry["smells"]):
-        out += ["This file also trips **Lines of Code in a Single File**. Splitting it is the *last* step."]
-        out += ["Reduce method-level complexity first; the file may drop below the limit without a split.", ""]
+    size_smells = [s["category"] for s in entry["smells"] if s["category"] in ("Lines of Code in a Single File", "Number of Functions in a Single Module")]
+    if size_smells:
+        out += [f"This file also trips **{' and '.join(size_smells)}**. Splitting it (Recipe S) is never the first step:"]
+        out += ["work the steps below once, then split when they stall on the file's size, and keep going on the new files.", ""]
+    out += ["If Recipe E or P steps score `DOWN` or `WORSE` only because they bring *Number of Functions in a Single"]
+    out += ["Module*, that is the signal for Recipe S (see the playbook).", ""]
 
     out += ["## 4. What must not change here", ""]
     if rel.startswith(PLUGIN_API):
@@ -270,9 +276,8 @@ def task_text(task_id: str, entry: dict) -> str:
     return "\n".join(out)
 
 
-def existing_progress() -> dict[str, tuple[str, str]]:
+def existing_progress(backlog: Path) -> dict[str, tuple[str, str]]:
     """The Current and Status columns of the backlog's progress table, kept across regenerations."""
-    backlog = DOCS / "BACKLOG.md"
     if not backlog.is_file():
         return {}
     rows = {}
@@ -280,14 +285,22 @@ def existing_progress() -> dict[str, tuple[str, str]]:
     for line in backlog.read_text(encoding="utf-8").splitlines():
         if line.startswith("## Progress"):
             in_progress = True
-        elif in_progress and re.match(r"\| R\d+ \|", line):
+        elif in_progress and re.match(r"\| R[\d-]+ \|", line):
             cells = [c.strip() for c in line.strip("|").split("|")]
             rows[cells[0]] = (cells[2], cells[3])
     return rows
 
 
 def main() -> None:
-    sweep = json.loads((DOCS / "scope-baseline.json").read_text(encoding="utf-8"))
+    ap = argparse.ArgumentParser(description="Generate the task files and backlog of one campaign round.")
+    ap.add_argument("--round", type=int, default=1,
+                    help="round 1 (default): tasks R01.. and BACKLOG.md; round N: tasks RN-01.. and BACKLOG-roundN.md")
+    ap.add_argument("--sweep", help="codehealth_sweep.py output to plan from (default: scope-baseline.json)")
+    args = ap.parse_args()
+    sweep_path = Path(args.sweep) if args.sweep else DOCS / "scope-baseline.json"
+    sweep = json.loads(sweep_path.read_text(encoding="utf-8"))
+    prefix = "R" if args.round == 1 else f"R{args.round}-"
+    backlog = DOCS / ("BACKLOG.md" if args.round == 1 else f"BACKLOG-round{args.round}.md")
     mutation = mutation_scores()
     entries = []
     for f in sweep["files"]:
@@ -305,27 +318,28 @@ def main() -> None:
 
     tasks = DOCS / "tasks"
     tasks.mkdir(exist_ok=True)
-    for old in tasks.glob("R*.md"):
-        old.unlink()
+    for old in tasks.glob(prefix + "*.md"):
+        if re.match(re.escape(prefix) + r"\d\d-", old.name):
+            old.unlink()
     rows = []
     for i, entry in enumerate(entries, 1):
-        task_id = f"R{i:02d}"
+        task_id = f"{prefix}{i:02d}"
         name = f"{task_id}-{Path(entry['path']).stem}.md"
         (tasks / name).write_text(task_text(task_id, entry), encoding="utf-8", newline="\n")
         worst = max(entry["functions"], key=lambda r: r.get("cc") or 0, default=None)
         worst_text = f"`{worst['name']}` (cc {worst['cc']})" if worst and worst.get("cc") else "-"
         rows.append((task_id, name, entry, worst_text))
 
-    out = ["# Backlog", ""]
+    out = ["# Backlog" + ("" if args.round == 1 else f", round {args.round}"), ""]
     out += ["Every scope file below Code Health 10.00, ranked worst first. Generated by"]
-    out += ["`tools/make_refactoring_tasks.py` from `scope-baseline.json` (sweep at "
+    out += [f"`tools/make_refactoring_tasks.py` from `{sweep_path.name}` (sweep at "
             + sweep.get("commit", "?")[:10] + ").", ""]
     out += ["See [`README.md`](README.md) for the campaign rules and [`PLAYBOOK.md`](PLAYBOOK.md) for the"]
     out += ["allowed transformations.", ""]
     out += ["| Task | File | Score | LoC | Churn | Mutation (S / M) | Recipes | Smells without a recipe | Worst method |"]
     out += ["| --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for task_id, name, e, worst in rows:
-        recipes = sorted({r for s in e["smells"] for r in RECIPES.get(s["category"], "").replace(" (last)", "").split(", ") if len(r) == 1})
+        recipes = sorted({r for s in e["smells"] for r in RECIPES.get(s["category"], "").replace(" (not first)", "").split(", ") if len(r) == 1})
         uncovered = sorted({s["category"] for s in e["smells"]} - set(RECIPES))
         m = e["mutation"]
         low = " (low)" if m and min(m.values()) < PROTECTION_FLOOR else ""
@@ -336,14 +350,16 @@ def main() -> None:
     out += ["", "## Aggregate", ""]
     out += [f"- **{len(rows)} files** below 10.00, {total_loc:,} lines of code"]
     out += [f"- {sum(len(e['functions']) for _, _, e, _ in rows)} flagged methods"]
-    out += ["- The other 14 scored scope files are already at 10.00; 28 scope files have no methods to score", ""]
+    optimal = sum(1 for f in sweep["files"] if f.get("score") is not None and f["score"] >= 10)
+    unscored = sum(1 for f in sweep["files"] if f.get("score") is None)
+    out += [f"- The other {optimal} scored scope files are already at 10.00; {unscored} scope files have no methods to score", ""]
     out += ["## Progress", "", "Update as tasks land.", "", "| Task | Baseline | Current | Status |", "| --- | --- | --- | --- |"]
-    progress = existing_progress()
+    progress = existing_progress(backlog)
     for task_id, _, e, _ in rows:
         current, status = progress.get(task_id, ("-", "not started"))
         out += [f"| {task_id} | {e['score']:.2f} | {current} | {status} |"]
-    (DOCS / "BACKLOG.md").write_text("\n".join(out) + "\n", encoding="utf-8", newline="\n")
-    print(f"wrote {len(rows)} task files and BACKLOG.md")
+    backlog.write_text("\n".join(out) + "\n", encoding="utf-8", newline="\n")
+    print(f"wrote {len(rows)} task files and {backlog.name}")
 
 
 if __name__ == "__main__":
