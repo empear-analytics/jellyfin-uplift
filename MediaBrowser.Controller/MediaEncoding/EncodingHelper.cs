@@ -2852,7 +2852,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     && request.Width.Value > videoStream.Width.Value;
 
                 // Don't allow bitrate increases unless upscaling
-                if (!isUpscaling && bitrate.HasValue && videoStream.BitRate.HasValue)
+                if (ShouldCapToSourceBitrate(isUpscaling, bitrate, videoStream))
                 {
                     bitrate = GetMinBitrate(videoStream.BitRate.Value, bitrate.Value);
                 }
@@ -2881,6 +2881,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             // sources that bypass the LiveTV pipeline are not covered by it.
             const int MaxSaneBitrate = 400_000_000; // 400 Mbps
             return Math.Min(bitrate ?? 0, MaxSaneBitrate);
+        }
+
+        private static bool ShouldCapToSourceBitrate(bool isUpscaling, int? bitrate, MediaStream videoStream)
+        {
+            return !isUpscaling && bitrate.HasValue && videoStream.BitRate.HasValue;
         }
 
         private int GetMinBitrate(int sourceBitrate, int requestedBitrate)
