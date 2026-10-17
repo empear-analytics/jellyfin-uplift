@@ -60,5 +60,15 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             return (isDxInDxOut || isUploadForOclTonemap) && !hasSubs;
         }
+
+        private static void AddAmdOclTonemapUpload(List<string> mainFilters, bool doOclTonemap)
+        {
+            if (doOclTonemap)
+            {
+                mainFilters.Add("hwupload=derive_device=d3d11va:extra_hw_frames=24");
+                mainFilters.Add("format=d3d11");
+                mainFilters.Add("hwmap=derive_device=opencl:mode=read");
+            }
+        }
     }
 }

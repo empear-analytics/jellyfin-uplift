@@ -123,12 +123,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // keep video at memory except ocl tonemap,
                 // since the overhead caused by hwupload >>> using sw filter.
                 // sw => hw
-                if (doOclTonemap)
-                {
-                    mainFilters.Add("hwupload=derive_device=d3d11va:extra_hw_frames=24");
-                    mainFilters.Add("format=d3d11");
-                    mainFilters.Add("hwmap=derive_device=opencl:mode=read");
-                }
+                AddAmdOclTonemapUpload(mainFilters, doOclTonemap);
             }
 
             if (isD3d11vaDecoder)
