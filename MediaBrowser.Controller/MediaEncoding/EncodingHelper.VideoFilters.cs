@@ -114,55 +114,11 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (string.Equals(hwTonemapSuffix, "vaapi", StringComparison.OrdinalIgnoreCase))
             {
-                var doVaVppProcamp = false;
-                var procampParams = string.Empty;
-                if (IsVppTonemappingBrightnessInRange(options))
-                {
-                    procampParams += "procamp_vaapi=b={0}";
-                    doVaVppProcamp = true;
-                }
-
-                if (options.VppTonemappingContrast > 1
-                    && options.VppTonemappingContrast <= 10)
-                {
-                    procampParams += doVaVppProcamp ? ":c={1}" : "procamp_vaapi=c={1}";
-                    doVaVppProcamp = true;
-                }
-
-                args = procampParams + "{2}tonemap_vaapi=format={3}:p=bt709:t=bt709:m=bt709:extra_hw_frames=32";
-
-                return string.Format(
-                        CultureInfo.InvariantCulture,
-                        args,
-                        options.VppTonemappingBrightness,
-                        options.VppTonemappingContrast,
-                        doVaVppProcamp ? "," : string.Empty,
-                        videoFormat ?? "nv12");
+                return GetVaapiTonemapFilter(options, videoFormat);
             }
             else
             {
-                args = "tonemap_{0}=format={1}:p=bt709:t=bt709:m=bt709:tonemap={2}:peak={3}:desat={4}";
-
-                var useLegacyTonemapModes = _mediaEncoder.EncoderVersion >= _minFFmpegOclCuTonemapMode
-                                           && _legacyTonemapModes.Contains(options.TonemappingMode);
-
-                var useAdvancedTonemapModes = _mediaEncoder.EncoderVersion >= _minFFmpegAdvancedTonemapMode
-                                              && _advancedTonemapModes.Contains(options.TonemappingMode);
-
-                if (useLegacyTonemapModes || useAdvancedTonemapModes)
-                {
-                    args += ":tonemap_mode={5}";
-                }
-
-                if (options.TonemappingParam != 0)
-                {
-                    args += ":param={6}";
-                }
-
-                if (range == TonemappingRange.tv || range == TonemappingRange.pc)
-                {
-                    args += ":range={7}";
-                }
+                args = GetGenericTonemapArgs(options, range);
             }
 
             return string.Format(
@@ -176,6 +132,62 @@ namespace MediaBrowser.Controller.MediaEncoding
                     mode,
                     options.TonemappingParam,
                     rangeString);
+        }
+
+        private static string GetVaapiTonemapFilter(EncodingOptions options, string videoFormat)
+        {
+            var doVaVppProcamp = false;
+            var procampParams = string.Empty;
+            if (IsVppTonemappingBrightnessInRange(options))
+            {
+                procampParams += "procamp_vaapi=b={0}";
+                doVaVppProcamp = true;
+            }
+
+            if (options.VppTonemappingContrast > 1
+                && options.VppTonemappingContrast <= 10)
+            {
+                procampParams += doVaVppProcamp ? ":c={1}" : "procamp_vaapi=c={1}";
+                doVaVppProcamp = true;
+            }
+
+            var args = procampParams + "{2}tonemap_vaapi=format={3}:p=bt709:t=bt709:m=bt709:extra_hw_frames=32";
+
+            return string.Format(
+                    CultureInfo.InvariantCulture,
+                    args,
+                    options.VppTonemappingBrightness,
+                    options.VppTonemappingContrast,
+                    doVaVppProcamp ? "," : string.Empty,
+                    videoFormat ?? "nv12");
+        }
+
+        private string GetGenericTonemapArgs(EncodingOptions options, TonemappingRange range)
+        {
+            var args = "tonemap_{0}=format={1}:p=bt709:t=bt709:m=bt709:tonemap={2}:peak={3}:desat={4}";
+
+            var useLegacyTonemapModes = _mediaEncoder.EncoderVersion >= _minFFmpegOclCuTonemapMode
+                                       && _legacyTonemapModes.Contains(options.TonemappingMode);
+
+            var useAdvancedTonemapModes = _mediaEncoder.EncoderVersion >= _minFFmpegAdvancedTonemapMode
+                                          && _advancedTonemapModes.Contains(options.TonemappingMode);
+
+            if (useLegacyTonemapModes || useAdvancedTonemapModes)
+            {
+                args += ":tonemap_mode={5}";
+            }
+
+            if (options.TonemappingParam != 0)
+            {
+                args += ":param={6}";
+            }
+
+            if (range == TonemappingRange.tv || range == TonemappingRange.pc)
+            {
+                args += ":range={7}";
+            }
+
+            return args;
         }
 
         private string GetLibplaceboFilter(
