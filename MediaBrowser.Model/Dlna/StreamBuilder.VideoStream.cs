@@ -48,10 +48,7 @@ namespace MediaBrowser.Model.Dlna
             var directAudioFailures = GetDirectAudioFailures(options, item, container, audioStreamWithSupportedCodec);
 
             playlistItem.TranscodeReasons |= directAudioFailures;
-            if (audioStream is not null && audioStreamWithSupportedCodec is null)
-            {
-                playlistItem.TranscodeReasons |= TranscodeReason.AudioCodecNotSupported;
-            }
+            MarkUnsupportedAudioCodec(playlistItem, audioStream, audioStreamWithSupportedCodec);
 
             var directAudioStreamSatisfied = IsDirectAudioStreamSatisfied(audioStreamWithSupportedCodec, channelsExceedsLimit, directAudioFailures, playlistItem);
 
@@ -154,6 +151,14 @@ namespace MediaBrowser.Model.Dlna
             if (videoStream is not null && !ContainerHelper.ContainsContainer(videoCodecs, false, videoStream.Codec))
             {
                 playlistItem.TranscodeReasons |= TranscodeReason.VideoCodecNotSupported;
+            }
+        }
+
+        private static void MarkUnsupportedAudioCodec(StreamInfo playlistItem, MediaStream? audioStream, MediaStream? audioStreamWithSupportedCodec)
+        {
+            if (audioStream is not null && audioStreamWithSupportedCodec is null)
+            {
+                playlistItem.TranscodeReasons |= TranscodeReason.AudioCodecNotSupported;
             }
         }
 
