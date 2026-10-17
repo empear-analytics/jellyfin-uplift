@@ -15,8 +15,11 @@ recipes are the protection; the tests are the backstop.
 
 1. **One recipe, one method, one commit.** Never combine two recipes in one commit. One
    commit may apply the same recipe several times within the same method, for example two
-   extractions from one method. The one exception to "one method" is Recipe D across
-   several methods (see Recipe D).
+   extractions from one method. Two exceptions to "one method": Recipe D across several
+   methods (see Recipe D), and any other single recipe applied the same way to several
+   methods **of one file** when no single application scores `UP` but together they do (each
+   alone `FLAT`, never `DOWN`). Measure each application alone first and say so in the commit
+   message, which lists the methods; every check runs on the combined change.
 2. **Re-measure after every step, before committing it.** If the Code Health score did not
    improve, revert. A step that raises the score but brings a smell category new to the file,
    makes an already flagged method worse, or creates a method with *Excess Number of Function
@@ -549,3 +552,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-17 | Recipe S: also when *Overall Code Complexity* blocks every new method; at most two groupings, and a file with no grouping that scores `UP` is reported as blocked. | R2-11 `ProbeResultNormalizer.Itunes`: the file had room for one more method, then every E or P step scored DOWN. R2-02 `ApplyTranscodingConditions`: a fourth extraction brings three smells at once. R2-03: every grouping that clears *Number of Functions* brought *Low Cohesion*. Adopted by the campaign owner. |
 | 2026-10-17 | Recipe D: blocks or loops that differ in a single constant or enum member may be merged into one helper taking that value, even when CodeScene reports no *Code Duplication*. | R2-11 `ProcessPairs`: three `foreach` loops that differ only in `PersonKind`. Adopted by the campaign owner. |
 | 2026-10-17 | Choosing the next step: a step that reveals *Large Method* is `WORSE`; do not retry, report the method as blocked. | R2-04 `GetVideoDirectPlayProfile`: reducing it from a Complex Method showed Large Method (81 lines), 7.79 to 8.29 was WORSE. |
+| 2026-10-17 | Rule 1: a single recipe may be applied the same way to several methods of one file in one commit when each application alone is `FLAT` and together they score `UP`, as Recipe D already could. | R3-22 `DynamicHlsHelper.Codecs`: nullable case 3 on `GetOutputVideoCodecLevel` and on `GetOutputAv1BitDepth` was `FLAT` each (the guard terms stay behind), `UP` together (8.54 to 9.09); the agent did not commit it because the rule allowed multi-method commits only for Recipe D. Same shape as R17 `EncodingJobInfo` (one of three methods per commit FLAT, all three UP). Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
