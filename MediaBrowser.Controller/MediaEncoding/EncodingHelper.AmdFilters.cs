@@ -91,14 +91,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasSubs = HasSubtitlesToEncode(state);
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
-            var hasAssSubs = hasSubs
-                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+            var hasAssSubs = HasAssSubtitles(state, hasSubs);
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
             var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+            var transposeDir = GetTransposeDirection(state, rotation);
             var doOclTranspose = !string.IsNullOrEmpty(transposeDir)
                 && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.TransposeOpenclReversal);
             var swapWAndH = Math.Abs(rotation) == 90 && (isSwDecoder || (isD3d11vaDecoder && doOclTranspose));
@@ -159,11 +157,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // hw tonemap
-            if (doOclTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "opencl", "nv12", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
             var memoryOutput = false;
             var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
@@ -184,10 +178,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 memoryOutput = true;
             }
 
-            if (memoryOutput)
-            {
-                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
-            }
+            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
             if (NeedsAmfHwOutputMap(isDxInDxOut, isUploadForOclTonemap, hasSubs))
             {
@@ -214,7 +205,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     else if (hasTextSubs)
                     {
                         var framerate = state.VideoStream?.RealFrameRate;
-                        var subFramerate = hasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
+                        var subFramerate = GetSubtitleFramerate(hasAssSubs, framerate);
 
                         // alphasrc=s=1280x720:r=10:start=0,format=yuva420p,subtitles,hwupload
                         var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH, subFramerate);
