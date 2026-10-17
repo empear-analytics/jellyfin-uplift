@@ -294,8 +294,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var nvdecNoInternalCopy = ffmpegVersion >= _minFFmpegHwaUnsafeOutput;
 
             // Strip the display rotation side data from the transposed fmp4 output stream.
-            var stripRotationData = NeedsDisplayRotationStrip(state, ffmpegVersion);
-            var stripRotationDataArgs = stripRotationData ? " -display_rotation 0" : string.Empty;
+            var stripRotationDataArgs = GetStripRotationDataArgs(state, ffmpegVersion);
 
             // VideoToolbox decoders have built-in SW fallback
             if (IsNonVideotoolboxCodecAvailable(options, isCodecAvailable))
@@ -437,6 +436,12 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static string GetRkmppHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
         {
             return " -hwaccel rkmpp" + (outputHwSurface ? " -hwaccel_output_format drm_prime -noautorotate" + stripRotationDataArgs : string.Empty);
+        }
+
+        private string GetStripRotationDataArgs(EncodingJobInfo state, Version ffmpegVersion)
+        {
+            var stripRotationData = NeedsDisplayRotationStrip(state, ffmpegVersion);
+            return stripRotationData ? " -display_rotation 0" : string.Empty;
         }
 
         private static bool IsHwaccelAvailable(bool isHwaccelSupported, bool isCodecAvailable)
