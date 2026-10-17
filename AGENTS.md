@@ -108,6 +108,12 @@ check it with `--dedup`: a literal may occur fewer times, as long as it still oc
 new value appears. Recipe S (split file) moves code to new files, so check the original and
 the new files as one unit with `--together`.
 
+**Leave the machine as you found it.** Other agents build and test on the same machine at the
+same time. Never run `dotnet build-server shutdown` or kill processes you did not start: the
+compiler and MSBuild servers are shared, and stopping them breaks other agents' builds. Every
+process you start must end on its own before you report, and temporary scripts and files go in
+a folder of your own, never in a shared scratchpad.
+
 **Never use `git stash`.** The stash is shared by every worktree of this repository, so
 another agent's `git stash pop` can take your change, and yours can take theirs. To check
 whether a failing test also fails without your change, commit your change first, then put
