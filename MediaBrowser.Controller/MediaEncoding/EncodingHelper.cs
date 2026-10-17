@@ -3625,10 +3625,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 requestedMaxWidth,
                 requestedMaxHeight);
 
-            if (!outWidth.HasValue
-                || !outHeight.HasValue
-                || outWidth.Value <= 0
-                || outHeight.Value <= 0)
+            if (IsMissingOrNonPositiveSize(outWidth, outHeight))
             {
                 return string.Empty;
             }
@@ -3636,10 +3633,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // Automatically add padding based on subtitle input
             var filters = @"scale,scale=-1:{1}:fast_bilinear,crop,pad=max({0}\,iw):max({1}\,ih):(ow-iw)/2:(oh-ih)/2:black@0,crop={0}:{1}";
 
-            if (subtitleWidth.HasValue
-                && subtitleHeight.HasValue
-                && subtitleWidth.Value > 0
-                && subtitleHeight.Value > 0)
+            if (HasPositiveSize(subtitleWidth, subtitleHeight))
             {
                 var videoDar = (double)outWidth.Value / outHeight.Value;
                 var subtitleDar = (double)subtitleWidth.Value / subtitleHeight.Value;
@@ -3656,6 +3650,22 @@ namespace MediaBrowser.Controller.MediaEncoding
                 filters,
                 outWidth.Value,
                 outHeight.Value);
+        }
+
+        private static bool IsMissingOrNonPositiveSize(int? width, int? height)
+        {
+            return !width.HasValue
+                || !height.HasValue
+                || width.Value <= 0
+                || height.Value <= 0;
+        }
+
+        private static bool HasPositiveSize(int? width, int? height)
+        {
+            return width.HasValue
+                && height.HasValue
+                && width.Value > 0
+                && height.Value > 0;
         }
 
         public static string GetAlphaSrcFilter(
