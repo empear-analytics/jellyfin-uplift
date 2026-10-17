@@ -1093,27 +1093,11 @@ namespace MediaBrowser.Model.Dlna
 
                     var failureReasons = directPlayProfileReasons | containerProfileReasons | subtitleProfileReasons;
 
-                    if ((failureReasons & TranscodeReason.VideoCodecNotSupported) == 0)
-                    {
-                        failureReasons |= videoCodecProfileReasons;
-                    }
-
-                    if ((failureReasons & TranscodeReason.AudioCodecNotSupported) == 0)
-                    {
-                        failureReasons |= audioCodecProfileReasons;
-                    }
+                    failureReasons = AddCodecProfileReasons(failureReasons, videoCodecProfileReasons, audioCodecProfileReasons);
 
                     var directStreamFailureReasons = failureReasons & (~DirectStreamReasons);
 
-                    PlayMethod? playMethod = null;
-                    if (CanDirectPlayWith(failureReasons, isEligibleForDirectPlay, mediaSource))
-                    {
-                        playMethod = PlayMethod.DirectPlay;
-                    }
-                    else if (CanDirectStreamWith(directStreamFailureReasons, isEligibleForDirectStream, mediaSource))
-                    {
-                        playMethod = PlayMethod.DirectStream;
-                    }
+                    PlayMethod? playMethod = SelectDirectPlayMethod(failureReasons, directStreamFailureReasons, isEligibleForDirectPlay, isEligibleForDirectStream, mediaSource);
 
                     var ranked = GetRank(ref failureReasons, rankings);
 
@@ -1143,6 +1127,36 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return (Profile: null, PlayMethod: null, AudioStreamIndex: null, TranscodeReasons: failureReasons);
+        }
+
+        private static TranscodeReason AddCodecProfileReasons(TranscodeReason failureReasons, TranscodeReason videoCodecProfileReasons, TranscodeReason audioCodecProfileReasons)
+        {
+            if ((failureReasons & TranscodeReason.VideoCodecNotSupported) == 0)
+            {
+                failureReasons |= videoCodecProfileReasons;
+            }
+
+            if ((failureReasons & TranscodeReason.AudioCodecNotSupported) == 0)
+            {
+                failureReasons |= audioCodecProfileReasons;
+            }
+
+            return failureReasons;
+        }
+
+        private static PlayMethod? SelectDirectPlayMethod(TranscodeReason failureReasons, TranscodeReason directStreamFailureReasons, bool isEligibleForDirectPlay, bool isEligibleForDirectStream, MediaSourceInfo mediaSource)
+        {
+            PlayMethod? playMethod = null;
+            if (CanDirectPlayWith(failureReasons, isEligibleForDirectPlay, mediaSource))
+            {
+                playMethod = PlayMethod.DirectPlay;
+            }
+            else if (CanDirectStreamWith(directStreamFailureReasons, isEligibleForDirectStream, mediaSource))
+            {
+                playMethod = PlayMethod.DirectStream;
+            }
+
+            return playMethod;
         }
 
         private static bool CanDirectPlayWith(TranscodeReason failureReasons, bool isEligibleForDirectPlay, MediaSourceInfo mediaSource)
