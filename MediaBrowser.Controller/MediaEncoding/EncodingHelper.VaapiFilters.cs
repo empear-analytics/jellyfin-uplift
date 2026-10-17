@@ -317,6 +317,15 @@ namespace MediaBrowser.Controller.MediaEncoding
             filters.Add("format=vaapi");
         }
 
+        private static void AddVulkanHwDownload(List<string> mainFilters, bool isSwEncoder, bool doVkTonemap, bool isVaapiDecoder)
+        {
+            if (NeedsVulkanHwDownload(isSwEncoder, doVkTonemap, isVaapiDecoder))
+            {
+                mainFilters.Add("hwdownload");
+                mainFilters.Add("format=nv12");
+            }
+        }
+
         private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
         {
             return isVaapiDecoder && IsIntelVppTonemapAvailable(state, options);
@@ -508,11 +517,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (!hasSubs)
             {
                 // OUTPUT nv12 surface(memory)
-                if (NeedsVulkanHwDownload(isSwEncoder, doVkTonemap, isVaapiDecoder))
-                {
-                    mainFilters.Add("hwdownload");
-                    mainFilters.Add("format=nv12");
-                }
+                AddVulkanHwDownload(mainFilters, isSwEncoder, doVkTonemap, isVaapiDecoder);
 
                 if (NeedsVaapiHwUpload(isSwDecoder, isVaapiEncoder, doVkTonemap))
                 {
