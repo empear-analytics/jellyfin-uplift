@@ -403,6 +403,19 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             string filter = null;
 
+            filter = Get3DFixedSwScaleFilter(threedFormat, filter);
+
+            // default
+            if (filter is null)
+            {
+                filter = GetDefaultFixedSwScaleFilter(requestedHeight, filter);
+            }
+
+            return string.Format(CultureInfo.InvariantCulture, filter, widthParam, heightParam);
+        }
+
+        private static string Get3DFixedSwScaleFilter(Video3DFormat? threedFormat, string filter)
+        {
             if (threedFormat.HasValue)
             {
                 switch (threedFormat.Value)
@@ -428,20 +441,21 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            // default
-            if (filter is null)
+            return filter;
+        }
+
+        private static string GetDefaultFixedSwScaleFilter(int requestedHeight, string filter)
+        {
+            if (requestedHeight > 0)
             {
-                if (requestedHeight > 0)
-                {
-                    filter = "scale=trunc({0}/2)*2:trunc({1}/2)*2";
-                }
-                else
-                {
-                    filter = "scale={0}:trunc({0}/a/2)*2";
-                }
+                filter = "scale=trunc({0}/2)*2:trunc({1}/2)*2";
+            }
+            else
+            {
+                filter = "scale={0}:trunc({0}/a/2)*2";
             }
 
-            return string.Format(CultureInfo.InvariantCulture, filter, widthParam, heightParam);
+            return filter;
         }
     }
 }
