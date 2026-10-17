@@ -442,6 +442,11 @@ public static class StreamingHelpers
             }
         }
 
+        return GetContainerExtension(mediaSource);
+    }
+
+    private static string GetContainerExtension(MediaSourceInfo? mediaSource)
+    {
         // Fallback to the container of mediaSource
         if (!string.IsNullOrEmpty(mediaSource?.Container))
         {
