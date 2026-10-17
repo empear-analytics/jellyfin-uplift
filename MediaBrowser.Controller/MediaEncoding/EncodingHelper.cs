@@ -1009,10 +1009,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 var subtitleWidth = state.SubtitleStream?.Width;
                 var subtitleHeight = state.SubtitleStream?.Height;
 
-                if (subtitleWidth.HasValue
-                    && subtitleHeight.HasValue
-                    && subtitleWidth.Value > 0
-                    && subtitleHeight.Value > 0)
+                if (HasPositiveSize(subtitleWidth, subtitleHeight))
                 {
                     return string.Format(
                         CultureInfo.InvariantCulture,
