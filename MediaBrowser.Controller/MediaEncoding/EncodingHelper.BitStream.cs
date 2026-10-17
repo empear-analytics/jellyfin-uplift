@@ -106,8 +106,7 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static DynamicHdrMetadataRemovalPlan ShouldRemoveDynamicHdrMetadata(EncodingJobInfo state)
         {
             var videoStream = state.VideoStream;
-            if (videoStream.VideoRange is not VideoRange.HDR
-                && videoStream.VideoRangeType != VideoRangeType.DOVIInvalid)
+            if (IsNonHdrVideoStream(videoStream))
             {
                 return DynamicHdrMetadataRemovalPlan.None;
             }
@@ -125,7 +124,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var shouldRemoveHdr10Plus = false;
             // Case 1: Client supports HDR10, does not support DOVI with EL but EL presets
-            var shouldRemoveDovi = (!requestHasDOVIwithEL && requestHasHDR10) && videoStream.VideoRangeType == VideoRangeType.DOVIWithEL;
+            var shouldRemoveDovi = IsUnsupportedDoviWithEL(videoStream, requestHasDOVIwithEL, requestHasHDR10);
 
             // Case 2: Client supports DOVI, does not support broken DOVI config
             // Client does not report DOVI support should be allowed to copy bad data for remuxing as HDR10 players would not crash
@@ -148,6 +147,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             // If the client is a Dolby Vision Player, remove the HDR10+ metadata to avoid playback issues
             shouldRemoveHdr10Plus = shouldRemoveHdr10Plus || (requestHasDOVI && videoStream.VideoRangeType == VideoRangeType.DOVIWithHDR10Plus);
             return shouldRemoveHdr10Plus ? DynamicHdrMetadataRemovalPlan.RemoveHdr10Plus : DynamicHdrMetadataRemovalPlan.None;
+        }
+
+        private static bool IsNonHdrVideoStream(MediaStream videoStream)
+        {
+            return videoStream.VideoRange is not VideoRange.HDR
+                && videoStream.VideoRangeType != VideoRangeType.DOVIInvalid;
+        }
+
+        private static bool IsUnsupportedDoviWithEL(MediaStream videoStream, bool requestHasDOVIwithEL, bool requestHasHDR10)
+        {
+            return (!requestHasDOVIwithEL && requestHasHDR10) && videoStream.VideoRangeType == VideoRangeType.DOVIWithEL;
         }
 
         private bool CanEncoderRemoveDynamicHdrMetadata(DynamicHdrMetadataRemovalPlan plan, MediaStream videoStream)
