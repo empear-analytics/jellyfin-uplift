@@ -343,10 +343,7 @@ namespace MediaBrowser.Model.Dlna
             var subtitleStream = playlistItem.SubtitleStreamIndex.HasValue ? item.GetMediaStream(MediaStreamType.Subtitle, playlistItem.SubtitleStreamIndex.Value) : null;
 
             var audioStream = item.GetDefaultAudioStream(options.AudioStreamIndex ?? item.DefaultAudioStreamIndex);
-            if (audioStream is not null)
-            {
-                playlistItem.AudioStreamIndex = audioStream.Index;
-            }
+            SetDefaultAudioStreamIndex(playlistItem, audioStream);
 
             // Collect candidate audio streams
             ICollection<MediaStream> candidateAudioStreams = GetCandidateAudioStreams(item, options, audioStream);
@@ -358,31 +355,11 @@ namespace MediaBrowser.Model.Dlna
             var isEligibleForDirectStream = IsEligibleForDirectStream(options, bitrateLimitExceeded);
             TranscodeReason transcodeReasons = 0;
 
-            // Force transcode or remux for BD/DVD folders
-            if (IsDiscFolder(item))
-            {
-                isEligibleForDirectPlay = false;
-            }
+            isEligibleForDirectPlay = ExcludeDirectPlayForNonByteStreams(item, isEligibleForDirectPlay);
 
-            // A manifest is not a byte stream, so it cannot be handed to the client as one. The variant
-            // and segment URIs inside it are relative to the origin and do not resolve against the
-            // Jellyfin url the client would fetch it from.
-            if (ContainerHelper.ContainsContainer(ManifestContainers, item.Container))
-            {
-                isEligibleForDirectPlay = false;
-            }
+            transcodeReasons = AddBitrateLimitReason(bitrateLimitExceeded, transcodeReasons);
 
-            if (bitrateLimitExceeded)
-            {
-                transcodeReasons = TranscodeReason.ContainerBitrateExceedsLimit;
-            }
-
-            _logger.LogDebug(
-                "Profile: {0}, Path: {1}, isEligibleForDirectPlay: {2}, isEligibleForDirectStream: {3}",
-                options.Profile.Name ?? "Unknown Profile",
-                item.Path ?? "Unknown path",
-                isEligibleForDirectPlay,
-                isEligibleForDirectStream);
+            LogDirectPlayEligibility(item, options, isEligibleForDirectPlay, isEligibleForDirectStream);
 
             DirectPlayProfile? directPlayProfile = null;
             if (isEligibleForDirectPlay || isEligibleForDirectStream)
@@ -433,6 +410,61 @@ namespace MediaBrowser.Model.Dlna
 
             ApplyVideoTranscodeProfile(item, options, playlistItem, videoStream, audioStream, candidateAudioStreams, subtitleStream);
 
+            LogBuildVideoItemResult(item, options, playlistItem);
+
+            item.Container = NormalizeMediaSourceFormatIntoSingleContainer(item.Container, options.Profile, DlnaProfileType.Video, directPlayProfile);
+            return playlistItem;
+        }
+
+        private static void SetDefaultAudioStreamIndex(StreamInfo playlistItem, MediaStream? audioStream)
+        {
+            if (audioStream is not null)
+            {
+                playlistItem.AudioStreamIndex = audioStream.Index;
+            }
+        }
+
+        private static bool ExcludeDirectPlayForNonByteStreams(MediaSourceInfo item, bool isEligibleForDirectPlay)
+        {
+            // Force transcode or remux for BD/DVD folders
+            if (IsDiscFolder(item))
+            {
+                isEligibleForDirectPlay = false;
+            }
+
+            // A manifest is not a byte stream, so it cannot be handed to the client as one. The variant
+            // and segment URIs inside it are relative to the origin and do not resolve against the
+            // Jellyfin url the client would fetch it from.
+            if (ContainerHelper.ContainsContainer(ManifestContainers, item.Container))
+            {
+                isEligibleForDirectPlay = false;
+            }
+
+            return isEligibleForDirectPlay;
+        }
+
+        private static TranscodeReason AddBitrateLimitReason(bool bitrateLimitExceeded, TranscodeReason transcodeReasons)
+        {
+            if (bitrateLimitExceeded)
+            {
+                transcodeReasons = TranscodeReason.ContainerBitrateExceedsLimit;
+            }
+
+            return transcodeReasons;
+        }
+
+        private void LogDirectPlayEligibility(MediaSourceInfo item, MediaOptions options, bool isEligibleForDirectPlay, bool isEligibleForDirectStream)
+        {
+            _logger.LogDebug(
+                "Profile: {0}, Path: {1}, isEligibleForDirectPlay: {2}, isEligibleForDirectStream: {3}",
+                options.Profile.Name ?? "Unknown Profile",
+                item.Path ?? "Unknown path",
+                isEligibleForDirectPlay,
+                isEligibleForDirectStream);
+        }
+
+        private void LogBuildVideoItemResult(MediaSourceInfo item, MediaOptions options, StreamInfo playlistItem)
+        {
             _logger.LogDebug(
                 "StreamBuilder.BuildVideoItem( Profile={0}, Path={1}, AudioStreamIndex={2}, SubtitleStreamIndex={3} ) => ( PlayMethod={4}, TranscodeReason={5} ) {6}",
                 options.Profile.Name ?? "Anonymous Profile",
@@ -442,9 +474,6 @@ namespace MediaBrowser.Model.Dlna
                 playlistItem.PlayMethod,
                 playlistItem.TranscodeReasons,
                 playlistItem.ToUrl("media:", "<token>", null));
-
-            item.Container = NormalizeMediaSourceFormatIntoSingleContainer(item.Container, options.Profile, DlnaProfileType.Video, directPlayProfile);
-            return playlistItem;
         }
 
         private static bool IsEligibleForDirectPlay(MediaOptions options, bool bitrateLimitExceeded)
