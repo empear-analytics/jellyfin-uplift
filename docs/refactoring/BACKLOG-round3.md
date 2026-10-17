@@ -124,7 +124,7 @@ Update as tasks land.
 | R3-36 | 8.69 | - | not started |
 | R3-37 | 8.88 | - | not started |
 | R3-38 | 8.96 | - | not started |
-| R3-39 | 9.04 | - | not started |
+| R3-39 | 9.04 | 9.53 | Sonnet. Three commits: rule 7 twice on GetAudioDirectPlayProfile (cleared), rule 9 on GetOptimalAudioStream (an instance method, since it calls ApplyTranscodingConditions). Every step chosen by measuring candidates alone. Left: GetOptimalAudioStream (3 bumps, cc 9): the remaining tails need 5 to 7 arguments (WORSE), blocks write several outer variables |
 | R3-40 | 9.06 | - | not started |
 | R3-41 | 9.09 | - | not started |
 | R3-42 | 9.09 | - | not started |
