@@ -61,7 +61,7 @@ Update as tasks land.
 | --- | --- | --- | --- |
 | R2-01 | 1.73 | - | not started |
 | R2-02 | 4.14 | - | not started |
-| R2-03 | 5.26 | - | not started |
+| R2-03 | 5.26 | 8.03 | split into 13 files (new files 7.82 to 10.00; Extras 7.82, Deletion, Episodes, Views 9.09, the rest 9.38 to 10.00); every grouping that clears Number of Functions brings Low Cohesion; FindExtras blocks call local functions; mapping switches; CS8629 on properties of a parameter; Constructor Over-Injection (24); Excess Arguments (public) |
 | R2-04 | 6.46 | - | not started |
 | R2-05 | 6.93 | - | not started |
 | R2-06 | 7.35 | - | not started |
