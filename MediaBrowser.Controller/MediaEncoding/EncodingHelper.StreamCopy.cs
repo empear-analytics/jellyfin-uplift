@@ -53,6 +53,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenSubtitlesAvcAndCodec(state, request, videoStream);
+        }
+
+        private bool CanCopyGivenSubtitlesAvcAndCodec(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             // Can't stream copy if we're burning in subtitles
             if (IsBurningInSubtitles(state, request))
             {
