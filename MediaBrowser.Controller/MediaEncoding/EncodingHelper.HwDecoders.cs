@@ -758,16 +758,12 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         public string GetVaapiVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
         {
-            if (!OperatingSystem.IsLinux()
-                || options.HardwareAccelerationType != HardwareAccelerationType.vaapi)
+            if (IsVaapiDecodingUnavailable(options))
             {
                 return null;
             }
 
-            var hwSurface = IsVaapiSupported(state)
-                && IsVaapiFullSupported()
-                && IsOpenclFullSupported()
-                && _mediaEncoder.SupportsFilter("alphasrc");
+            var hwSurface = HasVaapiHwSurface(state);
             var is8bitSwFormatsVaapi = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsVaapi = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVaapi);
             var is8_10_12bitSwFormatsVaapi = is8_10bitSwFormatsVaapi
@@ -781,8 +777,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (is8bitSwFormatsVaapi)
             {
-                if (string.Equals("avc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals("h264", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (IsH264StreamCodec(videoStream))
                 {
                     return GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
                 }
@@ -818,14 +813,39 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (is8_10_12bitSwFormatsVaapi)
             {
-                if (string.Equals("hevc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals("h265", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (IsHevcStreamCodec(videoStream))
                 {
                     return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
                 }
             }
 
             return null;
+        }
+
+        private static bool IsVaapiDecodingUnavailable(EncodingOptions options)
+        {
+            return !OperatingSystem.IsLinux()
+                || options.HardwareAccelerationType != HardwareAccelerationType.vaapi;
+        }
+
+        private bool HasVaapiHwSurface(EncodingJobInfo state)
+        {
+            return IsVaapiSupported(state)
+                && IsVaapiFullSupported()
+                && IsOpenclFullSupported()
+                && _mediaEncoder.SupportsFilter("alphasrc");
+        }
+
+        private static bool IsH264StreamCodec(MediaStream videoStream)
+        {
+            return string.Equals("avc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("h264", videoStream.Codec, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsHevcStreamCodec(MediaStream videoStream)
+        {
+            return string.Equals("hevc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
+                || string.Equals("h265", videoStream.Codec, StringComparison.OrdinalIgnoreCase);
         }
 
         public string GetVideotoolboxVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
