@@ -321,12 +321,17 @@ namespace MediaBrowser.MediaEncoding.Probing
                 return TransportStreamTimestamp.None;
             }
 
-            if ((packetBuffer[0] == 0) && (packetBuffer[1] == 0) && (packetBuffer[2] == 0) && (packetBuffer[3] == 0))
+            if (IsZeroPacketHeader(packetBuffer))
             {
                 return TransportStreamTimestamp.Zero;
             }
 
             return TransportStreamTimestamp.Valid;
+        }
+
+        private static bool IsZeroPacketHeader(byte[] packetBuffer)
+        {
+            return (packetBuffer[0] == 0) && (packetBuffer[1] == 0) && (packetBuffer[2] == 0) && (packetBuffer[3] == 0);
         }
     }
 }
