@@ -104,7 +104,7 @@ Update as tasks land.
 | R3-16 | 7.81 | - | not started |
 | R3-17 | 7.82 | - | not started |
 | R3-18 | 7.98 | - | not started |
-| R3-19 | 8.00 | - | not started |
+| R3-19 | 8.00 | 9.09 | Sonnet. Two splits (the maximum): ItunesPairs 10.00, ItunesArray 9.38, Itunes 9.09. Recipe D merged the three PersonKind loops (no duplication report), rule 7 on GetNameValuePair, rule 9 on FetchFromItunesInfo. Left: nesting 4 in ReadPlistRoot, ReadFromDictNode, ReadValueArray (G is DOWN or WORSE); the `if (reader.IsEmptyElement) { reader.Read(); continue; }` blocks need a continue-to-return rule |
 | R3-20 | 8.01 | - | not started |
 | R3-21 | 8.03 | - | not started |
 | R3-22 | 8.03 | - | not started |
