@@ -641,12 +641,9 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
 
                 // hw transpose(vaapi vpp)
-                if (NeedsVaapiTranspose(isVaapiDecoder, doVppTranspose))
-                {
-                    mainFilters.Add($"transpose_vaapi=dir={transposeDir}");
-                }
+                AddIntelVaapiTransposeFilter(mainFilters, isVaapiDecoder, doVppTranspose, transposeDir);
 
-                var outFormat = doTonemap ? (((isQsvDecoder && doVppTranspose) || isRext) ? "p010" : string.Empty) : "nv12";
+                var outFormat = GetHwScaleOutputFormat(doTonemap, isQsvDecoder, doVppTranspose, isRext);
                 var swapOutputWandH = NeedsQsvOutputSwap(isQsvDecoder, doVppTranspose, swapWAndH);
                 var hwScalePrefix = isQsvDecoder ? "vpp" : "scale";
                 var hwScaleFilter = GetHwScaleFilter(hwScalePrefix, hwFilterSuffix, outFormat, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
@@ -658,8 +655,8 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
                 {
-                    hwScaleFilter += ((isQsvDecoder && !doVppFullRangeOut) || doOclTonemap) ? string.Empty : ":out_range=pc";
-                    hwScaleFilter += isQsvDecoder ? (doVppScaleModeHq ? ":scale_mode=hq" : string.Empty) : ":mode=hq";
+                    hwScaleFilter += GetHwScaleFullRangeOption(isQsvDecoder, doVppFullRangeOut, doOclTonemap);
+                    hwScaleFilter += GetHwScaleModeOption(isQsvDecoder, doVppScaleModeHq);
                 }
 
                 // allocate extra pool sizes for vaapi vpp scale
@@ -678,11 +675,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 AddVaapiVppTonemapFilters(options, mainFilters, isQsvDecoder, isMjpegEncoder);
             }
 
-            if (NeedsHwToOpenclMapping(doOclTonemap, isHwDecoder))
-            {
-                // map from qsv to opencl via qsv(vaapi)-opencl interop.
-                mainFilters.Add("hwmap=derive_device=opencl:mode=read");
-            }
+            AddQsvVaapiToOpenclMapping(mainFilters, doOclTonemap, isHwDecoder);
 
             // ocl tonemap
             if (doOclTonemap)
@@ -773,6 +766,38 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static void AddIntelVaapiTransposeFilter(List<string> mainFilters, bool isVaapiDecoder, bool doVppTranspose, string transposeDir)
+        {
+            if (NeedsVaapiTranspose(isVaapiDecoder, doVppTranspose))
+            {
+                mainFilters.Add($"transpose_vaapi=dir={transposeDir}");
+            }
+        }
+
+        private static string GetHwScaleOutputFormat(bool doTonemap, bool isQsvDecoder, bool doVppTranspose, bool isRext)
+        {
+            return doTonemap ? (((isQsvDecoder && doVppTranspose) || isRext) ? "p010" : string.Empty) : "nv12";
+        }
+
+        private static string GetHwScaleFullRangeOption(bool isQsvDecoder, bool doVppFullRangeOut, bool doOclTonemap)
+        {
+            return ((isQsvDecoder && !doVppFullRangeOut) || doOclTonemap) ? string.Empty : ":out_range=pc";
+        }
+
+        private static string GetHwScaleModeOption(bool isQsvDecoder, bool doVppScaleModeHq)
+        {
+            return isQsvDecoder ? (doVppScaleModeHq ? ":scale_mode=hq" : string.Empty) : ":mode=hq";
+        }
+
+        private static void AddQsvVaapiToOpenclMapping(List<string> mainFilters, bool doOclTonemap, bool isHwDecoder)
+        {
+            if (NeedsHwToOpenclMapping(doOclTonemap, isHwDecoder))
+            {
+                // map from qsv to opencl via qsv(vaapi)-opencl interop.
+                mainFilters.Add("hwmap=derive_device=opencl:mode=read");
+            }
         }
 
         private static bool NeedsVaapiTranspose(bool isVaapiDecoder, bool doVppTranspose)
