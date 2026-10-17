@@ -52,7 +52,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var vidDecoder = GetHardwareVideoDecoder(state, options) ?? string.Empty;
             var isSwDecoder = string.IsNullOrEmpty(vidDecoder);
             var isSwEncoder = !vidEncoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
-            var isVaapiFullSupported = isLinux && IsVaapiSupported(state) && IsVaapiFullSupported();
+            var isVaapiFullSupported = IsVaapiFullSupportedOnLinux(state, isLinux);
             var isVaapiOclSupported = isVaapiFullSupported && IsOpenclFullSupported();
             var isVaapiVkSupported = isVaapiFullSupported && IsVulkanFullSupported();
 
@@ -385,6 +385,11 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             mainFilters.Add(isHwmapNotUsable ? "hwdownload" : "hwmap");
             mainFilters.Add("format=nv12");
+        }
+
+        private bool IsVaapiFullSupportedOnLinux(EncodingJobInfo state, bool isLinux)
+        {
+            return isLinux && IsVaapiSupported(state) && IsVaapiFullSupported();
         }
 
         private bool CanDoVaapiVppTonemap(EncodingJobInfo state, EncodingOptions options, bool isVaapiDecoder)
