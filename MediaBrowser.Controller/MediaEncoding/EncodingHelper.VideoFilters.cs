@@ -224,26 +224,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (doTonemap)
             {
-                var algorithm = options.TonemappingAlgorithm;
-                var algorithmString = "clip";
-                var mode = options.TonemappingMode;
-                var range = forceFullRange ? TonemappingRange.pc : options.TonemappingRange;
-
-                if (algorithm == TonemappingAlgorithm.bt2390)
-                {
-                    algorithmString = "bt.2390";
-                }
-                else if (algorithm != TonemappingAlgorithm.none)
-                {
-                    algorithmString = algorithm.ToString().ToLowerInvariant();
-                }
-
-                tonemapArg = $":tonemapping={algorithmString}:peak_detect=0:color_primaries=bt709:color_trc=bt709:colorspace=bt709";
-
-                if (range == TonemappingRange.tv || range == TonemappingRange.pc)
-                {
-                    tonemapArg += ":range=" + range.ToString().ToLowerInvariant();
-                }
+                tonemapArg = GetLibplaceboTonemapArg(options, forceFullRange, tonemapArg);
             }
             else if (forceFullRange)
             {
@@ -256,6 +237,32 @@ namespace MediaBrowser.Controller.MediaEncoding
                 sizeArg,
                 formatArg,
                 tonemapArg);
+        }
+
+        private static string GetLibplaceboTonemapArg(EncodingOptions options, bool forceFullRange, string tonemapArg)
+        {
+            var algorithm = options.TonemappingAlgorithm;
+            var algorithmString = "clip";
+            var mode = options.TonemappingMode;
+            var range = forceFullRange ? TonemappingRange.pc : options.TonemappingRange;
+
+            if (algorithm == TonemappingAlgorithm.bt2390)
+            {
+                algorithmString = "bt.2390";
+            }
+            else if (algorithm != TonemappingAlgorithm.none)
+            {
+                algorithmString = algorithm.ToString().ToLowerInvariant();
+            }
+
+            tonemapArg = $":tonemapping={algorithmString}:peak_detect=0:color_primaries=bt709:color_trc=bt709:colorspace=bt709";
+
+            if (range == TonemappingRange.tv || range == TonemappingRange.pc)
+            {
+                tonemapArg += ":range=" + range.ToString().ToLowerInvariant();
+            }
+
+            return tonemapArg;
         }
 
         public string GetVideoTransposeDirection(EncodingJobInfo state)
