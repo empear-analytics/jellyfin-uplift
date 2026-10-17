@@ -137,7 +137,7 @@ Update as tasks land.
 | R3-49 | 9.38 | - | not started |
 | R3-50 | 9.38 | - | not started |
 | R3-51 | 9.38 | 9.38 | Sonnet. No step scores UP: the predicate for the TimerCallback conditional is FLAT (the conditional goes, Primitive Obsession arrives because the helper takes two primitives); Constructor Over-Injection (6, public, plugin API) has no recipe. Tests barely cover this file; nothing changed |
-| R3-52 | 9.38 | - | not started |
+| R3-52 | 9.38 | 9.38 | Sonnet. No applicable step: GetAttachmentFolderPath and GetSubtitleFolderPath differ in two places (the cache base path and a log-message literal); Recipe D needs one, and merging the messages would change a literal (forbidden); both are IPathManager members. Candidate: Recipe D for two values that belong together (a base path and a matching log noun) |
 | R3-53 | 9.44 | - | not started |
 | R3-54 | 9.45 | 9.53 | Sonnet. Three commits: a FLAT split kept as a pair (the three Parse* helpers to JobLogger.Parsing.cs, 10.00; the pair 9.45 to 9.51 against the pre-split score), E on the total and start milliseconds, P twice (fps label, time field). Left: ParseLogLine (2 bumps, cc 10): the time branch writes two outer variables. The padded `size=` upstream bug untouched |
 | R3-55 | 9.66 | - | not started |
