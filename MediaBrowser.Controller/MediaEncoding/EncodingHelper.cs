@@ -7644,11 +7644,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 readrate = 1;
                 inputModifier += " -re";
             }
-            else if (encodingOptions.EnableSegmentDeletion
-                && state.VideoStream is not null
-                && state.TranscodingType == TranscodingJobType.Hls
-                && IsCopyCodec(state.OutputVideoCodec)
-                && _mediaEncoder.EncoderVersion >= _minFFmpegReadrateOption)
+            else if (NeedsSegmentDeletionReadrate(state, encodingOptions))
             {
                 // Set an input read rate limit 10x for using SegmentDeletion with stream-copy
                 // to prevent ffmpeg from exiting prematurely (due to fast drive)
@@ -7696,7 +7692,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (state.IsVideoRequest)
             {
-                if (!string.IsNullOrEmpty(state.InputContainer) && state.VideoType == VideoType.VideoFile && encodingOptions.HardwareAccelerationType != HardwareAccelerationType.none)
+                if (NeedsExplicitInputFormat(state, encodingOptions))
                 {
                     var inputFormat = GetInputFormat(state.InputContainer);
                     if (!string.IsNullOrEmpty(inputFormat))
@@ -7712,6 +7708,20 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return inputModifier;
+        }
+
+        private bool NeedsSegmentDeletionReadrate(EncodingJobInfo state, EncodingOptions encodingOptions)
+        {
+            return encodingOptions.EnableSegmentDeletion
+                && state.VideoStream is not null
+                && state.TranscodingType == TranscodingJobType.Hls
+                && IsCopyCodec(state.OutputVideoCodec)
+                && _mediaEncoder.EncoderVersion >= _minFFmpegReadrateOption;
+        }
+
+        private static bool NeedsExplicitInputFormat(EncodingJobInfo state, EncodingOptions encodingOptions)
+        {
+            return !string.IsNullOrEmpty(state.InputContainer) && state.VideoType == VideoType.VideoFile && encodingOptions.HardwareAccelerationType != HardwareAccelerationType.none;
         }
 
         public void AttachMediaSourceInfo(
