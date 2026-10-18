@@ -212,6 +212,14 @@ public static partial class HlsCodecStringHelpers
             <= 73728 => "11",
             <= 122880 => "20",
             <= 245760 => "21",
+            _ => GetVp9HighLevelString(lumaPictureSize, lumaSampleRate)
+        };
+    }
+
+    private static string GetVp9HighLevelString(int lumaPictureSize, float lumaSampleRate)
+    {
+        return lumaPictureSize switch
+        {
             <= 552960 => "30",
             <= 983040 => "31",
             <= 2228224 => lumaSampleRate <= 83558400 ? "40" : "41",
