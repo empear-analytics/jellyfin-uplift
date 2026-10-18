@@ -376,33 +376,40 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            // Nvidia cuda
-            if (hardwareAccelerationType == HardwareAccelerationType.nvenc)
-            {
-                if (IsHwaccelAvailable(isCudaSupported, isCodecAvailable))
-                {
-                    if (options.EnableEnhancedNvdecDecoder)
-                    {
-                        // set -threads 1 to nvdec decoder explicitly since it doesn't implement threading support.
-                        return GetCudaNvdecHwaccelOption(outputHwSurface, stripRotationDataArgs, nvdecNoInternalCopy, isAv1);
-                    }
-
-                    // cuvid decoder doesn't have threading issue.
-                    return GetCudaHwaccelOption(outputHwSurface, stripRotationDataArgs);
-                }
-            }
-
             var context = new HwDecoderHwaccelContext(
                 hardwareAccelerationType,
                 isD3d11Supported,
                 isVaapiSupported,
+                isCudaSupported,
                 isVideotoolboxSupported,
                 isRkmppSupported,
                 isCodecAvailable,
                 outputHwSurface,
                 stripRotationDataArgs,
+                nvdecNoInternalCopy,
                 profileMismatch,
                 isAv1);
+            return GetHwaccelTypeFromNvidia(context, options);
+        }
+
+        private string GetHwaccelTypeFromNvidia(HwDecoderHwaccelContext context, EncodingOptions options)
+        {
+            // Nvidia cuda
+            if (context.HardwareAccelerationType == HardwareAccelerationType.nvenc)
+            {
+                if (IsHwaccelAvailable(context.IsCudaSupported, context.IsCodecAvailable))
+                {
+                    if (options.EnableEnhancedNvdecDecoder)
+                    {
+                        // set -threads 1 to nvdec decoder explicitly since it doesn't implement threading support.
+                        return GetCudaNvdecHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.NvdecNoInternalCopy, context.IsAv1);
+                    }
+
+                    // cuvid decoder doesn't have threading issue.
+                    return GetCudaHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
+                }
+            }
+
             return GetHwaccelTypeFromRemainingTypes(context);
         }
 
@@ -1332,11 +1339,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             HardwareAccelerationType HardwareAccelerationType,
             bool IsD3d11Supported,
             bool IsVaapiSupported,
+            bool IsCudaSupported,
             bool IsVideotoolboxSupported,
             bool IsRkmppSupported,
             bool IsCodecAvailable,
             bool OutputHwSurface,
             string StripRotationDataArgs,
+            bool NvdecNoInternalCopy,
             bool ProfileMismatch,
             bool IsAv1);
     }
