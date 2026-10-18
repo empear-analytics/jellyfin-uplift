@@ -1004,12 +1004,14 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (context.Is8_10_12bitSwFormatsVaapi)
+            if (!context.Is8_10_12bitSwFormatsVaapi)
             {
-                if (IsHevcStreamCodec(context.VideoStream))
-                {
-                    return GetHwaccelType(context.State, context.Options, "hevc", context.BitDepth, context.HwSurface);
-                }
+                return null;
+            }
+
+            if (IsHevcStreamCodec(context.VideoStream))
+            {
+                return GetHwaccelType(context.State, context.Options, "hevc", context.BitDepth, context.HwSurface);
             }
 
             return null;
