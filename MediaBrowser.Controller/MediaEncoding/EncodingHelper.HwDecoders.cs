@@ -678,12 +678,14 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (context.Is8_10_12bitSwFormatsQsv)
+            if (!context.Is8_10_12bitSwFormatsQsv)
             {
-                if (IsHevcOrH265Codec(context.VideoStream))
-                {
-                    return GetHwaccelType(context.State, context.Options, "hevc", context.BitDepth, context.HwSurface) + GetHwDecoderName(context.Options, "hevc", "qsv", "hevc", context.BitDepth);
-                }
+                return null;
+            }
+
+            if (IsHevcOrH265Codec(context.VideoStream))
+            {
+                return GetHwaccelType(context.State, context.Options, "hevc", context.BitDepth, context.HwSurface) + GetHwDecoderName(context.Options, "hevc", "qsv", "hevc", context.BitDepth);
             }
 
             return null;
