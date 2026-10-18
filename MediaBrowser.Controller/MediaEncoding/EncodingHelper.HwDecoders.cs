@@ -743,24 +743,37 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (is8_10bitSwFormatsNvdec)
+            var context = new HwDecoderNvdecContext(
+                state,
+                options,
+                videoStream,
+                bitDepth,
+                hwSurface,
+                is8_10bitSwFormatsNvdec,
+                is8_10_12bitSwFormatsNvdec);
+            return ResolveNvdecWideSwFormatAccelType(context);
+        }
+
+        private string ResolveNvdecWideSwFormatAccelType(HwDecoderNvdecContext context)
+        {
+            if (context.Is8_10bitSwFormatsNvdec)
             {
-                if (string.Equals("vp9", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals("vp9", context.VideoStream.Codec, StringComparison.OrdinalIgnoreCase))
                 {
-                    return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface) + GetHwDecoderName(options, "vp9", "cuvid", "vp9", bitDepth);
+                    return GetHwaccelType(context.State, context.Options, "vp9", context.BitDepth, context.HwSurface) + GetHwDecoderName(context.Options, "vp9", "cuvid", "vp9", context.BitDepth);
                 }
 
-                if (string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals("av1", context.VideoStream.Codec, StringComparison.OrdinalIgnoreCase))
                 {
-                    return GetHwaccelType(state, options, "av1", bitDepth, hwSurface) + GetHwDecoderName(options, "av1", "cuvid", "av1", bitDepth);
+                    return GetHwaccelType(context.State, context.Options, "av1", context.BitDepth, context.HwSurface) + GetHwDecoderName(context.Options, "av1", "cuvid", "av1", context.BitDepth);
                 }
             }
 
-            if (is8_10_12bitSwFormatsNvdec)
+            if (context.Is8_10_12bitSwFormatsNvdec)
             {
-                if (IsHevcStreamCodec(videoStream))
+                if (IsHevcStreamCodec(context.VideoStream))
                 {
-                    return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface) + GetHwDecoderName(options, "hevc", "cuvid", "hevc", bitDepth);
+                    return GetHwaccelType(context.State, context.Options, "hevc", context.BitDepth, context.HwSurface) + GetHwDecoderName(context.Options, "hevc", "cuvid", "hevc", context.BitDepth);
                 }
             }
 
@@ -1162,5 +1175,14 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             return !string.IsNullOrEmpty(accelType) && isAfbcSupported;
         }
+
+        private readonly record struct HwDecoderNvdecContext(
+            EncodingJobInfo State,
+            EncodingOptions Options,
+            MediaStream VideoStream,
+            int BitDepth,
+            bool HwSurface,
+            bool Is8_10bitSwFormatsNvdec,
+            bool Is8_10_12bitSwFormatsNvdec);
     }
 }
