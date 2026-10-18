@@ -478,7 +478,17 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return "15";
                 }
             }
-            else if (IsHevcOrH265OutputCodec(state.ActualOutputVideoCodec))
+            else
+            {
+                return NormalizeVideoEncoderHevcOrH264Level(state, level, requestLevel);
+            }
+
+            return level;
+        }
+
+        private static string NormalizeVideoEncoderHevcOrH264Level(EncodingJobInfo state, string level, double requestLevel)
+        {
+            if (IsHevcOrH265OutputCodec(state.ActualOutputVideoCodec))
             {
                 // Transcode to level 5.0 and lower for maximum compatibility.
                 // Level 5.0 is suitable for up to 4k 30fps hevc encoding, otherwise let the encoder to handle it.
@@ -489,7 +499,17 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return "150";
                 }
             }
-            else if (string.Equals(state.ActualOutputVideoCodec, "h264", StringComparison.OrdinalIgnoreCase))
+            else
+            {
+                return NormalizeVideoEncoderH264Level(state, level, requestLevel);
+            }
+
+            return level;
+        }
+
+        private static string NormalizeVideoEncoderH264Level(EncodingJobInfo state, string level, double requestLevel)
+        {
+            if (string.Equals(state.ActualOutputVideoCodec, "h264", StringComparison.OrdinalIgnoreCase))
             {
                 // Transcode to level 5.1 and lower for maximum compatibility.
                 // h264 4k 30fps requires at least level 5.1 otherwise it will break on safari fmp4.
