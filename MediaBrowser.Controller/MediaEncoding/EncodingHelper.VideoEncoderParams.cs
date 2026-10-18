@@ -324,13 +324,21 @@ namespace MediaBrowser.Controller.MediaEncoding
                 EncoderPreset.veryslow => " -preset p7",
                 EncoderPreset.slower => " -preset p6",
                 EncoderPreset.slow => " -preset p5",
+                _ => VideoEncoderNvencFasterPreset(encoderPreset)
+            };
+
+            return AppendNvencAdaptiveQuantization(param, videoEncoder);
+        }
+
+        private static string VideoEncoderNvencFasterPreset(EncoderPreset encoderPreset)
+        {
+            return encoderPreset switch
+            {
                 EncoderPreset.medium => " -preset p4",
                 EncoderPreset.fast => " -preset p3",
                 EncoderPreset.faster => " -preset p2",
                 _ => " -preset p1"
             };
-
-            return AppendNvencAdaptiveQuantization(param, videoEncoder);
         }
 
         private static string AppendNvencAdaptiveQuantization(string param, string videoEncoder)
