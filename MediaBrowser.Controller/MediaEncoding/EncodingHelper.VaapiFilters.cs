@@ -238,17 +238,12 @@ namespace MediaBrowser.Controller.MediaEncoding
                 memoryOutput = true;
             }
 
-            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
-
-            if (NeedsVaapiUploadFromMemory(memoryOutput, isVaapiEncoder))
-            {
-                AddVaapiHwupload(mainFilters, hasGraphicalSubs);
-            }
+            var context = new VaapiIntelFullContext(state, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
+            AddVaapiMemoryOutputTail(context, mainFilters, memoryOutput, isVaapiEncoder);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
-            var context = new VaapiIntelFullContext(state, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
             if (isVaInVaOut)
             {
                 if (hasSubs)
@@ -305,6 +300,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             var (overlayW, overlayH) = GetFixedOutputSize(context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
             var overlaySize = GetOverlaySizeOption(overlayW, overlayH);
             AddOverlayVaapiFilter(overlayFilters, overlaySize);
+        }
+
+        private void AddVaapiMemoryOutputTail(VaapiIntelFullContext context, List<string> mainFilters, bool memoryOutput, bool isVaapiEncoder)
+        {
+            AddMemoryOutputTextSubtitlesFilter(context.State, mainFilters, memoryOutput, context.HasTextSubs);
+
+            if (NeedsVaapiUploadFromMemory(memoryOutput, isVaapiEncoder))
+            {
+                AddVaapiHwupload(mainFilters, context.HasGraphicalSubs);
+            }
         }
 
         private static void AddVaapiToOpenclMapping(List<string> mainFilters, bool doOclTonemap, bool isVaapiDecoder)
