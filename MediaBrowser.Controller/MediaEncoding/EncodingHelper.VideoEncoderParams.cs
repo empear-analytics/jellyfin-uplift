@@ -175,7 +175,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 param = AppendVaapiCompressionLevel(param, encoderPreset);
             }
-            else if (IsQsvVideoEncoder(videoEncoder))
+            else
+            {
+                param = AppendVideoEncoderHwPresetParam(param, encoderPreset, videoEncoder);
+            }
+
+            return param;
+        }
+
+        private string AppendVideoEncoderHwPresetParam(string param, EncoderPreset encoderPreset, string videoEncoder)
+        {
+            if (IsQsvVideoEncoder(videoEncoder))
             {
                 param = AppendQsvPreset(param, encoderPreset, videoEncoder);
             }
