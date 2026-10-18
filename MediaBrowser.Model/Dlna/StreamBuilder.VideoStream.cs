@@ -35,9 +35,7 @@ namespace MediaBrowser.Model.Dlna
             MarkUnsupportedVideoCodec(playlistItem, videoStream, videoCodecs);
 
             // Copy video codec options as a starting point, this applies to transcode and direct-stream
-            playlistItem.MaxFramerate = videoStream?.ReferenceFrameRate;
-            var qualifier = videoStream?.Codec;
-            CopyVideoStreamOptions(playlistItem, videoStream, qualifier);
+            var qualifier = VideoStreamItemCopyVideoOptions(playlistItem, videoStream);
 
             var audioCodecs = GetPreferredAudioCodecs(playlistItem, audioStream, audioCodec);
 
@@ -125,6 +123,14 @@ namespace MediaBrowser.Model.Dlna
             ApplyMaxVideoBitrate(playlistItem, maxBitrateSetting);
 
             LogTranscodeResult(options, item, playlistItem, audioStream);
+        }
+
+        private static string? VideoStreamItemCopyVideoOptions(StreamInfo playlistItem, MediaStream? videoStream)
+        {
+            playlistItem.MaxFramerate = videoStream?.ReferenceFrameRate;
+            var qualifier = videoStream?.Codec;
+            CopyVideoStreamOptions(playlistItem, videoStream, qualifier);
+            return qualifier;
         }
 
         private static void CopyDirectAudioOptions(StreamInfo playlistItem, MediaStream audioStream, string? qualifier)
