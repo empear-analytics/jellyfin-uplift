@@ -59,5 +59,17 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             return overlayW.HasValue && overlayH.HasValue && overlayH.Value > subMaxH;
         }
+
+        private static bool NeedsRkmppSwapWAndH(int rotation, bool isSwDecoder, bool isRkmppDecoder, bool doRkVppTranspose)
+        {
+            return Math.Abs(rotation) == 90 && (isSwDecoder || (isRkmppDecoder && doRkVppTranspose));
+        }
+
+        private static bool HasRkmppAssSubtitles(EncodingJobInfo state, bool hasSubs)
+        {
+            return hasSubs
+                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+        }
     }
 }
