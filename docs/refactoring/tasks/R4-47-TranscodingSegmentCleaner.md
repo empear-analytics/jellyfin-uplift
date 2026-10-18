@@ -134,13 +134,21 @@ Reply with exactly this, filled in:
 ```
 Task: R4-47 (MediaBrowser.Controller/MediaEncoding/TranscodingSegmentCleaner.cs)
 Baseline score: 9.38
-Final score:    <x.xx>
-Steps completed: <n> of 2
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
+Final score:    9.38
+Steps completed: 0 of 2 (no candidate scored UP; no code change committed)
+Steps reverted:  Step 1 (TimerCallback, Recipe P): five candidates, each measured alone and reverted:
+                 A  full predicate SegmentCleanerCanDeleteSegments(long, int) for the 3-term condition: FLAT 9.38 (complex conditional gone, Primitive Obsession new)
+                 B  leading two-term predicate SegmentCleanerHasKeepWindow: FLAT 9.38 (Primitive Obsession new)
+                 E  leading one-term predicate SegmentCleanerIsPositive(long): FLAT 9.38 (complex conditional still flagged)
+                 C  lambda term in DeleteHlsSegmentFiles, (idx >= idxMin && idx <= idxMax) as SegmentCleanerIsIndexInRange: DOWN 9.09
+                 D  whole lambda body of DeleteHlsSegmentFiles as SegmentCleanerIsSegmentFileInRange: DOWN 9.09
+                 Step 2 (TranscodingSegmentCleaner): no recipe, left as is.
+                 Recipes E and G: not applicable, CodeScene reports no Bumpy Road and no Deep Nested Complexity here.
+Smells left without a recipe: Constructor Over-Injection (TranscodingSegmentCleaner, 6 arguments; public constructor, plugin API, not changed)
+                 Complex Conditional (TimerCallback:103, Recipe P): tried, no candidate scores UP (see above)
+Build: PASS (dotnet build Jellyfin.sln --no-incremental: 0 errors, 211 warnings, the base count)
+Tests: FAIL, one flake. Jellyfin.Providers.Tests.MediaInfo.AtlFlacRegressionTests.AtlParser_MalformedFlac_DoesNotHang timed out at 5 s under load. Run alone once: passes (80 ms). The other 5,000+ tests passed, including MediaEncoding (280 passed, 1 skipped) and Integration (429 passed, 3 skipped). The test is outside this file's scope and the file is unchanged from HEAD.
 Protection: LOW - the tests barely cover this file; the changes are effectively unverified
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Commits: none for code; this report commit only
+Unsure about: (1) Primitive Obsession appears on every new predicate here whose parameters are primitive, which is every candidate; I did not try a non-primitive parameter form, because all operands are primitive locals. (2) The editor reported the file as changed on disk three times; git status and git diff showed only my own edit or revert each time, so I treated them as my own state. (3) The failing Providers test is unrelated to this file; I did not investigate it further.
 ```
