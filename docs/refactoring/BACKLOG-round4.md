@@ -149,5 +149,5 @@ Update as tasks land.
 | R4-61 | 9.68 | - | not started |
 | R4-62 | 9.68 | - | not started |
 | R4-63 | 9.68 | - | not started |
-| R4-64 | 9.68 | - | not started |
+| R4-64 | 9.68 | 10.00 | Sonnet. Rule 11 on GuessLayoutFromChannelCount: split points measured (2 FLAT, 3/4/5 UP 10.00, 6 FLAT); committed 4 arms kept (balanced). No smell left. |
 | R4-65 | 9.84 | - | not started |
