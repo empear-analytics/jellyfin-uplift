@@ -118,7 +118,7 @@ Update as tasks land.
 | R4-30 | 9.09 | - | not started |
 | R4-31 | 9.09 | - | not started |
 | R4-32 | 9.09 | - | not started |
-| R4-33 | 9.09 | - | not started |
+| R4-33 | 9.09 | 9.09 | Sonnet. No commit; 4 measured steps all FLAT (rule 10 on the IsEmptyElement block, rule 9, P on the loop condition; best cc 9 still flagged). Deep nesting 4 stays: the loop body holds a `switch`, which rule 10 excludes. Candidate: rule 10 for a block containing its own switch (also seen in R4-02). |
 | R4-34 | 9.24 | - | not started |
 | R4-35 | 9.25 | - | not started |
 | R4-36 | 9.26 | - | not started |
