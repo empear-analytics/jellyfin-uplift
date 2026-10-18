@@ -54,6 +54,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             int outputWidth = requestedWidth ?? inputWidth;
             int outputHeight = requestedHeight ?? inputHeight;
 
+            return LimitScaleOutputSize(outputWidth, outputHeight, requestedMaxWidth, requestedMaxHeight);
+        }
+
+        private static (int? Width, int? Height) LimitScaleOutputSize(int outputWidth, int outputHeight, int? requestedMaxWidth, int? requestedMaxHeight)
+        {
             // Don't transcode video to bigger than 4k when using HW.
             int maximumWidth = Math.Min(requestedMaxWidth ?? outputWidth, 4096);
             int maximumHeight = Math.Min(requestedMaxHeight ?? outputHeight, 4096);
