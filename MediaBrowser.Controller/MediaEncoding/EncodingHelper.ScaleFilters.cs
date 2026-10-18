@@ -343,6 +343,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                     targetAr);
             }
 
+            return GetScaleFilterForMaxWidthOrHeight(requestedMaxWidth, requestedMaxHeight, scaleVal, targetAr);
+        }
+
+        private static string GetScaleFilterForMaxWidthOrHeight(int? requestedMaxWidth, int? requestedMaxHeight, int scaleVal, string targetAr)
+        {
             // If a max width was requested
             if (requestedMaxWidth.HasValue)
             {
