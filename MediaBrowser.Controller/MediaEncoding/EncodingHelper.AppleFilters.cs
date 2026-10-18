@@ -188,6 +188,15 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return (mainFilters, subFilters, overlayFilters);
             }
 
+            return GetAppleLegacyHwSurfaceFilters(isVtEncoder, mainFilters, subFilters, overlayFilters);
+        }
+
+        private static (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetAppleLegacyHwSurfaceFilters(
+            bool isVtEncoder,
+            List<string> mainFilters,
+            List<string> subFilters,
+            List<string> overlayFilters)
+        {
             // For old jellyfin-ffmpeg that has broken hwsurface, add a hwupload
             var needFiltering = mainFilters.Any(f => !string.IsNullOrEmpty(f)) ||
                                 subFilters.Any(f => !string.IsNullOrEmpty(f)) ||
