@@ -199,21 +199,26 @@ namespace Emby.Server.Implementations.Library
                         continue;
                     }
 
-                    try
-                    {
-                        ItemAdded(
-                            this,
-                            new ItemChangeEventArgs
-                            {
-                                Item = item,
-                                Parent = parent ?? item.GetParent()
-                            });
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error in ItemAdded event handler");
-                    }
+                    ChangesRaiseItemAdded(ItemAdded, item, parent);
                 }
+            }
+        }
+
+        private void ChangesRaiseItemAdded(EventHandler<ItemChangeEventArgs> handler, BaseItem item, BaseItem? parent)
+        {
+            try
+            {
+                handler(
+                    this,
+                    new ItemChangeEventArgs
+                    {
+                        Item = item,
+                        Parent = parent ?? item.GetParent()
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in ItemAdded event handler");
             }
         }
 
