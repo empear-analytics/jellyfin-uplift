@@ -1729,25 +1729,35 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return string.Empty;
             }
 
+            return GetVersionedVideoSyncOption(videoSync, encoderVersion);
+        }
+
+        private static string GetVersionedVideoSyncOption(string videoSync, Version encoderVersion)
+        {
             if (encoderVersion >= new Version(5, 1))
             {
-                if (int.TryParse(videoSync, CultureInfo.InvariantCulture, out var vsync))
-                {
-                    return vsync switch
-                    {
-                        -1 => " -fps_mode auto",
-                        0 => " -fps_mode passthrough",
-                        1 => " -fps_mode cfr",
-                        2 => " -fps_mode vfr",
-                        _ => string.Empty
-                    };
-                }
-
-                return string.Empty;
+                return GetFpsModeFromVideoSync(videoSync);
             }
 
             // -vsync is deprecated in FFmpeg 5.1 and will be removed in the future.
             return $" -vsync {videoSync}";
+        }
+
+        private static string GetFpsModeFromVideoSync(string videoSync)
+        {
+            if (int.TryParse(videoSync, CultureInfo.InvariantCulture, out var vsync))
+            {
+                return vsync switch
+                {
+                    -1 => " -fps_mode auto",
+                    0 => " -fps_mode passthrough",
+                    1 => " -fps_mode cfr",
+                    2 => " -fps_mode vfr",
+                    _ => string.Empty
+                };
+            }
+
+            return string.Empty;
         }
     }
 }
