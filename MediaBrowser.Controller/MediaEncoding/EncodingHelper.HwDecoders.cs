@@ -352,30 +352,6 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            // Intel qsv/d3d11va/vaapi
-            if (hardwareAccelerationType == HardwareAccelerationType.qsv)
-            {
-                if (options.PreferSystemNativeHwDecoder)
-                {
-                    if (IsHwaccelAvailable(isVaapiSupported, isCodecAvailable))
-                    {
-                        return GetVaapiHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
-                    }
-
-                    if (IsHwaccelAvailable(isD3d11Supported, isCodecAvailable))
-                    {
-                        return GetD3d11vaHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
-                    }
-                }
-                else
-                {
-                    if (IsHwaccelAvailable(isQsvSupported, isCodecAvailable))
-                    {
-                        return GetQsvHwaccelOption(outputHwSurface, stripRotationDataArgs);
-                    }
-                }
-            }
-
             var context = new HwDecoderHwaccelContext(
                 hardwareAccelerationType,
                 isD3d11Supported,
@@ -389,6 +365,35 @@ namespace MediaBrowser.Controller.MediaEncoding
                 nvdecNoInternalCopy,
                 profileMismatch,
                 isAv1);
+            return GetHwaccelTypeFromIntel(context, options, isQsvSupported);
+        }
+
+        private string GetHwaccelTypeFromIntel(HwDecoderHwaccelContext context, EncodingOptions options, bool isQsvSupported)
+        {
+            // Intel qsv/d3d11va/vaapi
+            if (context.HardwareAccelerationType == HardwareAccelerationType.qsv)
+            {
+                if (options.PreferSystemNativeHwDecoder)
+                {
+                    if (IsHwaccelAvailable(context.IsVaapiSupported, context.IsCodecAvailable))
+                    {
+                        return GetVaapiHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
+                    }
+
+                    if (IsHwaccelAvailable(context.IsD3d11Supported, context.IsCodecAvailable))
+                    {
+                        return GetD3d11vaHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
+                    }
+                }
+                else
+                {
+                    if (IsHwaccelAvailable(isQsvSupported, context.IsCodecAvailable))
+                    {
+                        return GetQsvHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
+                    }
+                }
+            }
+
             return GetHwaccelTypeFromNvidia(context, options);
         }
 
