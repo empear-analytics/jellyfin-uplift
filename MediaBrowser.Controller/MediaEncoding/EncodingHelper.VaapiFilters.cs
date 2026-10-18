@@ -537,23 +537,22 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             mainFilters.Add(GetOverwriteColorPropertiesParam(state, doVkTonemap));
 
+            var context = new VaapiAmdFullContext(state, options, doVkTonemap, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
+
             if (isSwDecoder)
             {
                 // INPUT sw surface(memory)
                 // sw deint
                 AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
-                if (doVkTonemap || hasSubs)
+                if (NeedsVulkanTonemapOrSubs(doVkTonemap, hasSubs))
                 {
                     // sw => hw
                     AddVulkanHwupload(mainFilters);
                 }
                 else
                 {
-                    // sw scale
-                    var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-                    mainFilters.Add(swScaleFilter);
-                    mainFilters.Add("format=nv12");
+                    AddVaapiAmdSwScaleFilters(context, vidEncoder, threeDFormat, mainFilters);
                 }
             }
             else if (isVaapiDecoder)
@@ -581,23 +580,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             AddVulkanTransposeIfNeeded(mainFilters, doVkTranspose, transposeDir);
 
             // vk libplacebo
-            var context = new VaapiAmdFullContext(state, options, doVkTonemap, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-            if (doVkTonemap || hasSubs)
+            if (NeedsVulkanTonemapOrSubs(doVkTonemap, hasSubs))
             {
                 AddVaapiLibplaceboFilters(context, isMjpegEncoder, mainFilters);
             }
 
-            if (doVkTonemap && !hasSubs)
+            if (IsVulkanTonemapWithoutSubs(doVkTonemap, hasSubs))
             {
-                // OUTPUT vaapi(nv12) surface(vram)
-                // map from vulkan/drm to vaapi via interop (Polaris/gfx8+).
-                AddVulkanToVaapiMapping(mainFilters);
-
-                // clear the surf->meta_offset and output nv12
-                AddNonMjpegScaleVaapiFilter(mainFilters, isMjpegEncoder, options);
-
-                // hw deint
-                AddVaapiHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
+                AddVaapiVulkanTonemapOutput(context, isMjpegEncoder, doDeintH2645, mainFilters);
             }
 
             if (!hasSubs)
@@ -674,6 +664,37 @@ namespace MediaBrowser.Controller.MediaEncoding
             var libplaceboFilter = GetLibplaceboFilter(context.Options, "bgra", context.DoVkTonemap, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH, isMjpegEncoder);
             mainFilters.Add(libplaceboFilter);
             mainFilters.Add("format=vulkan");
+        }
+
+        private void AddVaapiAmdSwScaleFilters(VaapiAmdFullContext context, string vidEncoder, Video3DFormat? threeDFormat, List<string> mainFilters)
+        {
+            // sw scale
+            var swScaleFilter = GetSwScaleFilter(context.State, context.Options, vidEncoder, context.SwpInW, context.SwpInH, threeDFormat, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+            mainFilters.Add(swScaleFilter);
+            mainFilters.Add("format=nv12");
+        }
+
+        private void AddVaapiVulkanTonemapOutput(VaapiAmdFullContext context, bool isMjpegEncoder, bool doDeintH2645, List<string> mainFilters)
+        {
+            // OUTPUT vaapi(nv12) surface(vram)
+            // map from vulkan/drm to vaapi via interop (Polaris/gfx8+).
+            AddVulkanToVaapiMapping(mainFilters);
+
+            // clear the surf->meta_offset and output nv12
+            AddNonMjpegScaleVaapiFilter(mainFilters, isMjpegEncoder, context.Options);
+
+            // hw deint
+            AddVaapiHwDeinterlaceFilter(context.State, context.Options, mainFilters, doDeintH2645);
+        }
+
+        private static bool NeedsVulkanTonemapOrSubs(bool doVkTonemap, bool hasSubs)
+        {
+            return doVkTonemap || hasSubs;
+        }
+
+        private static bool IsVulkanTonemapWithoutSubs(bool doVkTonemap, bool hasSubs)
+        {
+            return doVkTonemap && !hasSubs;
         }
 
         private static string ApplyAmdVaapiMjpegFullRange(string hwScaleFilter, bool isMjpegEncoder, bool doVkTonemap)
