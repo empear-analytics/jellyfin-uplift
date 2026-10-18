@@ -148,16 +148,21 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return true;
                 }
 
+                return CanHwTonemapDoviWithDecoder(vidDecoder);
+            }
+
+            // GPU tonemapping supports all HDR RangeTypes
+            return state.VideoStream.VideoRange == VideoRange.HDR;
+        }
+
+        private static bool CanHwTonemapDoviWithDecoder(string vidDecoder)
+        {
                 var isSwDecoder = string.IsNullOrEmpty(vidDecoder);
                 var isNvdecDecoder = vidDecoder.Contains("cuda", StringComparison.OrdinalIgnoreCase);
                 var isVaapiDecoder = vidDecoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
                 var isD3d11vaDecoder = vidDecoder.Contains("d3d11va", StringComparison.OrdinalIgnoreCase);
                 var isVideoToolBoxDecoder = vidDecoder.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase);
                 return isSwDecoder || isNvdecDecoder || isVaapiDecoder || isD3d11vaDecoder || isVideoToolBoxDecoder;
-            }
-
-            // GPU tonemapping supports all HDR RangeTypes
-            return state.VideoStream.VideoRange == VideoRange.HDR;
         }
 
         private bool IsHwTonemapInputUnsupported(EncodingJobInfo state, EncodingOptions options)
