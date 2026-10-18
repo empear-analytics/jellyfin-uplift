@@ -121,7 +121,7 @@ Update as tasks land.
 | R4-33 | 9.09 | 9.09 | Sonnet. No commit; 4 measured steps all FLAT (rule 10 on the IsEmptyElement block, rule 9, P on the loop condition; best cc 9 still flagged). Deep nesting 4 stays: the loop body holds a `switch`, which rule 10 excludes. Candidate: rule 10 for a block containing its own switch (also seen in R4-02). |
 | R4-34 | 9.24 | - | not started |
 | R4-35 | 9.25 | 9.47 | Sonnet. Rule 12 context struct (12 members) with the whole `if (hasSubs)`/`if (hasGraphicalSubs)` statements moved into two helpers (the R4-09 lesson); bump gone. Left: Complex Method cc 16 (sw/nv-decoder blocks need 10 values, one struct per method is full); small predicates FLAT alone, DOWN together (Overall Code Complexity). Candidates: second context struct per method. Dead local `doubleRateDeint` reported, not touched. |
-| R4-36 | 9.26 | - | not started |
+| R4-36 | 9.26 | 9.48 | Sonnet. Rule 12 context struct (12 members), whole `if (hasSubs)`/`if (hasGraphicalSubs)` statements moved into two helpers (shape of R4-35); bumps gone. Left: Complex Method cc 14; sw/d3d11va blocks need ~13 values, struct full (second struct per method would be needed). Probes: rule 6 extraction DOWN (5 params), predicates FLAT alone and as a pair. |
 | R4-37 | 9.26 | - | not started |
 | R4-38 | 9.37 | - | not started |
 | R4-39 | 9.38 | - | not started |
