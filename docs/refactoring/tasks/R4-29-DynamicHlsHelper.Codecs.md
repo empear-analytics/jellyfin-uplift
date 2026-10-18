@@ -136,12 +136,31 @@ Reply with exactly this, filled in:
 ```
 Task: R4-29 (Jellyfin.Api/Helpers/DynamicHlsHelper.Codecs.cs)
 Baseline score: 9.09
-Final score:    <x.xx>
-Steps completed: <n> of 3
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    9.09
+Steps completed: 0 of 3 (no step scored UP; the named method GetPlaylistAudioCodecs has no UP candidate)
+Steps reverted:  GetPlaylistAudioCodecs, Recipe E rule 7/9 (trailing if-chain moved to a private static
+  helper PlaylistAudioCodecsRemaining, split point k = number of trailing blocks moved), each alone:
+  k=1 FLAT 9.09 (method still cc 9); k=2 FLAT 9.09; k=3 FLAT 9.09 (method cc 7, no longer flagged);
+  k=4 FLAT 9.09; k=5 DOWN 8.54 (new Code Duplication between the method and the helper); k=6 FLAT 9.09;
+  k=7 FLAT 9.09; k=8 FLAT 9.09 (helper cc 9); k=9 FLAT 9.09 (helper cc 10); k=3 plus a second tail
+  extraction of flac and alac in the same method FLAT 9.09. Recipe G: not applicable (no nesting).
+  Recipe P: not applicable (no compound condition). Recipe E rule 13: not applicable (no else-if chain).
+  Steps 1 and 3 of the task file (Recipe P on GetOutputVideoCodecLevel and GetOutputAv1BitDepth) were
+  already applied in 358b0ab08d; they were not repeated. The score stayed 9.09 whenever the method's
+  own Complex Method was cleared (k=3, 4, 6), so it appears pinned by GetOutputVideoCodecLevel (cc 9).
+Smells left without a recipe: Complex Method GetOutputVideoCodecLevel (cc 9; outside the named method,
+  not measured). Complex Conditional GetOutputVideoCodecLevel:44 and GetOutputAv1BitDepth:272 (the
+  nullable case-3 shape already applied; the guard terms must stay at the call site). Unmeasured
+  candidate: lines 57-58 of GetOutputVideoCodecLevel repeat IsHevcCodec's body (Recipe D reuse, not in
+  this run's recipe list).
+Build: PASS (dotnet build Jellyfin.sln --no-incremental: 0 errors, 211 warnings, the base count)
+Tests: PASS (dotnet test Jellyfin.sln --no-build: all 16 projects, 0 failed; Api 156/156,
+  Integration 429 passed and 3 skipped)
+Commits: none for code; a docs-only commit carries this report
+Unsure about: (1) Whether a trailing if-chain falls under "Recipe E rule 9/13" as the run used it.
+  I read it as rule 9 (a run of statements computing one value) with rule 7's tail conditions; the
+  playbook's history cites this method for rule 7. The measured result is FLAT or DOWN either way.
+  (2) Test data: $TEMP/jellyfin-test-data is not fully removed. Several test-host folders hold open
+  jellyfin.db files and were modified at 22:06, while other dotnet test processes ran on this machine,
+  so I left them as active.
 ```
