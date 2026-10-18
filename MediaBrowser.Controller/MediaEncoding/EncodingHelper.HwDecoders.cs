@@ -58,6 +58,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return ResolveHwDecoderByType(state, options, videoStream);
+        }
+
+        private string ResolveHwDecoderByType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream)
+        {
             var hardwareAccelerationType = options.HardwareAccelerationType;
 
             if (!string.IsNullOrEmpty(videoStream.Codec) && hardwareAccelerationType != HardwareAccelerationType.none)
@@ -69,8 +74,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 {
                     bool hasHardwareHi10P = HasHardwareHi10PDecoder(hardwareAccelerationType);
 
-                    if (!hasHardwareHi10P
-                        && string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase))
+                    if (IsH264WithoutHwHi10P(hasHardwareHi10P, videoStream))
                     {
                         return null;
                     }
@@ -105,6 +109,12 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // leave blank so ffmpeg will decide
             return null;
+        }
+
+        private static bool IsH264WithoutHwHi10P(bool hasHardwareHi10P, MediaStream videoStream)
+        {
+            return !hasHardwareHi10P
+                && string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsAppleSiliconVideoToolbox(HardwareAccelerationType hardwareAccelerationType)
@@ -190,6 +200,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return GetDecoderOptionUnlessSuperseded(options, decoderSuffix, decoderName, isCodecAvailable);
+        }
+
+        private static string GetDecoderOptionUnlessSuperseded(EncodingOptions options, string decoderSuffix, string decoderName, bool isCodecAvailable)
+        {
             if (IsCuvidSupersededByNvdec(options, decoderSuffix))
             {
                 return null;
@@ -284,8 +299,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var nvdecNoInternalCopy = ffmpegVersion >= _minFFmpegHwaUnsafeOutput;
 
             // Strip the display rotation side data from the transposed fmp4 output stream.
-            var stripRotationData = NeedsDisplayRotationStrip(state, ffmpegVersion);
-            var stripRotationDataArgs = stripRotationData ? " -display_rotation 0" : string.Empty;
+            var stripRotationDataArgs = GetStripRotationDataArgs(state, ffmpegVersion);
 
             // VideoToolbox decoders have built-in SW fallback
             if (IsNonVideotoolboxCodecAvailable(options, isCodecAvailable))
@@ -328,21 +342,19 @@ namespace MediaBrowser.Controller.MediaEncoding
                 {
                     if (IsHwaccelAvailable(isVaapiSupported, isCodecAvailable))
                     {
-                        return " -hwaccel vaapi" + (outputHwSurface ? " -hwaccel_output_format vaapi -noautorotate" + stripRotationDataArgs : string.Empty)
-                            + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + (isAv1 ? " -c:v av1" : string.Empty);
+                        return GetVaapiHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
                     }
 
                     if (IsHwaccelAvailable(isD3d11Supported, isCodecAvailable))
                     {
-                        return " -hwaccel d3d11va" + (outputHwSurface ? " -hwaccel_output_format d3d11 -noautorotate" + stripRotationDataArgs : string.Empty)
-                            + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + " -threads 2" + (isAv1 ? " -c:v av1" : string.Empty);
+                        return GetD3d11vaHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
                     }
                 }
                 else
                 {
                     if (IsHwaccelAvailable(isQsvSupported, isCodecAvailable))
                     {
-                        return " -hwaccel qsv" + (outputHwSurface ? " -hwaccel_output_format qsv -noautorotate" + stripRotationDataArgs : string.Empty);
+                        return GetQsvHwaccelOption(outputHwSurface, stripRotationDataArgs);
                     }
                 }
             }
@@ -355,12 +367,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                     if (options.EnableEnhancedNvdecDecoder)
                     {
                         // set -threads 1 to nvdec decoder explicitly since it doesn't implement threading support.
-                        return " -hwaccel cuda" + (outputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + stripRotationDataArgs : string.Empty)
-                            + (nvdecNoInternalCopy ? " -hwaccel_flags +unsafe_output" : string.Empty) + " -threads 1" + (isAv1 ? " -c:v av1" : string.Empty);
+                        return GetCudaNvdecHwaccelOption(outputHwSurface, stripRotationDataArgs, nvdecNoInternalCopy, isAv1);
                     }
 
                     // cuvid decoder doesn't have threading issue.
-                    return " -hwaccel cuda" + (outputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + stripRotationDataArgs : string.Empty);
+                    return GetCudaHwaccelOption(outputHwSurface, stripRotationDataArgs);
                 }
             }
 
@@ -369,31 +380,73 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 if (IsHwaccelAvailable(isD3d11Supported, isCodecAvailable))
                 {
-                    return " -hwaccel d3d11va" + (outputHwSurface ? " -hwaccel_output_format d3d11 -noautorotate" + stripRotationDataArgs : string.Empty)
-                        + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + " -threads 2" + (isAv1 ? " -c:v av1" : string.Empty);
+                    return GetD3d11vaHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
                 }
             }
 
             // Vaapi
             if (IsVaapiHwaccelUsable(hardwareAccelerationType, isVaapiSupported, isCodecAvailable))
             {
-                return " -hwaccel vaapi" + (outputHwSurface ? " -hwaccel_output_format vaapi -noautorotate" + stripRotationDataArgs : string.Empty)
-                    + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + (isAv1 ? " -c:v av1" : string.Empty);
+                return GetVaapiHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
             }
 
             // Apple videotoolbox
             if (IsVideotoolboxHwaccelUsable(hardwareAccelerationType, isVideotoolboxSupported, isCodecAvailable))
             {
-                return " -hwaccel videotoolbox" + (outputHwSurface ? " -hwaccel_output_format videotoolbox_vld" : string.Empty) + " -noautorotate" + stripRotationDataArgs;
+                return GetVideotoolboxHwaccelOption(outputHwSurface, stripRotationDataArgs);
             }
 
             // Rockchip rkmpp
             if (IsRkmppHwaccelUsable(hardwareAccelerationType, isRkmppSupported, isCodecAvailable))
             {
-                return " -hwaccel rkmpp" + (outputHwSurface ? " -hwaccel_output_format drm_prime -noautorotate" + stripRotationDataArgs : string.Empty);
+                return GetRkmppHwaccelOption(outputHwSurface, stripRotationDataArgs);
             }
 
             return null;
+        }
+
+        private static string GetVaapiHwaccelOption(bool outputHwSurface, string stripRotationDataArgs, bool profileMismatch, bool isAv1)
+        {
+            return " -hwaccel vaapi" + (outputHwSurface ? " -hwaccel_output_format vaapi -noautorotate" + stripRotationDataArgs : string.Empty)
+                + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + (isAv1 ? " -c:v av1" : string.Empty);
+        }
+
+        private static string GetD3d11vaHwaccelOption(bool outputHwSurface, string stripRotationDataArgs, bool profileMismatch, bool isAv1)
+        {
+            return " -hwaccel d3d11va" + (outputHwSurface ? " -hwaccel_output_format d3d11 -noautorotate" + stripRotationDataArgs : string.Empty)
+                + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + " -threads 2" + (isAv1 ? " -c:v av1" : string.Empty);
+        }
+
+        private static string GetQsvHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        {
+            return " -hwaccel qsv" + (outputHwSurface ? " -hwaccel_output_format qsv -noautorotate" + stripRotationDataArgs : string.Empty);
+        }
+
+        private static string GetCudaNvdecHwaccelOption(bool outputHwSurface, string stripRotationDataArgs, bool nvdecNoInternalCopy, bool isAv1)
+        {
+            return " -hwaccel cuda" + (outputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + stripRotationDataArgs : string.Empty)
+                + (nvdecNoInternalCopy ? " -hwaccel_flags +unsafe_output" : string.Empty) + " -threads 1" + (isAv1 ? " -c:v av1" : string.Empty);
+        }
+
+        private static string GetCudaHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        {
+            return " -hwaccel cuda" + (outputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + stripRotationDataArgs : string.Empty);
+        }
+
+        private static string GetVideotoolboxHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        {
+            return " -hwaccel videotoolbox" + (outputHwSurface ? " -hwaccel_output_format videotoolbox_vld" : string.Empty) + " -noautorotate" + stripRotationDataArgs;
+        }
+
+        private static string GetRkmppHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        {
+            return " -hwaccel rkmpp" + (outputHwSurface ? " -hwaccel_output_format drm_prime -noautorotate" + stripRotationDataArgs : string.Empty);
+        }
+
+        private string GetStripRotationDataArgs(EncodingJobInfo state, Version ffmpegVersion)
+        {
+            var stripRotationData = NeedsDisplayRotationStrip(state, ffmpegVersion);
+            return stripRotationData ? " -display_rotation 0" : string.Empty;
         }
 
         private static bool IsHwaccelAvailable(bool isHwaccelSupported, bool isCodecAvailable)
@@ -651,6 +704,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return ResolveNvdecAccelType(state, options, videoStream, bitDepth);
+        }
+
+        private string ResolveNvdecAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
+        {
             var hwSurface = HasCudaHwSurface();
             var is8bitSwFormatsNvdec = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsNvdec = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsNvdec);
@@ -736,6 +794,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return ResolveAmfAccelType(state, options, videoStream, bitDepth);
+        }
+
+        private string ResolveAmfAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
+        {
             var hwSurface = HasD3d11OclHwSurface();
             var is8bitSwFormatsAmf = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsAmf = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsAmf);
@@ -758,22 +821,24 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (is8_10bitSwFormatsAmf)
+            if (!is8_10bitSwFormatsAmf)
             {
-                if (IsHevcStreamCodec(videoStream))
-                {
-                    return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
-                }
+                return null;
+            }
 
-                if (string.Equals("vp9", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
-                }
+            if (IsHevcStreamCodec(videoStream))
+            {
+                return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
+            }
 
-                if (string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
-                }
+            if (string.Equals("vp9", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+            {
+                return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
+            }
+
+            if (string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+            {
+                return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
             }
 
             return null;
@@ -799,6 +864,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return ResolveVaapiAccelType(state, options, videoStream, bitDepth);
+        }
+
+        private string ResolveVaapiAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
+        {
             var hwSurface = HasVaapiHwSurface(state);
             var is8bitSwFormatsVaapi = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsVaapi = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVaapi);
@@ -884,6 +954,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return ResolveVideotoolboxAccelType(state, options, videoStream, bitDepth);
+        }
+
+        private string ResolveVideotoolboxAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
+        {
             var is8bitSwFormatsVt = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsVt = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVt);
             var is8_10_12bitSwFormatsVt = IsQsv8To12BitSwFormat(videoStream, is8_10bitSwFormatsVt);
@@ -961,6 +1036,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return ResolveRkmppAccelType(state, options, videoStream, bitDepth);
+        }
+
+        private string ResolveRkmppAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
+        {
             var inW = state.VideoStream?.Width;
             var inH = state.VideoStream?.Height;
             var reqW = state.BaseRequest.Width;
@@ -983,7 +1063,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // TODO: add more 8/10bit and 4:2:2 formats for Rkmpp after finishing the ffcheck tool
             var is8bitSwFormatsRkmpp = Is8BitYuv420SwFormat(videoStream);
             var is10bitSwFormatsRkmpp = string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-            var is8_10bitSwFormatsRkmpp = is8bitSwFormatsRkmpp || is10bitSwFormatsRkmpp;
+            var is8_10bitSwFormatsRkmpp = Is8Or10BitRkmppSwFormat(is8bitSwFormatsRkmpp, is10bitSwFormatsRkmpp);
 
             // nv15 and nv20 are bit-stream only formats
             if (IsRkmppBitstreamOnlyFormat(is10bitSwFormatsRkmpp, hwSurface))
@@ -1014,34 +1094,41 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (is8_10bitSwFormatsRkmpp)
+            if (!is8_10bitSwFormatsRkmpp)
             {
-                if (IsAvcOrH264Codec(videoStream))
-                {
-                    var accelType = GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
-                    return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
-                }
+                return null;
+            }
 
-                if (IsHevcOrH265Codec(videoStream))
-                {
-                    var accelType = GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
-                    return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
-                }
+            if (IsAvcOrH264Codec(videoStream))
+            {
+                var accelType = GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
+                return AppendAfbcRgaOption(accelType, isAfbcSupported);
+            }
 
-                if (string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
-                {
-                    var accelType = GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
-                    return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
-                }
+            if (IsHevcOrH265Codec(videoStream))
+            {
+                var accelType = GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
+                return AppendAfbcRgaOption(accelType, isAfbcSupported);
+            }
 
-                if (string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
-                {
-                    // there's an issue about AV1 AFBC on RK3588, disable it for now until it's fixed upstream
-                    return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
-                }
+            if (string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
+            {
+                var accelType = GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
+                return AppendAfbcRgaOption(accelType, isAfbcSupported);
+            }
+
+            if (string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
+            {
+                // there's an issue about AV1 AFBC on RK3588, disable it for now until it's fixed upstream
+                return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
             }
 
             return null;
+        }
+
+        private static bool Is8Or10BitRkmppSwFormat(bool is8bitSwFormatsRkmpp, bool is10bitSwFormatsRkmpp)
+        {
+            return is8bitSwFormatsRkmpp || is10bitSwFormatsRkmpp;
         }
 
         private static bool IsRkmppDecodingUnavailable(EncodingOptions options, bool isLinux)
@@ -1064,6 +1151,11 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static bool IsRkmppBitstreamOnlyFormat(bool is10bitSwFormatsRkmpp, bool hwSurface)
         {
             return is10bitSwFormatsRkmpp && !hwSurface;
+        }
+
+        private static string AppendAfbcRgaOption(string accelType, bool isAfbcSupported)
+        {
+            return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
         }
 
         private static bool CanUseAfbcRga(string accelType, bool isAfbcSupported)

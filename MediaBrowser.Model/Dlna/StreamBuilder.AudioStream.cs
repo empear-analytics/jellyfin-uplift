@@ -127,27 +127,32 @@ namespace MediaBrowser.Model.Dlna
 
                 SetStreamInfoOptionsFromTranscodingProfile(item, playlistItem, transcodingProfile);
 
-                var inputAudioChannels = audioStream.Channels;
-                var inputAudioBitrate = audioStream.BitRate;
-                var inputAudioSampleRate = audioStream.SampleRate;
-                var inputAudioBitDepth = audioStream.BitDepth;
-
-                var audioTranscodingConditions = GetProfileConditionsForAudio(options.Profile.CodecProfiles, transcodingProfile.Container, transcodingProfile.AudioCodec, inputAudioChannels, inputAudioBitrate, inputAudioSampleRate, inputAudioBitDepth, false).ToArray();
-                ApplyTranscodingConditions(playlistItem, audioTranscodingConditions, null, true, true);
-
-                // Honor requested max channels
-                playlistItem.GlobalMaxAudioChannels = options.MaxAudioChannels;
-
-                SetAudioTranscodingBitrate(options, playlistItem);
-
-                // Pure audio transcoding does not support comma separated list of transcoding codec at the moment.
-                // So just use the AudioCodec as is would be safe enough as the _transcoderSupport.CanEncodeToAudioCodec
-                // would fail so this profile will not even be picked up.
-                SetTranscodingAudioCodecIfMissing(playlistItem, transcodingProfile);
+                ApplyAudioTranscodingProfileSettings(options, audioStream, playlistItem, transcodingProfile);
             }
 
             playlistItem.TranscodeReasons = transcodeReasons;
             return playlistItem;
+        }
+
+        private void ApplyAudioTranscodingProfileSettings(MediaOptions options, MediaStream audioStream, StreamInfo playlistItem, TranscodingProfile transcodingProfile)
+        {
+            var inputAudioChannels = audioStream.Channels;
+            var inputAudioBitrate = audioStream.BitRate;
+            var inputAudioSampleRate = audioStream.SampleRate;
+            var inputAudioBitDepth = audioStream.BitDepth;
+
+            var audioTranscodingConditions = GetProfileConditionsForAudio(options.Profile.CodecProfiles, transcodingProfile.Container, transcodingProfile.AudioCodec, inputAudioChannels, inputAudioBitrate, inputAudioSampleRate, inputAudioBitDepth, false).ToArray();
+            ApplyTranscodingConditions(playlistItem, audioTranscodingConditions, null, true, true);
+
+            // Honor requested max channels
+            playlistItem.GlobalMaxAudioChannels = options.MaxAudioChannels;
+
+            SetAudioTranscodingBitrate(options, playlistItem);
+
+            // Pure audio transcoding does not support comma separated list of transcoding codec at the moment.
+            // So just use the AudioCodec as is would be safe enough as the _transcoderSupport.CanEncodeToAudioCodec
+            // would fail so this profile will not even be picked up.
+            SetTranscodingAudioCodecIfMissing(playlistItem, transcodingProfile);
         }
 
         private static string? GetAudioRemuxContainer(MediaSourceInfo item, (DirectPlayProfile? Profile, PlayMethod? PlayMethod, TranscodeReason TranscodeReasons) directPlayInfo)
@@ -256,6 +261,11 @@ namespace MediaBrowser.Model.Dlna
                 }
             }
 
+            return GetAudioPlayMethodFromProfile(item, options, directPlayProfile, transcodeReasons);
+        }
+
+        private (DirectPlayProfile? Profile, PlayMethod? PlayMethod, TranscodeReason TranscodeReasons) GetAudioPlayMethodFromProfile(MediaSourceInfo item, MediaOptions options, DirectPlayProfile? directPlayProfile, TranscodeReason transcodeReasons)
+        {
             // The profile describes what the device supports
             // If device requirements are satisfied then allow both direct stream and direct play
             // Note: As of 10.10 codebase, SupportsDirectPlay is always true because the MediaSourceInfo initializes this key as true
@@ -275,6 +285,11 @@ namespace MediaBrowser.Model.Dlna
                 }
             }
 
+            return GetAudioDirectStreamPlayMethod(item, options, directPlayProfile, transcodeReasons);
+        }
+
+        private (DirectPlayProfile? Profile, PlayMethod? PlayMethod, TranscodeReason TranscodeReasons) GetAudioDirectStreamPlayMethod(MediaSourceInfo item, MediaOptions options, DirectPlayProfile? directPlayProfile, TranscodeReason transcodeReasons)
+        {
             // While options takes the network and other factors into account. Only applies to direct stream
             if (item.SupportsDirectStream)
             {

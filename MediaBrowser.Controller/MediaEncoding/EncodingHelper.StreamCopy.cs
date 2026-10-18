@@ -53,6 +53,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenSubtitlesAvcAndCodec(state, request, videoStream);
+        }
+
+        private bool CanCopyGivenSubtitlesAvcAndCodec(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             // Can't stream copy if we're burning in subtitles
             if (IsBurningInSubtitles(state, request))
             {
@@ -70,6 +75,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return false;
             }
 
+            return CanCopyGivenRequestedProfile(state, request, videoStream);
+        }
+
+        private bool CanCopyGivenRequestedProfile(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             var requestedProfiles = state.GetRequestedProfiles(videoStream.Codec);
 
             // If client is requesting a specific video profile, it must match the source
@@ -94,6 +104,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenRangeRotationSizeAndFrameRate(state, request, videoStream);
+        }
+
+        private bool CanCopyGivenRangeRotationSizeAndFrameRate(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             var requestedRangeTypes = state.GetRequestedRangeTypes(videoStream.Codec);
             if (requestedRangeTypes.Length > 0)
             {
@@ -140,6 +155,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenRotationAndLaterLimits(state, request, videoStream);
+        }
+
+        private static bool CanCopyGivenRotationAndLaterLimits(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             var requestedRotations = state.GetRequestedRotations(videoStream.Codec);
             if (requestedRotations.Length > 0)
             {
@@ -150,6 +170,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenWidthHeightAndFrameRate(state, request, videoStream);
+        }
+
+        private static bool CanCopyGivenWidthHeightAndFrameRate(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             // Video width must fall within requested value
             if (ExceedsMaxWidth(request, videoStream))
             {
@@ -177,6 +202,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenVideoBitRate(state, request, videoStream);
+        }
+
+        private static bool CanCopyGivenVideoBitRate(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
+        {
             // Video bitrate must fall within requested value
             if (ExceedsMaxVideoBitRate(request, videoStream))
             {
@@ -187,6 +217,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenBitDepthRefFramesLevelAndContainer(state, videoStream);
+        }
+
+        private static bool CanCopyGivenBitDepthRefFramesLevelAndContainer(EncodingJobInfo state, MediaStream videoStream)
+        {
             var maxBitDepth = state.GetRequestedVideoBitDepth(videoStream.Codec);
             if (maxBitDepth.HasValue)
             {
@@ -196,6 +231,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            return CanCopyGivenRefFramesLevelAndContainer(state, videoStream);
+        }
+
+        private static bool CanCopyGivenRefFramesLevelAndContainer(EncodingJobInfo state, MediaStream videoStream)
+        {
             var maxRefFrames = state.GetRequestedMaxRefFrames(videoStream.Codec);
             if (ExceedsMaxRefFrames(maxRefFrames, videoStream))
             {
@@ -288,10 +328,15 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static bool IsIncompatibleRangeType(string[] requestedRangeTypes, MediaStream videoStream, bool requestHasHDR10, bool requestHasHLG, bool requestHasSDR)
         {
             return !requestedRangeTypes.Contains(videoStream.VideoRangeType.ToString(), StringComparison.OrdinalIgnoreCase)
-                && !((requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.DOVIWithHDR10)
-                    || (requestHasHLG && videoStream.VideoRangeType == VideoRangeType.DOVIWithHLG)
-                    || (requestHasSDR && videoStream.VideoRangeType == VideoRangeType.DOVIWithSDR)
-                    || (requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.HDR10Plus));
+                && !IsRangeTypeCompatibleByFallback(videoStream, requestHasHDR10, requestHasHLG, requestHasSDR);
+        }
+
+        private static bool IsRangeTypeCompatibleByFallback(MediaStream videoStream, bool requestHasHDR10, bool requestHasHLG, bool requestHasSDR)
+        {
+            return (requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.DOVIWithHDR10)
+                || (requestHasHLG && videoStream.VideoRangeType == VideoRangeType.DOVIWithHLG)
+                || (requestHasSDR && videoStream.VideoRangeType == VideoRangeType.DOVIWithSDR)
+                || (requestHasHDR10 && videoStream.VideoRangeType == VideoRangeType.HDR10Plus);
         }
 
         private static bool IsUnrequestedRotation(int rotation, string[] requestedRotations)
