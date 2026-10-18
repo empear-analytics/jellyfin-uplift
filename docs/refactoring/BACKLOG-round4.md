@@ -123,7 +123,7 @@ Update as tasks land.
 | R4-35 | 9.25 | 9.47 | Sonnet. Rule 12 context struct (12 members) with the whole `if (hasSubs)`/`if (hasGraphicalSubs)` statements moved into two helpers (the R4-09 lesson); bump gone. Left: Complex Method cc 16 (sw/nv-decoder blocks need 10 values, one struct per method is full); small predicates FLAT alone, DOWN together (Overall Code Complexity). Candidates: second context struct per method. Dead local `doubleRateDeint` reported, not touched. |
 | R4-36 | 9.26 | 9.48 | Sonnet. Rule 12 context struct (12 members), whole `if (hasSubs)`/`if (hasGraphicalSubs)` statements moved into two helpers (shape of R4-35); bumps gone. Left: Complex Method cc 14; sw/d3d11va blocks need ~13 values, struct full (second struct per method would be needed). Probes: rule 6 extraction DOWN (5 params), predicates FLAT alone and as a pair. |
 | R4-37 | 9.26 | - | not started |
-| R4-38 | 9.37 | - | not started |
+| R4-38 | 9.37 | 10.00 + 10.00 (EncodingHelper.AppleFilterHelpers.cs) | Sonnet. Group: S split FLAT alone (9.37), kept as a pair with the rule 12 subtitle context (9.58); rule 12 main-filters context with `transposeDir` as a plain parameter (guard rejected it as a member: interpolated string); three P predicates placed in the helpers file (Primitive Obsession in the original). The subtitle block alone was DOWN (9.00, Overall Code Complexity). No smell left. Caveat: score reached partly by moving code into a new file. |
 | R4-39 | 9.38 | - | not started |
 | R4-40 | 9.38 | - | not started |
 | R4-41 | 9.38 | - | not started |
