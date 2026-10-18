@@ -143,13 +143,23 @@ Reply with exactly this, filled in:
 
 ```
 Task: R4-18 (Jellyfin.Api/Helpers/StreamingHelpers.cs)
-Baseline score: 8.37
-Final score:    <x.xx>
-Steps completed: <n> of 4
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Baseline score: 8.77 (HEAD; the 8.37 in this file predates commit 0946d5c9e0 GetCodecExtension, as the brief says)
+Final score:    8.77 (no step scored UP, so no code change was kept)
+Steps completed: 0 of 4
+Steps reverted:  every candidate, each measured alone with codehealth_check.py and reverted, all FLAT at 8.77:
+  - ApplyParam (cc 35): not split. It is a void switch: its 34 sections end in `break`, not `return`, so rule 11 (suffix of a switch statement's sections that return or throw) does not apply. No other allowed recipe fits it (no run of statements, no if / else-if chain, no nesting, no compound condition, no return tail).
+  - C1 GetOutputFilePath, rule 9, the filename run (data, MD5) to StreamingParamFilename: FLAT 8.77
+  - C2 GetStreamingState, rule 9, the `ext` ternary to StreamingParamOutputExtension: FLAT 8.77
+  - C3 GetPlaybackMediaSource, Recipe P, `mediaSource is null && Guid.Parse(...)` to StreamingParamUsesItemIdAsSourceId: FLAT 8.77
+  - C4 ApplySupportedCodecs, Recipe P, `IsVideoRequest && !IsNullOrWhiteSpace(VideoCodec)` to StreamingParamHasVideoCodecRequest: FLAT 8.77
+  - C5 ParseStreamOptions, Recipe P, `Key.Length > 0 && char.IsLower(Key[0])` to StreamingParamIsLowerCaseKey: FLAT 8.77
+  Rule 13, rule 7 and Recipe G: no site in this file they apply to (no else-if chain, no return tail with a block to move, no nesting of depth 4).
+Smells left without a recipe: NONE that the allowed set can reach. Left, not tried (rule 12 is outside this run's brief):
+  - Excess Number of Function Arguments, GetStreamingState (11 arguments): needs Recipe E rule 12 (context struct).
+  - Excess Number of Function Arguments, GetOutputFilePath (5 arguments): needs Recipe E rule 12; the signature is frozen.
+  - Complex Method, ApplyParam (cc 35): a void-switch split is a candidate new recipe (see below). Not applied.
+Build: PASS (dotnet build Jellyfin.sln --no-incremental: 0 errors, 211 warnings, same as base)
+Tests: PASS except one failure that passed on rerun (flake under load). Full run: Api 156 passed, Server.Integration 429 passed (3 skipped), Providers 512 of 513 passed, all other projects passed. Failed: Jellyfin.Providers.Tests.MediaInfo.AtlFlacRegressionTests.AtlParser_MalformedFlac_DoesNotHang (5 s). Run alone once, it passed (85 ms). Tree equals HEAD, so it is unrelated to this file.
+Commits: this report commit only (no code commit)
+Unsure about: (1) candidate new recipe: a void switch whose sections end in `break` (ApplyParam, 34 cases, each a single assignment or one Apply* call); no recipe covers it. (2) Candidates C1-C5 are on helpers and other methods, because ApplyParam itself has no allowed site; all FLAT. (3) The Providers flake above.
 ```
