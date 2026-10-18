@@ -607,24 +607,37 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (is8_10bitSwFormatsQsv)
+            var context = new HwDecoderQsvContext(
+                state,
+                options,
+                videoStream,
+                bitDepth,
+                hwSurface,
+                is8_10bitSwFormatsQsv,
+                is8_10_12bitSwFormatsQsv);
+            return ResolveQsvWideSwFormatAccelType(context);
+        }
+
+        private string ResolveQsvWideSwFormatAccelType(HwDecoderQsvContext context)
+        {
+            if (context.Is8_10bitSwFormatsQsv)
             {
-                if (string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(context.VideoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
                 {
-                    return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface) + GetHwDecoderName(options, "vp9", "qsv", "vp9", bitDepth);
+                    return GetHwaccelType(context.State, context.Options, "vp9", context.BitDepth, context.HwSurface) + GetHwDecoderName(context.Options, "vp9", "qsv", "vp9", context.BitDepth);
                 }
 
-                if (string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(context.VideoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
                 {
-                    return GetHwaccelType(state, options, "av1", bitDepth, hwSurface) + GetHwDecoderName(options, "av1", "qsv", "av1", bitDepth);
+                    return GetHwaccelType(context.State, context.Options, "av1", context.BitDepth, context.HwSurface) + GetHwDecoderName(context.Options, "av1", "qsv", "av1", context.BitDepth);
                 }
             }
 
-            if (is8_10_12bitSwFormatsQsv)
+            if (context.Is8_10_12bitSwFormatsQsv)
             {
-                if (IsHevcOrH265Codec(videoStream))
+                if (IsHevcOrH265Codec(context.VideoStream))
                 {
-                    return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface) + GetHwDecoderName(options, "hevc", "qsv", "hevc", bitDepth);
+                    return GetHwaccelType(context.State, context.Options, "hevc", context.BitDepth, context.HwSurface) + GetHwDecoderName(context.Options, "hevc", "qsv", "hevc", context.BitDepth);
                 }
             }
 
@@ -1184,5 +1197,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool HwSurface,
             bool Is8_10bitSwFormatsNvdec,
             bool Is8_10_12bitSwFormatsNvdec);
+
+        private readonly record struct HwDecoderQsvContext(
+            EncodingJobInfo State,
+            EncodingOptions Options,
+            MediaStream VideoStream,
+            int BitDepth,
+            bool HwSurface,
+            bool Is8_10bitSwFormatsQsv,
+            bool Is8_10_12bitSwFormatsQsv);
     }
 }
