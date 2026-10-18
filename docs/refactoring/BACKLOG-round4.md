@@ -133,7 +133,7 @@ Update as tasks land.
 | R4-45 | 9.38 | - | not started |
 | R4-46 | 9.38 | - | not started |
 | R4-47 | 9.38 | - | not started |
-| R4-48 | 9.38 | - | not started |
+| R4-48 | 9.38 | 9.38 | Sonnet. No commit. The two-value Recipe D merge (helper with cache path and log message template) fails the build with CA2254 (logging template must be constant at every call site); the playbook rule of 2026-10-18 did not foresee it. Playbook correction needed: a differing log-message template is not a value that can move into a parameter (or: share only the non-logging part). |
 | R4-49 | 9.38 | - | not started |
 | R4-50 | 9.53 | - | not started |
 | R4-51 | 9.53 | - | not started |
