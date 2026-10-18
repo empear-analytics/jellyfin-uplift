@@ -101,7 +101,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subH = state.SubtitleStream?.Height;
 
             var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+            var transposeDir = GetRkmppTransposeDirection(state, rotation);
             var doRkVppTranspose = !string.IsNullOrEmpty(transposeDir);
             var swapWAndH = NeedsRkmppSwapWAndH(rotation, isSwDecoder, isRkmppDecoder, doRkVppTranspose);
             var swpInW = swapWAndH ? inH : inW;
@@ -261,6 +261,11 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static string GetRkmppSwOutFormat(bool doOclTonemap, bool hasGraphicalSubs)
         {
             return doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
+        }
+
+        private string GetRkmppTransposeDirection(EncodingJobInfo state, int rotation)
+        {
+            return rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
         }
     }
 }
