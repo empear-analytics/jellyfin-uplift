@@ -71,36 +71,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             return 128000 * (outputAudioChannels ?? audioStream.Channels ?? 2);
         }
 
-        private static int GetAudioCommonLossyBitrate(int inputChannels, int outputChannels, int bitrate)
-        {
-#pragma warning disable SA1008
-            return (inputChannels, outputChannels) switch
-            {
-                ( >= 6, >= 6 or 0) => Math.Min(640000, bitrate),
-                ( > 0, > 0) => Math.Min(outputChannels * 128000, bitrate),
-                ( > 0, _) => Math.Min(inputChannels * 128000, bitrate),
-                (_, _) => Math.Min(384000, bitrate)
-            };
-#pragma warning restore SA1008
-        }
-
-        private static bool IsDtsAudioCodec(string audioCodec)
-        {
-            return string.Equals(audioCodec, "dts", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "dca", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsDefaultOrCommonLossyAudioCodec(string audioCodec)
-        {
-            return string.IsNullOrEmpty(audioCodec)
-                || string.Equals(audioCodec, "aac", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "mp3", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "opus", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "vorbis", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "ac3", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(audioCodec, "eac3", StringComparison.OrdinalIgnoreCase);
-        }
-
         public string GetAudioVbrModeParam(string encoder, int bitrate, int channels)
         {
             var bitratePerChannel = bitrate / Math.Max(channels, 1);
@@ -117,52 +87,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return GetAudioNonFdkVbrModeParam(encoder, bitrate, bitratePerChannel);
-        }
-
-        private static string GetLameVbrModeParam(int bitrate, int bitratePerChannel)
-        {
-            // lame's VBR is only good for a certain bitrate range
-            // For very low and very high bitrate, use abr mode
-            if (bitratePerChannel is < 122500 and > 48000)
-            {
-                return " -qscale:a " + bitratePerChannel switch
-                {
-                    < 64000 => "6",
-                    < 88000 => "4",
-                    < 112000 => "2",
-                    _ => "0"
-                };
-            }
-
-            return " -abr:a 1" + " -b:a " + bitrate;
-        }
-
-        private static string GetAudioNonFdkVbrModeParam(string encoder, int bitrate, int bitratePerChannel)
-        {
-            if (string.Equals(encoder, "libmp3lame", StringComparison.OrdinalIgnoreCase))
-            {
-                return GetLameVbrModeParam(bitrate, bitratePerChannel);
-            }
-
-            if (string.Equals(encoder, "aac_at", StringComparison.OrdinalIgnoreCase))
-            {
-                // aac_at's CVBR mode
-                return " -aac_at_mode:a 2" + " -b:a " + bitrate;
-            }
-
-            if (string.Equals(encoder, "libvorbis", StringComparison.OrdinalIgnoreCase))
-            {
-                return " -qscale:a " + bitratePerChannel switch
-                {
-                    < 40000 => "0",
-                    < 56000 => "2",
-                    < 80000 => "4",
-                    < 112000 => "6",
-                    _ => "8"
-                };
-            }
-
-            return null;
         }
 
         public string GetAudioFilterParam(EncodingJobInfo state, EncodingOptions encodingOptions)
@@ -194,25 +118,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
-        }
-
-        private static void AddStereoDownMixFilters(EncodingJobInfo state, EncodingOptions encodingOptions, List<string> filters)
-        {
-            var hasDownMixFilter = DownMixAlgorithmsHelper.AlgorithmFilterStrings.TryGetValue((encodingOptions.DownMixStereoAlgorithm, DownMixAlgorithmsHelper.InferChannelLayout(state.AudioStream)), out var downMixFilterString);
-            if (hasDownMixFilter)
-            {
-                filters.Add(downMixFilterString);
-            }
-
-            if (!encodingOptions.DownMixAudioBoost.Equals(1))
-            {
-                filters.Add("volume=" + encodingOptions.DownMixAudioBoost.ToString(CultureInfo.InvariantCulture));
-            }
-        }
-
-        private static bool NeedsSubtitleAudioTimestampShift(EncodingJobInfo state, bool isCopyingTimestamps)
-        {
-            return state.SubtitleStream is not null && state.SubtitleStream.IsTextSubtitleStream && ShouldEncodeSubtitle(state) && !isCopyingTimestamps;
         }
 
         /// <summary>
@@ -270,32 +175,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return resultChannels;
-        }
-
-        private static int? GetHlsCompatibleChannelCount(int? resultChannels)
-        {
-            // We can let FFMpeg supply an extra LFE channel for 5ch and 7ch to make them 5.1 and 7.1
-            if (resultChannels == 5)
-            {
-                resultChannels = 6;
-            }
-            else if (resultChannels == 7)
-            {
-                resultChannels = 8;
-            }
-            else
-            {
-                // For other weird layout, just downmix to stereo for compatibility
-                resultChannels = 2;
-            }
-
-            return resultChannels;
-        }
-
-        private static bool HasUnsupportedHlsChannelLayout(EncodingJobInfo state, int? resultChannels)
-        {
-            return state.TranscodingType != TranscodingJobType.Progressive
-                && ((resultChannels > 2 && resultChannels < 6) || resultChannels == 7);
         }
     }
 }
