@@ -90,7 +90,7 @@ Update as tasks land.
 | R4-02 | 5.85 | 6.45 | Sonnet. Rule 10 helper `IsDisabledByQualifier` on 3 of the 4 qualifier guard blocks (4 blocks WORSE: Complex Method cc 66); `ApplyTranscodingConditions` is a `switch` statement, so rule 10 (no switch inside the block) stops there. Candidate: rule 10 for a block with its own switch. |
 | R4-03 | 6.85 | - | not started |
 | R4-04 | 7.32 | - | not started |
-| R4-05 | 7.51 | - | not started |
+| R4-05 | 7.51 | 7.82 | Sonnet. Rule 12 context structs (Intel 12, Amd 12, Limited 10 members) for the subtitle/output blocks of the three Vaapi methods; one Amd pair E+P (FLAT alone, UP together); Recipe P on GetVaapiVidFilterChain. Left: Bumpy Road (Amd 3, Intel 2), Complex Method (cc 16/16/14/10), Primitive Obsession. Decoder blocks need 13-15 values, struct full. Candidates: two structs per method / larger struct; rule 7 for a leading if whose body returns on every path; D across context-struct methods. Known flaky AtlFlacRegression test failed once under load. |
 | R4-06 | 7.57 | - | not started |
 | R4-07 | 7.57 | - | not started |
 | R4-08 | 7.86 | - | not started |
