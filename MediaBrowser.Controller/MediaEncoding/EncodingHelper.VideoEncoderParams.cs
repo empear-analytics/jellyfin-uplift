@@ -281,16 +281,24 @@ namespace MediaBrowser.Controller.MediaEncoding
                     EncoderPreset.slower => " -compression_level 2",
                     EncoderPreset.slow => " -compression_level 3",
                     EncoderPreset.medium => " -compression_level 4",
-                    EncoderPreset.fast => " -compression_level 5",
-                    EncoderPreset.faster => " -compression_level 6",
-                    EncoderPreset.veryfast => " -compression_level 7",
-                    EncoderPreset.superfast => " -compression_level 7",
-                    EncoderPreset.ultrafast => " -compression_level 7",
-                    _ => string.Empty
+                    _ => VideoEncoderVaapiFasterCompressionLevel(encoderPreset)
                 };
             }
 
             return param;
+        }
+
+        private static string VideoEncoderVaapiFasterCompressionLevel(EncoderPreset encoderPreset)
+        {
+            return encoderPreset switch
+            {
+                EncoderPreset.fast => " -compression_level 5",
+                EncoderPreset.faster => " -compression_level 6",
+                EncoderPreset.veryfast => " -compression_level 7",
+                EncoderPreset.superfast => " -compression_level 7",
+                EncoderPreset.ultrafast => " -compression_level 7",
+                _ => string.Empty
+            };
         }
 
         private static string AppendQsvPreset(string param, EncoderPreset encoderPreset, string videoEncoder)
