@@ -104,7 +104,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 args += keyFrameArg;
 
-                var hasGraphicalSubs = state.SubtitleStream is not null && !state.SubtitleStream.IsTextSubtitleStream && ShouldEncodeSubtitle(state);
+                var hasGraphicalSubs = IsProgressiveGraphicalSubtitleEncoded(state);
 
                 var hasCopyTs = false;
 
@@ -138,6 +138,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             args += GetOutputFFlags(state);
 
             return args;
+        }
+
+        private static bool IsProgressiveGraphicalSubtitleEncoded(EncodingJobInfo state)
+        {
+            return state.SubtitleStream is not null && !state.SubtitleStream.IsTextSubtitleStream && ShouldEncodeSubtitle(state);
         }
 
         private string AppendStreamCopyVideoArgs(string args, EncodingJobInfo state)
