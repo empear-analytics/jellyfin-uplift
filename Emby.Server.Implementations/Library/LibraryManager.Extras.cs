@@ -106,8 +106,7 @@ namespace Emby.Server.Implementations.Library
                 // The name derived from the file is only a default. A name that came from anywhere else,
                 // such as a local metadata file, is the user's and has to survive the scan, so only a
                 // name this method handed out itself is renewed; RefreshExtras persists the change.
-                if (IsUnlockedNewName(name, extra)
-                    && (itemById is null || IsGeneratedExtraName(extra.Name, candidate)))
+                if (ShouldRenewName(name, extra, itemById, candidate))
                 {
                     extra.Name = name;
                 }
@@ -128,6 +127,12 @@ namespace Emby.Server.Implementations.Library
                 }
 
                 return null;
+            }
+
+            bool ShouldRenewName(string name, BaseItem extra, BaseItem? itemById, ExtraCandidate candidate)
+            {
+                return IsUnlockedNewName(name, extra)
+                    && (itemById is null || IsGeneratedExtraName(extra.Name, candidate));
             }
 
             bool IsGeneratedExtraName(string currentName, ExtraCandidate candidate)
