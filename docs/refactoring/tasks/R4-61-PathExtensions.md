@@ -120,12 +120,15 @@ Reply with exactly this, filled in:
 ```
 Task: R4-61 (Emby.Server.Implementations/Library/PathExtensions.cs)
 Baseline score: 9.68
-Final score:    <x.xx>
-Steps completed: <n> of 1
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    9.68
+Steps completed: 0 of 1
+Steps reverted:  1 (Step 1, TryReplaceSubPath, Recipe P: no candidate scored UP; each candidate measured alone and reverted)
+  C1 whole condition of the `if` at line 45 as PathIsNotAtSubPathBoundary(4 args): 9.38 DOWN (adds Primitive Obsession, String Heavy Function Arguments)
+  C2 leading two terms of the `&&` chain as PathIsNotLongerThanUnterminatedSubPath(3 args), last term kept at call site: 9.38 DOWN (same two smells)
+  C3 leading three terms of the `||` chain in IsMissingOrLongerThanPath as PathIsNotAllPresent(3 args): 9.09 DOWN (Complex Conditional at TryReplaceSubPath:45 still flagged, plus the same two smells)
+Smells left without a recipe: NONE. The one smell left, Complex Conditional at TryReplaceSubPath:45 (2 expressions, lines 45-47), was tried under Recipe P (C1, C2) and has no UP application: each predicate brings Primitive Obsession and String Heavy Function Arguments, because its parameters are strings, a bool and a char.
+Build: PASS (dotnet build Jellyfin.sln --no-incremental: 0 errors, 211 warnings, same as base)
+Tests: FAIL on one test, classified as a flake. Full suite: Jellyfin.Providers.Tests.MediaInfo.AtlFlacRegressionTests.AtlParser_MalformedFlac_DoesNotHang timed out after 5000 ms under concurrent load (run on the unchanged start commit). Run alone once: passed (84 ms). All other test projects passed (Jellyfin.Server.Implementations.Tests 1102 passed, 17 skipped; Jellyfin.Server.Integration.Tests 429 passed, 3 skipped).
+Commits: no code commit (no candidate scored UP); docs-only commit of this report block: see git log
+Unsure about: whether the one-time solo re-run of the timed-out test is an acceptable classification under the "passes alone after failing under load" rule (it is the only re-run made); no other doubts. Candidate for a new recipe, not applied: none identified; the playbook allows no predicate with fewer primitive parameters for this condition.
 ```
