@@ -69,6 +69,14 @@ public static class DownMixAlgorithmsHelper
             2 => "stereo",
             3 => "2.1", // Could also be 3.0, prefer 2.1
             4 => "4.0", // Could also be quad (with rear left and rear right) and 3.1 with LFE. prefer 4.0 with front center and back center
+            _ => GuessLayoutFromHigherChannelCount(channels)
+        };
+    }
+
+    private static string GuessLayoutFromHigherChannelCount(int channels)
+    {
+        return channels switch
+        {
             5 => "5.0",
             6 => "5.1", // Could also be 6.0 or hexagonal, prefer 5.1
             7 => "6.1", // Could also be 7.0, prefer 6.1
