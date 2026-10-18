@@ -108,7 +108,7 @@ Update as tasks land.
 | R4-20 | 8.79 | - | not started |
 | R4-21 | 8.81 | - | not started |
 | R4-22 | 8.81 | - | not started |
-| R4-23 | 8.94 | - | not started |
+| R4-23 | 8.94 | 8.94 | Sonnet. No commit. `GetTranscodeReasonForFailedCondition` is a switch STATEMENT (task text said expression), so rule 11 does not apply; a probe of the statement analogue was DOWN (8.94 -> 8.87, both halves cc 15-16). Remaining smells are frozen private signatures. Candidates: rule 11 for a switch statement (measured DOWN), switch statement of constant returns to a switch expression. |
 | R4-24 | 9.09 | - | not started |
 | R4-25 | 9.09 | - | not started |
 | R4-26 | 9.09 | - | not started |
