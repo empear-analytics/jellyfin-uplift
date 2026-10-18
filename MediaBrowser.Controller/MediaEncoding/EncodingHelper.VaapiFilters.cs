@@ -238,34 +238,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
+            var context = new VaapiIntelFullContext(state, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
             if (isVaInVaOut)
             {
                 if (hasSubs)
                 {
-                    if (hasGraphicalSubs)
-                    {
-                        // overlay_vaapi can handle overlay scaling, setup a smaller height to reduce transfer overhead
-                        var subPreProcFilters = GetGraphicalSubPreProcessFilters(swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, 1080);
-                        subFilters.Add(subPreProcFilters);
-                        subFilters.Add("format=bgra");
-                    }
-                    else if (hasTextSubs)
-                    {
-                        var framerate = state.VideoStream?.RealFrameRate;
-                        var subFramerate = hasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
-
-                        var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, 1080, subFramerate);
-                        var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
-                        subFilters.Add(alphaSrcFilter);
-                        subFilters.Add("format=bgra");
-                        subFilters.Add(subTextSubtitlesFilter);
-                    }
-
-                    subFilters.Add("hwupload=derive_device=vaapi");
-
-                    var (overlayW, overlayH) = GetFixedOutputSize(swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                    var overlaySize = GetOverlaySizeOption(overlayW, overlayH);
-                    AddOverlayVaapiFilter(overlayFilters, overlaySize);
+                    AddVaapiVaInVaOutSubtitleFilters(context, subFilters, overlayFilters);
                 }
             }
             else if (memoryOutput)
@@ -284,6 +262,34 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void AddVaapiVaInVaOutSubtitleFilters(VaapiIntelFullContext context, List<string> subFilters, List<string> overlayFilters)
+        {
+            if (context.HasGraphicalSubs)
+            {
+                // overlay_vaapi can handle overlay scaling, setup a smaller height to reduce transfer overhead
+                var subPreProcFilters = GetGraphicalSubPreProcessFilters(context.SwpInW, context.SwpInH, context.SubW, context.SubH, context.ReqW, context.ReqH, context.ReqMaxW, 1080);
+                subFilters.Add(subPreProcFilters);
+                subFilters.Add("format=bgra");
+            }
+            else if (context.HasTextSubs)
+            {
+                var framerate = context.State.VideoStream?.RealFrameRate;
+                var subFramerate = context.HasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
+
+                var alphaSrcFilter = GetAlphaSrcFilter(context.State, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, 1080, subFramerate);
+                var subTextSubtitlesFilter = GetTextSubtitlesFilter(context.State, true, true);
+                subFilters.Add(alphaSrcFilter);
+                subFilters.Add("format=bgra");
+                subFilters.Add(subTextSubtitlesFilter);
+            }
+
+            subFilters.Add("hwupload=derive_device=vaapi");
+
+            var (overlayW, overlayH) = GetFixedOutputSize(context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+            var overlaySize = GetOverlaySizeOption(overlayW, overlayH);
+            AddOverlayVaapiFilter(overlayFilters, overlaySize);
         }
 
         private static void AddVaapiToOpenclMapping(List<string> mainFilters, bool doOclTonemap, bool isVaapiDecoder)
@@ -934,5 +940,19 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add("format=vaapi");
             }
         }
+
+        private readonly record struct VaapiIntelFullContext(
+            EncodingJobInfo State,
+            bool HasGraphicalSubs,
+            bool HasTextSubs,
+            bool HasAssSubs,
+            int? SwpInW,
+            int? SwpInH,
+            int? SubW,
+            int? SubH,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH);
     }
 }
