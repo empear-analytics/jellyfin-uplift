@@ -33,6 +33,11 @@ namespace MediaBrowser.MediaEncoding.Probing
                 height = info.Height.Value;
             }
 
+            return GetStandardAspectRatioOrOriginal(original, width, height);
+        }
+
+        private static string GetStandardAspectRatioOrOriginal(string original, int width, int height)
+        {
             if (width > 0 && height > 0)
             {
                 double ratio = width;
