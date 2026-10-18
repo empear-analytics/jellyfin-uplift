@@ -101,7 +101,7 @@ Update as tasks land.
 | R4-13 | 8.04 | - | not started |
 | R4-14 | 8.15 | 9.38 + 9.66 (AspectRatio.cs) | Sonnet. P with `x = default;` on both TryParse predicates, Recipe S split of aspect-ratio parsing, rule 7 tail. Group: P before the split was DOWN (revealed duplication), UP after. Left: file-level Overall Code Complexity (second split FLAT). Candidate: rule 7 for an if-return chain inside an `if` block. |
 | R4-15 | 8.16 | - | not started |
-| R4-16 | 8.19 | - | not started |
+| R4-16 | 8.19 | 8.54 | Sonnet. Rule 11 on GetVp9LevelString (best split measured: 5 arms kept, 8.50) and GetVp9ProfileString (4 arms kept, 8.54). Left: Excess Arguments on public GetVp9String (frozen), Primitive Obsession, Complex Method cc 9 in the new helper (a second split is DOWN: Code Duplication from equal-valued arms). One unnamed Server.Integration failure on a first run, clean on rerun. |
 | R4-17 | 8.24 | - | not started |
 | R4-18 | 8.37 | - | not started |
 | R4-19 | 8.78 | - | not started |
