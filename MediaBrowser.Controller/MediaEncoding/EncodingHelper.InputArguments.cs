@@ -342,5 +342,22 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             return inputModifier;
         }
+
+        private void AppendSubtitleProbeArgs(EncodingJobInfo state, StringBuilder arg)
+        {
+            // Use analyzeduration also for subtitle streams to improve resolution detection  with streams inside MKS files
+            var analyzeDurationArgument = GetFfmpegAnalyzeDurationArg(state);
+            if (!string.IsNullOrEmpty(analyzeDurationArgument))
+            {
+                arg.Append(' ').Append(analyzeDurationArgument);
+            }
+
+            // Apply probesize, too, if configured
+            var ffmpegProbeSizeArgument = GetFfmpegProbesizeArg();
+            if (!string.IsNullOrEmpty(ffmpegProbeSizeArgument))
+            {
+                arg.Append(' ').Append(ffmpegProbeSizeArgument);
+            }
+        }
     }
 }
