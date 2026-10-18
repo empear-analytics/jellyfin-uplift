@@ -314,6 +314,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 _ => " -preset p1"
             };
 
+            return AppendNvencAdaptiveQuantization(param, videoEncoder);
+        }
+
+        private static string AppendNvencAdaptiveQuantization(string param, string videoEncoder)
+        {
             // Enable Spatial Adaptive Quantization for better subjective visual quality
             // H.264 is skipped for now because Maxwell 1 does not support it
             if (!string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase))
