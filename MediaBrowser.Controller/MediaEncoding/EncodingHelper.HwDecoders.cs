@@ -105,10 +105,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 HardwareAccelerationType.vaapi => GetVaapiVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
                 HardwareAccelerationType.amf => GetAmfVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
                 HardwareAccelerationType.qsv => GetQsvHwVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
-                HardwareAccelerationType.nvenc => GetNvdecVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
-                HardwareAccelerationType.videotoolbox => GetVideotoolboxVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
-                HardwareAccelerationType.rkmpp => GetRkmppVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
-                _ => string.Empty
+                _ => ResolveHwDecoderByRemainingAccelerationType(context)
             };
 
             if (!string.IsNullOrEmpty(decoder))
@@ -118,6 +115,17 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // leave blank so ffmpeg will decide
             return null;
+        }
+
+        private string ResolveHwDecoderByRemainingAccelerationType(HwDecoderByTypeContext context)
+        {
+            return context.HardwareAccelerationType switch
+            {
+                HardwareAccelerationType.nvenc => GetNvdecVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                HardwareAccelerationType.videotoolbox => GetVideotoolboxVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                HardwareAccelerationType.rkmpp => GetRkmppVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                _ => string.Empty
+            };
         }
 
         private static bool IsH264WithoutHwHi10P(bool hasHardwareHi10P, MediaStream videoStream)
