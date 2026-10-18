@@ -984,8 +984,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 param = AppendHevcQsvLevel(param, level);
             }
-            else if (string.Equals(videoEncoder, "av1_qsv", StringComparison.OrdinalIgnoreCase)
-                     || string.Equals(videoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase))
+            else if (IsAv1QsvOrSvtAv1Encoder(videoEncoder))
             {
                 param = AppendAv1Level(param, level);
             }
@@ -1006,12 +1005,23 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 param += " -level " + level;
             }
-            else if (!string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase))
+            else if (IsNotLibX265Encoder(videoEncoder))
             {
                 param += " -level " + level;
             }
 
             return param;
+        }
+
+        private static bool IsAv1QsvOrSvtAv1Encoder(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "av1_qsv", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(videoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsNotLibX265Encoder(string videoEncoder)
+        {
+            return !string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsH264QsvOrLibX264Encoder(string videoEncoder)
