@@ -127,15 +127,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add($"transpose_vt=dir={transposeDir}");
             }
 
-            if (doVtTonemap)
-            {
-                const string VtTonemapArgs = "color_matrix=bt709:color_primaries=bt709:color_transfer=bt709";
-
-                // scale_vt can handle scaling & tonemapping in one shot, just like vpp_qsv.
-                hwScaleFilter = string.IsNullOrEmpty(hwScaleFilter)
-                    ? "scale_vt=" + VtTonemapArgs
-                    : hwScaleFilter + ":" + VtTonemapArgs;
-            }
+            hwScaleFilter = AddAppleVtTonemapArgs(hwScaleFilter, doVtTonemap);
 
             // hw scale & vt tonemap
             mainFilters.Add(hwScaleFilter);
@@ -189,6 +181,21 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return GetAppleLegacyHwSurfaceFilters(isVtEncoder, mainFilters, subFilters, overlayFilters);
+        }
+
+        private static string AddAppleVtTonemapArgs(string hwScaleFilter, bool doVtTonemap)
+        {
+            if (doVtTonemap)
+            {
+                const string VtTonemapArgs = "color_matrix=bt709:color_primaries=bt709:color_transfer=bt709";
+
+                // scale_vt can handle scaling & tonemapping in one shot, just like vpp_qsv.
+                hwScaleFilter = string.IsNullOrEmpty(hwScaleFilter)
+                    ? "scale_vt=" + VtTonemapArgs
+                    : hwScaleFilter + ":" + VtTonemapArgs;
+            }
+
+            return hwScaleFilter;
         }
 
         private static (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetAppleLegacyHwSurfaceFilters(
