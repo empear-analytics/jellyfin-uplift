@@ -104,7 +104,7 @@ Update as tasks land.
 | R4-16 | 8.19 | 8.54 | Sonnet. Rule 11 on GetVp9LevelString (best split measured: 5 arms kept, 8.50) and GetVp9ProfileString (4 arms kept, 8.54). Left: Excess Arguments on public GetVp9String (frozen), Primitive Obsession, Complex Method cc 9 in the new helper (a second split is DOWN: Code Duplication from equal-valued arms). One unnamed Server.Integration failure on a first run, clean on rerun. |
 | R4-17 | 8.24 | - | not started |
 | R4-18 | 8.37 | - | not started |
-| R4-19 | 8.78 | - | not started |
+| R4-19 | 8.78 | 9.11 (+ RkmppFilterSteps.cs 10.00, RkmppFilterHelpers.cs 10.00) | Sonnet. Group: two FLAT splits kept as pairs with the rule 12 subtitle context (12 members; the DRM branch needs 13 so HasSubs stays at the call site) and later steps; rule 9 x3, P x1. On the original file every new method was DOWN (Overall Code Complexity / Primitive Obsession) until helpers moved out. Left: Bumpy Road 3, cc 27; sw-decoder and hw-scale blocks need 12-15 values, struct full. Candidates: second struct per method / up to 16 members. |
 | R4-20 | 8.79 | - | not started |
 | R4-21 | 8.81 | - | not started |
 | R4-22 | 8.81 | - | not started |
