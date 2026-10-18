@@ -65,46 +65,55 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             var hardwareAccelerationType = options.HardwareAccelerationType;
 
-            if (!string.IsNullOrEmpty(videoStream.Codec) && hardwareAccelerationType != HardwareAccelerationType.none)
+            if (string.IsNullOrEmpty(videoStream.Codec) || hardwareAccelerationType == HardwareAccelerationType.none)
             {
-                var bitDepth = GetVideoColorBitDepth(state);
+                // leave blank so ffmpeg will decide
+                return null;
+            }
 
-                // Only HEVC, VP9 and AV1 formats have 10-bit hardware decoder support for most platforms
-                if (IsTenBitWithoutCommonHwDecoder(videoStream, bitDepth))
+            var bitDepth = GetVideoColorBitDepth(state);
+
+            // Only HEVC, VP9 and AV1 formats have 10-bit hardware decoder support for most platforms
+            if (IsTenBitWithoutCommonHwDecoder(videoStream, bitDepth))
+            {
+                bool hasHardwareHi10P = HasHardwareHi10PDecoder(hardwareAccelerationType);
+
+                if (IsH264WithoutHwHi10P(hasHardwareHi10P, videoStream))
                 {
-                    bool hasHardwareHi10P = HasHardwareHi10PDecoder(hardwareAccelerationType);
-
-                    if (IsH264WithoutHwHi10P(hasHardwareHi10P, videoStream))
-                    {
-                        return null;
-                    }
+                    return null;
                 }
+            }
 
-                // Block unsupported H.264 Hi422P and Hi444PP profiles, which can be encoded with 4:2:0 pixel format
-                if (IsH264Hi422OrHi444Profile(videoStream))
+            // Block unsupported H.264 Hi422P and Hi444PP profiles, which can be encoded with 4:2:0 pixel format
+            if (IsH264Hi422OrHi444Profile(videoStream))
+            {
+                // VideoToolbox on Apple Silicon has H.264 Hi444PP and theoretically also has Hi422P
+                if (!IsAppleSiliconVideoToolbox(hardwareAccelerationType))
                 {
-                    // VideoToolbox on Apple Silicon has H.264 Hi444PP and theoretically also has Hi422P
-                    if (!IsAppleSiliconVideoToolbox(hardwareAccelerationType))
-                    {
-                        return null;
-                    }
+                    return null;
                 }
+            }
 
-                var decoder = hardwareAccelerationType switch
-                {
-                    HardwareAccelerationType.vaapi => GetVaapiVidDecoder(state, options, videoStream, bitDepth),
-                    HardwareAccelerationType.amf => GetAmfVidDecoder(state, options, videoStream, bitDepth),
-                    HardwareAccelerationType.qsv => GetQsvHwVidDecoder(state, options, videoStream, bitDepth),
-                    HardwareAccelerationType.nvenc => GetNvdecVidDecoder(state, options, videoStream, bitDepth),
-                    HardwareAccelerationType.videotoolbox => GetVideotoolboxVidDecoder(state, options, videoStream, bitDepth),
-                    HardwareAccelerationType.rkmpp => GetRkmppVidDecoder(state, options, videoStream, bitDepth),
-                    _ => string.Empty
-                };
+            var context = new HwDecoderByTypeContext(state, options, videoStream, bitDepth, hardwareAccelerationType);
+            return ResolveHwDecoderByAccelerationType(context);
+        }
 
-                if (!string.IsNullOrEmpty(decoder))
-                {
-                    return decoder;
-                }
+        private string ResolveHwDecoderByAccelerationType(HwDecoderByTypeContext context)
+        {
+            var decoder = context.HardwareAccelerationType switch
+            {
+                HardwareAccelerationType.vaapi => GetVaapiVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                HardwareAccelerationType.amf => GetAmfVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                HardwareAccelerationType.qsv => GetQsvHwVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                HardwareAccelerationType.nvenc => GetNvdecVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                HardwareAccelerationType.videotoolbox => GetVideotoolboxVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                HardwareAccelerationType.rkmpp => GetRkmppVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                _ => string.Empty
+            };
+
+            if (!string.IsNullOrEmpty(decoder))
+            {
+                return decoder;
             }
 
             // leave blank so ffmpeg will decide
@@ -1287,5 +1296,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool HwSurface,
             bool IsAfbcSupported,
             bool Is8_10bitSwFormatsRkmpp);
+
+        private readonly record struct HwDecoderByTypeContext(
+            EncodingJobInfo State,
+            EncodingOptions Options,
+            MediaStream VideoStream,
+            int BitDepth,
+            HardwareAccelerationType HardwareAccelerationType);
     }
 }
