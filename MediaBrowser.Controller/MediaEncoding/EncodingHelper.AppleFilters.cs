@@ -102,22 +102,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
-            var scaleFormat = string.Empty;
-            // Use P010 for Metal tone mapping, otherwise force an 8bit output.
-            if (!string.Equals(state.VideoStream.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase))
-            {
-                if (doMetalTonemap)
-                {
-                    if (!string.Equals(state.VideoStream.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase))
-                    {
-                        scaleFormat = "p010le";
-                    }
-                }
-                else
-                {
-                    scaleFormat = "nv12";
-                }
-            }
+            var scaleFormat = GetAppleScaleFormat(state, doMetalTonemap);
 
             var hwScaleFilter = GetHwScaleFilter("scale", "vt", scaleFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
 
@@ -222,6 +207,28 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static string GetAppleScaleFormat(EncodingJobInfo state, bool doMetalTonemap)
+        {
+            var scaleFormat = string.Empty;
+            // Use P010 for Metal tone mapping, otherwise force an 8bit output.
+            if (!string.Equals(state.VideoStream.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase))
+            {
+                if (doMetalTonemap)
+                {
+                    if (!string.Equals(state.VideoStream.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase))
+                    {
+                        scaleFormat = "p010le";
+                    }
+                }
+                else
+                {
+                    scaleFormat = "nv12";
+                }
+            }
+
+            return scaleFormat;
         }
     }
 }
