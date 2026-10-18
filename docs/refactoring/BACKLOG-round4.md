@@ -94,7 +94,7 @@ Update as tasks land.
 | R4-06 | 7.57 | - | not started |
 | R4-07 | 7.57 | - | not started |
 | R4-08 | 7.86 | - | not started |
-| R4-09 | 7.91 | - | not started |
+| R4-09 | 7.91 | 8.32 | Sonnet. Rule 12 context structs (12 members each) for the subtitle sections of both methods; moving the whole `if (hasSubs)`/`if (hasGraphicalSubs)` statements (guard inside the helper, flag in the context) removed the bumps. Left: hw-decoder branches need 17+ values, procamp block writes outer locals. Probes FLAT/DOWN: sw-decoder block, `||` predicates, shared struct across the two methods. Candidates: rule 12 with the guard inside the helper (done here), two structs per method. |
 | R4-10 | 7.98 | - | not started |
 | R4-11 | 8.01 | - | not started |
 | R4-12 | 8.03 | - | not started |
