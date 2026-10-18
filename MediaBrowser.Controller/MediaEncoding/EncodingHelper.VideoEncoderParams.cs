@@ -656,15 +656,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (intelLowPowerHwEncoding)
-            {
-                param += " -low_power 1";
-            }
-
-            if (enableWaFori915Hang)
-            {
-                param += " -async_depth 1";
-            }
+            param = AppendIntelLowPowerParams(param, intelLowPowerHwEncoding, enableWaFori915Hang);
 
             var isLibX265 = string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase);
             var encodingPreset = encodingOptions.EncoderPreset;
@@ -681,6 +673,21 @@ namespace MediaBrowser.Controller.MediaEncoding
             param = AppendVideoProfileAndLevelParams(param, state, videoEncoder);
 
             return AppendVideoEncoderSpecificParams(param, videoEncoder, encodingOptions);
+        }
+
+        private static string AppendIntelLowPowerParams(string param, bool intelLowPowerHwEncoding, bool enableWaFori915Hang)
+        {
+            if (intelLowPowerHwEncoding)
+            {
+                param += " -low_power 1";
+            }
+
+            if (enableWaFori915Hang)
+            {
+                param += " -async_depth 1";
+            }
+
+            return param;
         }
 
         private string AppendVideoProfileAndLevelParams(string param, EncodingJobInfo state, string videoEncoder)
