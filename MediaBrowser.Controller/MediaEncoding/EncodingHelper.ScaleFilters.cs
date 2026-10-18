@@ -315,14 +315,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             var targetAr = isMjpeg ? "(a*sar)" : "a"; // manually calculate AR when using mjpeg encoder
 
             // If fixed dimensions were supplied
-            if (requestedWidth.HasValue && requestedHeight.HasValue)
+            if (AreBothDimensionsRequested(requestedWidth, requestedHeight))
             {
                 return GetFixedDimensionsSwScaleFilter(threedFormat, requestedWidth, requestedHeight, isV4l2);
             }
 
             // If Max dimensions were supplied, for width selects lowest even number between input width and width req size and selects lowest even number from in width*display aspect and requested size
 
-            if (requestedMaxWidth.HasValue && requestedMaxHeight.HasValue)
+            if (AreBothDimensionsRequested(requestedMaxWidth, requestedMaxHeight))
             {
                 var maxWidthParam = requestedMaxWidth.Value.ToString(CultureInfo.InvariantCulture);
                 var maxHeightParam = requestedMaxHeight.Value.ToString(CultureInfo.InvariantCulture);
@@ -356,6 +356,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return GetScaleFilterForMaxWidthOrHeight(requestedMaxWidth, requestedMaxHeight, scaleVal, targetAr);
+        }
+
+        private static bool AreBothDimensionsRequested(int? requestedWidthOrMaxWidth, int? requestedHeightOrMaxHeight)
+        {
+            return requestedWidthOrMaxWidth.HasValue && requestedHeightOrMaxHeight.HasValue;
         }
 
         private static string GetScaleFilterForMaxWidthOrHeight(int? requestedMaxWidth, int? requestedMaxHeight, int scaleVal, string targetAr)
