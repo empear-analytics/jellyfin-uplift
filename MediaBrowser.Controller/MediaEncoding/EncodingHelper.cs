@@ -1129,30 +1129,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             state.MediaSource = mediaSource;
 
             var request = state.BaseRequest;
-            var supportedAudioCodecs = state.SupportedAudioCodecs;
-            if (HasSupportedCodecs(request, supportedAudioCodecs))
-            {
-                var supportedAudioCodecsList = supportedAudioCodecs.ToList();
-
-                ShiftAudioCodecsIfNeeded(supportedAudioCodecsList, state.AudioStream);
-
-                state.SupportedAudioCodecs = supportedAudioCodecsList.ToArray();
-
-                request.AudioCodec = state.SupportedAudioCodecs.FirstOrDefault(_mediaEncoder.CanEncodeToAudioCodec)
-                    ?? state.SupportedAudioCodecs.FirstOrDefault();
-            }
-
-            var supportedVideoCodecs = state.SupportedVideoCodecs;
-            if (HasSupportedCodecs(request, supportedVideoCodecs))
-            {
-                var supportedVideoCodecsList = supportedVideoCodecs.ToList();
-
-                ShiftVideoCodecsIfNeeded(supportedVideoCodecsList, encodingOptions);
-
-                state.SupportedVideoCodecs = supportedVideoCodecsList.ToArray();
-
-                request.VideoCodec = state.SupportedVideoCodecs.FirstOrDefault();
-            }
+            ApplySupportedAudioCodecs(state, request);
+            ApplySupportedVideoCodecs(state, request, encodingOptions);
         }
 
         private static bool HasEncoderPathAndProtocol(MediaSourceInfo mediaSource)

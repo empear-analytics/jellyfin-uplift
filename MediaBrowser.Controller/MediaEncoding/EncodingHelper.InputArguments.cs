@@ -409,5 +409,36 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             return args;
         }
+
+        private void ApplySupportedAudioCodecs(EncodingJobInfo state, BaseEncodingJobOptions request)
+        {
+            var supportedAudioCodecs = state.SupportedAudioCodecs;
+            if (HasSupportedCodecs(request, supportedAudioCodecs))
+            {
+                var supportedAudioCodecsList = supportedAudioCodecs.ToList();
+
+                ShiftAudioCodecsIfNeeded(supportedAudioCodecsList, state.AudioStream);
+
+                state.SupportedAudioCodecs = supportedAudioCodecsList.ToArray();
+
+                request.AudioCodec = state.SupportedAudioCodecs.FirstOrDefault(_mediaEncoder.CanEncodeToAudioCodec)
+                    ?? state.SupportedAudioCodecs.FirstOrDefault();
+            }
+        }
+
+        private void ApplySupportedVideoCodecs(EncodingJobInfo state, BaseEncodingJobOptions request, EncodingOptions encodingOptions)
+        {
+            var supportedVideoCodecs = state.SupportedVideoCodecs;
+            if (HasSupportedCodecs(request, supportedVideoCodecs))
+            {
+                var supportedVideoCodecsList = supportedVideoCodecs.ToList();
+
+                ShiftVideoCodecsIfNeeded(supportedVideoCodecsList, encodingOptions);
+
+                state.SupportedVideoCodecs = supportedVideoCodecsList.ToArray();
+
+                request.VideoCodec = state.SupportedVideoCodecs.FirstOrDefault();
+            }
+        }
     }
 }
