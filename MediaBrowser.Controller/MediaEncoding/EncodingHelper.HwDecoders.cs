@@ -852,19 +852,25 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
-            if (IsHevcStreamCodec(videoStream))
+            var context = new HwDecoderAmfContext(state, options, videoStream, bitDepth, hwSurface);
+            return ResolveAmfWideSwFormatAccelType(context);
+        }
+
+        private string ResolveAmfWideSwFormatAccelType(HwDecoderAmfContext context)
+        {
+            if (IsHevcStreamCodec(context.VideoStream))
             {
-                return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
+                return GetHwaccelType(context.State, context.Options, "hevc", context.BitDepth, context.HwSurface);
             }
 
-            if (string.Equals("vp9", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals("vp9", context.VideoStream.Codec, StringComparison.OrdinalIgnoreCase))
             {
-                return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
+                return GetHwaccelType(context.State, context.Options, "vp9", context.BitDepth, context.HwSurface);
             }
 
-            if (string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals("av1", context.VideoStream.Codec, StringComparison.OrdinalIgnoreCase))
             {
-                return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
+                return GetHwaccelType(context.State, context.Options, "av1", context.BitDepth, context.HwSurface);
             }
 
             return null;
@@ -1252,5 +1258,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool Is8_10bitSwFormatsVt,
             bool Is8_10_12bitSwFormatsVt,
             bool IsAv1SupportedSwFormatsVt);
+
+        private readonly record struct HwDecoderAmfContext(
+            EncodingJobInfo State,
+            EncodingOptions Options,
+            MediaStream VideoStream,
+            int BitDepth,
+            bool HwSurface);
     }
 }
