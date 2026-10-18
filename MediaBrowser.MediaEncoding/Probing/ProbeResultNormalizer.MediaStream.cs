@@ -521,11 +521,7 @@ namespace MediaBrowser.MediaEncoding.Probing
             var original = info.DisplayAspectRatio;
 
             var parts = (original ?? string.Empty).Split(':');
-            if (!(parts.Length == 2
-                    && int.TryParse(parts[0], CultureInfo.InvariantCulture, out var width)
-                    && int.TryParse(parts[1], CultureInfo.InvariantCulture, out var height)
-                    && width > 0
-                    && height > 0))
+            if (!TryParseDisplayAspectRatioParts(parts, out var width, out var height))
             {
                 width = info.Width.Value;
                 height = info.Height.Value;
@@ -583,6 +579,17 @@ namespace MediaBrowser.MediaEncoding.Probing
             }
 
             return original;
+        }
+
+        private static bool TryParseDisplayAspectRatioParts(string[] parts, out int width, out int height)
+        {
+            width = default;
+            height = default;
+            return parts.Length == 2
+                    && int.TryParse(parts[0], CultureInfo.InvariantCulture, out width)
+                    && int.TryParse(parts[1], CultureInfo.InvariantCulture, out height)
+                    && width > 0
+                    && height > 0;
         }
 
         private static bool IsClose(double d1, double d2, double variance = .005)
