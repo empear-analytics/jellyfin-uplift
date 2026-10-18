@@ -136,26 +136,37 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return false;
                 }
 
-                if (IsIncompatibleRangeType(requestedRangeTypes, videoStream, requestHasHDR10, requestHasHLG, requestHasSDR))
+                var rangeContext = new StreamCopyRangeContext(state, requestedRangeTypes, videoStream, requestHasHDR10, requestHasHLG, requestHasSDR);
+                if (!StreamCopyIsIncompatibleRangeAccepted(rangeContext))
                 {
-                    // If the video stream is in HDR10+ or a static HDR format, don't allow copy if the client does not support HDR10 or HLG.
-                    if (videoStream.VideoRangeType is VideoRangeType.HDR10Plus or VideoRangeType.HDR10 or VideoRangeType.HLG)
-                    {
-                        return false;
-                    }
-
-                    // Check complicated cases where we need to remove dynamic metadata
-                    // Conservatively refuse to copy if the encoder can't remove dynamic metadata,
-                    // but a removal is required for compatability reasons.
-                    var dynamicHdrMetadataRemovalPlan = ShouldRemoveDynamicHdrMetadata(state);
-                    if (!CanEncoderRemoveDynamicHdrMetadata(dynamicHdrMetadataRemovalPlan, videoStream))
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
 
             return CanCopyGivenRotationAndLaterLimits(state, request, videoStream);
+        }
+
+        private bool StreamCopyIsIncompatibleRangeAccepted(StreamCopyRangeContext context)
+        {
+            if (IsIncompatibleRangeType(context.RequestedRangeTypes, context.VideoStream, context.RequestHasHDR10, context.RequestHasHLG, context.RequestHasSDR))
+            {
+                // If the video stream is in HDR10+ or a static HDR format, don't allow copy if the client does not support HDR10 or HLG.
+                if (context.VideoStream.VideoRangeType is VideoRangeType.HDR10Plus or VideoRangeType.HDR10 or VideoRangeType.HLG)
+                {
+                    return false;
+                }
+
+                // Check complicated cases where we need to remove dynamic metadata
+                // Conservatively refuse to copy if the encoder can't remove dynamic metadata,
+                // but a removal is required for compatability reasons.
+                var dynamicHdrMetadataRemovalPlan = ShouldRemoveDynamicHdrMetadata(context.State);
+                if (!CanEncoderRemoveDynamicHdrMetadata(dynamicHdrMetadataRemovalPlan, context.VideoStream))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static bool CanCopyGivenRotationAndLaterLimits(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
@@ -469,5 +480,13 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && audioStream.BitRate.HasValue
                 && audioStream.BitRate.Value > request.AudioBitRate.Value;
         }
+
+        private readonly record struct StreamCopyRangeContext(
+            EncodingJobInfo State,
+            string[] RequestedRangeTypes,
+            MediaStream VideoStream,
+            bool RequestHasHDR10,
+            bool RequestHasHLG,
+            bool RequestHasSDR);
     }
 }
