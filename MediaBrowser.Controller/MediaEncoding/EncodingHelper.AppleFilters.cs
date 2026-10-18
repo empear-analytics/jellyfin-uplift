@@ -92,12 +92,12 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doVtTonemap = IsVideoToolboxTonemapAvailable(state, options);
-            var doMetalTonemap = !doVtTonemap && IsHwTonemapAvailable(state, options);
-            var usingHwSurface = isVtDecoder && (_mediaEncoder.EncoderVersion >= _minFFmpegWorkingVtHwSurface);
+            var doMetalTonemap = IsAppleMetalTonemapNeeded(state, options, doVtTonemap);
+            var usingHwSurface = IsAppleHwSurfaceWorking(isVtDecoder);
 
             var rotation = state.VideoStream?.Rotation ?? 0;
             var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
-            var doVtTranspose = !string.IsNullOrEmpty(transposeDir) && _mediaEncoder.SupportsFilter("transpose_vt");
+            var doVtTranspose = IsAppleVtTransposeAvailable(transposeDir);
             var swapWAndH = Math.Abs(rotation) == 90 && doVtTranspose;
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
@@ -112,62 +112,32 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasAssSubs = HasAssSubtitles(state, hasSubs);
 
             /* Make main filters for video stream */
-            var mainFilters = new List<string>();
-
-            // hw deint
-            if (doDeintH2645)
-            {
-                var deintFilter = GetHwDeinterlaceFilter(state, options, "videotoolbox");
-                mainFilters.Add(deintFilter);
-            }
-
-            // hw transpose
-            if (doVtTranspose)
-            {
-                mainFilters.Add($"transpose_vt=dir={transposeDir}");
-            }
-
-            hwScaleFilter = AddAppleVtTonemapArgs(hwScaleFilter, doVtTonemap);
-
-            // hw scale & vt tonemap
-            mainFilters.Add(hwScaleFilter);
-
-            // Metal tonemap
-            if (doMetalTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "videotoolbox", "nv12", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            var mainContext = new AppleMainFilterContext(
+                state,
+                options,
+                doDeintH2645,
+                doVtTranspose,
+                doVtTonemap,
+                doMetalTonemap,
+                isMjpegEncoder);
+            var mainFilters = GetAppleMainFilters(hwScaleFilter, transposeDir, mainContext);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
 
-            if (hasSubs)
-            {
-                if (hasGraphicalSubs)
-                {
-                    var subW = state.SubtitleStream?.Width;
-                    var subH = state.SubtitleStream?.Height;
-                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
-                    subFilters.Add(subPreProcFilters);
-                    subFilters.Add("format=bgra");
-                }
-                else if (hasTextSubs)
-                {
-                    var framerate = state.VideoStream?.RealFrameRate;
-                    var subFramerate = GetSubtitleFramerate(hasAssSubs, framerate);
-
-                    var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH, subFramerate);
-                    var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
-                    subFilters.Add(alphaSrcFilter);
-                    subFilters.Add("format=bgra");
-                    subFilters.Add(subTextSubtitlesFilter);
-                }
-
-                subFilters.Add("hwupload");
-                overlayFilters.Add("overlay_videotoolbox=eof_action=pass:repeatlast=0");
-            }
+            var context = new AppleSubtitleFilterContext(
+                hasSubs,
+                hasGraphicalSubs,
+                hasTextSubs,
+                hasAssSubs,
+                swpInW,
+                swpInH,
+                reqW,
+                reqH,
+                reqMaxW,
+                reqMaxH);
+            AddAppleSubtitleFilters(state, subFilters, overlayFilters, context);
 
             if (usingHwSurface)
             {
@@ -183,68 +153,86 @@ namespace MediaBrowser.Controller.MediaEncoding
             return GetAppleLegacyHwSurfaceFilters(isVtEncoder, mainFilters, subFilters, overlayFilters);
         }
 
-        private static string AddAppleVtTonemapArgs(string hwScaleFilter, bool doVtTonemap)
+        private List<string> GetAppleMainFilters(string hwScaleFilter, string transposeDir, AppleMainFilterContext context)
         {
-            if (doVtTonemap)
-            {
-                const string VtTonemapArgs = "color_matrix=bt709:color_primaries=bt709:color_transfer=bt709";
+            var mainFilters = new List<string>();
 
-                // scale_vt can handle scaling & tonemapping in one shot, just like vpp_qsv.
-                hwScaleFilter = string.IsNullOrEmpty(hwScaleFilter)
-                    ? "scale_vt=" + VtTonemapArgs
-                    : hwScaleFilter + ":" + VtTonemapArgs;
+            // hw deint
+            if (context.DoDeintH2645)
+            {
+                var deintFilter = GetHwDeinterlaceFilter(context.State, context.Options, "videotoolbox");
+                mainFilters.Add(deintFilter);
             }
 
-            return hwScaleFilter;
-        }
-
-        private static (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetAppleLegacyHwSurfaceFilters(
-            bool isVtEncoder,
-            List<string> mainFilters,
-            List<string> subFilters,
-            List<string> overlayFilters)
-        {
-            // For old jellyfin-ffmpeg that has broken hwsurface, add a hwupload
-            var needFiltering = mainFilters.Any(f => !string.IsNullOrEmpty(f)) ||
-                                subFilters.Any(f => !string.IsNullOrEmpty(f)) ||
-                                overlayFilters.Any(f => !string.IsNullOrEmpty(f));
-            if (needFiltering)
+            // hw transpose
+            if (context.DoVtTranspose)
             {
-                // INPUT videotoolbox/memory surface(vram/uma)
-                // this will pass-through automatically if in/out format matches.
-                mainFilters.Insert(0, "hwupload");
-                mainFilters.Insert(0, "format=nv12|p010le|videotoolbox_vld");
-
-                if (!isVtEncoder)
-                {
-                    mainFilters.Add("hwdownload");
-                    mainFilters.Add("format=nv12");
-                }
+                mainFilters.Add($"transpose_vt=dir={transposeDir}");
             }
 
-            return (mainFilters, subFilters, overlayFilters);
-        }
+            hwScaleFilter = AddAppleVtTonemapArgs(hwScaleFilter, context.DoVtTonemap);
 
-        private static string GetAppleScaleFormat(EncodingJobInfo state, bool doMetalTonemap)
-        {
-            var scaleFormat = string.Empty;
-            // Use P010 for Metal tone mapping, otherwise force an 8bit output.
-            if (!string.Equals(state.VideoStream.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase))
+            // hw scale & vt tonemap
+            mainFilters.Add(hwScaleFilter);
+
+            // Metal tonemap
+            if (context.DoMetalTonemap)
             {
-                if (doMetalTonemap)
-                {
-                    if (!string.Equals(state.VideoStream.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase))
-                    {
-                        scaleFormat = "p010le";
-                    }
-                }
-                else
-                {
-                    scaleFormat = "nv12";
-                }
+                var tonemapFilter = GetHwTonemapFilter(context.Options, "videotoolbox", "nv12", context.IsMjpegEncoder);
+                mainFilters.Add(tonemapFilter);
             }
 
-            return scaleFormat;
+            return mainFilters;
         }
+
+        private void AddAppleSubtitleFilters(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters, AppleSubtitleFilterContext context)
+        {
+            if (context.HasSubs)
+            {
+                if (context.HasGraphicalSubs)
+                {
+                    var subW = state.SubtitleStream?.Width;
+                    var subH = state.SubtitleStream?.Height;
+                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(context.SwpInW, context.SwpInH, subW, subH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                    subFilters.Add(subPreProcFilters);
+                    subFilters.Add("format=bgra");
+                }
+                else if (context.HasTextSubs)
+                {
+                    var framerate = state.VideoStream?.RealFrameRate;
+                    var subFramerate = GetSubtitleFramerate(context.HasAssSubs, framerate);
+
+                    var alphaSrcFilter = GetAlphaSrcFilter(state, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH, subFramerate);
+                    var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
+                    subFilters.Add(alphaSrcFilter);
+                    subFilters.Add("format=bgra");
+                    subFilters.Add(subTextSubtitlesFilter);
+                }
+
+                subFilters.Add("hwupload");
+                overlayFilters.Add("overlay_videotoolbox=eof_action=pass:repeatlast=0");
+            }
+        }
+
+        private readonly record struct AppleSubtitleFilterContext(
+            bool HasSubs,
+            bool HasGraphicalSubs,
+            bool HasTextSubs,
+            bool HasAssSubs,
+            int? SwpInW,
+            int? SwpInH,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH);
+
+        private readonly record struct AppleMainFilterContext(
+            EncodingJobInfo State,
+            EncodingOptions Options,
+            bool DoDeintH2645,
+            bool DoVtTranspose,
+            bool DoVtTonemap,
+            bool DoMetalTonemap,
+            bool IsMjpegEncoder);
     }
 }

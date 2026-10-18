@@ -175,7 +175,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 param = AppendVaapiCompressionLevel(param, encoderPreset);
             }
-            else if (IsQsvVideoEncoder(videoEncoder))
+            else
+            {
+                param = AppendVideoEncoderHwPresetParam(param, encoderPreset, videoEncoder);
+            }
+
+            return param;
+        }
+
+        private string AppendVideoEncoderHwPresetParam(string param, EncoderPreset encoderPreset, string videoEncoder)
+        {
+            if (IsQsvVideoEncoder(videoEncoder))
             {
                 param = AppendQsvPreset(param, encoderPreset, videoEncoder);
             }
@@ -252,14 +262,22 @@ namespace MediaBrowser.Controller.MediaEncoding
                 EncoderPreset.slow => " -preset 7",
                 EncoderPreset.medium => " -preset 8",
                 EncoderPreset.fast => " -preset 9",
+                _ => VideoEncoderSvtAv1FasterPreset(encoderPreset)
+            };
+
+            return param;
+        }
+
+        private static string VideoEncoderSvtAv1FasterPreset(EncoderPreset encoderPreset)
+        {
+            return encoderPreset switch
+            {
                 EncoderPreset.faster => " -preset 10",
                 EncoderPreset.veryfast => " -preset 11",
                 EncoderPreset.superfast => " -preset 12",
                 EncoderPreset.ultrafast => " -preset 13",
                 _ => " -preset 10"
             };
-
-            return param;
         }
 
         private string AppendVaapiCompressionLevel(string param, EncoderPreset encoderPreset)
@@ -273,16 +291,24 @@ namespace MediaBrowser.Controller.MediaEncoding
                     EncoderPreset.slower => " -compression_level 2",
                     EncoderPreset.slow => " -compression_level 3",
                     EncoderPreset.medium => " -compression_level 4",
-                    EncoderPreset.fast => " -compression_level 5",
-                    EncoderPreset.faster => " -compression_level 6",
-                    EncoderPreset.veryfast => " -compression_level 7",
-                    EncoderPreset.superfast => " -compression_level 7",
-                    EncoderPreset.ultrafast => " -compression_level 7",
-                    _ => string.Empty
+                    _ => VideoEncoderVaapiFasterCompressionLevel(encoderPreset)
                 };
             }
 
             return param;
+        }
+
+        private static string VideoEncoderVaapiFasterCompressionLevel(EncoderPreset encoderPreset)
+        {
+            return encoderPreset switch
+            {
+                EncoderPreset.fast => " -compression_level 5",
+                EncoderPreset.faster => " -compression_level 6",
+                EncoderPreset.veryfast => " -compression_level 7",
+                EncoderPreset.superfast => " -compression_level 7",
+                EncoderPreset.ultrafast => " -compression_level 7",
+                _ => string.Empty
+            };
         }
 
         private static string AppendQsvPreset(string param, EncoderPreset encoderPreset, string videoEncoder)
@@ -308,13 +334,21 @@ namespace MediaBrowser.Controller.MediaEncoding
                 EncoderPreset.veryslow => " -preset p7",
                 EncoderPreset.slower => " -preset p6",
                 EncoderPreset.slow => " -preset p5",
+                _ => VideoEncoderNvencFasterPreset(encoderPreset)
+            };
+
+            return AppendNvencAdaptiveQuantization(param, videoEncoder);
+        }
+
+        private static string VideoEncoderNvencFasterPreset(EncoderPreset encoderPreset)
+        {
+            return encoderPreset switch
+            {
                 EncoderPreset.medium => " -preset p4",
                 EncoderPreset.fast => " -preset p3",
                 EncoderPreset.faster => " -preset p2",
                 _ => " -preset p1"
             };
-
-            return AppendNvencAdaptiveQuantization(param, videoEncoder);
         }
 
         private static string AppendNvencAdaptiveQuantization(string param, string videoEncoder)
@@ -444,7 +478,17 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return "15";
                 }
             }
-            else if (IsHevcOrH265OutputCodec(state.ActualOutputVideoCodec))
+            else
+            {
+                return NormalizeVideoEncoderHevcOrH264Level(state, level, requestLevel);
+            }
+
+            return level;
+        }
+
+        private static string NormalizeVideoEncoderHevcOrH264Level(EncodingJobInfo state, string level, double requestLevel)
+        {
+            if (IsHevcOrH265OutputCodec(state.ActualOutputVideoCodec))
             {
                 // Transcode to level 5.0 and lower for maximum compatibility.
                 // Level 5.0 is suitable for up to 4k 30fps hevc encoding, otherwise let the encoder to handle it.
@@ -455,7 +499,17 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return "150";
                 }
             }
-            else if (string.Equals(state.ActualOutputVideoCodec, "h264", StringComparison.OrdinalIgnoreCase))
+            else
+            {
+                return NormalizeVideoEncoderH264Level(state, level, requestLevel);
+            }
+
+            return level;
+        }
+
+        private static string NormalizeVideoEncoderH264Level(EncodingJobInfo state, string level, double requestLevel)
+        {
+            if (string.Equals(state.ActualOutputVideoCodec, "h264", StringComparison.OrdinalIgnoreCase))
             {
                 // Transcode to level 5.1 and lower for maximum compatibility.
                 // h264 4k 30fps requires at least level 5.1 otherwise it will break on safari fmp4.
@@ -988,7 +1042,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 param = AppendAv1Level(param, level);
             }
-            else if (IsAmfVideoEncoder(videoEncoder))
+            else
+            {
+                param = AppendVideoEncoderHwLevelParam(param, videoEncoder, level);
+            }
+
+            return param;
+        }
+
+        private string AppendVideoEncoderHwLevelParam(string param, string videoEncoder, string level)
+        {
+            if (IsAmfVideoEncoder(videoEncoder))
             {
                 param += " -level " + level;
             }

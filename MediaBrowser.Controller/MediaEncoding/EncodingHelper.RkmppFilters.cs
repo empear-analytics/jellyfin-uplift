@@ -88,9 +88,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isSwEncoder = !isRkmppEncoder;
             var isMjpegEncoder = vidEncoder.Contains("mjpeg", StringComparison.OrdinalIgnoreCase);
             var isDrmInDrmOut = isRkmppDecoder && isRkmppEncoder;
-            var isEncoderSupportAfbc = isRkmppEncoder
-                && (vidEncoder.Contains("h264", StringComparison.OrdinalIgnoreCase)
-                    || vidEncoder.Contains("hevc", StringComparison.OrdinalIgnoreCase));
+            var isEncoderSupportAfbc = IsRkmppAfbcEncoder(isRkmppEncoder, vidEncoder);
 
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doOclTonemap = IsHwTonemapAvailable(state, options);
@@ -103,7 +101,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subH = state.SubtitleStream?.Height;
 
             var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+            var transposeDir = GetRkmppTransposeDirection(state, rotation);
             var doRkVppTranspose = !string.IsNullOrEmpty(transposeDir);
             var swapWAndH = NeedsRkmppSwapWAndH(rotation, isSwDecoder, isRkmppDecoder, doRkVppTranspose);
             var swpInW = swapWAndH ? inH : inW;
@@ -120,7 +118,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // sw deint
                 AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
-                var outFormat = doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
+                var outFormat = GetRkmppSwOutFormat(doOclTonemap, hasGraphicalSubs);
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
                 swScaleFilter = AppendRkmppSwScaleOptions(swScaleFilter, isMjpegEncoder, doOclTonemap);
 
@@ -154,12 +152,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     // but in Trickplay there's a case: (3840/320 == 12), enable 2pass for it
                     if (doScaling && !isScaleRatioSupported)
                     {
-                        // Vendor provided BSP kernel has an RGA driver bug that causes the output to be corrupted for P010 format.
-                        // Use NV15 instead of P010 to avoid the issue.
-                        // SDR inputs are using BGRA formats already which is not affected.
-                        var intermediateFormat = doOclTonemap ? "nv15" : (isMjpegEncoder ? "bgra" : outFormat);
-                        var hwScaleFilterFirstPass = $"scale_rkrga=w=iw/7.9:h=ih/7.9:format={intermediateFormat}:force_original_aspect_ratio=increase:force_divisible_by=4:afbc=1";
-                        mainFilters.Add(hwScaleFilterFirstPass);
+                        AddRkmppScaleFirstPass(mainFilters, doOclTonemap, isMjpegEncoder, outFormat);
                     }
 
                     // The RKMPP MJPEG encoder on some newer chip models no longer supports RGB input.
@@ -218,106 +211,61 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             /* Make sub and overlay filters for subtitle stream */
+            var context = new RkmppSubtitleFilterContext(
+                isEncoderSupportAfbc,
+                hasGraphicalSubs,
+                hasTextSubs,
+                hasAssSubs,
+                swpInW,
+                swpInH,
+                subW,
+                subH,
+                reqW,
+                reqH,
+                reqMaxW,
+                reqMaxH);
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
             if (isDrmInDrmOut)
             {
                 if (hasSubs)
                 {
-                    var subMaxH = 1080;
-                    if (hasGraphicalSubs)
-                    {
-                        var subPreProcFilters = GetGraphicalSubPreProcessFilters(swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, subMaxH);
-                        subFilters.Add(subPreProcFilters);
-                        subFilters.Add("format=bgra");
-                    }
-                    else if (hasTextSubs)
-                    {
-                        var framerate = state.VideoStream?.RealFrameRate;
-                        var subFramerate = hasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
-
-                        // alphasrc=s=1280x720:r=10:start=0,format=bgra,subtitles,hwupload
-                        var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, subMaxH, subFramerate);
-                        var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
-                        subFilters.Add(alphaSrcFilter);
-                        subFilters.Add("format=bgra");
-                        subFilters.Add(subTextSubtitlesFilter);
-                    }
-
-                    subFilters.Add("hwupload=derive_device=rkmpp");
-
-                    // offload 1080p+ subtitles swscale upscaling from CPU to RGA
-                    var (overlayW, overlayH) = GetFixedOutputSize(swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                    if (IsOverlayTallerThan(overlayW, overlayH, subMaxH))
-                    {
-                        subFilters.Add($"vpp_rkrga=w={overlayW.Value}:h={overlayH.Value}:format=bgra:afbc=1");
-                    }
-
-                    // try enabling AFBC to save DDR bandwidth
-                    var hwOverlayFilter = "overlay_rkrga=eof_action=pass:repeatlast=0:format=nv12";
-                    if (isEncoderSupportAfbc)
-                    {
-                        hwOverlayFilter += ":afbc=1";
-                    }
-
-                    overlayFilters.Add(hwOverlayFilter);
+                    AddRkmppDrmSubtitleFilters(state, subFilters, overlayFilters, context);
                 }
             }
             else if (memoryOutput)
             {
-                if (hasGraphicalSubs)
-                {
-                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
-                    subFilters.Add(subPreProcFilters);
-                    overlayFilters.Add("overlay=eof_action=pass:repeatlast=0");
-                }
+                AddRkmppMemorySubtitleFilters(subFilters, overlayFilters, context);
             }
 
             return (mainFilters, subFilters, overlayFilters);
         }
 
-        private static string AppendRkmppSwScaleOptions(string swScaleFilter, bool isMjpegEncoder, bool doOclTonemap)
+        private static void AddRkmppScaleFirstPass(List<string> mainFilters, bool doOclTonemap, bool isMjpegEncoder, string outFormat)
         {
-            if (isMjpegEncoder && !doOclTonemap)
-            {
-                // sw decoder + hw mjpeg encoder
-                swScaleFilter = string.IsNullOrEmpty(swScaleFilter) ? "scale=out_range=pc" : $"{swScaleFilter}:out_range=pc";
-            }
-
-            if (!string.IsNullOrEmpty(swScaleFilter))
-            {
-                swScaleFilter += ":flags=fast_bilinear";
-            }
-
-            return swScaleFilter;
+            // Vendor provided BSP kernel has an RGA driver bug that causes the output to be corrupted for P010 format.
+            // Use NV15 instead of P010 to avoid the issue.
+            // SDR inputs are using BGRA formats already which is not affected.
+            var intermediateFormat = doOclTonemap ? "nv15" : (isMjpegEncoder ? "bgra" : outFormat);
+            var hwScaleFilterFirstPass = $"scale_rkrga=w=iw/7.9:h=ih/7.9:format={intermediateFormat}:force_original_aspect_ratio=increase:force_divisible_by=4:afbc=1";
+            mainFilters.Add(hwScaleFilterFirstPass);
         }
 
-        private static string AppendRkmppHwScaleOptions(string hwScaleFilter, bool doRkVppTranspose, string transposeDir, bool isFullAfbcPipeline)
+        private static bool IsRkmppAfbcEncoder(bool isRkmppEncoder, string vidEncoder)
         {
-            if (!string.IsNullOrEmpty(hwScaleFilter) && doRkVppTranspose)
-            {
-                hwScaleFilter += $":transpose={transposeDir}";
-            }
-
-            // try enabling AFBC to save DDR bandwidth
-            if (!string.IsNullOrEmpty(hwScaleFilter) && isFullAfbcPipeline)
-            {
-                hwScaleFilter += ":afbc=1";
-            }
-
-            return hwScaleFilter;
+            return isRkmppEncoder
+                && (vidEncoder.Contains("h264", StringComparison.OrdinalIgnoreCase)
+                    || vidEncoder.Contains("hevc", StringComparison.OrdinalIgnoreCase));
         }
 
-        private static bool NeedsRkmppSwapWAndH(int rotation, bool isSwDecoder, bool isRkmppDecoder, bool doRkVppTranspose)
+        private static string GetRkmppSwOutFormat(bool doOclTonemap, bool hasGraphicalSubs)
         {
-            return Math.Abs(rotation) == 90 && (isSwDecoder || (isRkmppDecoder && doRkVppTranspose));
+            return doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
         }
 
-        private static bool HasRkmppAssSubtitles(EncodingJobInfo state, bool hasSubs)
+        private string GetRkmppTransposeDirection(EncodingJobInfo state, int rotation)
         {
-            return hasSubs
-                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+            return rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
         }
     }
 }

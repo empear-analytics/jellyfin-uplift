@@ -36,6 +36,7 @@ RECIPES = {
     "Lines of Code in a Single File": "S (not first)",
     "Number of Functions in a Single Module": "S (not first)",
     "Overall Code Complexity": "follows the functions",
+    "Excess Number of Function Arguments": "E (context struct, rule 12; a signature itself is frozen)",
 }
 
 PARTS = {
@@ -139,7 +140,10 @@ def recipes_for(row: dict) -> list[str]:
         else:
             steps.append(f"**Recipes G, E, P** - cyclomatic complexity {row.get('cc')}; reduce it with the recipes above as they apply.")
     if "Code Duplication" in row["smells"]:
-        steps.append("**Recipe D (deduplicate)** - only if the copies are identical or differ by a single value.")
+        steps.append("**Recipe D (deduplicate)** - only if the copies are identical or differ by one or two values (see the recipe).")
+    if "Excess Number of Function Arguments" in row["smells"]:
+        detail = f" ({row['arguments']} arguments)" if row.get("arguments") else ""
+        steps.append(f"*Excess Number of Function Arguments*{detail} - **Recipe E rule 12 (context struct)** applies to a block that needs more than four values from this method; a non-private signature itself stays frozen.")
     for smell in sorted(row["smells"] - set(RECIPES)):
         detail = f" ({row['arguments']} arguments)" if smell == "Excess Number of Function Arguments" and row.get("arguments") else ""
         steps.append(f"*{smell}*{detail} - **no recipe in the playbook.** Leave it and report it.")

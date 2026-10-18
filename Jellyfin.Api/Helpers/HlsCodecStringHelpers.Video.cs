@@ -193,6 +193,14 @@ public static partial class HlsCodecStringHelpers
             "yuvj420p" => "00",
             "yuv422p" => "01",
             "yuv444p" => "01",
+            _ => GetVp9ExtendedProfileString(pixelFormat)
+        };
+    }
+
+    private static string GetVp9ExtendedProfileString(string pixelFormat)
+    {
+        return pixelFormat switch
+        {
             "yuv420p10le" => "02",
             "yuv420p12le" => "02",
             "yuv422p10le" => "03",
@@ -212,6 +220,14 @@ public static partial class HlsCodecStringHelpers
             <= 73728 => "11",
             <= 122880 => "20",
             <= 245760 => "21",
+            _ => GetVp9HighLevelString(lumaPictureSize, lumaSampleRate)
+        };
+    }
+
+    private static string GetVp9HighLevelString(int lumaPictureSize, float lumaSampleRate)
+    {
+        return lumaPictureSize switch
+        {
             <= 552960 => "30",
             <= 983040 => "31",
             <= 2228224 => lumaSampleRate <= 83558400 ? "40" : "41",

@@ -65,50 +65,72 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             var hardwareAccelerationType = options.HardwareAccelerationType;
 
-            if (!string.IsNullOrEmpty(videoStream.Codec) && hardwareAccelerationType != HardwareAccelerationType.none)
+            if (string.IsNullOrEmpty(videoStream.Codec) || hardwareAccelerationType == HardwareAccelerationType.none)
             {
-                var bitDepth = GetVideoColorBitDepth(state);
+                // leave blank so ffmpeg will decide
+                return null;
+            }
 
-                // Only HEVC, VP9 and AV1 formats have 10-bit hardware decoder support for most platforms
-                if (IsTenBitWithoutCommonHwDecoder(videoStream, bitDepth))
+            var bitDepth = GetVideoColorBitDepth(state);
+
+            // Only HEVC, VP9 and AV1 formats have 10-bit hardware decoder support for most platforms
+            if (IsTenBitWithoutCommonHwDecoder(videoStream, bitDepth))
+            {
+                bool hasHardwareHi10P = HasHardwareHi10PDecoder(hardwareAccelerationType);
+
+                if (IsH264WithoutHwHi10P(hasHardwareHi10P, videoStream))
                 {
-                    bool hasHardwareHi10P = HasHardwareHi10PDecoder(hardwareAccelerationType);
-
-                    if (IsH264WithoutHwHi10P(hasHardwareHi10P, videoStream))
-                    {
-                        return null;
-                    }
+                    return null;
                 }
+            }
 
-                // Block unsupported H.264 Hi422P and Hi444PP profiles, which can be encoded with 4:2:0 pixel format
-                if (IsH264Hi422OrHi444Profile(videoStream))
+            var context = new HwDecoderByTypeContext(state, options, videoStream, bitDepth, hardwareAccelerationType);
+            return ResolveHwDecoderUnlessUnsupportedProfile(context);
+        }
+
+        private string ResolveHwDecoderUnlessUnsupportedProfile(HwDecoderByTypeContext context)
+        {
+            // Block unsupported H.264 Hi422P and Hi444PP profiles, which can be encoded with 4:2:0 pixel format
+            if (IsH264Hi422OrHi444Profile(context.VideoStream))
+            {
+                // VideoToolbox on Apple Silicon has H.264 Hi444PP and theoretically also has Hi422P
+                if (!IsAppleSiliconVideoToolbox(context.HardwareAccelerationType))
                 {
-                    // VideoToolbox on Apple Silicon has H.264 Hi444PP and theoretically also has Hi422P
-                    if (!IsAppleSiliconVideoToolbox(hardwareAccelerationType))
-                    {
-                        return null;
-                    }
+                    return null;
                 }
+            }
 
-                var decoder = hardwareAccelerationType switch
-                {
-                    HardwareAccelerationType.vaapi => GetVaapiVidDecoder(state, options, videoStream, bitDepth),
-                    HardwareAccelerationType.amf => GetAmfVidDecoder(state, options, videoStream, bitDepth),
-                    HardwareAccelerationType.qsv => GetQsvHwVidDecoder(state, options, videoStream, bitDepth),
-                    HardwareAccelerationType.nvenc => GetNvdecVidDecoder(state, options, videoStream, bitDepth),
-                    HardwareAccelerationType.videotoolbox => GetVideotoolboxVidDecoder(state, options, videoStream, bitDepth),
-                    HardwareAccelerationType.rkmpp => GetRkmppVidDecoder(state, options, videoStream, bitDepth),
-                    _ => string.Empty
-                };
+            return ResolveHwDecoderByAccelerationType(context);
+        }
 
-                if (!string.IsNullOrEmpty(decoder))
-                {
-                    return decoder;
-                }
+        private string ResolveHwDecoderByAccelerationType(HwDecoderByTypeContext context)
+        {
+            var decoder = context.HardwareAccelerationType switch
+            {
+                HardwareAccelerationType.vaapi => GetVaapiVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                HardwareAccelerationType.amf => GetAmfVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                HardwareAccelerationType.qsv => GetQsvHwVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                _ => ResolveHwDecoderByRemainingAccelerationType(context)
+            };
+
+            if (!string.IsNullOrEmpty(decoder))
+            {
+                return decoder;
             }
 
             // leave blank so ffmpeg will decide
             return null;
+        }
+
+        private string ResolveHwDecoderByRemainingAccelerationType(HwDecoderByTypeContext context)
+        {
+            return context.HardwareAccelerationType switch
+            {
+                HardwareAccelerationType.nvenc => GetNvdecVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                HardwareAccelerationType.videotoolbox => GetVideotoolboxVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                HardwareAccelerationType.rkmpp => GetRkmppVidDecoder(context.State, context.Options, context.VideoStream, context.BitDepth),
+                _ => string.Empty
+            };
         }
 
         private static bool IsH264WithoutHwHi10P(bool hasHardwareHi10P, MediaStream videoStream)
@@ -335,71 +357,101 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            // Intel qsv/d3d11va/vaapi
-            if (hardwareAccelerationType == HardwareAccelerationType.qsv)
-            {
-                if (options.PreferSystemNativeHwDecoder)
-                {
-                    if (IsHwaccelAvailable(isVaapiSupported, isCodecAvailable))
-                    {
-                        return GetVaapiHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
-                    }
+            var context = new HwDecoderHwaccelContext(
+                hardwareAccelerationType,
+                isD3d11Supported,
+                isVaapiSupported,
+                isCudaSupported,
+                isVideotoolboxSupported,
+                isRkmppSupported,
+                isCodecAvailable,
+                outputHwSurface,
+                stripRotationDataArgs,
+                nvdecNoInternalCopy,
+                profileMismatch,
+                isAv1);
+            return GetHwaccelTypeFromIntel(context, options, isQsvSupported);
+        }
 
-                    if (IsHwaccelAvailable(isD3d11Supported, isCodecAvailable))
-                    {
-                        return GetD3d11vaHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
-                    }
-                }
-                else
-                {
-                    if (IsHwaccelAvailable(isQsvSupported, isCodecAvailable))
-                    {
-                        return GetQsvHwaccelOption(outputHwSurface, stripRotationDataArgs);
-                    }
-                }
+        private string GetHwaccelTypeFromIntel(HwDecoderHwaccelContext context, EncodingOptions options, bool isQsvSupported)
+        {
+            // Intel qsv/d3d11va/vaapi
+            if (context.HardwareAccelerationType != HardwareAccelerationType.qsv)
+            {
+                return GetHwaccelTypeFromNvidia(context, options);
             }
 
-            // Nvidia cuda
-            if (hardwareAccelerationType == HardwareAccelerationType.nvenc)
+            if (!options.PreferSystemNativeHwDecoder)
             {
-                if (IsHwaccelAvailable(isCudaSupported, isCodecAvailable))
+                if (IsHwaccelAvailable(isQsvSupported, context.IsCodecAvailable))
+                {
+                    return GetQsvHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
+                }
+
+                return GetHwaccelTypeFromNvidia(context, options);
+            }
+
+            if (IsHwaccelAvailable(context.IsVaapiSupported, context.IsCodecAvailable))
+            {
+                return GetVaapiHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
+            }
+
+            if (IsHwaccelAvailable(context.IsD3d11Supported, context.IsCodecAvailable))
+            {
+                return GetD3d11vaHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
+            }
+
+            return GetHwaccelTypeFromNvidia(context, options);
+        }
+
+        private string GetHwaccelTypeFromNvidia(HwDecoderHwaccelContext context, EncodingOptions options)
+        {
+            // Nvidia cuda
+            if (context.HardwareAccelerationType == HardwareAccelerationType.nvenc)
+            {
+                if (IsHwaccelAvailable(context.IsCudaSupported, context.IsCodecAvailable))
                 {
                     if (options.EnableEnhancedNvdecDecoder)
                     {
                         // set -threads 1 to nvdec decoder explicitly since it doesn't implement threading support.
-                        return GetCudaNvdecHwaccelOption(outputHwSurface, stripRotationDataArgs, nvdecNoInternalCopy, isAv1);
+                        return GetCudaNvdecHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.NvdecNoInternalCopy, context.IsAv1);
                     }
 
                     // cuvid decoder doesn't have threading issue.
-                    return GetCudaHwaccelOption(outputHwSurface, stripRotationDataArgs);
+                    return GetCudaHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
                 }
             }
 
+            return GetHwaccelTypeFromRemainingTypes(context);
+        }
+
+        private static string GetHwaccelTypeFromRemainingTypes(HwDecoderHwaccelContext context)
+        {
             // Amd d3d11va
-            if (hardwareAccelerationType == HardwareAccelerationType.amf)
+            if (context.HardwareAccelerationType == HardwareAccelerationType.amf)
             {
-                if (IsHwaccelAvailable(isD3d11Supported, isCodecAvailable))
+                if (IsHwaccelAvailable(context.IsD3d11Supported, context.IsCodecAvailable))
                 {
-                    return GetD3d11vaHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
+                    return GetD3d11vaHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
                 }
             }
 
             // Vaapi
-            if (IsVaapiHwaccelUsable(hardwareAccelerationType, isVaapiSupported, isCodecAvailable))
+            if (IsVaapiHwaccelUsable(context.HardwareAccelerationType, context.IsVaapiSupported, context.IsCodecAvailable))
             {
-                return GetVaapiHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
+                return GetVaapiHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
             }
 
             // Apple videotoolbox
-            if (IsVideotoolboxHwaccelUsable(hardwareAccelerationType, isVideotoolboxSupported, isCodecAvailable))
+            if (IsVideotoolboxHwaccelUsable(context.HardwareAccelerationType, context.IsVideotoolboxSupported, context.IsCodecAvailable))
             {
-                return GetVideotoolboxHwaccelOption(outputHwSurface, stripRotationDataArgs);
+                return GetVideotoolboxHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
             }
 
             // Rockchip rkmpp
-            if (IsRkmppHwaccelUsable(hardwareAccelerationType, isRkmppSupported, isCodecAvailable))
+            if (IsRkmppHwaccelUsable(context.HardwareAccelerationType, context.IsRkmppSupported, context.IsCodecAvailable))
             {
-                return GetRkmppHwaccelOption(outputHwSurface, stripRotationDataArgs);
+                return GetRkmppHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
             }
 
             return null;
@@ -564,603 +616,25 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && isCodecAvailable;
         }
 
-        public string GetQsvHwVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
-        {
-            var isWindows = OperatingSystem.IsWindows();
-            var isLinux = OperatingSystem.IsLinux();
-
-            if (IsQsvDecodingUnavailable(isWindows, isLinux, options))
-            {
-                return null;
-            }
-
-            var isQsvOclSupported = IsQsvOclSupported();
-            var isIntelDx11OclSupported = IsIntelDx11OclSupported(isWindows, isQsvOclSupported);
-            var isIntelVaapiOclSupported = IsIntelVaapiOclSupported(state, isLinux, isQsvOclSupported);
-            var hwSurface = HasQsvHwSurface(isIntelDx11OclSupported, isIntelVaapiOclSupported);
-
-            var is8bitSwFormatsQsv = Is8BitYuv420SwFormat(videoStream);
-            var is8_10bitSwFormatsQsv = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsQsv);
-            var is8_10_12bitSwFormatsQsv = IsQsv8To12BitSwFormat(videoStream, is8_10bitSwFormatsQsv);
-            // TODO: add more 8/10bit and 4:4:4 formats for Qsv after finishing the ffcheck tool
-
-            if (is8bitSwFormatsQsv)
-            {
-                if (IsAvcOrH264Codec(videoStream))
-                {
-                    return GetHwaccelType(state, options, "h264", bitDepth, hwSurface) + GetHwDecoderName(options, "h264", "qsv", "h264", bitDepth);
-                }
-
-                if (string.Equals(videoStream.Codec, "vc1", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vc1", bitDepth, hwSurface) + GetHwDecoderName(options, "vc1", "qsv", "vc1", bitDepth);
-                }
-
-                if (string.Equals(videoStream.Codec, "vp8", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp8", bitDepth, hwSurface) + GetHwDecoderName(options, "vp8", "qsv", "vp8", bitDepth);
-                }
-
-                if (string.Equals(videoStream.Codec, "mpeg2video", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "mpeg2video", bitDepth, hwSurface) + GetHwDecoderName(options, "mpeg2", "qsv", "mpeg2video", bitDepth);
-                }
-            }
-
-            if (is8_10bitSwFormatsQsv)
-            {
-                if (string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface) + GetHwDecoderName(options, "vp9", "qsv", "vp9", bitDepth);
-                }
-
-                if (string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "av1", bitDepth, hwSurface) + GetHwDecoderName(options, "av1", "qsv", "av1", bitDepth);
-                }
-            }
-
-            if (is8_10_12bitSwFormatsQsv)
-            {
-                if (IsHevcOrH265Codec(videoStream))
-                {
-                    return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface) + GetHwDecoderName(options, "hevc", "qsv", "hevc", bitDepth);
-                }
-            }
-
-            return null;
-        }
-
-        private bool IsQsvOclSupported()
-        {
-            return _mediaEncoder.SupportsHwaccel("qsv") && IsOpenclFullSupported();
-        }
-
-        private bool IsIntelDx11OclSupported(bool isWindows, bool isQsvOclSupported)
-        {
-            return isWindows
-                && _mediaEncoder.SupportsHwaccel("d3d11va")
-                && isQsvOclSupported;
-        }
-
-        private bool IsIntelVaapiOclSupported(EncodingJobInfo state, bool isLinux, bool isQsvOclSupported)
-        {
-            return isLinux
-                && IsVaapiSupported(state)
-                && isQsvOclSupported;
-        }
-
-        private bool HasQsvHwSurface(bool isIntelDx11OclSupported, bool isIntelVaapiOclSupported)
-        {
-            return (isIntelDx11OclSupported || isIntelVaapiOclSupported)
-                && _mediaEncoder.SupportsFilter("alphasrc");
-        }
-
-        private static bool Is8BitYuv420SwFormat(MediaStream videoStream)
-        {
-            return string.Equals("yuv420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuvj420p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool Is8Or10BitYuv420SwFormat(MediaStream videoStream, bool is8bitSwFormats)
-        {
-            return is8bitSwFormats || string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsQsv8To12BitSwFormat(MediaStream videoStream, bool is8_10bitSwFormatsQsv)
-        {
-            return is8_10bitSwFormatsQsv
-                || string.Equals("yuv422p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv422p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv422p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsAvcOrH264Codec(MediaStream videoStream)
-        {
-            return string.Equals(videoStream.Codec, "avc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoStream.Codec, "h264", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsHevcOrH265Codec(MediaStream videoStream)
-        {
-            return string.Equals(videoStream.Codec, "hevc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoStream.Codec, "h265", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsQsvDecodingUnavailable(bool isWindows, bool isLinux, EncodingOptions options)
-        {
-            return (!isWindows && !isLinux)
-                || options.HardwareAccelerationType != HardwareAccelerationType.qsv;
-        }
-
-        public string GetNvdecVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
-        {
-            if (IsNvdecDecodingUnavailable(options))
-            {
-                return null;
-            }
-
-            return ResolveNvdecAccelType(state, options, videoStream, bitDepth);
-        }
-
-        private string ResolveNvdecAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
-        {
-            var hwSurface = HasCudaHwSurface();
-            var is8bitSwFormatsNvdec = Is8BitYuv420SwFormat(videoStream);
-            var is8_10bitSwFormatsNvdec = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsNvdec);
-            var is8_10_12bitSwFormatsNvdec = IsNvdec8To12BitSwFormat(videoStream, is8_10bitSwFormatsNvdec);
-            // TODO: add more 8/10/12bit and 4:4:4 formats for Nvdec after finishing the ffcheck tool
-
-            if (is8bitSwFormatsNvdec)
-            {
-                if (IsH264StreamCodec(videoStream))
-                {
-                    return GetHwaccelType(state, options, "h264", bitDepth, hwSurface) + GetHwDecoderName(options, "h264", "cuvid", "h264", bitDepth);
-                }
-
-                if (string.Equals("mpeg2video", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "mpeg2video", bitDepth, hwSurface) + GetHwDecoderName(options, "mpeg2", "cuvid", "mpeg2video", bitDepth);
-                }
-
-                if (string.Equals("vc1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vc1", bitDepth, hwSurface) + GetHwDecoderName(options, "vc1", "cuvid", "vc1", bitDepth);
-                }
-
-                if (string.Equals("mpeg4", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "mpeg4", bitDepth, hwSurface) + GetHwDecoderName(options, "mpeg4", "cuvid", "mpeg4", bitDepth);
-                }
-
-                if (string.Equals("vp8", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp8", bitDepth, hwSurface) + GetHwDecoderName(options, "vp8", "cuvid", "vp8", bitDepth);
-                }
-            }
-
-            if (is8_10bitSwFormatsNvdec)
-            {
-                if (string.Equals("vp9", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface) + GetHwDecoderName(options, "vp9", "cuvid", "vp9", bitDepth);
-                }
-
-                if (string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "av1", bitDepth, hwSurface) + GetHwDecoderName(options, "av1", "cuvid", "av1", bitDepth);
-                }
-            }
-
-            if (is8_10_12bitSwFormatsNvdec)
-            {
-                if (IsHevcStreamCodec(videoStream))
-                {
-                    return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface) + GetHwDecoderName(options, "hevc", "cuvid", "hevc", bitDepth);
-                }
-            }
-
-            return null;
-        }
-
-        private bool HasCudaHwSurface()
-        {
-            return IsCudaFullSupported() && _mediaEncoder.SupportsFilter("alphasrc");
-        }
-
-        private static bool IsNvdec8To12BitSwFormat(MediaStream videoStream, bool is8_10bitSwFormatsNvdec)
-        {
-            return is8_10bitSwFormatsNvdec
-                || string.Equals("yuv444p", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("yuv444p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsNvdecDecodingUnavailable(EncodingOptions options)
-        {
-            return (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux())
-                || options.HardwareAccelerationType != HardwareAccelerationType.nvenc;
-        }
-
-        public string GetAmfVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
-        {
-            if (IsAmfDecodingUnavailable(options))
-            {
-                return null;
-            }
-
-            return ResolveAmfAccelType(state, options, videoStream, bitDepth);
-        }
-
-        private string ResolveAmfAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
-        {
-            var hwSurface = HasD3d11OclHwSurface();
-            var is8bitSwFormatsAmf = Is8BitYuv420SwFormat(videoStream);
-            var is8_10bitSwFormatsAmf = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsAmf);
-
-            if (is8bitSwFormatsAmf)
-            {
-                if (IsH264StreamCodec(videoStream))
-                {
-                    return GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
-                }
-
-                if (string.Equals("mpeg2video", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "mpeg2video", bitDepth, hwSurface);
-                }
-
-                if (string.Equals("vc1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vc1", bitDepth, hwSurface);
-                }
-            }
-
-            if (!is8_10bitSwFormatsAmf)
-            {
-                return null;
-            }
-
-            if (IsHevcStreamCodec(videoStream))
-            {
-                return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
-            }
-
-            if (string.Equals("vp9", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-            {
-                return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
-            }
-
-            if (string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-            {
-                return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
-            }
-
-            return null;
-        }
-
-        private static bool IsAmfDecodingUnavailable(EncodingOptions options)
-        {
-            return !OperatingSystem.IsWindows()
-                || options.HardwareAccelerationType != HardwareAccelerationType.amf;
-        }
-
-        private bool HasD3d11OclHwSurface()
-        {
-            return _mediaEncoder.SupportsHwaccel("d3d11va")
-                && IsOpenclFullSupported()
-                && _mediaEncoder.SupportsFilter("alphasrc");
-        }
-
-        public string GetVaapiVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
-        {
-            if (IsVaapiDecodingUnavailable(options))
-            {
-                return null;
-            }
-
-            return ResolveVaapiAccelType(state, options, videoStream, bitDepth);
-        }
-
-        private string ResolveVaapiAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
-        {
-            var hwSurface = HasVaapiHwSurface(state);
-            var is8bitSwFormatsVaapi = Is8BitYuv420SwFormat(videoStream);
-            var is8_10bitSwFormatsVaapi = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVaapi);
-            var is8_10_12bitSwFormatsVaapi = IsQsv8To12BitSwFormat(videoStream, is8_10bitSwFormatsVaapi);
-
-            if (is8bitSwFormatsVaapi)
-            {
-                if (IsH264StreamCodec(videoStream))
-                {
-                    return GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
-                }
-
-                if (string.Equals("mpeg2video", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "mpeg2video", bitDepth, hwSurface);
-                }
-
-                if (string.Equals("vc1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vc1", bitDepth, hwSurface);
-                }
-
-                if (string.Equals("vp8", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp8", bitDepth, hwSurface);
-                }
-            }
-
-            if (is8_10bitSwFormatsVaapi)
-            {
-                if (string.Equals("vp9", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
-                }
-
-                if (string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
-                }
-            }
-
-            if (is8_10_12bitSwFormatsVaapi)
-            {
-                if (IsHevcStreamCodec(videoStream))
-                {
-                    return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
-                }
-            }
-
-            return null;
-        }
-
-        private static bool IsVaapiDecodingUnavailable(EncodingOptions options)
-        {
-            return !OperatingSystem.IsLinux()
-                || options.HardwareAccelerationType != HardwareAccelerationType.vaapi;
-        }
-
-        private bool HasVaapiHwSurface(EncodingJobInfo state)
-        {
-            return IsVaapiSupported(state)
-                && IsVaapiFullSupported()
-                && IsOpenclFullSupported()
-                && _mediaEncoder.SupportsFilter("alphasrc");
-        }
-
-        private static bool IsH264StreamCodec(MediaStream videoStream)
-        {
-            return string.Equals("avc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("h264", videoStream.Codec, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsHevcStreamCodec(MediaStream videoStream)
-        {
-            return string.Equals("hevc", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                || string.Equals("h265", videoStream.Codec, StringComparison.OrdinalIgnoreCase);
-        }
-
-        public string GetVideotoolboxVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
-        {
-            if (IsVideotoolboxDecodingUnavailable(options))
-            {
-                return null;
-            }
-
-            return ResolveVideotoolboxAccelType(state, options, videoStream, bitDepth);
-        }
-
-        private string ResolveVideotoolboxAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
-        {
-            var is8bitSwFormatsVt = Is8BitYuv420SwFormat(videoStream);
-            var is8_10bitSwFormatsVt = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsVt);
-            var is8_10_12bitSwFormatsVt = IsQsv8To12BitSwFormat(videoStream, is8_10bitSwFormatsVt);
-            var isAv1SupportedSwFormatsVt = IsVtAv1SupportedSwFormat(videoStream, is8_10bitSwFormatsVt);
-
-            // The related patches make videotoolbox hardware surface working is only available in jellyfin-ffmpeg 7.0.1 at the moment.
-            bool useHwSurface = CanUseVideotoolboxHwSurface();
-
-            if (is8bitSwFormatsVt)
-            {
-                if (string.Equals("vp8", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp8", bitDepth, useHwSurface);
-                }
-            }
-
-            if (is8_10bitSwFormatsVt)
-            {
-                if (IsH264StreamCodec(videoStream))
-                {
-                    return GetHwaccelType(state, options, "h264", bitDepth, useHwSurface);
-                }
-
-                if (string.Equals("vp9", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp9", bitDepth, useHwSurface);
-                }
-            }
-
-            if (is8_10_12bitSwFormatsVt)
-            {
-                if (IsHevcStreamCodec(videoStream))
-                {
-                    return GetHwaccelType(state, options, "hevc", bitDepth, useHwSurface);
-                }
-
-                if (IsVideoToolboxAv1Decodable(videoStream, isAv1SupportedSwFormatsVt))
-                {
-                    return GetHwaccelType(state, options, "av1", bitDepth, useHwSurface);
-                }
-            }
-
-            return null;
-        }
-
-        private static bool IsVideotoolboxDecodingUnavailable(EncodingOptions options)
-        {
-            return !OperatingSystem.IsMacOS()
-                || options.HardwareAccelerationType != HardwareAccelerationType.videotoolbox;
-        }
-
-        private static bool IsVtAv1SupportedSwFormat(MediaStream videoStream, bool is8_10bitSwFormatsVt)
-        {
-            return is8_10bitSwFormatsVt || string.Equals("yuv420p12le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private bool CanUseVideotoolboxHwSurface()
-        {
-            return (_mediaEncoder.EncoderVersion >= _minFFmpegWorkingVtHwSurface) && IsVideoToolboxFullSupported();
-        }
-
-        private bool IsVideoToolboxAv1Decodable(MediaStream videoStream, bool isAv1SupportedSwFormatsVt)
-        {
-            return string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase)
-                && isAv1SupportedSwFormatsVt
-                && _mediaEncoder.IsVideoToolboxAv1DecodeAvailable;
-        }
-
-        public string GetRkmppVidDecoder(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
-        {
-            var isLinux = OperatingSystem.IsLinux();
-
-            if (IsRkmppDecodingUnavailable(options, isLinux))
-            {
-                return null;
-            }
-
-            return ResolveRkmppAccelType(state, options, videoStream, bitDepth);
-        }
-
-        private string ResolveRkmppAccelType(EncodingJobInfo state, EncodingOptions options, MediaStream videoStream, int bitDepth)
-        {
-            var inW = state.VideoStream?.Width;
-            var inH = state.VideoStream?.Height;
-            var reqW = state.BaseRequest.Width;
-            var reqH = state.BaseRequest.Height;
-            var reqMaxW = state.BaseRequest.MaxWidth;
-            var reqMaxH = state.BaseRequest.MaxHeight;
-
-            // rkrga RGA2e supports range from 1/16 to 16
-            if (!IsScaleRatioSupported(inW, inH, reqW, reqH, reqMaxW, reqMaxH, 16.0f))
-            {
-                return null;
-            }
-
-            var isRkmppOclSupported = IsRkmppOclSupported();
-            var hwSurface = HasRkmppHwSurface(isRkmppOclSupported);
-
-            // rkrga RGA3 supports range from 1/8 to 8
-            var isAfbcSupported = hwSurface && IsScaleRatioSupported(inW, inH, reqW, reqH, reqMaxW, reqMaxH, 8.0f);
-
-            // TODO: add more 8/10bit and 4:2:2 formats for Rkmpp after finishing the ffcheck tool
-            var is8bitSwFormatsRkmpp = Is8BitYuv420SwFormat(videoStream);
-            var is10bitSwFormatsRkmpp = string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-            var is8_10bitSwFormatsRkmpp = Is8Or10BitRkmppSwFormat(is8bitSwFormatsRkmpp, is10bitSwFormatsRkmpp);
-
-            // nv15 and nv20 are bit-stream only formats
-            if (IsRkmppBitstreamOnlyFormat(is10bitSwFormatsRkmpp, hwSurface))
-            {
-                return null;
-            }
-
-            if (is8bitSwFormatsRkmpp)
-            {
-                if (string.Equals(videoStream.Codec, "mpeg1video", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "mpeg1video", bitDepth, hwSurface);
-                }
-
-                if (string.Equals(videoStream.Codec, "mpeg2video", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "mpeg2video", bitDepth, hwSurface);
-                }
-
-                if (string.Equals(videoStream.Codec, "mpeg4", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "mpeg4", bitDepth, hwSurface);
-                }
-
-                if (string.Equals(videoStream.Codec, "vp8", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp8", bitDepth, hwSurface);
-                }
-            }
-
-            if (!is8_10bitSwFormatsRkmpp)
-            {
-                return null;
-            }
-
-            if (IsAvcOrH264Codec(videoStream))
-            {
-                var accelType = GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
-                return AppendAfbcRgaOption(accelType, isAfbcSupported);
-            }
-
-            if (IsHevcOrH265Codec(videoStream))
-            {
-                var accelType = GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
-                return AppendAfbcRgaOption(accelType, isAfbcSupported);
-            }
-
-            if (string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
-            {
-                var accelType = GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
-                return AppendAfbcRgaOption(accelType, isAfbcSupported);
-            }
-
-            if (string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
-            {
-                // there's an issue about AV1 AFBC on RK3588, disable it for now until it's fixed upstream
-                return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
-            }
-
-            return null;
-        }
-
-        private static bool Is8Or10BitRkmppSwFormat(bool is8bitSwFormatsRkmpp, bool is10bitSwFormatsRkmpp)
-        {
-            return is8bitSwFormatsRkmpp || is10bitSwFormatsRkmpp;
-        }
-
-        private static bool IsRkmppDecodingUnavailable(EncodingOptions options, bool isLinux)
-        {
-            return !isLinux
-                || options.HardwareAccelerationType != HardwareAccelerationType.rkmpp;
-        }
-
-        private bool IsRkmppOclSupported()
-        {
-            return IsRkmppFullSupported() && IsOpenclFullSupported();
-        }
-
-        private bool HasRkmppHwSurface(bool isRkmppOclSupported)
-        {
-            return isRkmppOclSupported
-                && _mediaEncoder.SupportsFilter("alphasrc");
-        }
-
-        private static bool IsRkmppBitstreamOnlyFormat(bool is10bitSwFormatsRkmpp, bool hwSurface)
-        {
-            return is10bitSwFormatsRkmpp && !hwSurface;
-        }
-
-        private static string AppendAfbcRgaOption(string accelType, bool isAfbcSupported)
-        {
-            return accelType + (CanUseAfbcRga(accelType, isAfbcSupported) ? " -afbc rga" : string.Empty);
-        }
-
-        private static bool CanUseAfbcRga(string accelType, bool isAfbcSupported)
-        {
-            return !string.IsNullOrEmpty(accelType) && isAfbcSupported;
-        }
+        private readonly record struct HwDecoderByTypeContext(
+            EncodingJobInfo State,
+            EncodingOptions Options,
+            MediaStream VideoStream,
+            int BitDepth,
+            HardwareAccelerationType HardwareAccelerationType);
+
+        private readonly record struct HwDecoderHwaccelContext(
+            HardwareAccelerationType HardwareAccelerationType,
+            bool IsD3d11Supported,
+            bool IsVaapiSupported,
+            bool IsCudaSupported,
+            bool IsVideotoolboxSupported,
+            bool IsRkmppSupported,
+            bool IsCodecAvailable,
+            bool OutputHwSurface,
+            string StripRotationDataArgs,
+            bool NvdecNoInternalCopy,
+            bool ProfileMismatch,
+            bool IsAv1);
     }
 }

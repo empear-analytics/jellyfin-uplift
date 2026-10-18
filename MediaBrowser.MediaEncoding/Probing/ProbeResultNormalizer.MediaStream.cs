@@ -516,75 +516,6 @@ namespace MediaBrowser.MediaEncoding.Probing
             return input.AsSpan().LeftPart('(').ToString();
         }
 
-        private static string GetAspectRatio(MediaStreamInfo info)
-        {
-            var original = info.DisplayAspectRatio;
-
-            var parts = (original ?? string.Empty).Split(':');
-            if (!(parts.Length == 2
-                    && int.TryParse(parts[0], CultureInfo.InvariantCulture, out var width)
-                    && int.TryParse(parts[1], CultureInfo.InvariantCulture, out var height)
-                    && width > 0
-                    && height > 0))
-            {
-                width = info.Width.Value;
-                height = info.Height.Value;
-            }
-
-            if (width > 0 && height > 0)
-            {
-                double ratio = width;
-                ratio /= height;
-
-                if (IsClose(ratio, 1.777777778, .03))
-                {
-                    return "16:9";
-                }
-
-                if (IsClose(ratio, 1.3333333333, .05))
-                {
-                    return "4:3";
-                }
-
-                if (IsClose(ratio, 1.41))
-                {
-                    return "1.41:1";
-                }
-
-                if (IsClose(ratio, 1.5))
-                {
-                    return "1.5:1";
-                }
-
-                if (IsClose(ratio, 1.6))
-                {
-                    return "1.6:1";
-                }
-
-                if (IsClose(ratio, 1.66666666667))
-                {
-                    return "5:3";
-                }
-
-                if (IsClose(ratio, 1.85, .02))
-                {
-                    return "1.85:1";
-                }
-
-                if (IsClose(ratio, 2.35, .025))
-                {
-                    return "2.35:1";
-                }
-
-                if (IsClose(ratio, 2.4, .025))
-                {
-                    return "2.40:1";
-                }
-            }
-
-            return original;
-        }
-
         private static bool IsClose(double d1, double d2, double variance = .005)
         {
             return Math.Abs(d1 - d2) <= variance;
@@ -607,15 +538,22 @@ namespace MediaBrowser.MediaEncoding.Probing
             }
 
             var parts = sar.Split(':');
-            if (parts.Length == 2
-                && double.TryParse(parts[0], CultureInfo.InvariantCulture, out var num)
-                && double.TryParse(parts[1], CultureInfo.InvariantCulture, out var den)
-                && den > 0)
+            if (TryParseSarRatioParts(parts, out var num, out var den))
             {
                 return IsClose(num / den, 1.0, 0.01);
             }
 
             return string.Equals(sar, "1:1", StringComparison.Ordinal);
+        }
+
+        private static bool TryParseSarRatioParts(string[] parts, out double num, out double den)
+        {
+            num = default;
+            den = default;
+            return parts.Length == 2
+                && double.TryParse(parts[0], CultureInfo.InvariantCulture, out num)
+                && double.TryParse(parts[1], CultureInfo.InvariantCulture, out den)
+                && den > 0;
         }
 
         /// <summary>

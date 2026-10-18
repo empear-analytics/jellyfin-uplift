@@ -106,8 +106,7 @@ namespace Emby.Server.Implementations.Library
                 // The name derived from the file is only a default. A name that came from anywhere else,
                 // such as a local metadata file, is the user's and has to survive the scan, so only a
                 // name this method handed out itself is renewed; RefreshExtras persists the change.
-                if (IsUnlockedNewName(name, extra)
-                    && (itemById is null || IsGeneratedExtraName(extra.Name, candidate)))
+                if (ShouldRenewName(name, extra, itemById, candidate))
                 {
                     extra.Name = name;
                 }
@@ -128,6 +127,12 @@ namespace Emby.Server.Implementations.Library
                 }
 
                 return null;
+            }
+
+            bool ShouldRenewName(string name, BaseItem extra, BaseItem? itemById, ExtraCandidate candidate)
+            {
+                return IsUnlockedNewName(name, extra)
+                    && (itemById is null || IsGeneratedExtraName(extra.Name, candidate));
             }
 
             bool IsGeneratedExtraName(string currentName, ExtraCandidate candidate)
@@ -164,7 +169,7 @@ namespace Emby.Server.Implementations.Library
             for (var i = 0; i < count; i++)
             {
                 var current = filtered[i];
-                if (current.IsDirectory && _namingOptions.AllExtrasTypesFolderNames.ContainsKey(current.Name))
+                if (IsExtrasTypeFolder(current))
                 {
                     var filesInSubFolder = _fileSystem.GetFiles(current.FullName, null, false, false);
                     var filesInSubFolderList = filesInSubFolder.ToList();
@@ -197,6 +202,11 @@ namespace Emby.Server.Implementations.Library
                     candidates.Add(new ExtraCandidate(extra, extraType, extraRule, isInMixedFolder));
                 }
             }
+        }
+
+        private bool IsExtrasTypeFolder(FileSystemMetadata current)
+        {
+            return current.IsDirectory && _namingOptions.AllExtrasTypesFolderNames.ContainsKey(current.Name);
         }
 
         private static bool IsFolderOrDiscVideo(BaseItem owner)
@@ -267,10 +277,20 @@ namespace Emby.Server.Implementations.Library
             ExtraType.Trailer => "NameExtraTrailer",
             ExtraType.BehindTheScenes => "NameExtraBehindTheScenes",
             ExtraType.DeletedScene => "NameExtraDeletedScene",
+            _ => GetExtraTypeNameKeyFromInterview(extraType)
+        };
+
+        private static string GetExtraTypeNameKeyFromInterview(ExtraType extraType) => extraType switch
+        {
             ExtraType.Interview => "NameExtraInterview",
             ExtraType.Scene => "NameExtraScene",
             ExtraType.Sample => "NameExtraSample",
             ExtraType.ThemeSong => "NameExtraThemeSong",
+            _ => GetExtraTypeNameKeyFromThemeVideo(extraType)
+        };
+
+        private static string GetExtraTypeNameKeyFromThemeVideo(ExtraType extraType) => extraType switch
+        {
             ExtraType.ThemeVideo => "NameExtraThemeVideo",
             ExtraType.Featurette => "NameExtraFeaturette",
             ExtraType.Short => "NameExtraShort",

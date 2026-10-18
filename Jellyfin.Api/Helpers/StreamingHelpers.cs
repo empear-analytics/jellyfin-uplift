@@ -423,28 +423,35 @@ public static class StreamingHelpers
         }
         else
         {
-            // Try to infer based on the desired audio codec
-            var audioCodec = state.Request.AudioCodec;
+            return GetAudioCodecExtension(state, mediaSource);
+        }
 
-            if (string.Equals("aac", audioCodec, StringComparison.OrdinalIgnoreCase))
-            {
-                return ".aac";
-            }
+        return GetContainerExtension(mediaSource);
+    }
 
-            if (string.Equals("mp3", audioCodec, StringComparison.OrdinalIgnoreCase))
-            {
-                return ".mp3";
-            }
+    private static string GetAudioCodecExtension(StreamState state, MediaSourceInfo? mediaSource)
+    {
+        // Try to infer based on the desired audio codec
+        var audioCodec = state.Request.AudioCodec;
 
-            if (string.Equals("vorbis", audioCodec, StringComparison.OrdinalIgnoreCase))
-            {
-                return ".ogg";
-            }
+        if (string.Equals("aac", audioCodec, StringComparison.OrdinalIgnoreCase))
+        {
+            return ".aac";
+        }
 
-            if (string.Equals("wma", audioCodec, StringComparison.OrdinalIgnoreCase))
-            {
-                return ".wma";
-            }
+        if (string.Equals("mp3", audioCodec, StringComparison.OrdinalIgnoreCase))
+        {
+            return ".mp3";
+        }
+
+        if (string.Equals("vorbis", audioCodec, StringComparison.OrdinalIgnoreCase))
+        {
+            return ".ogg";
+        }
+
+        if (string.Equals("wma", audioCodec, StringComparison.OrdinalIgnoreCase))
+        {
+            return ".wma";
         }
 
         return GetContainerExtension(mediaSource);

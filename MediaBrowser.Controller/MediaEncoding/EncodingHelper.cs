@@ -834,15 +834,10 @@ namespace MediaBrowser.Controller.MediaEncoding
                 ApplyVideoCopyFallback(state);
             }
 
-            var preventHlsAudioCopy = state.TranscodingType is TranscodingJobType.Hls
-                && state.VideoStream is not null
-                && !IsCopyCodec(state.OutputVideoCodec)
-                && options.HlsAudioSeekStrategy is HlsAudioSeekStrategy.TranscodeAudio;
+            var preventHlsAudioCopy = IsHlsAudioCopyPrevented(state, options);
 
             TranscodeReason audioCopyFailureReasons = 0;
-            if (state.AudioStream is not null
-                && CanStreamCopyAudio(state, state.AudioStream, state.SupportedAudioCodecs, out audioCopyFailureReasons)
-                && !preventHlsAudioCopy)
+            if (CanCopyAudioStream(state, preventHlsAudioCopy, out audioCopyFailureReasons))
             {
                 state.OutputAudioCodec = "copy";
             }
@@ -850,6 +845,22 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 ApplyAudioCopyFallback(state, audioCopyFailureReasons);
             }
+        }
+
+        private static bool IsHlsAudioCopyPrevented(EncodingJobInfo state, EncodingOptions options)
+        {
+            return state.TranscodingType is TranscodingJobType.Hls
+                && state.VideoStream is not null
+                && !IsCopyCodec(state.OutputVideoCodec)
+                && options.HlsAudioSeekStrategy is HlsAudioSeekStrategy.TranscodeAudio;
+        }
+
+        private bool CanCopyAudioStream(EncodingJobInfo state, bool preventHlsAudioCopy, out TranscodeReason audioCopyFailureReasons)
+        {
+            audioCopyFailureReasons = default;
+            return state.AudioStream is not null
+                && CanStreamCopyAudio(state, state.AudioStream, state.SupportedAudioCodecs, out audioCopyFailureReasons)
+                && !preventHlsAudioCopy;
         }
 
         private static void ApplyVideoCopyFallback(EncodingJobInfo state)
@@ -920,15 +931,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             inputModifier += " " + GetFastSeekCommandLineParameter(state, encodingOptions, segmentContainer);
             inputModifier = inputModifier.Trim();
 
-            if (state.InputProtocol == MediaProtocol.Rtsp)
-            {
-                inputModifier += " -rtsp_transport tcp+udp -rtsp_flags prefer_tcp";
-            }
-
-            if (!string.IsNullOrEmpty(state.InputAudioSync))
-            {
-                inputModifier += " -async " + state.InputAudioSync;
-            }
+            inputModifier = AppendRtspAndAudioSyncOptions(inputModifier, state);
 
             // The -fps_mode option cannot be applied to input
             if (NeedsInputVideoSync(state))
@@ -967,6 +970,21 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (state.MediaSource.RequiresLooping)
             {
                 inputModifier += " -stream_loop -1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2";
+            }
+
+            return inputModifier;
+        }
+
+        private static string AppendRtspAndAudioSyncOptions(string inputModifier, EncodingJobInfo state)
+        {
+            if (state.InputProtocol == MediaProtocol.Rtsp)
+            {
+                inputModifier += " -rtsp_transport tcp+udp -rtsp_flags prefer_tcp";
+            }
+
+            if (!string.IsNullOrEmpty(state.InputAudioSync))
+            {
+                inputModifier += " -async " + state.InputAudioSync;
             }
 
             return inputModifier;

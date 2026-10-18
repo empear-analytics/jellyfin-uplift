@@ -165,50 +165,87 @@ namespace MediaBrowser.Controller.MediaEncoding
             AddAmdD3d11OutputMapping(mainFilters, isDxInDxOut, isUploadForOclTonemap, hasSubs);
 
             /* Make sub and overlay filters for subtitle stream */
+            var context = new AmdSubtitleFilterContext(
+                hasSubs,
+                hasGraphicalSubs,
+                hasTextSubs,
+                hasAssSubs,
+                swpInW,
+                swpInH,
+                subW,
+                subH,
+                reqW,
+                reqH,
+                reqMaxW,
+                reqMaxH);
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
             if (isDxInDxOut || isUploadForOclTonemap)
             {
-                if (hasSubs)
-                {
-                    var alphaFormatOpt = string.Empty;
-                    if (hasGraphicalSubs)
-                    {
-                        var subPreProcFilters = GetGraphicalSubPreProcessFilters(swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
-                        subFilters.Add(subPreProcFilters);
-                        subFilters.Add("format=yuva420p");
-                    }
-                    else if (hasTextSubs)
-                    {
-                        var subFramerate = GetAmdSubtitleFramerate(state, hasAssSubs);
-
-                        // alphasrc=s=1280x720:r=10:start=0,format=yuva420p,subtitles,hwupload
-                        var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH, subFramerate);
-                        var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
-                        subFilters.Add(alphaSrcFilter);
-                        subFilters.Add("format=yuva420p");
-                        subFilters.Add(subTextSubtitlesFilter);
-
-                        alphaFormatOpt = GetAmdOverlayAlphaFormatOption();
-                    }
-
-                    subFilters.Add("hwupload=derive_device=opencl");
-                    overlayFilters.Add($"overlay_opencl=eof_action=pass:repeatlast=0{alphaFormatOpt}");
-                    overlayFilters.Add("hwmap=derive_device=d3d11va:mode=write:reverse=1");
-                    overlayFilters.Add("format=d3d11");
-                }
+                AddAmdDxInDxOutSubtitleFilters(state, subFilters, overlayFilters, context);
             }
             else if (memoryOutput)
             {
-                if (hasGraphicalSubs)
-                {
-                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
-                    subFilters.Add(subPreProcFilters);
-                    overlayFilters.Add("overlay=eof_action=pass:repeatlast=0");
-                }
+                AddAmdMemorySubtitleFilters(subFilters, overlayFilters, context);
             }
 
             return (mainFilters, subFilters, overlayFilters);
         }
+
+        private void AddAmdDxInDxOutSubtitleFilters(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters, AmdSubtitleFilterContext context)
+        {
+            if (context.HasSubs)
+            {
+                var alphaFormatOpt = string.Empty;
+                if (context.HasGraphicalSubs)
+                {
+                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(context.SwpInW, context.SwpInH, context.SubW, context.SubH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                    subFilters.Add(subPreProcFilters);
+                    subFilters.Add("format=yuva420p");
+                }
+                else if (context.HasTextSubs)
+                {
+                    var subFramerate = GetAmdSubtitleFramerate(state, context.HasAssSubs);
+
+                    // alphasrc=s=1280x720:r=10:start=0,format=yuva420p,subtitles,hwupload
+                    var alphaSrcFilter = GetAlphaSrcFilter(state, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH, subFramerate);
+                    var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
+                    subFilters.Add(alphaSrcFilter);
+                    subFilters.Add("format=yuva420p");
+                    subFilters.Add(subTextSubtitlesFilter);
+
+                    alphaFormatOpt = GetAmdOverlayAlphaFormatOption();
+                }
+
+                subFilters.Add("hwupload=derive_device=opencl");
+                overlayFilters.Add($"overlay_opencl=eof_action=pass:repeatlast=0{alphaFormatOpt}");
+                overlayFilters.Add("hwmap=derive_device=d3d11va:mode=write:reverse=1");
+                overlayFilters.Add("format=d3d11");
+            }
+        }
+
+        private static void AddAmdMemorySubtitleFilters(List<string> subFilters, List<string> overlayFilters, AmdSubtitleFilterContext context)
+        {
+            if (context.HasGraphicalSubs)
+            {
+                var subPreProcFilters = GetGraphicalSubPreProcessFilters(context.SwpInW, context.SwpInH, context.SubW, context.SubH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                subFilters.Add(subPreProcFilters);
+                overlayFilters.Add("overlay=eof_action=pass:repeatlast=0");
+            }
+        }
+
+        private readonly record struct AmdSubtitleFilterContext(
+            bool HasSubs,
+            bool HasGraphicalSubs,
+            bool HasTextSubs,
+            bool HasAssSubs,
+            int? SwpInW,
+            int? SwpInH,
+            int? SubW,
+            int? SubH,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH);
     }
 }

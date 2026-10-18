@@ -122,22 +122,7 @@ namespace MediaBrowser.Model.Dlna
                 // Look for supported embedded subs of the same format
                 foreach (var profile in subtitleProfiles)
                 {
-                    if (!profile.SupportsLanguage(subtitleStream.Language))
-                    {
-                        continue;
-                    }
-
-                    if (profile.Method != SubtitleDeliveryMethod.Embed)
-                    {
-                        continue;
-                    }
-
-                    if (!ContainerHelper.ContainsContainer(profile.Container, outputContainer))
-                    {
-                        continue;
-                    }
-
-                    if (IsEmbedUnsupportedForTranscode(playMethod, outputContainer))
+                    if (IsProfileUnusableForEmbed(profile, subtitleStream, playMethod, outputContainer))
                     {
                         continue;
                     }
@@ -151,22 +136,7 @@ namespace MediaBrowser.Model.Dlna
                 // Look for supported embedded subs of a convertible format
                 foreach (var profile in subtitleProfiles)
                 {
-                    if (!profile.SupportsLanguage(subtitleStream.Language))
-                    {
-                        continue;
-                    }
-
-                    if (profile.Method != SubtitleDeliveryMethod.Embed)
-                    {
-                        continue;
-                    }
-
-                    if (!ContainerHelper.ContainsContainer(profile.Container, outputContainer))
-                    {
-                        continue;
-                    }
-
-                    if (IsEmbedUnsupportedForTranscode(playMethod, outputContainer))
+                    if (IsProfileUnusableForEmbed(profile, subtitleStream, playMethod, outputContainer))
                     {
                         continue;
                     }
@@ -179,13 +149,44 @@ namespace MediaBrowser.Model.Dlna
             }
 
             // Look for an external or hls profile that matches the stream type (text/graphical) and doesn't require conversion
-            return GetExternalSubtitleProfile(mediaSource, subtitleStream, subtitleProfiles, playMethod, transcoderSupport, false) ??
-                GetExternalSubtitleProfile(mediaSource, subtitleStream, subtitleProfiles, playMethod, transcoderSupport, true) ??
+            var context = new ExternalOrEncodeContext(mediaSource, subtitleStream, subtitleProfiles, playMethod, transcoderSupport);
+            return GetExternalOrEncodeSubtitleProfile(context);
+        }
+
+        private static SubtitleProfile GetExternalOrEncodeSubtitleProfile(ExternalOrEncodeContext context)
+        {
+            return GetExternalSubtitleProfile(context.MediaSource, context.SubtitleStream, context.SubtitleProfiles, context.PlayMethod, context.TranscoderSupport, false) ??
+                GetExternalSubtitleProfile(context.MediaSource, context.SubtitleStream, context.SubtitleProfiles, context.PlayMethod, context.TranscoderSupport, true) ??
                 new SubtitleProfile
                 {
                     Method = SubtitleDeliveryMethod.Encode,
-                    Format = subtitleStream.Codec
+                    Format = context.SubtitleStream.Codec
                 };
+        }
+
+        private static bool IsProfileUnusableForEmbed(SubtitleProfile profile, MediaStream subtitleStream, PlayMethod playMethod, string? outputContainer)
+        {
+            if (!profile.SupportsLanguage(subtitleStream.Language))
+            {
+                return true;
+            }
+
+            if (profile.Method != SubtitleDeliveryMethod.Embed)
+            {
+                return true;
+            }
+
+            if (!ContainerHelper.ContainsContainer(profile.Container, outputContainer))
+            {
+                return true;
+            }
+
+            if (IsEmbedUnsupportedForTranscode(playMethod, outputContainer))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private static bool IsEmbeddedFormatMatch(MediaStream subtitleStream, SubtitleProfile profile)
@@ -238,22 +239,7 @@ namespace MediaBrowser.Model.Dlna
         {
             foreach (var profile in subtitleProfiles)
             {
-                if (IsNeitherExternalNorHls(profile))
-                {
-                    continue;
-                }
-
-                if (IsHlsWithoutTranscode(profile, playMethod))
-                {
-                    continue;
-                }
-
-                if (!profile.SupportsLanguage(subtitleStream.Language))
-                {
-                    continue;
-                }
-
-                if (IsUnextractableEmbeddedSubtitle(subtitleStream, playMethod, transcoderSupport))
+                if (IsProfileUnusableForExternal(profile, subtitleStream, playMethod, transcoderSupport))
                 {
                     continue;
                 }
@@ -288,6 +274,31 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return null;
+        }
+
+        private static bool IsProfileUnusableForExternal(SubtitleProfile profile, MediaStream subtitleStream, PlayMethod playMethod, ITranscoderSupport transcoderSupport)
+        {
+            if (IsNeitherExternalNorHls(profile))
+            {
+                return true;
+            }
+
+            if (IsHlsWithoutTranscode(profile, playMethod))
+            {
+                return true;
+            }
+
+            if (!profile.SupportsLanguage(subtitleStream.Language))
+            {
+                return true;
+            }
+
+            if (IsUnextractableEmbeddedSubtitle(subtitleStream, playMethod, transcoderSupport))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private static bool IsNeitherExternalNorHls(SubtitleProfile profile)
@@ -342,5 +353,12 @@ namespace MediaBrowser.Model.Dlna
                 && subtitleStream.IsVobSubSubtitleStream
                 && (!subtitleStream.IsExternal || subtitleStream.Path?.EndsWith(".mks", StringComparison.OrdinalIgnoreCase) == true);
         }
+
+        private readonly record struct ExternalOrEncodeContext(
+            MediaSourceInfo MediaSource,
+            MediaStream SubtitleStream,
+            SubtitleProfile[] SubtitleProfiles,
+            PlayMethod PlayMethod,
+            ITranscoderSupport TranscoderSupport);
     }
 }
