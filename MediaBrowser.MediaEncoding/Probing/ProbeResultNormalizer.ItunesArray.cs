@@ -32,33 +32,43 @@ namespace MediaBrowser.MediaEncoding.Probing
             // Loop through each element
             while (!reader.EOF && reader.ReadState == ReadState.Interactive)
             {
-                if (reader.NodeType == XmlNodeType.Element)
+                if (ItunesArrayReadEntry(reader, pairs))
                 {
-                    switch (reader.Name)
-                    {
-                        case "dict":
-
-                            if (reader.IsEmptyElement)
-                            {
-                                reader.Read();
-                                continue;
-                            }
-
-                            AddDictPair(reader, pairs);
-
-                            break;
-                        default:
-                            reader.Skip();
-                            break;
-                    }
-                }
-                else
-                {
-                    reader.Read();
+                    continue;
                 }
             }
 
             return pairs;
+        }
+
+        private static bool ItunesArrayReadEntry(XmlReader reader, List<NameValuePair> pairs)
+        {
+            if (reader.NodeType == XmlNodeType.Element)
+            {
+                switch (reader.Name)
+                {
+                    case "dict":
+
+                        if (reader.IsEmptyElement)
+                        {
+                            reader.Read();
+                            return true;
+                        }
+
+                        AddDictPair(reader, pairs);
+
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+            else
+            {
+                reader.Read();
+            }
+
+            return false;
         }
 
         private static void AddDictPair(XmlReader reader, List<NameValuePair> pairs)
