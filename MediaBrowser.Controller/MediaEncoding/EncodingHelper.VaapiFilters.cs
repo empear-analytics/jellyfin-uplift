@@ -581,11 +581,10 @@ namespace MediaBrowser.Controller.MediaEncoding
             AddVulkanTransposeIfNeeded(mainFilters, doVkTranspose, transposeDir);
 
             // vk libplacebo
+            var context = new VaapiAmdFullContext(state, options, doVkTonemap, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
             if (doVkTonemap || hasSubs)
             {
-                var libplaceboFilter = GetLibplaceboFilter(options, "bgra", doVkTonemap, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH, isMjpegEncoder);
-                mainFilters.Add(libplaceboFilter);
-                mainFilters.Add("format=vulkan");
+                AddVaapiLibplaceboFilters(context, isMjpegEncoder, mainFilters);
             }
 
             if (doVkTonemap && !hasSubs)
@@ -614,25 +613,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var overlayFilters = new List<string>();
             if (hasSubs)
             {
-                if (hasGraphicalSubs)
-                {
-                    var subW = state.SubtitleStream?.Width;
-                    var subH = state.SubtitleStream?.Height;
-                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
-                    subFilters.Add(subPreProcFilters);
-                    subFilters.Add("format=bgra");
-                }
-                else if (hasTextSubs)
-                {
-                    var framerate = state.VideoStream?.RealFrameRate;
-                    var subFramerate = hasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
-
-                    var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH, subFramerate);
-                    var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
-                    subFilters.Add(alphaSrcFilter);
-                    subFilters.Add("format=bgra");
-                    subFilters.Add(subTextSubtitlesFilter);
-                }
+                AddVaapiAmdSubtitleSourceFilters(context, subFilters);
 
                 AddVulkanHwupload(subFilters);
 
@@ -645,19 +626,54 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
                 else if (isVaapiEncoder)
                 {
-                    // OUTPUT vaapi(nv12) surface(vram)
-                    // map from vulkan/drm to vaapi via interop (Polaris/gfx8+).
-                    AddVulkanToVaapiMapping(overlayFilters);
-
-                    // clear the surf->meta_offset and output nv12
-                    AddVkTonemapScaleVaapiFilter(overlayFilters, doVkTonemap, options);
-
-                    // hw deint
-                    AddVaapiHwDeinterlaceFilter(state, options, overlayFilters, doDeintH2645);
+                    AddVaapiVulkanOverlayOutput(context, overlayFilters, doDeintH2645);
                 }
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void AddVaapiAmdSubtitleSourceFilters(VaapiAmdFullContext context, List<string> subFilters)
+        {
+            if (context.HasGraphicalSubs)
+            {
+                var subW = context.State.SubtitleStream?.Width;
+                var subH = context.State.SubtitleStream?.Height;
+                var subPreProcFilters = GetGraphicalSubPreProcessFilters(context.SwpInW, context.SwpInH, subW, subH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                subFilters.Add(subPreProcFilters);
+                subFilters.Add("format=bgra");
+            }
+            else if (context.HasTextSubs)
+            {
+                var framerate = context.State.VideoStream?.RealFrameRate;
+                var subFramerate = context.HasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
+
+                var alphaSrcFilter = GetAlphaSrcFilter(context.State, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH, subFramerate);
+                var subTextSubtitlesFilter = GetTextSubtitlesFilter(context.State, true, true);
+                subFilters.Add(alphaSrcFilter);
+                subFilters.Add("format=bgra");
+                subFilters.Add(subTextSubtitlesFilter);
+            }
+        }
+
+        private void AddVaapiVulkanOverlayOutput(VaapiAmdFullContext context, List<string> overlayFilters, bool doDeintH2645)
+        {
+            // OUTPUT vaapi(nv12) surface(vram)
+            // map from vulkan/drm to vaapi via interop (Polaris/gfx8+).
+            AddVulkanToVaapiMapping(overlayFilters);
+
+            // clear the surf->meta_offset and output nv12
+            AddVkTonemapScaleVaapiFilter(overlayFilters, context.DoVkTonemap, context.Options);
+
+            // hw deint
+            AddVaapiHwDeinterlaceFilter(context.State, context.Options, overlayFilters, doDeintH2645);
+        }
+
+        private void AddVaapiLibplaceboFilters(VaapiAmdFullContext context, bool isMjpegEncoder, List<string> mainFilters)
+        {
+            var libplaceboFilter = GetLibplaceboFilter(context.Options, "bgra", context.DoVkTonemap, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH, isMjpegEncoder);
+            mainFilters.Add(libplaceboFilter);
+            mainFilters.Add("format=vulkan");
         }
 
         private static string ApplyAmdVaapiMjpegFullRange(string hwScaleFilter, bool isMjpegEncoder, bool doVkTonemap)
@@ -955,6 +971,20 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? SwpInH,
             int? SubW,
             int? SubH,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH);
+
+        private readonly record struct VaapiAmdFullContext(
+            EncodingJobInfo State,
+            EncodingOptions Options,
+            bool DoVkTonemap,
+            bool HasGraphicalSubs,
+            bool HasTextSubs,
+            bool HasAssSubs,
+            int? SwpInW,
+            int? SwpInH,
             int? ReqW,
             int? ReqH,
             int? ReqMaxW,
