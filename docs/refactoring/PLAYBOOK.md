@@ -19,7 +19,9 @@ recipes are the protection; the tests are the backstop.
    methods (see Recipe D), and any other single recipe applied the same way to several
    methods **of one file** when no single application scores `UP` but together they do (each
    alone `FLAT`, never `DOWN`). Measure each application alone first and say so in the commit
-   message, which lists the methods; every check runs on the combined change.
+   message, which lists the methods; every check runs on the combined change. A pair of steps of
+   two different recipes in one file, each alone `FLAT` and together `UP`, may also be one commit,
+   with the message naming both recipes. Never more than two recipes in one commit.
 2. **Re-measure after every step, before committing it.** If the Code Health score did not
    improve, revert. A step that raises the score but brings a smell category new to the file,
    makes an already flagged method worse, or creates a method with *Excess Number of Function
@@ -96,6 +98,34 @@ blocks of nested logic). Each "bump" is a missing method.
    above when it produces a single value or none. Keep the statements and their order as they
    were. This is allowed because a single complex statement can carry the complexity (for
    example many `??` operators); the step must still score `UP`.
+10. **A block that leaves a loop iteration with `continue`.** A block inside a loop body, in which
+    some paths end in `continue` and the others fall out of the block, moves to a method that
+    returns `bool`. Each `continue;` that targeted the enclosing loop becomes `return true;`, the
+    end of the block becomes `return false;`, and the call site is
+    `if (Helper(...)) { continue; }`. Every other statement moves unchanged, in the same order.
+    Only when the block contains no loop and no `switch` of its own, no `break`, `return` or `yield`,
+    and assigns no local variable that is read after the block (it may change objects it is
+    passed, such as a list, as rule 9 allows). If the block contains `await`, the method is
+    `async Task<bool>`.
+11. **A large `switch` expression: a suffix of its arms.** The last arms of the switch, together
+    with its discard arm, move to a new method that returns the switch expression of those arms;
+    the original keeps its first arms and gets the discard arm `_ => Helper(x)`. The arms keep their
+    order, guards (`when`) and patterns, so the first matching arm is the same as before, and the
+    original's discard arm (including a `throw`) moves unchanged into the helper. Never take arms
+    from the middle.
+12. **Shared inputs (a context struct).** A block that needs more than four values from its method
+    may take them as one `private readonly record struct`, nested in the class at the end of the
+    file that holds the method (one per method). Only when:
+    - the members are values the block only reads: locals that are not assigned between the
+      struct's construction and the end of the block, and references (a list, the `state` object)
+      whose contents the block may change, as before; never a local the block assigns;
+    - the struct is constructed once, with `new FooContext(...)`, immediately before the first
+      block that uses it, and later blocks reuse it;
+    - inside the moved code, each local `x` that became a member is replaced by `context.X` (the
+      same name with an upper-case first letter), and nothing else changes;
+    - the new method has at most four parameters, the context included, and the struct at most
+      twelve members.
+    The struct is `private`, so no accessibility is widened.
 
 **Before:**
 
@@ -255,8 +285,28 @@ If the build then fails with CS8602 or CS8629, because the code after the condit
 on a null check inside it, see
 [Nullable flow analysis](#nullable-flow-analysis-recipes-e-and-p).
 
-**An `out` variable the expression already declares** becomes an `out` parameter of the
-predicate, when the code after the condition uses it. This is not the invented `out`
+**An `out` variable the expression assigns only on some paths** (`TryParse(a, out x) &&
+TryParse(b, out y) && ...`) fails to compile as an `out` parameter with CS0177, because the
+compiler wants every `out` parameter assigned on every path. The predicate then starts with one
+statement `x = default;` for each such parameter and returns the expression unchanged. The caller
+reads the `out` variables only where it read them before, after the condition is true, so the
+values are the same:
+
+```csharp
+private static bool TryParseDimensions(string[] parts, out int w, out int h)
+{
+    w = default;
+    h = default;
+    return parts.Length == 2 && int.TryParse(parts[0], out w) && int.TryParse(parts[1], out h) && w > 0 && h > 0;
+}
+```
+
+**A predicate that calls a local function.** When the expression calls a local function of the
+method, the predicate is a local function too, declared next to the one it calls, taking the
+values it reads as parameters. A private method cannot reach a local function.
+
+**An `out` variable the expression already declares** becomes an `out` parameter of the predicate,
+when the code after the condition uses it. This is not the invented `out`
 parameter Recipe E forbids: the expression had it already. Declare it as an `out` parameter
 of the predicate and pass it with `out var` at the call site. Inside the predicate, the
 declaration `out var x` becomes `out x`, because it now assigns the parameter; every other
@@ -380,9 +430,9 @@ private static bool IsLevelAbove150([NotNullWhen(true)] int? level)
 The step is kept only if it still scores `UP`: a smaller conditional that leaves the guard
 terms behind may not lower the method's complexity enough.
 
-Still not covered, so still reported: an `out` variable the expression assigns only on some
-paths (CS0177), an `out` argument that writes to an existing variable, and a pattern variable
-(`is Video video`) that the code after the condition uses.
+Still not covered, so still reported: an `out` argument that writes to an existing variable, and a
+pattern variable (`is Video video`) that the code after the condition uses. (An `out` variable the
+expression assigns only on some paths is covered by Recipe P, `x = default;`.)
 
 ---
 
@@ -417,6 +467,12 @@ and the other conditions of this recipe hold: the copies are identical character
 apart from that one value and the names of the variables passed in, and each call site passes
 the value its copy used. The value moves from the body to the call sites, so the guard is run
 with `--dedup` and every value must still occur.
+
+**Copies that differ in two values.** Copies identical character for character except for two
+values (a base path and a log-message literal) may be merged into one `private` helper that takes
+those two values as parameters, when the helper has at most four parameters in all and each call
+site passes the values its own copy used. The values move to the call sites, so the guard runs
+with `--dedup` and every value must still occur. Three or more differing values stay as they are.
 
 **Copies that differ only in a type** (the same body, once for `int` and once for `double`)
 become one generic `private` helper. Its constraints provide exactly the operations the copies
@@ -578,3 +634,9 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-17 | Recipe S: a split that scores `FLAT` (never `DOWN`) is kept as a pair with the step it enables, when the pair scores `UP` against the score before the split; *Primitive Obsession* counts as a file-level smell for this. | R3-33 `StreamBuilder.VideoStream`: a split of small methods scored FLAT (8.67), and then six extractions that were DOWN before (7.70 to 7.73) scored UP (8.72 to 8.75). R3-27 `ProbeResultNormalizer`: a second split FLAT (8.54), with the predicate step on top 8.79 UP. Both agents correctly did not commit the pair under the old wording. Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
 | 2026-10-17 | Recipe D: an identical copy may call a helper that lives in another part of the same partial class, when the helper is not widened and its body is identical to the copy. | R3-05 `EncodingHelper.IntelFilters`: `GetIntelVidFilterChain` called `IsQsvOclSupported`, `IsIntelDx11OclSupported` and `IsIntelVaapiOclSupported` from `EncodingHelper.HwDecoders.cs` (bodies identical, checked); R2-01 `EncodingHelper` did the same across its split files and asked for a ruling. Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
 | 2026-10-18 | Recipe P: the predicate may take a leading run of the terms of an `||` or `&&` chain, the remaining terms staying at the call site in order. | R3-03 `EncodingHelper.VideoEncoderParams` `IsGopOnlyKeyFrameEncoder`: the first seven of eleven `||` terms became `IsGopOnlyH264OrHevcKeyFrameEncoder` (+0.17); the agent asked for a ruling. Nullable case 3 already used the same shape for `&&` chains. Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
+| 2026-10-18 | Recipe E rule 10: a block inside a loop that ends in `continue` on some paths moves to a `bool` method (`continue` becomes `return true`, falling out becomes `return false`, the call site is `if (Helper(...)) { continue; }`). | Blocked `ApplyTranscodingConditions` (10 case guards), `ProbeResultNormalizer.Itunes` (`if (reader.IsEmptyElement) { reader.Read(); continue; }` in three methods; R3-19). Blocks that mix `continue` with `return` (`GetExternalSubtitleProfile`) are not covered. Compile-tested and compared with the original on 20,000 random inputs. Adopted by the campaign owner. |
+| 2026-10-18 | Recipe E rule 11: a suffix of the arms of a large `switch` expression, with the discard arm, moves to a helper; the original gets `_ => Helper(x)`. | Mapping switches blocked `DownMixAlgorithmsHelper.GuessLayoutFromChannelCount` (cc 11), `GetTranscodeReasonForFailedCondition` (cc 28), `GetExtraTypeNameKey` (cc 14), `HlsCodecStringHelpers` level and profile switches (cc 13 each), `AppendVaapiCompressionLevel`, `AppendSvtAv1Preset`. Compared with the original on 20,000 random inputs, including a `when` guard and a `throw` arm. Adopted by the campaign owner. |
+| 2026-10-18 | Recipe E rule 12: a private readonly record struct carries the shared read-only inputs of a block that needs more than four values; the moved code reads `context.X`. | The sw-decoder, hw-scale and subtitle blocks of `GetIntelQsvDx11VidFiltersPrefered`, `GetIntelQsvVaapiVidFiltersPrefered`, `GetAmdDx11VidFiltersPrefered`, `GetNvidiaVidFiltersPrefered`, `GetAppleVidFiltersPreferred`, `GetRkmppVidFiltersPrefered` and the three Vaapi methods need 8 to 17 shared values; every extraction was WORSE on Excess Number of Function Arguments (R3-05, R3-06, R3-31, R3-37, R3-38, R3-40; R2-01). Agents also asked for it (R3-05, R3-37, R3-40). Compiled under warnings as errors and compared with the original on random inputs. Adopted by the campaign owner. |
+| 2026-10-18 | Recipe P: an `out` variable assigned only on some paths is allowed, the predicate starting with `x = default;` for each such parameter; and a predicate may be a local function when the expression calls a local function. | CS0177 blocked `GetAspectRatio` and `IsNearSquarePixelSar` (R3-24), `FetchWtvInfo` (R04), `GetH26xOrAv1Encoder` and `GetMjpegEncoder` (R01); a local-function predicate scored 8.26 UP on `PrepareExtra` (R3-17) but was held back. Both compiled under warnings as errors and behaved identically on random inputs. Adopted by the campaign owner. |
+| 2026-10-18 | Recipe D: copies that differ in two values may be merged into one helper of at most four parameters. | `PathManager.GetAttachmentFolderPath` and `GetSubtitleFolderPath` differ in the cache base path and a log-message literal (R3-52). Adopted by the campaign owner. |
+| 2026-10-18 | Rule 1: a pair of steps of two different recipes in one file, each alone FLAT and together UP, may be one commit, naming both recipes. | R3-04 `EncodingHelper`: a predicate on the `preventHlsAudioCopy` initializer (FLAT) plus an extraction in `GetInputModifier` (FLAT) scored 7.55 together (from 7.32). Adopted by the campaign owner. |
