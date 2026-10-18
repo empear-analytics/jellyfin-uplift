@@ -54,15 +54,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (IsDtsAudioCodec(audioCodec))
             {
-#pragma warning disable SA1008
-                return (inputChannels, outputChannels) switch
-                {
-                    ( >= 6, >= 6 or 0) => Math.Min(768000, bitrate),
-                    ( > 0, > 0) => Math.Min(outputChannels * 136000, bitrate),
-                    ( > 0, _) => Math.Min(inputChannels * 136000, bitrate),
-                    (_, _) => Math.Min(672000, bitrate)
-                };
-#pragma warning restore SA1008
+                return GetAudioDtsBitrate(inputChannels, outputChannels, bitrate);
             }
 
             // Empty bitrate area is not allow on iOS
@@ -148,6 +140,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return GetAudioTranscodeChannels(state, request, codec, resultChannels);
+        }
+
+        private static int GetAudioDtsBitrate(int inputChannels, int outputChannels, int bitrate)
+        {
+#pragma warning disable SA1008
+            return (inputChannels, outputChannels) switch
+            {
+                ( >= 6, >= 6 or 0) => Math.Min(768000, bitrate),
+                ( > 0, > 0) => Math.Min(outputChannels * 136000, bitrate),
+                ( > 0, _) => Math.Min(inputChannels * 136000, bitrate),
+                (_, _) => Math.Min(672000, bitrate)
+            };
+#pragma warning restore SA1008
         }
     }
 }
