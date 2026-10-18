@@ -233,22 +233,7 @@ namespace MediaBrowser.Model.Dlna
         {
             foreach (var profile in subtitleProfiles)
             {
-                if (IsNeitherExternalNorHls(profile))
-                {
-                    continue;
-                }
-
-                if (IsHlsWithoutTranscode(profile, playMethod))
-                {
-                    continue;
-                }
-
-                if (!profile.SupportsLanguage(subtitleStream.Language))
-                {
-                    continue;
-                }
-
-                if (IsUnextractableEmbeddedSubtitle(subtitleStream, playMethod, transcoderSupport))
+                if (IsProfileUnusableForExternal(profile, subtitleStream, playMethod, transcoderSupport))
                 {
                     continue;
                 }
@@ -283,6 +268,31 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return null;
+        }
+
+        private static bool IsProfileUnusableForExternal(SubtitleProfile profile, MediaStream subtitleStream, PlayMethod playMethod, ITranscoderSupport transcoderSupport)
+        {
+            if (IsNeitherExternalNorHls(profile))
+            {
+                return true;
+            }
+
+            if (IsHlsWithoutTranscode(profile, playMethod))
+            {
+                return true;
+            }
+
+            if (!profile.SupportsLanguage(subtitleStream.Language))
+            {
+                return true;
+            }
+
+            if (IsUnextractableEmbeddedSubtitle(subtitleStream, playMethod, transcoderSupport))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private static bool IsNeitherExternalNorHls(SubtitleProfile profile)
