@@ -53,8 +53,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isSwDecoder = string.IsNullOrEmpty(vidDecoder);
             var isSwEncoder = !vidEncoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
             var isVaapiFullSupported = IsVaapiFullSupportedOnLinux(state, isLinux);
-            var isVaapiOclSupported = isVaapiFullSupported && IsOpenclFullSupported();
-            var isVaapiVkSupported = isVaapiFullSupported && IsVulkanFullSupported();
+            var isVaapiOclSupported = IsVaapiFullAndOpenclSupported(isVaapiFullSupported);
+            var isVaapiVkSupported = IsVaapiFullAndVulkanSupported(isVaapiFullSupported);
 
             // legacy vaapi pipeline(copy-back)
             if (UseLegacyHwPipeline(isSwDecoder, isSwEncoder, isVaapiOclSupported))
@@ -92,6 +92,16 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // Intel i965 and Amd legacy driver path, only featuring scale and deinterlace support.
             return GetVaapiLimitedVidFiltersPrefered(state, options, vidDecoder, vidEncoder);
+        }
+
+        private bool IsVaapiFullAndOpenclSupported(bool isVaapiFullSupported)
+        {
+            return isVaapiFullSupported && IsOpenclFullSupported();
+        }
+
+        private bool IsVaapiFullAndVulkanSupported(bool isVaapiFullSupported)
+        {
+            return isVaapiFullSupported && IsVulkanFullSupported();
         }
 
         private bool UseLegacyHwPipeline(bool isSwDecoder, bool isSwEncoder, bool isHwOclSupported)
