@@ -1153,33 +1153,46 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (!is8_10bitSwFormatsRkmpp)
+            var context = new HwDecoderRkmppContext(
+                state,
+                options,
+                videoStream,
+                bitDepth,
+                hwSurface,
+                isAfbcSupported,
+                is8_10bitSwFormatsRkmpp);
+            return ResolveRkmppWideSwFormatAccelType(context);
+        }
+
+        private string ResolveRkmppWideSwFormatAccelType(HwDecoderRkmppContext context)
+        {
+            if (!context.Is8_10bitSwFormatsRkmpp)
             {
                 return null;
             }
 
-            if (IsAvcOrH264Codec(videoStream))
+            if (IsAvcOrH264Codec(context.VideoStream))
             {
-                var accelType = GetHwaccelType(state, options, "h264", bitDepth, hwSurface);
-                return AppendAfbcRgaOption(accelType, isAfbcSupported);
+                var accelType = GetHwaccelType(context.State, context.Options, "h264", context.BitDepth, context.HwSurface);
+                return AppendAfbcRgaOption(accelType, context.IsAfbcSupported);
             }
 
-            if (IsHevcOrH265Codec(videoStream))
+            if (IsHevcOrH265Codec(context.VideoStream))
             {
-                var accelType = GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
-                return AppendAfbcRgaOption(accelType, isAfbcSupported);
+                var accelType = GetHwaccelType(context.State, context.Options, "hevc", context.BitDepth, context.HwSurface);
+                return AppendAfbcRgaOption(accelType, context.IsAfbcSupported);
             }
 
-            if (string.Equals(videoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(context.VideoStream.Codec, "vp9", StringComparison.OrdinalIgnoreCase))
             {
-                var accelType = GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
-                return AppendAfbcRgaOption(accelType, isAfbcSupported);
+                var accelType = GetHwaccelType(context.State, context.Options, "vp9", context.BitDepth, context.HwSurface);
+                return AppendAfbcRgaOption(accelType, context.IsAfbcSupported);
             }
 
-            if (string.Equals(videoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(context.VideoStream.Codec, "av1", StringComparison.OrdinalIgnoreCase))
             {
                 // there's an issue about AV1 AFBC on RK3588, disable it for now until it's fixed upstream
-                return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
+                return GetHwaccelType(context.State, context.Options, "av1", context.BitDepth, context.HwSurface);
             }
 
             return null;
@@ -1265,5 +1278,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             MediaStream VideoStream,
             int BitDepth,
             bool HwSurface);
+
+        private readonly record struct HwDecoderRkmppContext(
+            EncodingJobInfo State,
+            EncodingOptions Options,
+            MediaStream VideoStream,
+            int BitDepth,
+            bool HwSurface,
+            bool IsAfbcSupported,
+            bool Is8_10bitSwFormatsRkmpp);
     }
 }
