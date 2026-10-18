@@ -118,7 +118,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // sw deint
                 AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
-                var outFormat = doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
+                var outFormat = GetRkmppSwOutFormat(doOclTonemap, hasGraphicalSubs);
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
                 swScaleFilter = AppendRkmppSwScaleOptions(swScaleFilter, isMjpegEncoder, doOclTonemap);
 
@@ -256,6 +256,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             return isRkmppEncoder
                 && (vidEncoder.Contains("h264", StringComparison.OrdinalIgnoreCase)
                     || vidEncoder.Contains("hevc", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static string GetRkmppSwOutFormat(bool doOclTonemap, bool hasGraphicalSubs)
+        {
+            return doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
         }
     }
 }
