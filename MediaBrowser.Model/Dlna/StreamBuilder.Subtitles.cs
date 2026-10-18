@@ -149,12 +149,18 @@ namespace MediaBrowser.Model.Dlna
             }
 
             // Look for an external or hls profile that matches the stream type (text/graphical) and doesn't require conversion
-            return GetExternalSubtitleProfile(mediaSource, subtitleStream, subtitleProfiles, playMethod, transcoderSupport, false) ??
-                GetExternalSubtitleProfile(mediaSource, subtitleStream, subtitleProfiles, playMethod, transcoderSupport, true) ??
+            var context = new ExternalOrEncodeContext(mediaSource, subtitleStream, subtitleProfiles, playMethod, transcoderSupport);
+            return GetExternalOrEncodeSubtitleProfile(context);
+        }
+
+        private static SubtitleProfile GetExternalOrEncodeSubtitleProfile(ExternalOrEncodeContext context)
+        {
+            return GetExternalSubtitleProfile(context.MediaSource, context.SubtitleStream, context.SubtitleProfiles, context.PlayMethod, context.TranscoderSupport, false) ??
+                GetExternalSubtitleProfile(context.MediaSource, context.SubtitleStream, context.SubtitleProfiles, context.PlayMethod, context.TranscoderSupport, true) ??
                 new SubtitleProfile
                 {
                     Method = SubtitleDeliveryMethod.Encode,
-                    Format = subtitleStream.Codec
+                    Format = context.SubtitleStream.Codec
                 };
         }
 
@@ -347,5 +353,12 @@ namespace MediaBrowser.Model.Dlna
                 && subtitleStream.IsVobSubSubtitleStream
                 && (!subtitleStream.IsExternal || subtitleStream.Path?.EndsWith(".mks", StringComparison.OrdinalIgnoreCase) == true);
         }
+
+        private readonly record struct ExternalOrEncodeContext(
+            MediaSourceInfo MediaSource,
+            MediaStream SubtitleStream,
+            SubtitleProfile[] SubtitleProfiles,
+            PlayMethod PlayMethod,
+            ITranscoderSupport TranscoderSupport);
     }
 }
