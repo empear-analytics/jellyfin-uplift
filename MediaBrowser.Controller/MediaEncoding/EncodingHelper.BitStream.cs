@@ -202,12 +202,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
-            var stream = streamType switch
-            {
-                MediaStreamType.Audio => state.AudioStream,
-                MediaStreamType.Video => state.VideoStream,
-                _ => state.VideoStream
-            };
+            var stream = GetBitStreamSourceStream(state, streamType);
             // TODO This is auto inserted into the mpegts mux so it might not be needed.
             // https://www.ffmpeg.org/ffmpeg-bitstream-filters.html#h264_005fmp4toannexb
             if (IsH264(stream))
@@ -232,6 +227,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return null;
+        }
+
+        private static MediaStream GetBitStreamSourceStream(EncodingJobInfo state, MediaStreamType streamType)
+        {
+            return streamType switch
+            {
+                MediaStreamType.Audio => state.AudioStream,
+                MediaStreamType.Video => state.VideoStream,
+                _ => state.VideoStream
+            };
         }
 
         private string GetHevcBitStreamArgs(EncodingJobInfo state)
