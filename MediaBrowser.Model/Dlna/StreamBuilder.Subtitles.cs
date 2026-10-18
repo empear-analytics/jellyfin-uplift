@@ -122,22 +122,7 @@ namespace MediaBrowser.Model.Dlna
                 // Look for supported embedded subs of the same format
                 foreach (var profile in subtitleProfiles)
                 {
-                    if (!profile.SupportsLanguage(subtitleStream.Language))
-                    {
-                        continue;
-                    }
-
-                    if (profile.Method != SubtitleDeliveryMethod.Embed)
-                    {
-                        continue;
-                    }
-
-                    if (!ContainerHelper.ContainsContainer(profile.Container, outputContainer))
-                    {
-                        continue;
-                    }
-
-                    if (IsEmbedUnsupportedForTranscode(playMethod, outputContainer))
+                    if (IsProfileUnusableForEmbed(profile, subtitleStream, playMethod, outputContainer))
                     {
                         continue;
                     }
@@ -151,22 +136,7 @@ namespace MediaBrowser.Model.Dlna
                 // Look for supported embedded subs of a convertible format
                 foreach (var profile in subtitleProfiles)
                 {
-                    if (!profile.SupportsLanguage(subtitleStream.Language))
-                    {
-                        continue;
-                    }
-
-                    if (profile.Method != SubtitleDeliveryMethod.Embed)
-                    {
-                        continue;
-                    }
-
-                    if (!ContainerHelper.ContainsContainer(profile.Container, outputContainer))
-                    {
-                        continue;
-                    }
-
-                    if (IsEmbedUnsupportedForTranscode(playMethod, outputContainer))
+                    if (IsProfileUnusableForEmbed(profile, subtitleStream, playMethod, outputContainer))
                     {
                         continue;
                     }
@@ -186,6 +156,31 @@ namespace MediaBrowser.Model.Dlna
                     Method = SubtitleDeliveryMethod.Encode,
                     Format = subtitleStream.Codec
                 };
+        }
+
+        private static bool IsProfileUnusableForEmbed(SubtitleProfile profile, MediaStream subtitleStream, PlayMethod playMethod, string? outputContainer)
+        {
+            if (!profile.SupportsLanguage(subtitleStream.Language))
+            {
+                return true;
+            }
+
+            if (profile.Method != SubtitleDeliveryMethod.Embed)
+            {
+                return true;
+            }
+
+            if (!ContainerHelper.ContainsContainer(profile.Container, outputContainer))
+            {
+                return true;
+            }
+
+            if (IsEmbedUnsupportedForTranscode(playMethod, outputContainer))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private static bool IsEmbeddedFormatMatch(MediaStream subtitleStream, SubtitleProfile profile)
