@@ -183,5 +183,10 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             return resultChannels;
         }
+
+        private static int GetAudioDefaultBitrate(MediaStream audioStream, int? outputAudioChannels)
+        {
+            return 128000 * (outputAudioChannels ?? audioStream.Channels ?? 2);
+        }
     }
 }

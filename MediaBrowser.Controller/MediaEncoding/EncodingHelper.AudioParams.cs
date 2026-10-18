@@ -60,7 +60,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // Empty bitrate area is not allow on iOS
             // Default audio bitrate to 128K per channel if we don't have codec specific defaults
             // https://ffmpeg.org/ffmpeg-codecs.html#toc-Codec-Options
-            return 128000 * (outputAudioChannels ?? audioStream.Channels ?? 2);
+            return GetAudioDefaultBitrate(audioStream, outputAudioChannels);
         }
 
         public string GetAudioVbrModeParam(string encoder, int bitrate, int channels)
