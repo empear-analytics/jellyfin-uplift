@@ -162,11 +162,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var swpOutH = swapOutputWandH ? outWidth.Value : outHeight.Value;
 
             var arg1 = isSizeFixed ? $"=w={swpOutW}:h={swpOutH}" : string.Empty;
-            var arg2 = isFormatFixed ? $"format={videoFormat}" : string.Empty;
-            if (isFormatFixed)
-            {
-                arg2 = (isSizeFixed ? ':' : '=') + arg2;
-            }
+            var arg2 = GetScaleFormatArgument(videoFormat, isSizeFixed, isFormatFixed);
 
             if (NeedsHwScaleFilter(hwScaleSuffix, isSizeFixed, isFormatFixed))
             {
@@ -180,6 +176,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static string GetScaleFormatArgument(string videoFormat, bool isSizeFixed, bool isFormatFixed)
+        {
+            var arg2 = isFormatFixed ? $"format={videoFormat}" : string.Empty;
+            if (isFormatFixed)
+            {
+                arg2 = (isSizeFixed ? ':' : '=') + arg2;
+            }
+
+            return arg2;
         }
 
         private static bool IsOutputSizeChanged(int? videoWidth, int? videoHeight, int? outWidth, int? outHeight)
