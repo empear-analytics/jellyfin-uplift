@@ -106,19 +106,9 @@ namespace MediaBrowser.Model.Dlna
 
                     case ProfileConditionValue.AudioChannels:
                         {
-                            if (string.IsNullOrEmpty(qualifier))
+                            if (IsDisabledByQualifier(qualifier, enableQualifiedConditions, enableNonQualifiedConditions))
                             {
-                                if (!enableNonQualifiedConditions)
-                                {
-                                    continue;
-                                }
-                            }
-                            else
-                            {
-                                if (!enableQualifiedConditions)
-                                {
-                                    continue;
-                                }
+                                continue;
                             }
 
                             ApplyAudioChannelsCondition(item, condition, value, qualifier);
@@ -152,19 +142,9 @@ namespace MediaBrowser.Model.Dlna
 
                     case ProfileConditionValue.IsInterlaced:
                         {
-                            if (string.IsNullOrEmpty(qualifier))
+                            if (IsDisabledByQualifier(qualifier, enableQualifiedConditions, enableNonQualifiedConditions))
                             {
-                                if (!enableNonQualifiedConditions)
-                                {
-                                    continue;
-                                }
-                            }
-                            else
-                            {
-                                if (!enableQualifiedConditions)
-                                {
-                                    continue;
-                                }
+                                continue;
                             }
 
                             ApplyInterlacedCondition(item, condition, value, qualifier);
@@ -187,19 +167,9 @@ namespace MediaBrowser.Model.Dlna
 
                     case ProfileConditionValue.RefFrames:
                         {
-                            if (string.IsNullOrEmpty(qualifier))
+                            if (IsDisabledByQualifier(qualifier, enableQualifiedConditions, enableNonQualifiedConditions))
                             {
-                                if (!enableNonQualifiedConditions)
-                                {
-                                    continue;
-                                }
-                            }
-                            else
-                            {
-                                if (!enableQualifiedConditions)
-                                {
-                                    continue;
-                                }
+                                continue;
                             }
 
                             ApplyRefFramesCondition(item, condition, value, qualifier);
@@ -341,6 +311,26 @@ namespace MediaBrowser.Model.Dlna
                         break;
                 }
             }
+        }
+
+        private static bool IsDisabledByQualifier(string? qualifier, bool enableQualifiedConditions, bool enableNonQualifiedConditions)
+        {
+            if (string.IsNullOrEmpty(qualifier))
+            {
+                if (!enableNonQualifiedConditions)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (!enableQualifiedConditions)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void ApplyVideoProfileCondition(StreamInfo item, ProfileCondition condition, string conditionValue, string? qualifier)
