@@ -135,12 +135,12 @@ Reply with exactly this, filled in:
 ```
 Task: R4-42 (MediaBrowser.Controller/MediaEncoding/EncodingHelper.StreamCopy.cs)
 Baseline score: 9.38
-Final score:    <x.xx>
-Steps completed: <n> of 3
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    9.68
+Steps completed: 2 of 3
+Steps reverted:  1 (step 3, IsIncompatibleRangeType: its only smell is the 5-parameter signature, and the signature is frozen for this run; no recipe applies without changing it)
+Smells left without a recipe: Excess Number of Function Arguments in IsIncompatibleRangeType (5 arguments, signature frozen)
+Build: PASS (0 errors, 211 warnings, same as base)
+Tests: PASS (full solution; Controller 1411, Integration 429 passed, 3 skipped)
+Commits: 27a2029c06 (CanCopyGivenRangeRotationSizeAndFrameRate, 9.38 to 9.53, UP), 737cf6ab3f (CanCopyGivenRequestedProfile, 9.53 to 9.68, UP), plus this report commit
+Unsure about: (1) step 1 uses Recipe E rule 12 on the whole `if (IsIncompatibleRangeType(...))` statement, guard included, with a helper that ends in `return true;` (the rule-7/10 end-of-block pattern, not spelled out for a block that falls through); (2) step 2 uses the same shape with three plain parameters, no struct
 ```
