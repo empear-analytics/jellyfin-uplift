@@ -68,11 +68,7 @@ namespace Emby.Server.Implementations.Library
                     continue;
                 }
 
-                if (IsAliasFollowedById(shortAttr, subStr, attributeEnd))
-                {
-                    // We were searching for a shortened attribute, but it's followed by "id" - let's skip it.
-                    attributeEnd += 2;
-                }
+                attributeEnd = AttributeValueSkipId(shortAttr, subStr, attributeEnd);
 
                 // attributeEnd points at '='.
                 // We need at least 1 more character and the closing bracket after that.
@@ -98,6 +94,17 @@ namespace Emby.Server.Implementations.Library
             }
 
             return FindImdbIdByPattern(str, attribute);
+        }
+
+        private static int AttributeValueSkipId(ReadOnlySpan<char> shortAttr, ReadOnlySpan<char> subStr, int attributeEnd)
+        {
+            if (IsAliasFollowedById(shortAttr, subStr, attributeEnd))
+            {
+                // We were searching for a shortened attribute, but it's followed by "id" - let's skip it.
+                attributeEnd += 2;
+            }
+
+            return attributeEnd;
         }
 
         private static char GetAttributeCloser(char attributeOpener)
