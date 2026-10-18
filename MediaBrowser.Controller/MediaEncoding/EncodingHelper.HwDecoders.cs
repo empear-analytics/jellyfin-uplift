@@ -84,17 +84,22 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            var context = new HwDecoderByTypeContext(state, options, videoStream, bitDepth, hardwareAccelerationType);
+            return ResolveHwDecoderUnlessUnsupportedProfile(context);
+        }
+
+        private string ResolveHwDecoderUnlessUnsupportedProfile(HwDecoderByTypeContext context)
+        {
             // Block unsupported H.264 Hi422P and Hi444PP profiles, which can be encoded with 4:2:0 pixel format
-            if (IsH264Hi422OrHi444Profile(videoStream))
+            if (IsH264Hi422OrHi444Profile(context.VideoStream))
             {
                 // VideoToolbox on Apple Silicon has H.264 Hi444PP and theoretically also has Hi422P
-                if (!IsAppleSiliconVideoToolbox(hardwareAccelerationType))
+                if (!IsAppleSiliconVideoToolbox(context.HardwareAccelerationType))
                 {
                     return null;
                 }
             }
 
-            var context = new HwDecoderByTypeContext(state, options, videoStream, bitDepth, hardwareAccelerationType);
             return ResolveHwDecoderByAccelerationType(context);
         }
 
