@@ -972,41 +972,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         public string GetInputModifier(EncodingJobInfo state, EncodingOptions encodingOptions, string segmentContainer)
         {
-            var inputModifier = string.Empty;
-            var analyzeDurationArgument = GetFfmpegAnalyzeDurationArg(state);
-
-            if (!string.IsNullOrEmpty(analyzeDurationArgument))
-            {
-                inputModifier += " " + analyzeDurationArgument;
-            }
-
-            inputModifier = inputModifier.Trim();
-
-            // Apply -probesize if configured
-            var ffmpegProbeSizeArgument = GetFfmpegProbesizeArg();
-
-            if (!string.IsNullOrEmpty(ffmpegProbeSizeArgument))
-            {
-                inputModifier += " " + ffmpegProbeSizeArgument;
-            }
-
-            var userAgentParam = GetUserAgentParam(state);
-
-            if (!string.IsNullOrEmpty(userAgentParam))
-            {
-                inputModifier += " " + userAgentParam;
-            }
-
-            inputModifier = inputModifier.Trim();
-
-            var refererParam = GetRefererParam(state);
-
-            if (!string.IsNullOrEmpty(refererParam))
-            {
-                inputModifier += " " + refererParam;
-            }
-
-            inputModifier = inputModifier.Trim();
+            var inputModifier = GetInputProbeAndHeaderParams(state);
 
             inputModifier += " " + GetFastSeekCommandLineParameter(state, encodingOptions, segmentContainer);
             inputModifier = inputModifier.Trim();
