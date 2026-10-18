@@ -112,32 +112,15 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasAssSubs = HasAssSubtitles(state, hasSubs);
 
             /* Make main filters for video stream */
-            var mainFilters = new List<string>();
-
-            // hw deint
-            if (doDeintH2645)
-            {
-                var deintFilter = GetHwDeinterlaceFilter(state, options, "videotoolbox");
-                mainFilters.Add(deintFilter);
-            }
-
-            // hw transpose
-            if (doVtTranspose)
-            {
-                mainFilters.Add($"transpose_vt=dir={transposeDir}");
-            }
-
-            hwScaleFilter = AddAppleVtTonemapArgs(hwScaleFilter, doVtTonemap);
-
-            // hw scale & vt tonemap
-            mainFilters.Add(hwScaleFilter);
-
-            // Metal tonemap
-            if (doMetalTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "videotoolbox", "nv12", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            var mainContext = new AppleMainFilterContext(
+                state,
+                options,
+                doDeintH2645,
+                doVtTranspose,
+                doVtTonemap,
+                doMetalTonemap,
+                isMjpegEncoder);
+            var mainFilters = GetAppleMainFilters(hwScaleFilter, transposeDir, mainContext);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
@@ -168,6 +151,38 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return GetAppleLegacyHwSurfaceFilters(isVtEncoder, mainFilters, subFilters, overlayFilters);
+        }
+
+        private List<string> GetAppleMainFilters(string hwScaleFilter, string transposeDir, AppleMainFilterContext context)
+        {
+            var mainFilters = new List<string>();
+
+            // hw deint
+            if (context.DoDeintH2645)
+            {
+                var deintFilter = GetHwDeinterlaceFilter(context.State, context.Options, "videotoolbox");
+                mainFilters.Add(deintFilter);
+            }
+
+            // hw transpose
+            if (context.DoVtTranspose)
+            {
+                mainFilters.Add($"transpose_vt=dir={transposeDir}");
+            }
+
+            hwScaleFilter = AddAppleVtTonemapArgs(hwScaleFilter, context.DoVtTonemap);
+
+            // hw scale & vt tonemap
+            mainFilters.Add(hwScaleFilter);
+
+            // Metal tonemap
+            if (context.DoMetalTonemap)
+            {
+                var tonemapFilter = GetHwTonemapFilter(context.Options, "videotoolbox", "nv12", context.IsMjpegEncoder);
+                mainFilters.Add(tonemapFilter);
+            }
+
+            return mainFilters;
         }
 
         private void AddAppleSubtitleFilters(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters, AppleSubtitleFilterContext context)
@@ -210,5 +225,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? ReqH,
             int? ReqMaxW,
             int? ReqMaxH);
+
+        private readonly record struct AppleMainFilterContext(
+            EncodingJobInfo State,
+            EncodingOptions Options,
+            bool DoDeintH2645,
+            bool DoVtTranspose,
+            bool DoVtTonemap,
+            bool DoMetalTonemap,
+            bool IsMjpegEncoder);
     }
 }
