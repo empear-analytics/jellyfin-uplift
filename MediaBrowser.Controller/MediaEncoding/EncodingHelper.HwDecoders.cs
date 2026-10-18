@@ -392,31 +392,47 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
+            var context = new HwDecoderHwaccelContext(
+                hardwareAccelerationType,
+                isD3d11Supported,
+                isVaapiSupported,
+                isVideotoolboxSupported,
+                isRkmppSupported,
+                isCodecAvailable,
+                outputHwSurface,
+                stripRotationDataArgs,
+                profileMismatch,
+                isAv1);
+            return GetHwaccelTypeFromRemainingTypes(context);
+        }
+
+        private static string GetHwaccelTypeFromRemainingTypes(HwDecoderHwaccelContext context)
+        {
             // Amd d3d11va
-            if (hardwareAccelerationType == HardwareAccelerationType.amf)
+            if (context.HardwareAccelerationType == HardwareAccelerationType.amf)
             {
-                if (IsHwaccelAvailable(isD3d11Supported, isCodecAvailable))
+                if (IsHwaccelAvailable(context.IsD3d11Supported, context.IsCodecAvailable))
                 {
-                    return GetD3d11vaHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
+                    return GetD3d11vaHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
                 }
             }
 
             // Vaapi
-            if (IsVaapiHwaccelUsable(hardwareAccelerationType, isVaapiSupported, isCodecAvailable))
+            if (IsVaapiHwaccelUsable(context.HardwareAccelerationType, context.IsVaapiSupported, context.IsCodecAvailable))
             {
-                return GetVaapiHwaccelOption(outputHwSurface, stripRotationDataArgs, profileMismatch, isAv1);
+                return GetVaapiHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
             }
 
             // Apple videotoolbox
-            if (IsVideotoolboxHwaccelUsable(hardwareAccelerationType, isVideotoolboxSupported, isCodecAvailable))
+            if (IsVideotoolboxHwaccelUsable(context.HardwareAccelerationType, context.IsVideotoolboxSupported, context.IsCodecAvailable))
             {
-                return GetVideotoolboxHwaccelOption(outputHwSurface, stripRotationDataArgs);
+                return GetVideotoolboxHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
             }
 
             // Rockchip rkmpp
-            if (IsRkmppHwaccelUsable(hardwareAccelerationType, isRkmppSupported, isCodecAvailable))
+            if (IsRkmppHwaccelUsable(context.HardwareAccelerationType, context.IsRkmppSupported, context.IsCodecAvailable))
             {
-                return GetRkmppHwaccelOption(outputHwSurface, stripRotationDataArgs);
+                return GetRkmppHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
             }
 
             return null;
@@ -1311,5 +1327,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             MediaStream VideoStream,
             int BitDepth,
             HardwareAccelerationType HardwareAccelerationType);
+
+        private readonly record struct HwDecoderHwaccelContext(
+            HardwareAccelerationType HardwareAccelerationType,
+            bool IsD3d11Supported,
+            bool IsVaapiSupported,
+            bool IsVideotoolboxSupported,
+            bool IsRkmppSupported,
+            bool IsCodecAvailable,
+            bool OutputHwSurface,
+            string StripRotationDataArgs,
+            bool ProfileMismatch,
+            bool IsAv1);
     }
 }
