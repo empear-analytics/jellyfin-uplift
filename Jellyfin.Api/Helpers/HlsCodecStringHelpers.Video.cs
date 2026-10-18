@@ -193,6 +193,14 @@ public static partial class HlsCodecStringHelpers
             "yuvj420p" => "00",
             "yuv422p" => "01",
             "yuv444p" => "01",
+            _ => GetVp9ExtendedProfileString(pixelFormat)
+        };
+    }
+
+    private static string GetVp9ExtendedProfileString(string pixelFormat)
+    {
+        return pixelFormat switch
+        {
             "yuv420p10le" => "02",
             "yuv420p12le" => "02",
             "yuv422p10le" => "03",
