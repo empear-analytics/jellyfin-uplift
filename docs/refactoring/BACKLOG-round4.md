@@ -158,3 +158,4 @@ Update as tasks land.
 | Task | Baseline | Current | Model | Status |
 | --- | --- | --- | --- | --- |
 | R4-20 | 8.79 | 8.79 | Haiku | No commit. Rule 11 on GetEstimatedAudioBitrate: three suffix splits (from opus, vorbis, flac) all WORSE or DOWN (Primitive Obsession from the isMultichannel parameter). Candidate: derive isMultichannel inside the helper from channelCount. |
+| R4-34 | 9.24 | 9.24 | Haiku | No commit. Recipe G and P not applicable (no early exits, no compound condition). Rule 9 on the percent expression FLAT. The three bumps come from branches that write two outer locals (`positionTicks`, `playedToCompletion`), which the playbook forbids. Candidate: a block that writes two locals (tuple or out parameter). |
