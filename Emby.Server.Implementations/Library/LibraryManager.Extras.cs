@@ -267,10 +267,20 @@ namespace Emby.Server.Implementations.Library
             ExtraType.Trailer => "NameExtraTrailer",
             ExtraType.BehindTheScenes => "NameExtraBehindTheScenes",
             ExtraType.DeletedScene => "NameExtraDeletedScene",
+            _ => GetExtraTypeNameKeyFromInterview(extraType)
+        };
+
+        private static string GetExtraTypeNameKeyFromInterview(ExtraType extraType) => extraType switch
+        {
             ExtraType.Interview => "NameExtraInterview",
             ExtraType.Scene => "NameExtraScene",
             ExtraType.Sample => "NameExtraSample",
             ExtraType.ThemeSong => "NameExtraThemeSong",
+            _ => GetExtraTypeNameKeyFromThemeVideo(extraType)
+        };
+
+        private static string GetExtraTypeNameKeyFromThemeVideo(ExtraType extraType) => extraType switch
+        {
             ExtraType.ThemeVideo => "NameExtraThemeVideo",
             ExtraType.Featurette => "NameExtraFeaturette",
             ExtraType.Short => "NameExtraShort",
