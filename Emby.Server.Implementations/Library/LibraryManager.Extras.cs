@@ -169,7 +169,7 @@ namespace Emby.Server.Implementations.Library
             for (var i = 0; i < count; i++)
             {
                 var current = filtered[i];
-                if (current.IsDirectory && _namingOptions.AllExtrasTypesFolderNames.ContainsKey(current.Name))
+                if (IsExtrasTypeFolder(current))
                 {
                     var filesInSubFolder = _fileSystem.GetFiles(current.FullName, null, false, false);
                     var filesInSubFolderList = filesInSubFolder.ToList();
@@ -202,6 +202,11 @@ namespace Emby.Server.Implementations.Library
                     candidates.Add(new ExtraCandidate(extra, extraType, extraRule, isInMixedFolder));
                 }
             }
+        }
+
+        private bool IsExtrasTypeFolder(FileSystemMetadata current)
+        {
+            return current.IsDirectory && _namingOptions.AllExtrasTypesFolderNames.ContainsKey(current.Name);
         }
 
         private static bool IsFolderOrDiscVideo(BaseItem owner)
