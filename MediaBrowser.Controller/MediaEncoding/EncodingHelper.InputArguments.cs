@@ -359,5 +359,55 @@ namespace MediaBrowser.Controller.MediaEncoding
                 arg.Append(' ').Append(ffmpegProbeSizeArgument);
             }
         }
+
+        private static string GetStreamMapArgs(EncodingJobInfo state)
+        {
+            var args = string.Empty;
+
+            if (state.VideoStream is not null)
+            {
+                int videoStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.VideoStream);
+
+                args += string.Format(
+                    CultureInfo.InvariantCulture,
+                    "-map 0:{0}",
+                    videoStreamIndex);
+            }
+            else
+            {
+                // No known video stream
+                args += "-vn";
+            }
+
+            if (state.AudioStream is not null)
+            {
+                args = AppendAudioMapArgs(args, state);
+            }
+            else
+            {
+                args += " -map -0:a";
+            }
+
+            var subtitleMethod = state.SubtitleDeliveryMethod;
+            if (IsSubtitleExcludedFromMap(state, subtitleMethod))
+            {
+                args += " -map -0:s";
+            }
+            else if (subtitleMethod == SubtitleDeliveryMethod.Embed)
+            {
+                args = AppendEmbeddedSubtitleMapArgs(args, state);
+            }
+            else if (IsExternalGraphicalSubtitle(state))
+            {
+                int externalSubtitleStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.SubtitleStream);
+
+                args += string.Format(
+                    CultureInfo.InvariantCulture,
+                    " -map 1:{0} -sn",
+                    externalSubtitleStreamIndex);
+            }
+
+            return args;
+        }
     }
 }
