@@ -887,14 +887,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isHwmapNotUsable = hasGraphicalSubs || isUploadForOclTonemap;
             var isHwmapForSubs = NeedsHwmapForSubs(hasSubs, isVaapiDecoder);
             var isHwUnmapForTextSubs = NeedsHwUnmapForTextSubs(hasTextSubs, isVaInVaOut, isUploadForOclTonemap);
-            if (NeedsMemoryOutput(isVaapiDecoder, isSwEncoder, isUploadForOclTonemap) || isHwmapForSubs)
-            {
-                memoryOutput = true;
-
-                // OUTPUT nv12 surface(memory)
-                // prefer hwmap to hwdownload on opencl/vaapi.
-                AddLimitedMemoryOutputFilters(mainFilters, isHwmapNotUsable);
-            }
+            var context = new VaapiLimitedContext(state, hasGraphicalSubs, hasTextSubs, isVaapiEncoder, isVaapiDecoder, isSwEncoder, isUploadForOclTonemap, isHwmapForSubs, isHwmapNotUsable, isHwUnmapForTextSubs);
+            memoryOutput = AddVaapiLimitedMemoryOutput(context, mainFilters, memoryOutput);
 
             // OUTPUT nv12 surface(memory)
             if (IsSwDecodeToVaapiEncode(isSwDecoder, isVaapiEncoder))
@@ -902,17 +896,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 memoryOutput = true;
             }
 
-            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
-
-            if (isHwUnmapForTextSubs)
-            {
-                mainFilters.Add("hwmap");
-                mainFilters.Add("format=vaapi");
-            }
-            else if (NeedsVaapiUploadFromMemory(memoryOutput, isVaapiEncoder))
-            {
-                AddVaapiHwupload(mainFilters, hasGraphicalSubs);
-            }
+            AddVaapiLimitedSubtitleOutput(context, mainFilters, memoryOutput);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
@@ -935,6 +919,35 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool AddVaapiLimitedMemoryOutput(VaapiLimitedContext context, List<string> mainFilters, bool memoryOutput)
+        {
+            if (NeedsMemoryOutput(context.IsVaapiDecoder, context.IsSwEncoder, context.IsUploadForOclTonemap) || context.IsHwmapForSubs)
+            {
+                memoryOutput = true;
+
+                // OUTPUT nv12 surface(memory)
+                // prefer hwmap to hwdownload on opencl/vaapi.
+                AddLimitedMemoryOutputFilters(mainFilters, context.IsHwmapNotUsable);
+            }
+
+            return memoryOutput;
+        }
+
+        private void AddVaapiLimitedSubtitleOutput(VaapiLimitedContext context, List<string> mainFilters, bool memoryOutput)
+        {
+            AddMemoryOutputTextSubtitlesFilter(context.State, mainFilters, memoryOutput, context.HasTextSubs);
+
+            if (context.IsHwUnmapForTextSubs)
+            {
+                mainFilters.Add("hwmap");
+                mainFilters.Add("format=vaapi");
+            }
+            else if (NeedsVaapiUploadFromMemory(memoryOutput, context.IsVaapiEncoder))
+            {
+                AddVaapiHwupload(mainFilters, context.HasGraphicalSubs);
+            }
         }
 
         private static bool NeedsLimitedUploadForOclTonemap(bool doOclTonemap, bool isSwDecoder, bool isVaapiDecoder, bool isi965Driver)
@@ -1010,5 +1023,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? ReqH,
             int? ReqMaxW,
             int? ReqMaxH);
+
+        private readonly record struct VaapiLimitedContext(
+            EncodingJobInfo State,
+            bool HasGraphicalSubs,
+            bool HasTextSubs,
+            bool IsVaapiEncoder,
+            bool IsVaapiDecoder,
+            bool IsSwEncoder,
+            bool IsUploadForOclTonemap,
+            bool IsHwmapForSubs,
+            bool IsHwmapNotUsable,
+            bool IsHwUnmapForTextSubs);
     }
 }
