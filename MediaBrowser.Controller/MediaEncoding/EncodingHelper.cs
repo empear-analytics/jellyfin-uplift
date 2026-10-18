@@ -382,6 +382,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return GetInputFormatFromLegacyContainer(container);
+        }
+
+        private static string GetInputFormatFromLegacyContainer(string container)
+        {
             if (string.Equals(container, "mpg", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
@@ -417,6 +422,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
+            return GetInputFormatFromStreamingContainer(container);
+        }
+
+        private static string GetInputFormatFromStreamingContainer(string container)
+        {
             if (string.Equals(container, "rmvb", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
