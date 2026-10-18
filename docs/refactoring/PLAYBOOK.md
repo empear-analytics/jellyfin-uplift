@@ -103,8 +103,10 @@ blocks of nested logic). Each "bump" is a missing method.
     returns `bool`. Each `continue;` that targeted the enclosing loop becomes `return true;`, the
     end of the block becomes `return false;`, and the call site is
     `if (Helper(...)) { continue; }`. Every other statement moves unchanged, in the same order.
-    Only when the block contains no loop and no `switch` of its own, no `break`, `return` or `yield`,
-    and assigns no local variable that is read after the block (it may change objects it is
+    Only when the block contains no loop of its own, no `return` or `yield`, and no `break` that
+    leaves anything but a `switch` inside the block (a `switch` statement of its own is allowed:
+    its `break`s stay as they are, and each `continue;` inside it becomes `return true;`), and
+    assigns no local variable that is read after the block (it may change objects it is
     passed, such as a list, as rule 9 allows). If the block contains `await`, the method is
     `async Task<bool>`.
 11. **A large `switch` expression: a suffix of its arms.** The last arms of the switch, together
@@ -112,20 +114,42 @@ blocks of nested logic). Each "bump" is a missing method.
     the original keeps its first arms and gets the discard arm `_ => Helper(x)`. The arms keep their
     order, guards (`when`) and patterns, so the first matching arm is the same as before, and the
     original's discard arm (including a `throw`) moves unchanged into the helper. Never take arms
-    from the middle.
+    from the middle. The same applies to a `switch` **statement** whose sections end in `return`
+    (or `throw`): the last sections, together with `default:`, move to a new method holding a
+    `switch` statement of those sections, and the original's `default:` becomes
+    `default: return Helper(x);`. Sections that fall through to each other (stacked `case` labels)
+    move together. Measure the split point: a helper with more than about five sections can stay
+    a Complex Method.
 12. **Shared inputs (a context struct).** A block that needs more than four values from its method
     may take them as one `private readonly record struct`, nested in the class at the end of the
-    file that holds the method (one per method). Only when:
+    file that holds the method. A method may have two such structs when its blocks need different
+    sets of values (for example the subtitle blocks and the decoder blocks); each struct serves
+    one family of blocks and is constructed immediately before the first block that uses it.
+    Only when:
     - the members are values the block only reads: locals that are not assigned between the
       struct's construction and the end of the block, and references (a list, the `state` object)
       whose contents the block may change, as before; never a local the block assigns;
-    - the struct is constructed once, with `new FooContext(...)`, immediately before the first
-      block that uses it, and later blocks reuse it;
+    - each struct is constructed once, with `new FooContext(...)`, immediately before the first
+      block that uses it, and later blocks of its family reuse it;
     - inside the moved code, each local `x` that became a member is replaced by `context.X` (the
       same name with an upper-case first letter), and nothing else changes;
     - the new method has at most four parameters, the context included, and the struct at most
       twelve members.
-    The struct is `private`, so no accessibility is widened.
+    The struct is `private`, so no accessibility is widened. Move the whole statement that holds
+    the block (for example the whole `if (hasSubs) { ... }`, with the flag as a member of the
+    context and `state` as a plain parameter), not only its inside: leaving the guard at the call
+    site keeps the nesting and the bumps. A value used inside an interpolated string stays a plain
+    parameter when the guard reports the string as changed.
+13. **The tail of an `if` / `else if` chain.** The last branches of a chain
+    (`if (a) { ... } else if (b) { ... } else if (c) { ... } else if (d) { ... }`) move, from some
+    `else if` onwards, to a new method; the original gets `else { x = Helper(...); }` (when the
+    branches assign a variable, which is then passed in and returned) or `else { return
+    Helper(...); }` (when every branch returns). The conditions and bodies keep their order and
+    their text, so the first matching condition is the same as before; a condition that is
+    already true on the way in (such as a repeated test of the same value) stays as written. Only
+    when the moved branches assign or return the same single variable, change no other local that
+    is read afterwards, and the new method has at most four parameters. It is a form of rules 7
+    and 9, written out because it is the most common blocker in `else if` dispatch code.
 
 **Before:**
 
@@ -473,6 +497,11 @@ values (a base path and a log-message literal) may be merged into one `private` 
 those two values as parameters, when the helper has at most four parameters in all and each call
 site passes the values its own copy used. The values move to the call sites, so the guard runs
 with `--dedup` and every value must still occur. Three or more differing values stay as they are.
+**A logging message template is never one of the values:** analyzer CA2254 requires a constant
+template at every logging call site, so a helper that takes the template as a parameter fails the
+build. When the copies differ in a log template, share only the part without the log call (for
+example the GUID formatting and the path join) and keep each log call, with its own literal, in
+its copy.
 
 **Copies that differ only in a type** (the same body, once for `int` and once for `double`)
 become one generic `private` helper. Its constraints provide exactly the operations the copies
@@ -640,3 +669,8 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-18 | Recipe P: an `out` variable assigned only on some paths is allowed, the predicate starting with `x = default;` for each such parameter; and a predicate may be a local function when the expression calls a local function. | CS0177 blocked `GetAspectRatio` and `IsNearSquarePixelSar` (R3-24), `FetchWtvInfo` (R04), `GetH26xOrAv1Encoder` and `GetMjpegEncoder` (R01); a local-function predicate scored 8.26 UP on `PrepareExtra` (R3-17) but was held back. Both compiled under warnings as errors and behaved identically on random inputs. Adopted by the campaign owner. |
 | 2026-10-18 | Recipe D: copies that differ in two values may be merged into one helper of at most four parameters. | `PathManager.GetAttachmentFolderPath` and `GetSubtitleFolderPath` differ in the cache base path and a log-message literal (R3-52). Adopted by the campaign owner. |
 | 2026-10-18 | Rule 1: a pair of steps of two different recipes in one file, each alone FLAT and together UP, may be one commit, naming both recipes. | R3-04 `EncodingHelper`: a predicate on the `preventHlsAudioCopy` initializer (FLAT) plus an extraction in `GetInputModifier` (FLAT) scored 7.55 together (from 7.32). Adopted by the campaign owner. |
+| 2026-10-18 | Recipe E rule 10: the block may contain a `switch` statement of its own (its `break`s stay, each `continue;` in it becomes `return true;`). | Blocked `ReadFromDictNode`, `ReadPlistRoot`, `ReadValueArray` (R4-33: four steps all FLAT, deep nesting stayed) and the case guards of `ApplyTranscodingConditions` (R4-02: the fourth guard made `ApplyTranscodingConditions` Complex Method cc 66, WORSE). Compiled under warnings as errors and compared with the original on 20,000 random inputs. Adopted by the campaign owner. |
+| 2026-10-18 | Recipe E rule 11 also covers a `switch` statement whose sections return: a suffix of the sections moves with `default:`. | `GetTranscodeReasonForFailedCondition` (R4-23: probe DOWN 8.94 to 8.87, both halves cc 15-16, so the split point must be measured), `IsVideoConditionSatisfied` (R4-07, cc 21, 19 sections), `ApplyTranscodingConditions` (R4-02, cc 66). Compiled and compared on 20,000 random inputs. Adopted by the campaign owner. |
+| 2026-10-18 | Recipe E rule 12: up to two context structs per method, one per family of blocks; the whole statement that holds the block moves, guard included. | One struct per method was full at 12 members in every EncodingHelper filter method (R4-09, R4-35, R4-36, R4-05, R4-19), leaving the decoder blocks (12 to 17 values) blocked; moving the whole `if (hasSubs)` statement instead of its inside is what removed the bumps (R4-09, R4-35, R4-36). Compiled and compared on 20,000 random inputs. Adopted by the campaign owner. |
+| 2026-10-18 | Recipe E rule 13: the tail of an `if` / `else if` chain moves to a helper (`else { x = Helper(...); }` or `else { return Helper(...); }`). | Used already by R4-03 under rules 7 and 9 on `GetEncoderParam`, `AppendLevelParam` and `NormalizeTranscodingLevel` (6.85 to 8.03, Bumpy Road gone); also the shape of `GetHwDeviceAndDecoderArgs` (R4-06, still six bumps). Compiled and compared on 20,000 random inputs. Adopted by the campaign owner. |
+| 2026-10-18 | Recipe D: a logging message template is never a value moved into a helper parameter (CA2254). | R4-48 `PathManager`: the two-value merge adopted earlier the same day fails the build with CA2254, so no step was possible. Correction of the earlier row. Made under the campaign owner's mandate. |

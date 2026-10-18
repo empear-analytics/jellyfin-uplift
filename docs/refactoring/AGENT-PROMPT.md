@@ -30,7 +30,10 @@ your task, your worktree and anything specific to the file. Everything below app
   to make. Report it as a candidate. The recipes of 2026-10-18 are in force: rules 10 (a block that
   ends in `continue`), 11 (a suffix of a `switch` expression's arms) and 12 (a context struct) of
   Recipe E, `x = default;` for `out` parameters and local-function predicates in Recipe P, Recipe D
-  for two differing values, and a pair of FLAT steps of two recipes in one commit.
+  for two differing values (never a log template: CA2254), and a pair of FLAT steps of two recipes
+  in one commit. The additions of the evening of 2026-10-18 are in force too: rule 10 with a
+  `switch` inside the block, rule 11 for a `switch` statement, up to two context structs per method
+  in rule 12, and rule 13 (the tail of an `if` / `else if` chain).
 - Before a step that adds methods, follow "Choosing the next step": measure the candidate
   applications on their own first and commit the best `UP` one.
 - After every step, before committing it, run all four checks from section 7 of the task file.
