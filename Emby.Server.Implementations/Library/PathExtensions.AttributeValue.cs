@@ -28,6 +28,11 @@ namespace Emby.Server.Implementations.Library
             // The code below only supports aliases for attributes in the form of "<alias>id".
             ReadOnlySpan<char> shortAttr = GetShortAlias(attribute);
 
+            return AttributeValueSearch(str, attribute, shortAttr);
+        }
+
+        private static string? AttributeValueSearch(ReadOnlySpan<char> str, ReadOnlySpan<char> attribute, ReadOnlySpan<char> shortAttr)
+        {
             for (int strIndex = 0, attributeIndex = 0; attributeIndex > -1;)
             {
                 // We may want to use imdbid pattern matching later, so we don't want to modify the original 'str'.
