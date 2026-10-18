@@ -1022,7 +1022,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 param = AppendAv1Level(param, level);
             }
-            else if (IsAmfVideoEncoder(videoEncoder))
+            else
+            {
+                param = AppendVideoEncoderHwLevelParam(param, videoEncoder, level);
+            }
+
+            return param;
+        }
+
+        private string AppendVideoEncoderHwLevelParam(string param, string videoEncoder, string level)
+        {
+            if (IsAmfVideoEncoder(videoEncoder))
             {
                 param += " -level " + level;
             }
