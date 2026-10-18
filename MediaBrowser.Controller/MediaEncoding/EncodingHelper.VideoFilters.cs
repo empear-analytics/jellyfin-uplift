@@ -479,41 +479,46 @@ namespace MediaBrowser.Controller.MediaEncoding
             subFilters?.RemoveAll(string.IsNullOrEmpty);
             overlayFilters?.RemoveAll(string.IsNullOrEmpty);
 
+            return VideoFilterOverlayParam(state, new VideoFilterContext(mainFilters, subFilters, overlayFilters, hasSubs, hasTextSubs));
+        }
+
+        private string VideoFilterOverlayParam(EncodingJobInfo state, VideoFilterContext context)
+        {
             var framerate = GetFramerateParam(state);
-            if (ShouldAddFpsFilter(mainFilters, framerate))
+            if (ShouldAddFpsFilter(context.MainFilters, framerate))
             {
-                AddFpsFilter(state, mainFilters, framerate);
+                AddFpsFilter(state, context.MainFilters, framerate);
             }
 
-            var mainStr = JoinMainFiltersForVideoProcessing(mainFilters);
+            var mainStr = JoinMainFiltersForVideoProcessing(context.MainFilters);
 
-            if (overlayFilters?.Count == 0)
+            if (context.OverlayFilters?.Count == 0)
             {
                 // -vf "scale..."
                 return GetMainOnlyVideoFilterParam(mainStr);
             }
 
-            if (HasSubtitleOverlay(state, subFilters, overlayFilters))
+            if (HasSubtitleOverlay(state, context.SubFilters, context.OverlayFilters))
             {
                 // overlay graphical/text subtitles
                 var subStr = string.Format(
                         CultureInfo.InvariantCulture,
                         "{0}",
-                        string.Join(',', subFilters));
+                        string.Join(',', context.SubFilters));
 
                 var overlayStr = string.Format(
                         CultureInfo.InvariantCulture,
                         "{0}",
-                        string.Join(',', overlayFilters));
+                        string.Join(',', context.OverlayFilters));
 
                 var mapPrefix = Convert.ToInt32(state.SubtitleStream.IsExternal);
                 var subtitleStreamIndex = GetSubtitleStreamIndexForFfmpeg(state.MediaSource, state.SubtitleStream);
                 var videoStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.VideoStream);
 
-                if (hasSubs)
+                if (context.HasSubs)
                 {
                     // -filter_complex "[0:s]scale=s[sub]..."
-                    var filterStr = GetSubtitleFilterComplexTemplate(mainStr, hasTextSubs);
+                    var filterStr = GetSubtitleFilterComplexTemplate(mainStr, context.HasTextSubs);
 
                     return string.Format(
                         CultureInfo.InvariantCulture,
@@ -593,5 +598,12 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && subFilters?.Count > 0
                 && state.SubtitleStream is not null;
         }
+
+        private readonly record struct VideoFilterContext(
+            List<string> MainFilters,
+            List<string> SubFilters,
+            List<string> OverlayFilters,
+            bool HasSubs,
+            bool HasTextSubs);
     }
 }
