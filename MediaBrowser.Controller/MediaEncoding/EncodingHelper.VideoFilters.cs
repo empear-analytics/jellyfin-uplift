@@ -470,9 +470,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 HardwareAccelerationType.amf => GetAmdVidFilterChain(state, options, outputVideoCodec),
                 HardwareAccelerationType.qsv => GetIntelVidFilterChain(state, options, outputVideoCodec),
                 HardwareAccelerationType.nvenc => GetNvidiaVidFilterChain(state, options, outputVideoCodec),
-                HardwareAccelerationType.videotoolbox => GetAppleVidFilterChain(state, options, outputVideoCodec),
-                HardwareAccelerationType.rkmpp => GetRkmppVidFilterChain(state, options, outputVideoCodec),
-                _ => GetSwVidFilterChain(state, options, outputVideoCodec),
+                _ => VideoFilterChainOtherHardware(state, options, outputVideoCodec),
             };
 
             mainFilters?.RemoveAll(string.IsNullOrEmpty);
@@ -480,6 +478,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             overlayFilters?.RemoveAll(string.IsNullOrEmpty);
 
             return VideoFilterOverlayParam(state, new VideoFilterContext(mainFilters, subFilters, overlayFilters, hasSubs, hasTextSubs));
+        }
+
+        private (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) VideoFilterChainOtherHardware(EncodingJobInfo state, EncodingOptions options, string outputVideoCodec)
+        {
+            return options.HardwareAccelerationType switch
+            {
+                HardwareAccelerationType.videotoolbox => GetAppleVidFilterChain(state, options, outputVideoCodec),
+                HardwareAccelerationType.rkmpp => GetRkmppVidFilterChain(state, options, outputVideoCodec),
+                _ => GetSwVidFilterChain(state, options, outputVideoCodec),
+            };
         }
 
         private string VideoFilterOverlayParam(EncodingJobInfo state, VideoFilterContext context)
