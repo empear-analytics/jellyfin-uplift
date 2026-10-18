@@ -837,9 +837,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var preventHlsAudioCopy = IsHlsAudioCopyPrevented(state, options);
 
             TranscodeReason audioCopyFailureReasons = 0;
-            if (state.AudioStream is not null
-                && CanStreamCopyAudio(state, state.AudioStream, state.SupportedAudioCodecs, out audioCopyFailureReasons)
-                && !preventHlsAudioCopy)
+            if (CanCopyAudioStream(state, preventHlsAudioCopy, out audioCopyFailureReasons))
             {
                 state.OutputAudioCodec = "copy";
             }
@@ -855,6 +853,14 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && state.VideoStream is not null
                 && !IsCopyCodec(state.OutputVideoCodec)
                 && options.HlsAudioSeekStrategy is HlsAudioSeekStrategy.TranscodeAudio;
+        }
+
+        private bool CanCopyAudioStream(EncodingJobInfo state, bool preventHlsAudioCopy, out TranscodeReason audioCopyFailureReasons)
+        {
+            audioCopyFailureReasons = default;
+            return state.AudioStream is not null
+                && CanStreamCopyAudio(state, state.AudioStream, state.SupportedAudioCodecs, out audioCopyFailureReasons)
+                && !preventHlsAudioCopy;
         }
 
         private static void ApplyVideoCopyFallback(EncodingJobInfo state)
