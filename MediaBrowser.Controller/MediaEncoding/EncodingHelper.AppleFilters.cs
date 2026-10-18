@@ -143,31 +143,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
 
-            if (hasSubs)
-            {
-                if (hasGraphicalSubs)
-                {
-                    var subW = state.SubtitleStream?.Width;
-                    var subH = state.SubtitleStream?.Height;
-                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
-                    subFilters.Add(subPreProcFilters);
-                    subFilters.Add("format=bgra");
-                }
-                else if (hasTextSubs)
-                {
-                    var framerate = state.VideoStream?.RealFrameRate;
-                    var subFramerate = GetSubtitleFramerate(hasAssSubs, framerate);
-
-                    var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH, subFramerate);
-                    var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
-                    subFilters.Add(alphaSrcFilter);
-                    subFilters.Add("format=bgra");
-                    subFilters.Add(subTextSubtitlesFilter);
-                }
-
-                subFilters.Add("hwupload");
-                overlayFilters.Add("overlay_videotoolbox=eof_action=pass:repeatlast=0");
-            }
+            var context = new AppleSubtitleFilterContext(
+                hasSubs,
+                hasGraphicalSubs,
+                hasTextSubs,
+                hasAssSubs,
+                swpInW,
+                swpInH,
+                reqW,
+                reqH,
+                reqMaxW,
+                reqMaxH);
+            AddAppleSubtitleFilters(state, subFilters, overlayFilters, context);
 
             if (usingHwSurface)
             {
@@ -182,5 +169,46 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             return GetAppleLegacyHwSurfaceFilters(isVtEncoder, mainFilters, subFilters, overlayFilters);
         }
+
+        private void AddAppleSubtitleFilters(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters, AppleSubtitleFilterContext context)
+        {
+            if (context.HasSubs)
+            {
+                if (context.HasGraphicalSubs)
+                {
+                    var subW = state.SubtitleStream?.Width;
+                    var subH = state.SubtitleStream?.Height;
+                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(context.SwpInW, context.SwpInH, subW, subH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                    subFilters.Add(subPreProcFilters);
+                    subFilters.Add("format=bgra");
+                }
+                else if (context.HasTextSubs)
+                {
+                    var framerate = state.VideoStream?.RealFrameRate;
+                    var subFramerate = GetSubtitleFramerate(context.HasAssSubs, framerate);
+
+                    var alphaSrcFilter = GetAlphaSrcFilter(state, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH, subFramerate);
+                    var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
+                    subFilters.Add(alphaSrcFilter);
+                    subFilters.Add("format=bgra");
+                    subFilters.Add(subTextSubtitlesFilter);
+                }
+
+                subFilters.Add("hwupload");
+                overlayFilters.Add("overlay_videotoolbox=eof_action=pass:repeatlast=0");
+            }
+        }
+
+        private readonly record struct AppleSubtitleFilterContext(
+            bool HasSubs,
+            bool HasGraphicalSubs,
+            bool HasTextSubs,
+            bool HasAssSubs,
+            int? SwpInW,
+            int? SwpInH,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH);
     }
 }
