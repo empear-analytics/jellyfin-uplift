@@ -94,14 +94,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (string.Equals(encoder, "libvorbis", StringComparison.OrdinalIgnoreCase))
             {
-                return " -qscale:a " + bitratePerChannel switch
-                {
-                    < 40000 => "0",
-                    < 56000 => "2",
-                    < 80000 => "4",
-                    < 112000 => "6",
-                    _ => "8"
-                };
+                return GetAudioVorbisVbrModeParam(bitratePerChannel);
             }
 
             return null;
@@ -187,6 +180,18 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static int GetAudioDefaultBitrate(MediaStream audioStream, int? outputAudioChannels)
         {
             return 128000 * (outputAudioChannels ?? audioStream.Channels ?? 2);
+        }
+
+        private static string GetAudioVorbisVbrModeParam(int bitratePerChannel)
+        {
+            return " -qscale:a " + bitratePerChannel switch
+            {
+                < 40000 => "0",
+                < 56000 => "2",
+                < 80000 => "4",
+                < 112000 => "6",
+                _ => "8"
+            };
         }
     }
 }
