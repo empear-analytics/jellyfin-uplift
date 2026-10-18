@@ -129,26 +129,7 @@ namespace Emby.Server.Implementations.Library
                 try
                 {
                     // Try to resolve the path into a video
-                    video = ResolvePath(_fileSystem.GetFileSystemInfo(info.Path)) as Video;
-
-                    if (video is null)
-                    {
-                        _logger.LogError("Intro resolver returned null for {Path}.", info.Path);
-                    }
-                    else
-                    {
-                        // Pull the saved db item that will include metadata
-                        var dbItem = GetItemById(video.Id) as Video;
-
-                        if (dbItem is not null)
-                        {
-                            video = dbItem;
-                        }
-                        else
-                        {
-                            return null;
-                        }
-                    }
+                    video = IntrosResolvePathVideo(info);
                 }
                 catch (Exception ex)
                 {
@@ -158,6 +139,32 @@ namespace Emby.Server.Implementations.Library
             else
             {
                 _logger.LogError("IntroProvider returned an IntroInfo with null Path and ItemId.");
+            }
+
+            return video;
+        }
+
+        private Video? IntrosResolvePathVideo(IntroInfo info)
+        {
+            var video = ResolvePath(_fileSystem.GetFileSystemInfo(info.Path)) as Video;
+
+            if (video is null)
+            {
+                _logger.LogError("Intro resolver returned null for {Path}.", info.Path);
+            }
+            else
+            {
+                // Pull the saved db item that will include metadata
+                var dbItem = GetItemById(video.Id) as Video;
+
+                if (dbItem is not null)
+                {
+                    video = dbItem;
+                }
+                else
+                {
+                    return null;
+                }
             }
 
             return video;
