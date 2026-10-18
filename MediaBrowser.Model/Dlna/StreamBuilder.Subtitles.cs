@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using Jellyfin.Data.Enums;
@@ -33,14 +34,18 @@ namespace MediaBrowser.Model.Dlna
             foreach (var stream in item.MediaStreams)
             {
                 if (stream.Type == MediaStreamType.Subtitle
-                    && stream.Score.HasValue
-                    && stream.Score.Value > highestScore)
+                    && IsScoreAbove(stream.Score, highestScore))
                 {
                     highestScore = stream.Score.Value;
                 }
             }
 
             return highestScore;
+        }
+
+        private static bool IsScoreAbove([NotNullWhen(true)] int? score, int highestScore)
+        {
+            return score.HasValue && score.Value > highestScore;
         }
 
         private static List<MediaStream> GetTopScoringSubtitleStreams(MediaSourceInfo item, int highestScore)
@@ -132,12 +137,12 @@ namespace MediaBrowser.Model.Dlna
                         continue;
                     }
 
-                    if (playMethod == PlayMethod.Transcode && !IsSubtitleEmbedSupported(outputContainer))
+                    if (IsEmbedUnsupportedForTranscode(playMethod, outputContainer))
                     {
                         continue;
                     }
 
-                    if (subtitleStream.IsTextSubtitleStream == MediaStream.IsTextFormat(profile.Format) && string.Equals(profile.Format, subtitleStream.Codec, StringComparison.OrdinalIgnoreCase))
+                    if (IsEmbeddedFormatMatch(subtitleStream, profile))
                     {
                         return profile;
                     }
@@ -161,12 +166,12 @@ namespace MediaBrowser.Model.Dlna
                         continue;
                     }
 
-                    if (playMethod == PlayMethod.Transcode && !IsSubtitleEmbedSupported(outputContainer))
+                    if (IsEmbedUnsupportedForTranscode(playMethod, outputContainer))
                     {
                         continue;
                     }
 
-                    if (subtitleStream.IsTextSubtitleStream && subtitleStream.SupportsSubtitleConversionTo(profile.Format))
+                    if (IsConvertibleTextSubtitle(subtitleStream, profile))
                     {
                         return profile;
                     }
@@ -181,6 +186,21 @@ namespace MediaBrowser.Model.Dlna
                     Method = SubtitleDeliveryMethod.Encode,
                     Format = subtitleStream.Codec
                 };
+        }
+
+        private static bool IsEmbeddedFormatMatch(MediaStream subtitleStream, SubtitleProfile profile)
+        {
+            return subtitleStream.IsTextSubtitleStream == MediaStream.IsTextFormat(profile.Format) && string.Equals(profile.Format, subtitleStream.Codec, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsEmbedUnsupportedForTranscode(PlayMethod playMethod, string? outputContainer)
+        {
+            return playMethod == PlayMethod.Transcode && !IsSubtitleEmbedSupported(outputContainer);
+        }
+
+        private static bool IsConvertibleTextSubtitle(MediaStream subtitleStream, SubtitleProfile profile)
+        {
+            return subtitleStream.IsTextSubtitleStream && subtitleStream.SupportsSubtitleConversionTo(profile.Format);
         }
 
         private static bool IsSubtitleEmbedSupported(string? transcodingContainer)
@@ -218,12 +238,12 @@ namespace MediaBrowser.Model.Dlna
         {
             foreach (var profile in subtitleProfiles)
             {
-                if (profile.Method != SubtitleDeliveryMethod.External && profile.Method != SubtitleDeliveryMethod.Hls)
+                if (IsNeitherExternalNorHls(profile))
                 {
                     continue;
                 }
 
-                if (profile.Method == SubtitleDeliveryMethod.Hls && playMethod != PlayMethod.Transcode)
+                if (IsHlsWithoutTranscode(profile, playMethod))
                 {
                     continue;
                 }
@@ -242,8 +262,7 @@ namespace MediaBrowser.Model.Dlna
 
                 if (IsMatchingExternalOrHlsProfile(profile, subtitleStream, isVobSubMksProfile))
                 {
-                    bool requiresConversion = !isVobSubMksProfile
-                        && !string.Equals(subtitleStream.Codec, profile.Format, StringComparison.OrdinalIgnoreCase);
+                    bool requiresConversion = DoesRequireConversion(isVobSubMksProfile, subtitleStream, profile);
 
                     if (!requiresConversion)
                     {
@@ -269,6 +288,22 @@ namespace MediaBrowser.Model.Dlna
             }
 
             return null;
+        }
+
+        private static bool IsNeitherExternalNorHls(SubtitleProfile profile)
+        {
+            return profile.Method != SubtitleDeliveryMethod.External && profile.Method != SubtitleDeliveryMethod.Hls;
+        }
+
+        private static bool IsHlsWithoutTranscode(SubtitleProfile profile, PlayMethod playMethod)
+        {
+            return profile.Method == SubtitleDeliveryMethod.Hls && playMethod != PlayMethod.Transcode;
+        }
+
+        private static bool DoesRequireConversion(bool isVobSubMksProfile, MediaStream subtitleStream, SubtitleProfile profile)
+        {
+            return !isVobSubMksProfile
+                && !string.Equals(subtitleStream.Codec, profile.Format, StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsUnextractableEmbeddedSubtitle(MediaStream subtitleStream, PlayMethod playMethod, ITranscoderSupport transcoderSupport)

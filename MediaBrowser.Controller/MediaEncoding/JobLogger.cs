@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace MediaBrowser.Controller.MediaEncoding
 {
-    public class JobLogger
+    public partial class JobLogger
     {
         private readonly ILogger _logger;
 
@@ -69,20 +69,15 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var parts = line.Split(' ');
 
-            var totalMs = state.RunTimeTicks.HasValue
-                ? TimeSpan.FromTicks(state.RunTimeTicks.Value).TotalMilliseconds
-                : 0;
+            var totalMs = GetTotalMilliseconds(state);
 
-            var startMs = state.BaseRequest.StartTimeTicks.HasValue
-                ? TimeSpan.FromTicks(state.BaseRequest.StartTimeTicks.Value).TotalMilliseconds
-                : 0;
+            var startMs = GetStartMilliseconds(state);
 
             for (var i = 0; i < parts.Length; i++)
             {
                 var part = parts[i];
 
-                if (string.Equals(part, "fps=", StringComparison.OrdinalIgnoreCase) &&
-                    (i + 1 < parts.Length))
+                if (IsFpsLabelWithValue(part, i, parts))
                 {
                     var rate = parts[i + 1];
 
@@ -94,8 +89,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                     framerate = ParseFramerate(rate, framerate);
                 }
-                else if (state.RunTimeTicks.HasValue &&
-                    part.StartsWith("time=", StringComparison.OrdinalIgnoreCase))
+                else if (IsTimeFieldWithRuntime(state, part))
                 {
                     var time = part.Split('=', 2)[^1];
 
@@ -124,58 +118,30 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
         }
 
-        private static float? ParseFramerate(string rate, float? framerate)
+        private static double GetTotalMilliseconds(EncodingJobInfo state)
         {
-            if (float.TryParse(rate, CultureInfo.InvariantCulture, out var val))
-            {
-                framerate = val;
-            }
-
-            return framerate;
+            return state.RunTimeTicks.HasValue
+                ? TimeSpan.FromTicks(state.RunTimeTicks.Value).TotalMilliseconds
+                : 0;
         }
 
-        private static long? ParseBytesTranscoded(string part, long? bytesTranscoded)
+        private static double GetStartMilliseconds(EncodingJobInfo state)
         {
-            var size = part.Split('=', 2)[^1];
-
-            int? scale = null;
-            if (size.Contains("kb", StringComparison.OrdinalIgnoreCase))
-            {
-                scale = 1024;
-                size = size.Replace("kb", string.Empty, StringComparison.OrdinalIgnoreCase);
-            }
-
-            if (scale.HasValue)
-            {
-                if (long.TryParse(size, CultureInfo.InvariantCulture, out var val))
-                {
-                    bytesTranscoded = val * scale.Value;
-                }
-            }
-
-            return bytesTranscoded;
+            return state.BaseRequest.StartTimeTicks.HasValue
+                ? TimeSpan.FromTicks(state.BaseRequest.StartTimeTicks.Value).TotalMilliseconds
+                : 0;
         }
 
-        private static int? ParseBitRate(string part, int? bitRate)
+        private static bool IsFpsLabelWithValue(string part, int i, string[] parts)
         {
-            var rate = part.Split('=', 2)[^1];
+            return string.Equals(part, "fps=", StringComparison.OrdinalIgnoreCase) &&
+                    (i + 1 < parts.Length);
+        }
 
-            int? scale = null;
-            if (rate.Contains("kbits/s", StringComparison.OrdinalIgnoreCase))
-            {
-                scale = 1024;
-                rate = rate.Replace("kbits/s", string.Empty, StringComparison.OrdinalIgnoreCase);
-            }
-
-            if (scale.HasValue)
-            {
-                if (float.TryParse(rate, CultureInfo.InvariantCulture, out var val))
-                {
-                    bitRate = (int)Math.Ceiling(val * scale.Value);
-                }
-            }
-
-            return bitRate;
+        private static bool IsTimeFieldWithRuntime(EncodingJobInfo state, string part)
+        {
+            return state.RunTimeTicks.HasValue &&
+                    part.StartsWith("time=", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

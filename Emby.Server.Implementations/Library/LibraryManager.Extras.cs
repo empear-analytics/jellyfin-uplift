@@ -71,34 +71,7 @@ namespace Emby.Server.Implementations.Library
                 return [];
             }
 
-            var candidates = new List<ExtraCandidate>();
-
-            var count = filtered.Count;
-            for (var i = 0; i < count; i++)
-            {
-                var current = filtered[i];
-                if (current.IsDirectory && _namingOptions.AllExtrasTypesFolderNames.ContainsKey(current.Name))
-                {
-                    var filesInSubFolder = _fileSystem.GetFiles(current.FullName, null, false, false);
-                    var filesInSubFolderList = filesInSubFolder.ToList();
-
-                    bool subFolderIsMixedFolder = filesInSubFolderList.Count > 1;
-
-                    foreach (var file in filesInSubFolderList)
-                    {
-                        if (!_extraResolver.TryGetExtraTypeForOwner(file.FullName, ownerVideoInfo, out var extraType, out var extraRule))
-                        {
-                            continue;
-                        }
-
-                        AddCandidate(file, extraType.Value, extraRule, subFolderIsMixedFolder);
-                    }
-                }
-                else if (!current.IsDirectory && _extraResolver.TryGetExtraTypeForOwner(current.FullName, ownerVideoInfo, out var extraType, out var extraRule))
-                {
-                    AddCandidate(current, extraType.Value, extraRule, false);
-                }
-            }
+            var candidates = FindExtraCandidates(filtered, ownerVideoInfo, directoryService);
 
             var extras = new List<BaseItem>();
             var typeCounters = new Dictionary<ExtraType, int>();
@@ -116,15 +89,6 @@ namespace Emby.Server.Implementations.Library
             }
 
             return extras;
-
-            void AddCandidate(FileSystemMetadata file, ExtraType extraType, ExtraRule extraRule, bool isInMixedFolder)
-            {
-                var extra = ResolvePath(_fileSystem.GetFileInfo(file.FullName), directoryService, _extraResolver.GetResolversForExtraType(extraType));
-                if (extra is Video or Audio)
-                {
-                    candidates.Add(new ExtraCandidate(extra, extraType, extraRule, isInMixedFolder));
-                }
-            }
 
             BaseItem? PrepareExtra(ExtraCandidate candidate)
             {
@@ -189,6 +153,49 @@ namespace Emby.Server.Implementations.Library
                 }
 
                 return names.Contains(currentName);
+            }
+        }
+
+        private List<ExtraCandidate> FindExtraCandidates(List<FileSystemMetadata> filtered, VideoFileInfo ownerVideoInfo, IDirectoryService directoryService)
+        {
+            var candidates = new List<ExtraCandidate>();
+
+            var count = filtered.Count;
+            for (var i = 0; i < count; i++)
+            {
+                var current = filtered[i];
+                if (current.IsDirectory && _namingOptions.AllExtrasTypesFolderNames.ContainsKey(current.Name))
+                {
+                    var filesInSubFolder = _fileSystem.GetFiles(current.FullName, null, false, false);
+                    var filesInSubFolderList = filesInSubFolder.ToList();
+
+                    bool subFolderIsMixedFolder = filesInSubFolderList.Count > 1;
+
+                    foreach (var file in filesInSubFolderList)
+                    {
+                        if (!_extraResolver.TryGetExtraTypeForOwner(file.FullName, ownerVideoInfo, out var extraType, out var extraRule))
+                        {
+                            continue;
+                        }
+
+                        AddCandidate(file, extraType.Value, extraRule, subFolderIsMixedFolder);
+                    }
+                }
+                else if (!current.IsDirectory && _extraResolver.TryGetExtraTypeForOwner(current.FullName, ownerVideoInfo, out var extraType, out var extraRule))
+                {
+                    AddCandidate(current, extraType.Value, extraRule, false);
+                }
+            }
+
+            return candidates;
+
+            void AddCandidate(FileSystemMetadata file, ExtraType extraType, ExtraRule extraRule, bool isInMixedFolder)
+            {
+                var extra = ResolvePath(_fileSystem.GetFileInfo(file.FullName), directoryService, _extraResolver.GetResolversForExtraType(extraType));
+                if (extra is Video or Audio)
+                {
+                    candidates.Add(new ExtraCandidate(extra, extraType, extraRule, isInMixedFolder));
+                }
             }
         }
 

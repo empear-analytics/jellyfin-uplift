@@ -382,70 +382,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
-            if (string.Equals(container, "mpg", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            if (string.Equals(container, "mpeg", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            if (string.Equals(container, "rec", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            if (string.Equals(container, "dvr-ms", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            if (string.Equals(container, "ogm", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            if (string.Equals(container, "divx", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            if (string.Equals(container, "tp", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            if (string.Equals(container, "rmvb", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            if (string.Equals(container, "rtp", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            // Seeing reported failures here, not sure yet if this is related to specifying input format
-            if (string.Equals(container, "m4v", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            // obviously don't do this for strm files
-            if (string.Equals(container, "strm", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            // ISO files don't have an ffmpeg format
-            if (string.Equals(container, "iso", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            return container;
+            return GetInputFormatFromLegacyContainer(container);
         }
 
         /// <summary>
@@ -593,41 +530,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return "aac";
             }
 
-            if (string.Equals(codec, "mp3", StringComparison.OrdinalIgnoreCase))
-            {
-                return "libmp3lame";
-            }
-
-            if (string.Equals(codec, "vorbis", StringComparison.OrdinalIgnoreCase))
-            {
-                return "libvorbis";
-            }
-
-            if (string.Equals(codec, "opus", StringComparison.OrdinalIgnoreCase))
-            {
-                return "libopus";
-            }
-
-            if (string.Equals(codec, "flac", StringComparison.OrdinalIgnoreCase))
-            {
-                return "flac";
-            }
-
-            if (string.Equals(codec, "dts", StringComparison.OrdinalIgnoreCase))
-            {
-                return "dca";
-            }
-
-            if (string.Equals(codec, "alac", StringComparison.OrdinalIgnoreCase))
-            {
-                // The ffmpeg upstream breaks the AudioToolbox ALAC encoder in version 6.1 but fixes it in version 7.0.
-                // Since ALAC is lossless in quality and the AudioToolbox encoder is not faster,
-                // its only benefit is a smaller file size.
-                // To prevent problems, use the ffmpeg native encoder instead.
-                return "alac";
-            }
-
-            return codec.ToLowerInvariant();
+            return GetNonAacAudioEncoder(codec);
         }
 
         /// <summary>
@@ -671,19 +574,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // dvdsub/vobsub graphical subtitles use .sub+.idx pairs
                 subtitlePath = GetIdxSubtitlePath(subtitlePath);
 
-                // Use analyzeduration also for subtitle streams to improve resolution detection  with streams inside MKS files
-                var analyzeDurationArgument = GetFfmpegAnalyzeDurationArg(state);
-                if (!string.IsNullOrEmpty(analyzeDurationArgument))
-                {
-                    arg.Append(' ').Append(analyzeDurationArgument);
-                }
-
-                // Apply probesize, too, if configured
-                var ffmpegProbeSizeArgument = GetFfmpegProbesizeArg();
-                if (!string.IsNullOrEmpty(ffmpegProbeSizeArgument))
-                {
-                    arg.Append(' ').Append(ffmpegProbeSizeArgument);
-                }
+                AppendSubtitleProbeArgs(state, arg);
 
                 // Also seek the external subtitles stream.
                 var seekSubParam = GetFastSeekCommandLineParameter(state, options, segmentContainer);
@@ -715,61 +606,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             return arg.ToString();
         }
 
-        private static bool IsDvdOrBluRaySource(EncodingJobInfo state)
-        {
-            return state.MediaSource.VideoType == VideoType.Dvd || state.MediaSource.VideoType == VideoType.BluRay;
-        }
-
-        private static bool IsGraphicalSubtitleBurnIn(EncodingJobInfo state)
-        {
-            return ShouldEncodeSubtitle(state) && !state.SubtitleStream.IsTextSubtitleStream;
-        }
-
-        private static bool HasExternalAudioStream(EncodingJobInfo state)
-        {
-            return state.AudioStream is not null && state.AudioStream.IsExternal;
-        }
-
-        private void AppendConcatInput(EncodingJobInfo state, StringBuilder arg)
-        {
-            var concatFilePath = Path.Join(_configurationManager.CommonApplicationPaths.CachePath, "concat", state.MediaSource.Id + ".concat");
-            if (!File.Exists(concatFilePath))
-            {
-                _mediaEncoder.GenerateConcatConfig(state.MediaSource, concatFilePath);
-            }
-
-            arg.Append(" -f concat -safe 0 -i \"")
-                .Append(concatFilePath)
-                .Append("\" ");
-        }
-
-        private static string GetIdxSubtitlePath(string subtitlePath)
-        {
-            var subtitleExtension = Path.GetExtension(subtitlePath.AsSpan());
-            if (subtitleExtension.Equals(".sub", StringComparison.OrdinalIgnoreCase))
-            {
-                var idxFile = Path.ChangeExtension(subtitlePath, ".idx");
-                if (File.Exists(idxFile))
-                {
-                    subtitlePath = idxFile;
-                }
-            }
-
-            return subtitlePath;
-        }
-
-        private void AppendExternalAudioInput(EncodingJobInfo state, EncodingOptions options, string segmentContainer, StringBuilder arg)
-        {
-            // Also seek the external audio stream.
-            var seekAudioParam = GetFastSeekCommandLineParameter(state, options, segmentContainer);
-            if (!string.IsNullOrEmpty(seekAudioParam))
-            {
-                arg.Append(' ').Append(seekAudioParam);
-            }
-
-            arg.Append(" -i \"").Append(state.AudioStream.Path.EscapeProcessArgument()).Append('"');
-        }
-
         /// <summary>
         /// Gets the text subtitle param.
         /// </summary>
@@ -799,21 +635,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (state.SubtitleStream.IsExternal)
             {
-                var charsetParam = string.Empty;
-
-                if (!string.IsNullOrEmpty(state.SubtitleStream.Language))
-                {
-                    var charenc = _subtitleEncoder.GetSubtitleFileCharacterSet(
-                            state.SubtitleStream,
-                            state.SubtitleStream.Language,
-                            state.MediaSource,
-                            CancellationToken.None).GetAwaiter().GetResult();
-
-                    if (!string.IsNullOrEmpty(charenc))
-                    {
-                        charsetParam = ":charenc=" + charenc;
-                    }
-                }
+                var charsetParam = GetSubtitleCharsetParam(state);
 
                 return string.Format(
                     CultureInfo.InvariantCulture,
@@ -920,133 +742,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return state.IsInputVideo ? "-sn" : string.Empty;
             }
 
-            var args = string.Empty;
-
-            if (state.VideoStream is not null)
-            {
-                int videoStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.VideoStream);
-
-                args += string.Format(
-                    CultureInfo.InvariantCulture,
-                    "-map 0:{0}",
-                    videoStreamIndex);
-            }
-            else
-            {
-                // No known video stream
-                args += "-vn";
-            }
-
-            if (state.AudioStream is not null)
-            {
-                args = AppendAudioMapArgs(args, state);
-            }
-            else
-            {
-                args += " -map -0:a";
-            }
-
-            var subtitleMethod = state.SubtitleDeliveryMethod;
-            if (IsSubtitleExcludedFromMap(state, subtitleMethod))
-            {
-                args += " -map -0:s";
-            }
-            else if (subtitleMethod == SubtitleDeliveryMethod.Embed)
-            {
-                args = AppendEmbeddedSubtitleMapArgs(args, state);
-            }
-            else if (IsExternalGraphicalSubtitle(state))
-            {
-                int externalSubtitleStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.SubtitleStream);
-
-                args += string.Format(
-                    CultureInfo.InvariantCulture,
-                    " -map 1:{0} -sn",
-                    externalSubtitleStreamIndex);
-            }
-
-            return args;
-        }
-
-        private static bool HasNoKnownMediaStreams(EncodingJobInfo state)
-        {
-            return state.VideoStream is null && state.AudioStream is null;
-        }
-
-        private static bool HasUnknownVideoStreamIndex(EncodingJobInfo state)
-        {
-            return state.VideoStream is not null && state.VideoStream.Index == -1;
-        }
-
-        private static bool HasUnknownAudioStreamIndex(EncodingJobInfo state)
-        {
-            return state.AudioStream is not null && state.AudioStream.Index == -1;
-        }
-
-        private static bool IsSubtitleExcludedFromMap(EncodingJobInfo state, SubtitleDeliveryMethod subtitleMethod)
-        {
-            return state.SubtitleStream is null || subtitleMethod == SubtitleDeliveryMethod.Hls;
-        }
-
-        private static bool IsExternalGraphicalSubtitle(EncodingJobInfo state)
-        {
-            return state.SubtitleStream.IsExternal && !state.SubtitleStream.IsTextSubtitleStream;
-        }
-
-        private static string AppendAudioMapArgs(string args, EncodingJobInfo state)
-        {
-            int audioStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.AudioStream);
-            if (state.AudioStream.IsExternal)
-            {
-                bool hasExternalSubAsInput = NeedsExternalSubtitleMuxing(state);
-                int externalAudioMapIndex = hasExternalSubAsInput ? 2 : 1;
-
-                args += string.Format(
-                    CultureInfo.InvariantCulture,
-                    " -map {0}:{1}",
-                    externalAudioMapIndex,
-                    audioStreamIndex);
-            }
-            else
-            {
-                args += string.Format(
-                    CultureInfo.InvariantCulture,
-                    " -map 0:{0}",
-                    audioStreamIndex);
-            }
-
-            return args;
-        }
-
-        private static string AppendEmbeddedSubtitleMapArgs(string args, EncodingJobInfo state)
-        {
-            if (state.SubtitleStream.IsExternal)
-            {
-                // External subtitle file is added as second FFmpeg input.
-                // For single-stream files (SRT/ASS/VTT) the in-file index is always 0.
-                // For multi-stream containers (MKS) we count how many streams from
-                // the same file appear before the selected one.
-                var inFileIndex = state.MediaSource.MediaStreams
-                    .Where(s => string.Equals(s.Path, state.SubtitleStream.Path, StringComparison.Ordinal))
-                    .TakeWhile(s => s.Index != state.SubtitleStream.Index)
-                    .Count();
-
-                args += string.Format(
-                    CultureInfo.InvariantCulture,
-                    " -map 1:{0}",
-                    inFileIndex);
-            }
-            else
-            {
-                int subtitleStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.SubtitleStream);
-
-                args += string.Format(
-                    CultureInfo.InvariantCulture,
-                    " -map 0:{0}",
-                    subtitleStreamIndex);
-            }
-
-            return args;
+            return GetStreamMapArgs(state);
         }
 
         /// <summary>
@@ -1219,41 +915,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         public string GetInputModifier(EncodingJobInfo state, EncodingOptions encodingOptions, string segmentContainer)
         {
-            var inputModifier = string.Empty;
-            var analyzeDurationArgument = GetFfmpegAnalyzeDurationArg(state);
-
-            if (!string.IsNullOrEmpty(analyzeDurationArgument))
-            {
-                inputModifier += " " + analyzeDurationArgument;
-            }
-
-            inputModifier = inputModifier.Trim();
-
-            // Apply -probesize if configured
-            var ffmpegProbeSizeArgument = GetFfmpegProbesizeArg();
-
-            if (!string.IsNullOrEmpty(ffmpegProbeSizeArgument))
-            {
-                inputModifier += " " + ffmpegProbeSizeArgument;
-            }
-
-            var userAgentParam = GetUserAgentParam(state);
-
-            if (!string.IsNullOrEmpty(userAgentParam))
-            {
-                inputModifier += " " + userAgentParam;
-            }
-
-            inputModifier = inputModifier.Trim();
-
-            var refererParam = GetRefererParam(state);
-
-            if (!string.IsNullOrEmpty(refererParam))
-            {
-                inputModifier += " " + refererParam;
-            }
-
-            inputModifier = inputModifier.Trim();
+            var inputModifier = GetInputProbeAndHeaderParams(state);
 
             inputModifier += " " + GetFastSeekCommandLineParameter(state, encodingOptions, segmentContainer);
             inputModifier = inputModifier.Trim();
@@ -1467,30 +1129,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             state.MediaSource = mediaSource;
 
             var request = state.BaseRequest;
-            var supportedAudioCodecs = state.SupportedAudioCodecs;
-            if (HasSupportedCodecs(request, supportedAudioCodecs))
-            {
-                var supportedAudioCodecsList = supportedAudioCodecs.ToList();
-
-                ShiftAudioCodecsIfNeeded(supportedAudioCodecsList, state.AudioStream);
-
-                state.SupportedAudioCodecs = supportedAudioCodecsList.ToArray();
-
-                request.AudioCodec = state.SupportedAudioCodecs.FirstOrDefault(_mediaEncoder.CanEncodeToAudioCodec)
-                    ?? state.SupportedAudioCodecs.FirstOrDefault();
-            }
-
-            var supportedVideoCodecs = state.SupportedVideoCodecs;
-            if (HasSupportedCodecs(request, supportedVideoCodecs))
-            {
-                var supportedVideoCodecsList = supportedVideoCodecs.ToList();
-
-                ShiftVideoCodecsIfNeeded(supportedVideoCodecsList, encodingOptions);
-
-                state.SupportedVideoCodecs = supportedVideoCodecsList.ToArray();
-
-                request.VideoCodec = state.SupportedVideoCodecs.FirstOrDefault();
-            }
+            ApplySupportedAudioCodecs(state, request);
+            ApplySupportedVideoCodecs(state, request, encodingOptions);
         }
 
         private static bool HasEncoderPathAndProtocol(MediaSourceInfo mediaSource)
@@ -1714,25 +1354,35 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return string.Empty;
             }
 
+            return GetVersionedVideoSyncOption(videoSync, encoderVersion);
+        }
+
+        private static string GetVersionedVideoSyncOption(string videoSync, Version encoderVersion)
+        {
             if (encoderVersion >= new Version(5, 1))
             {
-                if (int.TryParse(videoSync, CultureInfo.InvariantCulture, out var vsync))
-                {
-                    return vsync switch
-                    {
-                        -1 => " -fps_mode auto",
-                        0 => " -fps_mode passthrough",
-                        1 => " -fps_mode cfr",
-                        2 => " -fps_mode vfr",
-                        _ => string.Empty
-                    };
-                }
-
-                return string.Empty;
+                return GetFpsModeFromVideoSync(videoSync);
             }
 
             // -vsync is deprecated in FFmpeg 5.1 and will be removed in the future.
             return $" -vsync {videoSync}";
+        }
+
+        private static string GetFpsModeFromVideoSync(string videoSync)
+        {
+            if (int.TryParse(videoSync, CultureInfo.InvariantCulture, out var vsync))
+            {
+                return vsync switch
+                {
+                    -1 => " -fps_mode auto",
+                    0 => " -fps_mode passthrough",
+                    1 => " -fps_mode cfr",
+                    2 => " -fps_mode vfr",
+                    _ => string.Empty
+                };
+            }
+
+            return string.Empty;
         }
     }
 }

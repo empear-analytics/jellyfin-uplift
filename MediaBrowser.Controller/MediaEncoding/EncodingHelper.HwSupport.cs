@@ -45,15 +45,20 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         private bool IsVaapiFullSupported()
         {
-            return _mediaEncoder.SupportsHwaccel("drm")
-                   && _mediaEncoder.SupportsHwaccel("vaapi")
-                   && _mediaEncoder.SupportsFilter("scale_vaapi")
-                   && _mediaEncoder.SupportsFilter("deinterlace_vaapi")
+            return IsVaapiDrmScaleDeinterlaceSupported()
                    && _mediaEncoder.SupportsFilter("tonemap_vaapi")
                    && _mediaEncoder.SupportsFilter("procamp_vaapi")
                    && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayVaapiFrameSync)
                    && _mediaEncoder.SupportsFilter("transpose_vaapi")
                    && _mediaEncoder.SupportsFilter("hwupload_vaapi");
+        }
+
+        private bool IsVaapiDrmScaleDeinterlaceSupported()
+        {
+            return _mediaEncoder.SupportsHwaccel("drm")
+                   && _mediaEncoder.SupportsHwaccel("vaapi")
+                   && _mediaEncoder.SupportsFilter("scale_vaapi")
+                   && _mediaEncoder.SupportsFilter("deinterlace_vaapi");
         }
 
         private bool IsRkmppFullSupported()
@@ -143,16 +148,21 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return true;
                 }
 
+                return CanHwTonemapDoviWithDecoder(vidDecoder);
+            }
+
+            // GPU tonemapping supports all HDR RangeTypes
+            return state.VideoStream.VideoRange == VideoRange.HDR;
+        }
+
+        private static bool CanHwTonemapDoviWithDecoder(string vidDecoder)
+        {
                 var isSwDecoder = string.IsNullOrEmpty(vidDecoder);
                 var isNvdecDecoder = vidDecoder.Contains("cuda", StringComparison.OrdinalIgnoreCase);
                 var isVaapiDecoder = vidDecoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
                 var isD3d11vaDecoder = vidDecoder.Contains("d3d11va", StringComparison.OrdinalIgnoreCase);
                 var isVideoToolBoxDecoder = vidDecoder.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase);
                 return isSwDecoder || isNvdecDecoder || isVaapiDecoder || isD3d11vaDecoder || isVideoToolBoxDecoder;
-            }
-
-            // GPU tonemapping supports all HDR RangeTypes
-            return state.VideoStream.VideoRange == VideoRange.HDR;
         }
 
         private bool IsHwTonemapInputUnsupported(EncodingJobInfo state, EncodingOptions options)
@@ -256,14 +266,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Equals(videoStream.Codec, "hevc", StringComparison.OrdinalIgnoreCase)
-                   && (string.Equals(videoStream.Profile, "Rext", StringComparison.OrdinalIgnoreCase)
-                       || string.Equals(videoStream.PixelFormat, "yuv420p12le", StringComparison.OrdinalIgnoreCase)
-                       || string.Equals(videoStream.PixelFormat, "yuv422p", StringComparison.OrdinalIgnoreCase)
-                       || string.Equals(videoStream.PixelFormat, "yuv422p10le", StringComparison.OrdinalIgnoreCase)
-                       || string.Equals(videoStream.PixelFormat, "yuv422p12le", StringComparison.OrdinalIgnoreCase)
-                       || string.Equals(videoStream.PixelFormat, "yuv444p", StringComparison.OrdinalIgnoreCase)
-                       || string.Equals(videoStream.PixelFormat, "yuv444p10le", StringComparison.OrdinalIgnoreCase)
-                       || string.Equals(videoStream.PixelFormat, "yuv444p12le", StringComparison.OrdinalIgnoreCase));
+                   && IsHevcRextProfileOrPixelFormat(videoStream);
+        }
+
+        private static bool IsHevcRextProfileOrPixelFormat(MediaStream videoStream)
+        {
+            return string.Equals(videoStream.Profile, "Rext", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(videoStream.PixelFormat, "yuv420p12le", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(videoStream.PixelFormat, "yuv422p", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(videoStream.PixelFormat, "yuv422p10le", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(videoStream.PixelFormat, "yuv422p12le", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(videoStream.PixelFormat, "yuv444p", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(videoStream.PixelFormat, "yuv444p10le", StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(videoStream.PixelFormat, "yuv444p12le", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

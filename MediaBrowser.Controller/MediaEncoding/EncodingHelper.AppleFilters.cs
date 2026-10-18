@@ -102,31 +102,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
-            var scaleFormat = string.Empty;
-            // Use P010 for Metal tone mapping, otherwise force an 8bit output.
-            if (!string.Equals(state.VideoStream.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase))
-            {
-                if (doMetalTonemap)
-                {
-                    if (!string.Equals(state.VideoStream.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase))
-                    {
-                        scaleFormat = "p010le";
-                    }
-                }
-                else
-                {
-                    scaleFormat = "nv12";
-                }
-            }
+            var scaleFormat = GetAppleScaleFormat(state, doMetalTonemap);
 
             var hwScaleFilter = GetHwScaleFilter("scale", "vt", scaleFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
 
             var hasSubs = HasSubtitlesToEncode(state);
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
-            var hasAssSubs = hasSubs
-                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+            var hasAssSubs = HasAssSubtitles(state, hasSubs);
 
             /* Make main filters for video stream */
             var mainFilters = new List<string>();
@@ -144,15 +127,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add($"transpose_vt=dir={transposeDir}");
             }
 
-            if (doVtTonemap)
-            {
-                const string VtTonemapArgs = "color_matrix=bt709:color_primaries=bt709:color_transfer=bt709";
-
-                // scale_vt can handle scaling & tonemapping in one shot, just like vpp_qsv.
-                hwScaleFilter = string.IsNullOrEmpty(hwScaleFilter)
-                    ? "scale_vt=" + VtTonemapArgs
-                    : hwScaleFilter + ":" + VtTonemapArgs;
-            }
+            hwScaleFilter = AddAppleVtTonemapArgs(hwScaleFilter, doVtTonemap);
 
             // hw scale & vt tonemap
             mainFilters.Add(hwScaleFilter);
@@ -181,7 +156,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 else if (hasTextSubs)
                 {
                     var framerate = state.VideoStream?.RealFrameRate;
-                    var subFramerate = hasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
+                    var subFramerate = GetSubtitleFramerate(hasAssSubs, framerate);
 
                     var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH, subFramerate);
                     var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
@@ -205,6 +180,30 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return (mainFilters, subFilters, overlayFilters);
             }
 
+            return GetAppleLegacyHwSurfaceFilters(isVtEncoder, mainFilters, subFilters, overlayFilters);
+        }
+
+        private static string AddAppleVtTonemapArgs(string hwScaleFilter, bool doVtTonemap)
+        {
+            if (doVtTonemap)
+            {
+                const string VtTonemapArgs = "color_matrix=bt709:color_primaries=bt709:color_transfer=bt709";
+
+                // scale_vt can handle scaling & tonemapping in one shot, just like vpp_qsv.
+                hwScaleFilter = string.IsNullOrEmpty(hwScaleFilter)
+                    ? "scale_vt=" + VtTonemapArgs
+                    : hwScaleFilter + ":" + VtTonemapArgs;
+            }
+
+            return hwScaleFilter;
+        }
+
+        private static (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetAppleLegacyHwSurfaceFilters(
+            bool isVtEncoder,
+            List<string> mainFilters,
+            List<string> subFilters,
+            List<string> overlayFilters)
+        {
             // For old jellyfin-ffmpeg that has broken hwsurface, add a hwupload
             var needFiltering = mainFilters.Any(f => !string.IsNullOrEmpty(f)) ||
                                 subFilters.Any(f => !string.IsNullOrEmpty(f)) ||
@@ -224,6 +223,28 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static string GetAppleScaleFormat(EncodingJobInfo state, bool doMetalTonemap)
+        {
+            var scaleFormat = string.Empty;
+            // Use P010 for Metal tone mapping, otherwise force an 8bit output.
+            if (!string.Equals(state.VideoStream.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase))
+            {
+                if (doMetalTonemap)
+                {
+                    if (!string.Equals(state.VideoStream.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase))
+                    {
+                        scaleFormat = "p010le";
+                    }
+                }
+                else
+                {
+                    scaleFormat = "nv12";
+                }
+            }
+
+            return scaleFormat;
         }
     }
 }

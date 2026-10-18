@@ -246,6 +246,11 @@ Copy the expression **character for character**. Do not "simplify" the boolean a
 and do not reorder the operands - `&&` and `?.` short-circuit, so reordering can change
 which side effects run and can introduce null dereferences.
 
+The predicate may take **only a leading run of the terms** of an `||` or `&&` chain, with the
+remaining terms staying at the call site in their original order (`P(a || b || c) || d`): both
+operators are associative and short-circuit left to right, so the order of evaluation is the same.
+Never take a run from the middle or the end of the chain.
+
 If the build then fails with CS8602 or CS8629, because the code after the condition relied
 on a null check inside it, see
 [Nullable flow analysis](#nullable-flow-analysis-recipes-e-and-p).
@@ -397,7 +402,12 @@ score UP. The copies must still be identical or differ by a single value.
 **An identical copy CodeScene does not report** may also call the helper (or predicate) that
 an earlier step extracted from the same file, instead of getting a second helper with the same
 body. The copy must be identical to the helper's body, character for character, apart from
-the names of the variables passed in.
+the names of the variables passed in. The helper may also live in **another part of the same
+partial class**, when it is `private` (or already as accessible as the code that will call it:
+never widen it) and its body, read in its own file, is identical to the copy. Run the guard with
+`--dedup` over the file you change, **and `--together` with the file that holds the helper** (the
+guard otherwise sees the helper's literals only in the other file and rejects the step); a literal
+that only the removed copy carried must still occur in the class.
 
 **Copies that differ in a single value, without a duplication report.** Blocks or loops that
 are identical except for one constant or enum member (three `foreach` loops that differ only in
@@ -442,6 +452,18 @@ on those file-level smells.
 **A split has a floor.** Some groupings bring *Low Cohesion* instead of clearing the smell
 (R2-03). Try at most two groupings; keep the first one under which the original file scores
 `UP`. If none does, revert and report the file as blocked.
+
+**A split that is `FLAT` may be kept when it enables a step.** A file can sit just below a
+file-level smell (*Overall Code Complexity*, *Code Duplication* that the extra methods would
+reveal, *Primitive Obsession*): then a split scores `FLAT`, and so does every extraction before it,
+but after the split the extractions score `UP`. Keep such a split (never one that scores `DOWN`)
+only as a pair: apply the split, then the best step on top of it, and measure both against the score
+**before the split**. If the pair scores `UP` against that score, commit the split first
+(commit message: `split ... (FLAT, enables <step>)`), then the step, each after its own four checks
+(the guard `--together` for the split). If the step scores `UP` only against the split's own score
+and not against the score before the split, revert both. The split moves members only and widens
+nothing, so this exception adds no behaviour risk. *Primitive Obsession* counts as a file-level smell
+here, like *Overall Code Complexity*.
 
 **After the split, keep going.** Work the remaining steps, and retry the steps that were
 `FLAT`, `DOWN` or `WORSE` before the split, on whichever file now holds each method. Measure
@@ -553,3 +575,6 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-17 | Recipe D: blocks or loops that differ in a single constant or enum member may be merged into one helper taking that value, even when CodeScene reports no *Code Duplication*. | R2-11 `ProcessPairs`: three `foreach` loops that differ only in `PersonKind`. Adopted by the campaign owner. |
 | 2026-10-17 | Choosing the next step: a step that reveals *Large Method* is `WORSE`; do not retry, report the method as blocked. | R2-04 `GetVideoDirectPlayProfile`: reducing it from a Complex Method showed Large Method (81 lines), 7.79 to 8.29 was WORSE. |
 | 2026-10-17 | Rule 1: a single recipe may be applied the same way to several methods of one file in one commit when each application alone is `FLAT` and together they score `UP`, as Recipe D already could. | R3-22 `DynamicHlsHelper.Codecs`: nullable case 3 on `GetOutputVideoCodecLevel` and on `GetOutputAv1BitDepth` was `FLAT` each (the guard terms stay behind), `UP` together (8.54 to 9.09); the agent did not commit it because the rule allowed multi-method commits only for Recipe D. Same shape as R17 `EncodingJobInfo` (one of three methods per commit FLAT, all three UP). Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
+| 2026-10-17 | Recipe S: a split that scores `FLAT` (never `DOWN`) is kept as a pair with the step it enables, when the pair scores `UP` against the score before the split; *Primitive Obsession* counts as a file-level smell for this. | R3-33 `StreamBuilder.VideoStream`: a split of small methods scored FLAT (8.67), and then six extractions that were DOWN before (7.70 to 7.73) scored UP (8.72 to 8.75). R3-27 `ProbeResultNormalizer`: a second split FLAT (8.54), with the predicate step on top 8.79 UP. Both agents correctly did not commit the pair under the old wording. Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
+| 2026-10-17 | Recipe D: an identical copy may call a helper that lives in another part of the same partial class, when the helper is not widened and its body is identical to the copy. | R3-05 `EncodingHelper.IntelFilters`: `GetIntelVidFilterChain` called `IsQsvOclSupported`, `IsIntelDx11OclSupported` and `IsIntelVaapiOclSupported` from `EncodingHelper.HwDecoders.cs` (bodies identical, checked); R2-01 `EncodingHelper` did the same across its split files and asked for a ruling. Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |
+| 2026-10-18 | Recipe P: the predicate may take a leading run of the terms of an `||` or `&&` chain, the remaining terms staying at the call site in order. | R3-03 `EncodingHelper.VideoEncoderParams` `IsGopOnlyKeyFrameEncoder`: the first seven of eleven `||` terms became `IsGopOnlyH264OrHevcKeyFrameEncoder` (+0.17); the agent asked for a ruling. Nullable case 3 already used the same shape for `&&` chains. Made under the campaign owner's mandate of 2026-10-17 to evolve the playbook; not individually reviewed. |

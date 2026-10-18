@@ -62,6 +62,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             // Use long arithmetic to prevent int32 overflow for very high bitrate values.
             int bufsize = (int)Math.Min((long)bitrate * 2, int.MaxValue);
 
+            return GetVideoEncoderRateControlParam(state, videoCodec, bitrate, bufsize);
+        }
+
+        private string GetVideoEncoderRateControlParam(EncodingJobInfo state, string videoCodec, int bitrate, int bufsize)
+        {
             if (string.Equals(videoCodec, "libsvtav1", StringComparison.OrdinalIgnoreCase))
             {
                 return FormattableString.Invariant($" -b:v {bitrate} -bufsize {bufsize}");
@@ -309,6 +314,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 _ => " -preset p1"
             };
 
+            return AppendNvencAdaptiveQuantization(param, videoEncoder);
+        }
+
+        private static string AppendNvencAdaptiveQuantization(string param, string videoEncoder)
+        {
             // Enable Spatial Adaptive Quantization for better subjective visual quality
             // H.264 is skipped for now because Maxwell 1 does not support it
             if (!string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase))
@@ -330,6 +340,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 _ => " -quality speed"
             };
 
+            return AppendAmfQualityOptions(param, videoEncoder);
+        }
+
+        private string AppendAmfQualityOptions(string param, string videoEncoder)
+        {
             // Enable Variance Based/Context Adaptive Quantization for better subjective visual quality
             if (IsAmfH26xEncoder(videoEncoder))
             {
@@ -424,19 +439,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 // Transcode to level 5.3 (15) and lower for maximum compatibility.
                 // https://en.wikipedia.org/wiki/AV1#Levels
-                if (requestLevel < 0 || requestLevel >= 15)
+                if (IsAv1LevelAboveCap(requestLevel))
                 {
                     return "15";
                 }
             }
-            else if (string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
-                     || string.Equals(state.ActualOutputVideoCodec, "h265", StringComparison.OrdinalIgnoreCase))
+            else if (IsHevcOrH265OutputCodec(state.ActualOutputVideoCodec))
             {
                 // Transcode to level 5.0 and lower for maximum compatibility.
                 // Level 5.0 is suitable for up to 4k 30fps hevc encoding, otherwise let the encoder to handle it.
                 // https://en.wikipedia.org/wiki/High_Efficiency_Video_Coding_tiers_and_levels
                 // MaxLumaSampleRate = 3840*2160*30 = 248832000 < 267386880.
-                if (requestLevel < 0 || requestLevel >= 150)
+                if (IsHevcLevelAboveCap(requestLevel))
                 {
                     return "150";
                 }
@@ -446,13 +460,34 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // Transcode to level 5.1 and lower for maximum compatibility.
                 // h264 4k 30fps requires at least level 5.1 otherwise it will break on safari fmp4.
                 // https://en.wikipedia.org/wiki/Advanced_Video_Coding#Levels
-                if (requestLevel < 0 || requestLevel >= 51)
+                if (IsH264LevelAboveCap(requestLevel))
                 {
                     return "51";
                 }
             }
 
             return level;
+        }
+
+        private static bool IsAv1LevelAboveCap(double requestLevel)
+        {
+            return requestLevel < 0 || requestLevel >= 15;
+        }
+
+        private static bool IsHevcLevelAboveCap(double requestLevel)
+        {
+            return requestLevel < 0 || requestLevel >= 150;
+        }
+
+        private static bool IsH264LevelAboveCap(double requestLevel)
+        {
+            return requestLevel < 0 || requestLevel >= 51;
+        }
+
+        private static bool IsHevcOrH265OutputCodec(string codec)
+        {
+            return string.Equals(codec, "hevc", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(codec, "h265", StringComparison.OrdinalIgnoreCase);
         }
 
         public double? GetFramerateParam(EncodingJobInfo state)
@@ -543,17 +578,22 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         private static bool IsGopOnlyKeyFrameEncoder(string codec)
         {
+            return IsGopOnlyH264OrHevcKeyFrameEncoder(codec)
+                || string.Equals(codec, "av1_qsv", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(codec, "av1_nvenc", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(codec, "av1_amf", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(codec, "libsvtav1", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsGopOnlyH264OrHevcKeyFrameEncoder(string codec)
+        {
             return string.Equals(codec, "h264_qsv", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(codec, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(codec, "h264_amf", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(codec, "h264_rkmpp", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(codec, "hevc_qsv", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(codec, "hevc_nvenc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "hevc_rkmpp", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "av1_qsv", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "av1_nvenc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "av1_amf", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "libsvtav1", StringComparison.OrdinalIgnoreCase);
+                || string.Equals(codec, "hevc_rkmpp", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsForcedKeyFrameEncoder(string codec)
@@ -621,15 +661,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (intelLowPowerHwEncoding)
-            {
-                param += " -low_power 1";
-            }
-
-            if (enableWaFori915Hang)
-            {
-                param += " -async_depth 1";
-            }
+            param = AppendIntelLowPowerParams(param, intelLowPowerHwEncoding, enableWaFori915Hang);
 
             var isLibX265 = string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase);
             var encodingPreset = encodingOptions.EncoderPreset;
@@ -643,6 +675,28 @@ namespace MediaBrowser.Controller.MediaEncoding
                 param += string.Format(CultureInfo.InvariantCulture, " -r {0}", framerate.Value.ToString(CultureInfo.InvariantCulture));
             }
 
+            param = AppendVideoProfileAndLevelParams(param, state, videoEncoder);
+
+            return AppendVideoEncoderSpecificParams(param, videoEncoder, encodingOptions);
+        }
+
+        private static string AppendIntelLowPowerParams(string param, bool intelLowPowerHwEncoding, bool enableWaFori915Hang)
+        {
+            if (intelLowPowerHwEncoding)
+            {
+                param += " -low_power 1";
+            }
+
+            if (enableWaFori915Hang)
+            {
+                param += " -async_depth 1";
+            }
+
+            return param;
+        }
+
+        private string AppendVideoProfileAndLevelParams(string param, EncodingJobInfo state, string videoEncoder)
+        {
             var targetVideoCodec = state.ActualOutputVideoCodec;
             if (IsHevcCodecName(targetVideoCodec))
             {
@@ -668,6 +722,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 param = AppendLevelParam(param, videoEncoder, level);
             }
 
+            return param;
+        }
+
+        private string AppendVideoEncoderSpecificParams(string param, string videoEncoder, EncodingOptions encodingOptions)
+        {
             if (string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase))
             {
                 param += " -x264opts:0 subme=0:me_range=16:rc_lookahead=10:me=hex:open_gop=0";
@@ -742,6 +801,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 profile = "main";
             }
 
+            return NormalizeH264EncoderProfile(videoEncoder, profile);
+        }
+
+        private static string NormalizeH264EncoderProfile(string videoEncoder, string profile)
+        {
             // h264_vaapi does not support Baseline profile, force Constrained Baseline in this case,
             // which is compatible (and ugly).
             if (IsVaapiH264BaselineProfile(videoEncoder, profile))
@@ -920,8 +984,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 param = AppendHevcQsvLevel(param, level);
             }
-            else if (string.Equals(videoEncoder, "av1_qsv", StringComparison.OrdinalIgnoreCase)
-                     || string.Equals(videoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase))
+            else if (IsAv1QsvOrSvtAv1Encoder(videoEncoder))
             {
                 param = AppendAv1Level(param, level);
             }
@@ -942,12 +1005,23 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 param += " -level " + level;
             }
-            else if (!string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase))
+            else if (IsNotLibX265Encoder(videoEncoder))
             {
                 param += " -level " + level;
             }
 
             return param;
+        }
+
+        private static bool IsAv1QsvOrSvtAv1Encoder(string videoEncoder)
+        {
+            return string.Equals(videoEncoder, "av1_qsv", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(videoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsNotLibX265Encoder(string videoEncoder)
+        {
+            return !string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsH264QsvOrLibX264Encoder(string videoEncoder)

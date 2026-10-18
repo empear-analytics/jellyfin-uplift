@@ -54,6 +54,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             int outputWidth = requestedWidth ?? inputWidth;
             int outputHeight = requestedHeight ?? inputHeight;
 
+            return LimitScaleOutputSize(outputWidth, outputHeight, requestedMaxWidth, requestedMaxHeight);
+        }
+
+        private static (int? Width, int? Height) LimitScaleOutputSize(int outputWidth, int outputHeight, int? requestedMaxWidth, int? requestedMaxHeight)
+        {
             // Don't transcode video to bigger than 4k when using HW.
             int maximumWidth = Math.Min(requestedMaxWidth ?? outputWidth, 4096);
             int maximumHeight = Math.Min(requestedMaxHeight ?? outputHeight, 4096);
@@ -157,11 +162,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var swpOutH = swapOutputWandH ? outWidth.Value : outHeight.Value;
 
             var arg1 = isSizeFixed ? $"=w={swpOutW}:h={swpOutH}" : string.Empty;
-            var arg2 = isFormatFixed ? $"format={videoFormat}" : string.Empty;
-            if (isFormatFixed)
-            {
-                arg2 = (isSizeFixed ? ':' : '=') + arg2;
-            }
+            var arg2 = GetScaleFormatArgument(videoFormat, isSizeFixed, isFormatFixed);
 
             if (NeedsHwScaleFilter(hwScaleSuffix, isSizeFixed, isFormatFixed))
             {
@@ -175,6 +176,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static string GetScaleFormatArgument(string videoFormat, bool isSizeFixed, bool isFormatFixed)
+        {
+            var arg2 = isFormatFixed ? $"format={videoFormat}" : string.Empty;
+            if (isFormatFixed)
+            {
+                arg2 = (isSizeFixed ? ':' : '=') + arg2;
+            }
+
+            return arg2;
         }
 
         private static bool IsOutputSizeChanged(int? videoWidth, int? videoHeight, int? outWidth, int? outHeight)
@@ -298,19 +310,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? requestedMaxHeight)
         {
             var isV4l2 = string.Equals(videoEncoder, "h264_v4l2m2m", StringComparison.OrdinalIgnoreCase);
-            var isMjpeg = videoEncoder is not null && videoEncoder.Contains("mjpeg", StringComparison.OrdinalIgnoreCase);
+            var isMjpeg = IsMjpegVideoEncoder(videoEncoder);
             var scaleVal = isV4l2 ? 64 : 2;
             var targetAr = isMjpeg ? "(a*sar)" : "a"; // manually calculate AR when using mjpeg encoder
 
             // If fixed dimensions were supplied
-            if (requestedWidth.HasValue && requestedHeight.HasValue)
+            if (AreBothDimensionsRequested(requestedWidth, requestedHeight))
             {
                 return GetFixedDimensionsSwScaleFilter(threedFormat, requestedWidth, requestedHeight, isV4l2);
             }
 
             // If Max dimensions were supplied, for width selects lowest even number between input width and width req size and selects lowest even number from in width*display aspect and requested size
 
-            if (requestedMaxWidth.HasValue && requestedMaxHeight.HasValue)
+            if (AreBothDimensionsRequested(requestedMaxWidth, requestedMaxHeight))
             {
                 var maxWidthParam = requestedMaxWidth.Value.ToString(CultureInfo.InvariantCulture);
                 var maxHeightParam = requestedMaxHeight.Value.ToString(CultureInfo.InvariantCulture);
@@ -343,6 +355,21 @@ namespace MediaBrowser.Controller.MediaEncoding
                     targetAr);
             }
 
+            return GetScaleFilterForMaxWidthOrHeight(requestedMaxWidth, requestedMaxHeight, scaleVal, targetAr);
+        }
+
+        private static bool AreBothDimensionsRequested(int? requestedWidthOrMaxWidth, int? requestedHeightOrMaxHeight)
+        {
+            return requestedWidthOrMaxWidth.HasValue && requestedHeightOrMaxHeight.HasValue;
+        }
+
+        private static bool IsMjpegVideoEncoder(string videoEncoder)
+        {
+            return videoEncoder is not null && videoEncoder.Contains("mjpeg", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string GetScaleFilterForMaxWidthOrHeight(int? requestedMaxWidth, int? requestedMaxHeight, int scaleVal, string targetAr)
+        {
             // If a max width was requested
             if (requestedMaxWidth.HasValue)
             {

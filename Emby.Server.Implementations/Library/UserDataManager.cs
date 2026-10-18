@@ -322,6 +322,15 @@ namespace Emby.Server.Implementations.Library
                 }
             }
 
+            return ResolveResumeDataFromCandidates(result, candidates, localProbeIds, user);
+        }
+
+        private IReadOnlyDictionary<Guid, VersionResumeData> ResolveResumeDataFromCandidates(
+            Dictionary<Guid, VersionResumeData> result,
+            List<Video>? candidates,
+            List<Guid>? localProbeIds,
+            User user)
+        {
             if (candidates is null)
             {
                 return result;
@@ -329,6 +338,15 @@ namespace Emby.Server.Implementations.Library
 
             HashSet<Guid>? withLocalAlternates = FindIdsWithLocalAlternates(localProbeIds);
 
+            return ResolveResumeDataFromAlternates(result, candidates, withLocalAlternates, user);
+        }
+
+        private IReadOnlyDictionary<Guid, VersionResumeData> ResolveResumeDataFromAlternates(
+            Dictionary<Guid, VersionResumeData> result,
+            List<Video> candidates,
+            HashSet<Guid>? withLocalAlternates,
+            User user)
+        {
             List<(Guid PrimaryId, IReadOnlyList<Video> Versions)>? versionGroups = null;
             List<BaseItem>? allVersions = null;
 
@@ -350,6 +368,15 @@ namespace Emby.Server.Implementations.Library
                 (allVersions ??= []).AddRange(versions);
             }
 
+            return ResolveResumeDataFromVersionGroups(result, versionGroups, allVersions, user);
+        }
+
+        private IReadOnlyDictionary<Guid, VersionResumeData> ResolveResumeDataFromVersionGroups(
+            Dictionary<Guid, VersionResumeData> result,
+            List<(Guid PrimaryId, IReadOnlyList<Video> Versions)>? versionGroups,
+            List<BaseItem>? allVersions,
+            User user)
+        {
             if (versionGroups is null)
             {
                 return result;

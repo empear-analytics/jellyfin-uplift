@@ -25,72 +25,13 @@ namespace MediaBrowser.MediaEncoding.Probing
         private void SetAudioInfoFromTags(MediaInfo audio, Dictionary<string, string> tags)
         {
             var people = new List<BaseItemPerson>();
-            if (tags.TryGetValue("composer", out var composer) && !string.IsNullOrWhiteSpace(composer))
-            {
-                foreach (var person in Split(composer, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Composer });
-                }
-            }
-
-            if (tags.TryGetValue("conductor", out var conductor) && !string.IsNullOrWhiteSpace(conductor))
-            {
-                foreach (var person in Split(conductor, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Conductor });
-                }
-            }
-
-            if (tags.TryGetValue("lyricist", out var lyricist) && !string.IsNullOrWhiteSpace(lyricist))
-            {
-                foreach (var person in Split(lyricist, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Lyricist });
-                }
-            }
+            AddMusicalCredits(people, tags);
 
             AddPerformers(people, tags);
 
-            // In cases where there isn't sufficient information as to which role a writer performed on a recording, tagging software uses the "writer" tag.
-            if (tags.TryGetValue("writer", out var writer) && !string.IsNullOrWhiteSpace(writer))
-            {
-                foreach (var person in Split(writer, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Writer });
-                }
-            }
+            AddWritingAndEngineeringCredits(people, tags);
 
-            if (tags.TryGetValue("arranger", out var arranger) && !string.IsNullOrWhiteSpace(arranger))
-            {
-                foreach (var person in Split(arranger, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Arranger });
-                }
-            }
-
-            if (tags.TryGetValue("engineer", out var engineer) && !string.IsNullOrWhiteSpace(engineer))
-            {
-                foreach (var person in Split(engineer, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Engineer });
-                }
-            }
-
-            if (tags.TryGetValue("mixer", out var mixer) && !string.IsNullOrWhiteSpace(mixer))
-            {
-                foreach (var person in Split(mixer, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Mixer });
-                }
-            }
-
-            if (tags.TryGetValue("remixer", out var remixer) && !string.IsNullOrWhiteSpace(remixer))
-            {
-                foreach (var person in Split(remixer, false))
-                {
-                    people.Add(new BaseItemPerson { Name = person, Type = PersonKind.Remixer });
-                }
-            }
+            AddMixingCredits(people, tags);
 
             audio.People = people.ToArray();
 
@@ -109,28 +50,6 @@ namespace MediaBrowser.MediaEncoding.Probing
             FetchStudios(audio, tags, "label");
 
             SetMusicBrainzIds(audio, tags);
-        }
-
-        private void AddPerformers(List<BaseItemPerson> people, Dictionary<string, string> tags)
-        {
-            if (tags.TryGetValue("performer", out var performer) && !string.IsNullOrWhiteSpace(performer))
-            {
-                foreach (var person in Split(performer, false))
-                {
-                    Match match = PerformerRegex().Match(person);
-
-                    // If the performer doesn't have any instrument/role associated, it won't match. In that case, chances are it's simply a band name, so we skip it.
-                    if (match.Success)
-                    {
-                        people.Add(new BaseItemPerson
-                        {
-                            Name = match.Groups["name"].Value,
-                            Type = PersonKind.Actor,
-                            Role = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(match.Groups["instrument"].Value)
-                        });
-                    }
-                }
-            }
         }
 
         private void SetAlbumArtists(MediaInfo audio, Dictionary<string, string> tags)

@@ -98,16 +98,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasSubs = HasSubtitlesToEncode(state);
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
-            var hasAssSubs = hasSubs
-                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+            var hasAssSubs = HasRkmppAssSubtitles(state, hasSubs);
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
             var rotation = state.VideoStream?.Rotation ?? 0;
             var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
             var doRkVppTranspose = !string.IsNullOrEmpty(transposeDir);
-            var swapWAndH = Math.Abs(rotation) == 90 && (isSwDecoder || (isRkmppDecoder && doRkVppTranspose));
+            var swapWAndH = NeedsRkmppSwapWAndH(rotation, isSwDecoder, isRkmppDecoder, doRkVppTranspose);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
@@ -124,16 +122,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 var outFormat = doOclTonemap ? "yuv420p10le" : (hasGraphicalSubs ? "yuv420p" : "nv12");
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-                if (isMjpegEncoder && !doOclTonemap)
-                {
-                    // sw decoder + hw mjpeg encoder
-                    swScaleFilter = string.IsNullOrEmpty(swScaleFilter) ? "scale=out_range=pc" : $"{swScaleFilter}:out_range=pc";
-                }
-
-                if (!string.IsNullOrEmpty(swScaleFilter))
-                {
-                    swScaleFilter += ":flags=fast_bilinear";
-                }
+                swScaleFilter = AppendRkmppSwScaleOptions(swScaleFilter, isMjpegEncoder, doOclTonemap);
 
                 // sw scale
                 mainFilters.Add(swScaleFilter);
@@ -181,16 +170,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                         mainFilters.Add(hwScaleFilterFirstPass);
                     }
 
-                    if (!string.IsNullOrEmpty(hwScaleFilter) && doRkVppTranspose)
-                    {
-                        hwScaleFilter += $":transpose={transposeDir}";
-                    }
-
-                    // try enabling AFBC to save DDR bandwidth
-                    if (!string.IsNullOrEmpty(hwScaleFilter) && isFullAfbcPipeline)
-                    {
-                        hwScaleFilter += ":afbc=1";
-                    }
+                    hwScaleFilter = AppendRkmppHwScaleOptions(hwScaleFilter, doRkVppTranspose, transposeDir, isFullAfbcPipeline);
 
                     // hw transpose & scale
                     mainFilters.Add(hwScaleFilter);
@@ -296,33 +276,48 @@ namespace MediaBrowser.Controller.MediaEncoding
             return (mainFilters, subFilters, overlayFilters);
         }
 
-        private static void AddDrmReverseMapping(List<string> mainFilters, bool doOclTonemap)
+        private static string AppendRkmppSwScaleOptions(string swScaleFilter, bool isMjpegEncoder, bool doOclTonemap)
         {
-            if (doOclTonemap)
+            if (isMjpegEncoder && !doOclTonemap)
             {
-                // OUTPUT drm(nv12) surface(gem/dma-heap)
-                // reverse-mapping via drm-opencl interop.
-                mainFilters.Add("hwmap=derive_device=rkmpp:reverse=1");
-                mainFilters.Add("format=drm_prime");
+                // sw decoder + hw mjpeg encoder
+                swScaleFilter = string.IsNullOrEmpty(swScaleFilter) ? "scale=out_range=pc" : $"{swScaleFilter}:out_range=pc";
             }
+
+            if (!string.IsNullOrEmpty(swScaleFilter))
+            {
+                swScaleFilter += ":flags=fast_bilinear";
+            }
+
+            return swScaleFilter;
         }
 
-        private static bool NeedsRkrgaScaleFilters(bool hasSubs, bool doRkVppTranspose, bool isFullAfbcPipeline, bool doScaling)
+        private static string AppendRkmppHwScaleOptions(string hwScaleFilter, bool doRkVppTranspose, string transposeDir, bool isFullAfbcPipeline)
         {
-            return !hasSubs
-                || doRkVppTranspose
-                || !isFullAfbcPipeline
-                || doScaling;
+            if (!string.IsNullOrEmpty(hwScaleFilter) && doRkVppTranspose)
+            {
+                hwScaleFilter += $":transpose={transposeDir}";
+            }
+
+            // try enabling AFBC to save DDR bandwidth
+            if (!string.IsNullOrEmpty(hwScaleFilter) && isFullAfbcPipeline)
+            {
+                hwScaleFilter += ":afbc=1";
+            }
+
+            return hwScaleFilter;
         }
 
-        private static bool NeedsRkrgaMjpegFirstPass(bool isMjpegEncoder, bool doOclTonemap, bool doScaling, bool isScaleRatioSupported)
+        private static bool NeedsRkmppSwapWAndH(int rotation, bool isSwDecoder, bool isRkmppDecoder, bool doRkVppTranspose)
         {
-            return isMjpegEncoder && !doOclTonemap && ((doScaling && isScaleRatioSupported) || !doScaling);
+            return Math.Abs(rotation) == 90 && (isSwDecoder || (isRkmppDecoder && doRkVppTranspose));
         }
 
-        private static bool IsOverlayTallerThan(int? overlayW, int? overlayH, int subMaxH)
+        private static bool HasRkmppAssSubtitles(EncodingJobInfo state, bool hasSubs)
         {
-            return overlayW.HasValue && overlayH.HasValue && overlayH.Value > subMaxH;
+            return hasSubs
+                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
         }
     }
 }

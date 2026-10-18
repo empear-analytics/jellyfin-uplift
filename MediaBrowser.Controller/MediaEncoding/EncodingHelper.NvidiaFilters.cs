@@ -97,16 +97,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasSubs = HasSubtitlesToEncode(state);
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
-            var hasAssSubs = hasSubs
-                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+            var hasAssSubs = HasAssSubtitles(state, hasSubs);
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
             var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+            var transposeDir = GetTransposeDirection(state, rotation);
             var doCuTranspose = !string.IsNullOrEmpty(transposeDir) && _mediaEncoder.SupportsFilter("transpose_cuda");
-            var swapWAndH = Math.Abs(rotation) == 90 && (isSwDecoder || (isNvDecoder && doCuTranspose));
+            var swapWAndH = NeedsVaapiSwapWAndH(rotation, isSwDecoder, isNvDecoder, doCuTranspose);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
@@ -128,41 +126,26 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add($"format={outFormat}");
 
                 // sw => hw
-                if (doCuTonemap)
-                {
-                    mainFilters.Add("hwupload=derive_device=cuda");
-                }
+                AddNvidiaHwupload(mainFilters, doCuTonemap);
             }
 
             if (isNvDecoder)
             {
                 // INPUT cuda surface(vram)
                 // hw deint
-                if (doDeintH2645)
-                {
-                    var deintFilter = GetHwDeinterlaceFilter(state, options, "cuda");
-                    mainFilters.Add(deintFilter);
-                }
+                AddNvidiaHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 // hw transpose
-                if (doCuTranspose)
-                {
-                    mainFilters.Add($"transpose_cuda=dir={transposeDir}");
-                }
+                AddNvidiaHwTransposeFilter(mainFilters, doCuTranspose, transposeDir);
 
-                var isRext = IsVideoStreamHevcRext(state);
-                var outFormat = doCuTonemap ? (isRext ? "p010" : string.Empty) : "yuv420p";
+                var outFormat = GetNvidiaHwOutFormat(state, doCuTonemap);
                 var hwScaleFilter = GetHwScaleFilter("scale", "cuda", outFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
                 // hw scale
                 mainFilters.Add(hwScaleFilter);
             }
 
             // hw tonemap
-            if (doCuTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "cuda", "yuv420p", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            AddNvidiaHwTonemapFilter(options, mainFilters, doCuTonemap, isMjpegEncoder);
 
             var memoryOutput = false;
             var isUploadForCuTonemap = isSwDecoder && doCuTonemap;
@@ -205,7 +188,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     else if (hasTextSubs)
                     {
                         var framerate = state.VideoStream?.RealFrameRate;
-                        var subFramerate = hasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
+                        var subFramerate = GetSubtitleFramerate(hasAssSubs, framerate);
 
                         // alphasrc=s=1280x720:r=10:start=0,format=yuva420p,subtitles,hwupload
                         var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH, subFramerate);
@@ -214,8 +197,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                         subFilters.Add("format=yuva420p");
                         subFilters.Add(subTextSubtitlesFilter);
 
-                        alphaFormatOpt = _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayCudaAlphaFormat)
-                            ? ":alpha_format=premultiplied" : string.Empty;
+                        alphaFormatOpt = GetNvidiaOverlayAlphaFormatOption();
                     }
 
                     subFilters.Add("hwupload=derive_device=cuda");
@@ -233,16 +215,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
-        }
-
-        private static bool NeedsCudaMemoryOutput(bool isNvDecoder, bool isSwEncoder, bool isUploadForCuTonemap, bool hasSubs)
-        {
-            return (isNvDecoder && isSwEncoder) || (isUploadForCuTonemap && hasSubs);
-        }
-
-        private static bool NeedsNvencHwUpload(bool isSwDecoder, bool isNvencEncoder, bool isUploadForCuTonemap)
-        {
-            return isSwDecoder && isNvencEncoder && !isUploadForCuTonemap;
         }
     }
 }

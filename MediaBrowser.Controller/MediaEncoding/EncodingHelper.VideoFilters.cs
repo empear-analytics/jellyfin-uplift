@@ -50,11 +50,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 var useBwdif = CanUseCudaBwdif(options);
 
-                return string.Format(
-                    CultureInfo.InvariantCulture,
-                    "{0}_cuda={1}:-1:0",
-                    useBwdif ? "bwdif" : "yadif",
-                    doubleRateDeint ? "1" : "0");
+                return FormatBwdifYadifDeinterlaceFilter("{0}_cuda={1}:-1:0", useBwdif, doubleRateDeint);
             }
 
             if (hwDeintSuffix.Contains("opencl", StringComparison.OrdinalIgnoreCase))
@@ -63,11 +59,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 if (SupportsOpenclDeinterlaceFilters())
                 {
-                    return string.Format(
-                        CultureInfo.InvariantCulture,
-                        "{0}_opencl={1}:-1:0",
-                        useBwdif ? "bwdif" : "yadif",
-                        doubleRateDeint ? "1" : "0");
+                    return FormatBwdifYadifDeinterlaceFilter("{0}_opencl={1}:-1:0", useBwdif, doubleRateDeint);
                 }
             }
 
@@ -88,14 +80,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 var useBwdif = CanUseVideotoolboxBwdif(options);
 
-                return string.Format(
-                    CultureInfo.InvariantCulture,
-                    "{0}_videotoolbox={1}:-1:0",
-                    useBwdif ? "bwdif" : "yadif",
-                    doubleRateDeint ? "1" : "0");
+                return FormatBwdifYadifDeinterlaceFilter("{0}_videotoolbox={1}:-1:0", useBwdif, doubleRateDeint);
             }
 
             return string.Empty;
+        }
+
+        private static string FormatBwdifYadifDeinterlaceFilter(string format, bool useBwdif, bool doubleRateDeint)
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                format,
+                useBwdif ? "bwdif" : "yadif",
+                doubleRateDeint ? "1" : "0");
         }
 
         private static bool IsHwDoubleRateDeinterlace(EncodingJobInfo state, EncodingOptions options)
@@ -238,9 +235,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var tonemapArg = string.Empty;
 
             // libplacebo only support full range RGB
-            forceFullRange = forceFullRange
-                || (videoFormat ?? string.Empty).Contains("rgb", StringComparison.OrdinalIgnoreCase)
-                || (videoFormat ?? string.Empty).Contains("bgr", StringComparison.OrdinalIgnoreCase);
+            forceFullRange = IsLibplaceboFullRangeRequired(videoFormat, forceFullRange);
 
             if (doTonemap)
             {
@@ -257,6 +252,13 @@ namespace MediaBrowser.Controller.MediaEncoding
                 sizeArg,
                 formatArg,
                 tonemapArg);
+        }
+
+        private static bool IsLibplaceboFullRangeRequired(string videoFormat, bool forceFullRange)
+        {
+            return forceFullRange
+                || (videoFormat ?? string.Empty).Contains("rgb", StringComparison.OrdinalIgnoreCase)
+                || (videoFormat ?? string.Empty).Contains("bgr", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetLibplaceboTonemapArg(EncodingOptions options, bool forceFullRange, string tonemapArg)
@@ -324,7 +326,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doToneMap = IsSwTonemapAvailable(state, options);
-            var requireDoviReshaping = doToneMap && state.VideoStream.VideoRangeType == VideoRangeType.DOVI;
+            var requireDoviReshaping = IsSwDoviReshapingRequired(state, doToneMap);
 
             var hasSubs = HasSubtitlesToEncode(state);
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
@@ -350,14 +352,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var outFormat = isSwDecoder ? "yuv420p" : "nv12";
             var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-            if (isVaapiEncoder)
-            {
-                outFormat = "nv12";
-            }
-            else if (isV4l2Encoder)
-            {
-                outFormat = "yuv420p";
-            }
+            outFormat = ResolveSwOutputFormat(outFormat, isVaapiEncoder, isV4l2Encoder);
 
             // sw scale
             mainFilters.Add(swScaleFilter);
@@ -392,6 +387,25 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static string ResolveSwOutputFormat(string outFormat, bool isVaapiEncoder, bool isV4l2Encoder)
+        {
+            if (isVaapiEncoder)
+            {
+                outFormat = "nv12";
+            }
+            else if (isV4l2Encoder)
+            {
+                outFormat = "yuv420p";
+            }
+
+            return outFormat;
+        }
+
+        private static bool IsSwDoviReshapingRequired(EncodingJobInfo state, bool doToneMap)
+        {
+            return doToneMap && state.VideoStream.VideoRangeType == VideoRangeType.DOVI;
         }
 
         private static void AddSwTonemapFilter(EncodingOptions options, List<string> mainFilters, bool requireDoviReshaping, string outFormat)
@@ -466,24 +480,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             overlayFilters?.RemoveAll(string.IsNullOrEmpty);
 
             var framerate = GetFramerateParam(state);
-            if (mainFilters is not null && framerate.HasValue)
+            if (ShouldAddFpsFilter(mainFilters, framerate))
             {
                 AddFpsFilter(state, mainFilters, framerate);
             }
 
-            var mainStr = string.Empty;
-            if (mainFilters?.Count > 0)
-            {
-                mainStr = string.Format(
-                    CultureInfo.InvariantCulture,
-                    "{0}",
-                    string.Join(',', mainFilters));
-            }
+            var mainStr = JoinMainFiltersForVideoProcessing(mainFilters);
 
             if (overlayFilters?.Count == 0)
             {
                 // -vf "scale..."
-                return string.IsNullOrEmpty(mainStr) ? string.Empty : " -vf \"" + mainStr + "\"";
+                return GetMainOnlyVideoFilterParam(mainStr);
             }
 
             if (HasSubtitleOverlay(state, subFilters, overlayFilters))
@@ -506,16 +513,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 if (hasSubs)
                 {
                     // -filter_complex "[0:s]scale=s[sub]..."
-                    var filterStr = string.IsNullOrEmpty(mainStr)
-                        ? " -filter_complex \"[{0}:{1}]{4}[sub];[0:{2}][sub]{5}\""
-                        : " -filter_complex \"[{0}:{1}]{4}[sub];[0:{2}]{3}[main];[main][sub]{5}\"";
-
-                    if (hasTextSubs)
-                    {
-                        filterStr = string.IsNullOrEmpty(mainStr)
-                            ? " -filter_complex \"{4}[sub];[0:{2}][sub]{5}\""
-                            : " -filter_complex \"{4}[sub];[0:{2}]{3}[main];[main][sub]{5}\"";
-                    }
+                    var filterStr = GetSubtitleFilterComplexTemplate(mainStr, hasTextSubs);
 
                     return string.Format(
                         CultureInfo.InvariantCulture,
@@ -530,6 +528,46 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return string.Empty;
+        }
+
+        private static string JoinMainFiltersForVideoProcessing(List<string> mainFilters)
+        {
+            var mainStr = string.Empty;
+            if (mainFilters?.Count > 0)
+            {
+                mainStr = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0}",
+                    string.Join(',', mainFilters));
+            }
+
+            return mainStr;
+        }
+
+        private static string GetSubtitleFilterComplexTemplate(string mainStr, bool hasTextSubs)
+        {
+            var filterStr = string.IsNullOrEmpty(mainStr)
+                ? " -filter_complex \"[{0}:{1}]{4}[sub];[0:{2}][sub]{5}\""
+                : " -filter_complex \"[{0}:{1}]{4}[sub];[0:{2}]{3}[main];[main][sub]{5}\"";
+
+            if (hasTextSubs)
+            {
+                filterStr = string.IsNullOrEmpty(mainStr)
+                    ? " -filter_complex \"{4}[sub];[0:{2}][sub]{5}\""
+                    : " -filter_complex \"{4}[sub];[0:{2}]{3}[main];[main][sub]{5}\"";
+            }
+
+            return filterStr;
+        }
+
+        private static bool ShouldAddFpsFilter(List<string> mainFilters, double? framerate)
+        {
+            return mainFilters is not null && framerate.HasValue;
+        }
+
+        private static string GetMainOnlyVideoFilterParam(string mainStr)
+        {
+            return string.IsNullOrEmpty(mainStr) ? string.Empty : " -vf \"" + mainStr + "\"";
         }
 
         private static void AddFpsFilter(EncodingJobInfo state, List<string> mainFilters, double? framerate)
@@ -554,97 +592,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             return overlayFilters?.Count > 0
                 && subFilters?.Count > 0
                 && state.SubtitleStream is not null;
-        }
-
-        public string GetOverwriteColorPropertiesParam(EncodingJobInfo state, bool isTonemapAvailable)
-        {
-            if (isTonemapAvailable)
-            {
-                return GetInputHdrParam(state.VideoStream?.ColorTransfer);
-            }
-
-            return GetOutputSdrParam(null);
-        }
-
-        public string GetInputHdrParam(string colorTransfer)
-        {
-            if (string.Equals(colorTransfer, "arib-std-b67", StringComparison.OrdinalIgnoreCase))
-            {
-                // HLG
-                return "setparams=color_primaries=bt2020:color_trc=arib-std-b67:colorspace=bt2020nc";
-            }
-
-            // HDR10
-            return "setparams=color_primaries=bt2020:color_trc=smpte2084:colorspace=bt2020nc";
-        }
-
-        public string GetOutputSdrParam(string tonemappingRange)
-        {
-            // SDR
-            if (string.Equals(tonemappingRange, "tv", StringComparison.OrdinalIgnoreCase))
-            {
-                return "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv";
-            }
-
-            if (string.Equals(tonemappingRange, "pc", StringComparison.OrdinalIgnoreCase))
-            {
-                return "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=pc";
-            }
-
-            return "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709";
-        }
-
-        public static int GetVideoColorBitDepth(EncodingJobInfo state)
-        {
-            var videoStream = state.VideoStream;
-            if (videoStream is not null)
-            {
-                if (videoStream.BitDepth.HasValue)
-                {
-                    return videoStream.BitDepth.Value;
-                }
-
-                if (Is8BitPixelFormat(videoStream))
-                {
-                    return 8;
-                }
-
-                if (Is10BitPixelFormat(videoStream))
-                {
-                    return 10;
-                }
-
-                if (Is12BitPixelFormat(videoStream))
-                {
-                    return 12;
-                }
-
-                return 8;
-            }
-
-            return 0;
-        }
-
-        private static bool Is8BitPixelFormat(MediaStream videoStream)
-        {
-            return string.Equals(videoStream.PixelFormat, "yuv420p", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoStream.PixelFormat, "yuvj420p", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoStream.PixelFormat, "yuv422p", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoStream.PixelFormat, "yuv444p", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool Is10BitPixelFormat(MediaStream videoStream)
-        {
-            return string.Equals(videoStream.PixelFormat, "yuv420p10le", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoStream.PixelFormat, "yuv422p10le", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoStream.PixelFormat, "yuv444p10le", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool Is12BitPixelFormat(MediaStream videoStream)
-        {
-            return string.Equals(videoStream.PixelFormat, "yuv420p12le", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoStream.PixelFormat, "yuv422p12le", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoStream.PixelFormat, "yuv444p12le", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

@@ -33,8 +33,7 @@ namespace MediaBrowser.Controller.MediaEncoding
     {
         private static int GetBitDepthCompensatedBitrate(int bitrate, MediaStream videoStream, int targetBitDepth)
         {
-            if (targetBitDepth >= 10
-                || (videoStream.BitDepth is int bitDepth && bitDepth <= targetBitDepth)
+            if (IsBitrateCompensationUnneededForBitDepth(videoStream, targetBitDepth)
                 || videoStream.BitRate is not int sourceBitrate)
             {
                 return bitrate;
@@ -53,18 +52,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             return Convert.ToInt32(bitrate * factor);
         }
 
+        private static bool IsBitrateCompensationUnneededForBitDepth(MediaStream videoStream, int targetBitDepth)
+        {
+            return targetBitDepth >= 10
+                || (videoStream.BitDepth is int bitDepth && bitDepth <= targetBitDepth);
+        }
+
         public int GetVideoBitrateParamValue(BaseEncodingJobOptions request, MediaStream videoStream, string outputVideoCodec)
         {
             var bitrate = request.VideoBitRate;
 
             if (videoStream is not null)
             {
-                var isUpscaling = request.Height.HasValue
-                    && videoStream.Height.HasValue
-                    && request.Height.Value > videoStream.Height.Value
-                    && request.Width.HasValue
-                    && videoStream.Width.HasValue
-                    && request.Width.Value > videoStream.Width.Value;
+                var isUpscaling = IsBitrateRequestUpscaling(request, videoStream);
 
                 // Don't allow bitrate increases unless upscaling
                 if (ShouldCapToSourceBitrate(isUpscaling, bitrate, videoStream))
@@ -88,6 +88,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             // sources that bypass the LiveTV pipeline are not covered by it.
             const int MaxSaneBitrate = 400_000_000; // 400 Mbps
             return Math.Min(bitrate ?? 0, MaxSaneBitrate);
+        }
+
+        private static bool IsBitrateRequestUpscaling(BaseEncodingJobOptions request, MediaStream videoStream)
+        {
+            return request.Height.HasValue
+                && videoStream.Height.HasValue
+                && request.Height.Value > videoStream.Height.Value
+                && request.Width.HasValue
+                && videoStream.Width.HasValue
+                && request.Width.Value > videoStream.Width.Value;
         }
 
         private static int? GetCompensatedBitrate(BaseEncodingJobOptions request, MediaStream videoStream, string outputVideoCodec, int? bitrate)

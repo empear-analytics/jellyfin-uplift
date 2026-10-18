@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -244,61 +245,9 @@ namespace MediaBrowser.MediaEncoding.Probing
             }
         }
 
-        private string NormalizeFormat(string format, IReadOnlyList<MediaStream> mediaStreams)
-        {
-            if (string.IsNullOrWhiteSpace(format))
-            {
-                return null;
-            }
-
-            // Input can be a list of multiple, comma-delimited formats - each of them needs to be checked
-            var splitFormat = format.Split(',');
-            for (var i = 0; i < splitFormat.Length; i++)
-            {
-                // Handle MPEG-1 container
-                if (string.Equals(splitFormat[i], "mpegvideo", StringComparison.OrdinalIgnoreCase))
-                {
-                    splitFormat[i] = "mpeg";
-                }
-
-                // Handle MPEG-TS container
-                else if (string.Equals(splitFormat[i], "mpegts", StringComparison.OrdinalIgnoreCase))
-                {
-                    splitFormat[i] = "ts";
-                }
-
-                // Handle matroska container
-                else if (string.Equals(splitFormat[i], "matroska", StringComparison.OrdinalIgnoreCase))
-                {
-                    splitFormat[i] = "mkv";
-                }
-
-                // Handle WebM
-                else if (string.Equals(splitFormat[i], "webm", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Limit WebM to supported stream types and codecs.
-                    // FFprobe can report "matroska,webm" for Matroska-like containers, so only keep "webm" if all streams are WebM-compatible.
-                    // Any stream that is not video nor audio is not supported in WebM and should disqualify the webm container probe result.
-                    if (HasWebmIncompatibleStream(mediaStreams))
-                    {
-                        splitFormat[i] = string.Empty;
-                    }
-                }
-            }
-
-            return string.Join(',', splitFormat.Where(s => !string.IsNullOrEmpty(s)));
-        }
-
-        private static bool HasWebmIncompatibleStream(IReadOnlyList<MediaStream> mediaStreams)
-        {
-            return mediaStreams.Any(stream => stream.Type is not MediaStreamType.Video and not MediaStreamType.Audio)
-                || mediaStreams.Any(stream => (stream.Type == MediaStreamType.Video && !_webmVideoCodecs.Contains(stream.Codec, StringComparison.OrdinalIgnoreCase))
-                    || (stream.Type == MediaStreamType.Audio && !_webmAudioCodecs.Contains(stream.Codec, StringComparison.OrdinalIgnoreCase)));
-        }
-
         internal static int? GetEstimatedAudioBitrate(string codec, string profile, int? channels)
         {
-            if (!channels.HasValue || channels.Value < 1 || string.IsNullOrEmpty(codec))
+            if (IsAudioBitrateNotEstimable(codec, channels))
             {
                 return null;
             }
@@ -321,138 +270,13 @@ namespace MediaBrowser.MediaEncoding.Probing
             };
         }
 
+        private static bool IsAudioBitrateNotEstimable(string codec, [NotNullWhen(false)] int? channels)
+        {
+            return !channels.HasValue || channels.Value < 1 || string.IsNullOrEmpty(codec);
+        }
+
         private static bool IsDtsLossless(string profile)
             => profile is not null && profile.Contains("HD MA", StringComparison.OrdinalIgnoreCase);
-
-        private static string NormalizeSubtitleCodec(string codec)
-        {
-            if (string.Equals(codec, "dvb_subtitle", StringComparison.OrdinalIgnoreCase))
-            {
-                codec = "DVBSUB";
-            }
-            else if (string.Equals(codec, "dvb_teletext", StringComparison.OrdinalIgnoreCase))
-            {
-                codec = "DVBTXT";
-            }
-            else if (string.Equals(codec, "dvd_subtitle", StringComparison.OrdinalIgnoreCase))
-            {
-                codec = "DVDSUB"; // .sub+.idx
-            }
-            else if (string.Equals(codec, "hdmv_pgs_subtitle", StringComparison.OrdinalIgnoreCase))
-            {
-                codec = "PGSSUB"; // .sup
-            }
-
-            return codec;
-        }
-
-        /// <summary>
-        /// Converts ffprobe stream info to our MediaAttachment class.
-        /// </summary>
-        /// <param name="streamInfo">The stream info.</param>
-        /// <returns>MediaAttachments.</returns>
-        private MediaAttachment GetMediaAttachment(MediaStreamInfo streamInfo)
-        {
-            if (streamInfo.CodecType != CodecType.Attachment
-                && streamInfo.Disposition?.GetValueOrDefault("attached_pic") != 1)
-            {
-                return null;
-            }
-
-            var attachment = new MediaAttachment
-            {
-                Codec = streamInfo.CodecName,
-                Index = streamInfo.Index
-            };
-
-            if (!string.IsNullOrWhiteSpace(streamInfo.CodecTagString))
-            {
-                attachment.CodecTag = streamInfo.CodecTagString;
-            }
-
-            if (streamInfo.Tags is not null)
-            {
-                attachment.FileName = GetDictionaryValue(streamInfo.Tags, "filename");
-                attachment.MimeType = GetDictionaryValue(streamInfo.Tags, "mimetype");
-                attachment.Comment = GetDictionaryValue(streamInfo.Tags, "comment");
-            }
-
-            return attachment;
-        }
-
-        /// <summary>
-        /// Gets a string from an FFProbeResult tags dictionary.
-        /// </summary>
-        /// <param name="tags">The tags.</param>
-        /// <param name="key">The key.</param>
-        /// <returns>System.String.</returns>
-        private static string GetDictionaryValue(IReadOnlyDictionary<string, string> tags, string key)
-        {
-            if (tags is null)
-            {
-                return null;
-            }
-
-            tags.TryGetValue(key, out var val);
-
-            return val;
-        }
-
-        private static void SetAudioRuntimeTicks(InternalMediaInfoResult result, MediaInfo data)
-        {
-            // Get the first info stream
-            var stream = result.Streams?.FirstOrDefault(s => s.CodecType == CodecType.Audio);
-            if (stream is null)
-            {
-                return;
-            }
-
-            // Get duration from stream properties
-            var duration = stream.Duration;
-
-            // If it's not there go into format properties
-            if (string.IsNullOrEmpty(duration))
-            {
-                duration = result.Format.Duration;
-            }
-
-            // If we got something, parse it
-            if (!string.IsNullOrEmpty(duration))
-            {
-                data.RunTimeTicks = TimeSpan.FromSeconds(double.Parse(duration, CultureInfo.InvariantCulture)).Ticks;
-            }
-        }
-
-        private static void SetSize(InternalMediaInfoResult data, MediaInfo info)
-        {
-            if (data.Format is null)
-            {
-                return;
-            }
-
-            info.Size = string.IsNullOrEmpty(data.Format.Size) ? null : long.Parse(data.Format.Size, CultureInfo.InvariantCulture);
-        }
-
-        private static ChapterInfo GetChapterInfo(MediaChapter chapter)
-        {
-            var info = new ChapterInfo();
-
-            if (chapter.Tags is not null && chapter.Tags.TryGetValue("title", out string name))
-            {
-                info.Name = name;
-            }
-
-            // Limit accuracy to milliseconds to match xml saving
-            var secondsString = chapter.StartTime;
-
-            if (double.TryParse(secondsString, CultureInfo.InvariantCulture, out var seconds))
-            {
-                var ms = Math.Round(TimeSpan.FromSeconds(seconds).TotalMilliseconds);
-                info.StartPositionTicks = TimeSpan.FromMilliseconds(ms).Ticks;
-            }
-
-            return info;
-        }
 
         [GeneratedRegex("(?<name>.*) \\((?<instrument>.*)\\)")]
         private static partial Regex PerformerRegex();

@@ -133,17 +133,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            if (bool.TryParse(value, out var isAvc))
-                            {
-                                if (isAvc && condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.RequireAvc = true;
-                                }
-                                else if (!isAvc && condition.Condition == ProfileConditionType.NotEquals)
-                                {
-                                    item.RequireAvc = true;
-                                }
-                            }
+                            ApplyAvcCondition(item, condition, value);
 
                             break;
                         }
@@ -155,17 +145,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            if (bool.TryParse(value, out var isAnamorphic))
-                            {
-                                if (isAnamorphic && condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.RequireNonAnamorphic = true;
-                                }
-                                else if (!isAnamorphic && condition.Condition == ProfileConditionType.NotEquals)
-                                {
-                                    item.RequireNonAnamorphic = true;
-                                }
-                            }
+                            ApplyAnamorphicCondition(item, condition, value);
 
                             break;
                         }
@@ -187,17 +167,7 @@ namespace MediaBrowser.Model.Dlna
                                 }
                             }
 
-                            if (bool.TryParse(value, out var isInterlaced))
-                            {
-                                if (!isInterlaced && condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.SetOption(qualifier, "deinterlace", "true");
-                                }
-                                else if (isInterlaced && condition.Condition == ProfileConditionType.NotEquals)
-                                {
-                                    item.SetOption(qualifier, "deinterlace", "true");
-                                }
-                            }
+                            ApplyInterlacedCondition(item, condition, value, qualifier);
 
                             break;
                         }
@@ -232,21 +202,7 @@ namespace MediaBrowser.Model.Dlna
                                 }
                             }
 
-                            if (int.TryParse(value, CultureInfo.InvariantCulture, out var num))
-                            {
-                                if (condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.SetOption(qualifier, "maxrefframes", num.ToString(CultureInfo.InvariantCulture));
-                                }
-                                else if (condition.Condition == ProfileConditionType.LessThanEqual)
-                                {
-                                    item.SetOption(qualifier, "maxrefframes", Math.Min(num, item.GetTargetRefFrames(qualifier) ?? num).ToString(CultureInfo.InvariantCulture));
-                                }
-                                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                                {
-                                    item.SetOption(qualifier, "maxrefframes", Math.Max(num, item.GetTargetRefFrames(qualifier) ?? num).ToString(CultureInfo.InvariantCulture));
-                                }
-                            }
+                            ApplyRefFramesCondition(item, condition, value, qualifier);
 
                             break;
                         }
@@ -268,21 +224,7 @@ namespace MediaBrowser.Model.Dlna
                                 }
                             }
 
-                            if (int.TryParse(value, CultureInfo.InvariantCulture, out var num))
-                            {
-                                if (condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.SetOption(qualifier, "videobitdepth", num.ToString(CultureInfo.InvariantCulture));
-                                }
-                                else if (condition.Condition == ProfileConditionType.LessThanEqual)
-                                {
-                                    item.SetOption(qualifier, "videobitdepth", Math.Min(num, item.GetTargetVideoBitDepth(qualifier) ?? num).ToString(CultureInfo.InvariantCulture));
-                                }
-                                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                                {
-                                    item.SetOption(qualifier, "videobitdepth", Math.Max(num, item.GetTargetVideoBitDepth(qualifier) ?? num).ToString(CultureInfo.InvariantCulture));
-                                }
-                            }
+                            ApplyVideoBitDepthCondition(item, condition, value, qualifier);
 
                             break;
                         }
@@ -294,27 +236,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            // Change from split by | to comma
-                            // Strip spaces to avoid having to encode
-                            var values = value
-                                .Split('|', StringSplitOptions.RemoveEmptyEntries);
-
-                            if (condition.Condition == ProfileConditionType.Equals)
-                            {
-                                item.SetOption(qualifier, "profile", string.Join(',', values));
-                            }
-                            else if (condition.Condition == ProfileConditionType.EqualsAny)
-                            {
-                                var currentValue = item.GetOption(qualifier, "profile");
-                                if (!string.IsNullOrEmpty(currentValue) && values.Any(value => value == currentValue))
-                                {
-                                    item.SetOption(qualifier, "profile", currentValue);
-                                }
-                                else
-                                {
-                                    item.SetOption(qualifier, "profile", string.Join(',', values));
-                                }
-                            }
+                            ApplyVideoProfileCondition(item, condition, value, qualifier);
 
                             break;
                         }
@@ -326,31 +248,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            // change from split by | to comma
-                            // strip spaces to avoid having to encode
-                            var values = value
-                                .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-                            if (condition.Condition == ProfileConditionType.Equals)
-                            {
-                                item.SetOption(qualifier, "rangetype", string.Join(',', values));
-                            }
-                            else if (condition.Condition == ProfileConditionType.NotEquals)
-                            {
-                                item.SetOption(qualifier, "rangetype", string.Join(',', Enum.GetNames<VideoRangeType>().Except(values)));
-                            }
-                            else if (condition.Condition == ProfileConditionType.EqualsAny)
-                            {
-                                var currentValue = item.GetOption(qualifier, "rangetype");
-                                if (!string.IsNullOrEmpty(currentValue) && values.Any(v => string.Equals(v, currentValue, StringComparison.OrdinalIgnoreCase)))
-                                {
-                                    item.SetOption(qualifier, "rangetype", currentValue);
-                                }
-                                else
-                                {
-                                    item.SetOption(qualifier, "rangetype", string.Join(',', values));
-                                }
-                            }
+                            ApplyVideoRangeTypeCondition(item, condition, value, qualifier);
 
                             break;
                         }
@@ -362,27 +260,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            // change from split by | to comma
-                            // strip spaces to avoid having to encode
-                            var values = value
-                                .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-                            if (condition.Condition == ProfileConditionType.Equals)
-                            {
-                                item.SetOption(qualifier, "codectag", string.Join(',', values));
-                            }
-                            else if (condition.Condition == ProfileConditionType.EqualsAny)
-                            {
-                                var currentValue = item.GetOption(qualifier, "codectag");
-                                if (!string.IsNullOrEmpty(currentValue) && values.Any(v => string.Equals(v, currentValue, StringComparison.OrdinalIgnoreCase)))
-                                {
-                                    item.SetOption(qualifier, "codectag", currentValue);
-                                }
-                                else
-                                {
-                                    item.SetOption(qualifier, "codectag", string.Join(',', values));
-                                }
-                            }
+                            ApplyVideoCodecTagCondition(item, condition, value, qualifier);
 
                             break;
                         }
@@ -394,27 +272,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            // change from split by | to comma
-                            // strip spaces to avoid having to encode
-                            var values = value
-                                .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-                            if (condition.Condition == ProfileConditionType.Equals)
-                            {
-                                item.SetOption(qualifier, "rotation", string.Join(',', values));
-                            }
-                            else if (condition.Condition == ProfileConditionType.EqualsAny)
-                            {
-                                var currentValue = item.GetOption(qualifier, "rotation");
-                                if (!string.IsNullOrEmpty(currentValue) && values.Any(v => string.Equals(v, currentValue, StringComparison.OrdinalIgnoreCase)))
-                                {
-                                    item.SetOption(qualifier, "rotation", currentValue);
-                                }
-                                else
-                                {
-                                    item.SetOption(qualifier, "rotation", string.Join(',', values));
-                                }
-                            }
+                            ApplyVideoRotationCondition(item, condition, value, qualifier);
 
                             break;
                         }
@@ -426,21 +284,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            if (int.TryParse(value, CultureInfo.InvariantCulture, out var num))
-                            {
-                                if (condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.MaxHeight = num;
-                                }
-                                else if (condition.Condition == ProfileConditionType.LessThanEqual)
-                                {
-                                    item.MaxHeight = Math.Min(num, item.MaxHeight ?? num);
-                                }
-                                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                                {
-                                    item.MaxHeight = Math.Max(num, item.MaxHeight ?? num);
-                                }
-                            }
+                            ApplyHeightCondition(item, condition, value);
 
                             break;
                         }
@@ -452,21 +296,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            if (int.TryParse(value, CultureInfo.InvariantCulture, out var num))
-                            {
-                                if (condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.VideoBitrate = num;
-                                }
-                                else if (condition.Condition == ProfileConditionType.LessThanEqual)
-                                {
-                                    item.VideoBitrate = Math.Min(num, item.VideoBitrate ?? num);
-                                }
-                                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                                {
-                                    item.VideoBitrate = Math.Max(num, item.VideoBitrate ?? num);
-                                }
-                            }
+                            ApplyVideoBitrateCondition(item, condition, value);
 
                             break;
                         }
@@ -478,21 +308,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            if (float.TryParse(value, CultureInfo.InvariantCulture, out var num))
-                            {
-                                if (condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.MaxFramerate = num;
-                                }
-                                else if (condition.Condition == ProfileConditionType.LessThanEqual)
-                                {
-                                    item.MaxFramerate = Math.Min(num, item.MaxFramerate ?? num);
-                                }
-                                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                                {
-                                    item.MaxFramerate = Math.Max(num, item.MaxFramerate ?? num);
-                                }
-                            }
+                            ApplyVideoFramerateCondition(item, condition, value);
 
                             break;
                         }
@@ -504,21 +320,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            if (int.TryParse(value, CultureInfo.InvariantCulture, out var num))
-                            {
-                                if (condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.SetOption(qualifier, "level", num.ToString(CultureInfo.InvariantCulture));
-                                }
-                                else if (condition.Condition == ProfileConditionType.LessThanEqual)
-                                {
-                                    item.SetOption(qualifier, "level", Math.Min(num, item.GetTargetVideoLevel(qualifier) ?? num).ToString(CultureInfo.InvariantCulture));
-                                }
-                                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                                {
-                                    item.SetOption(qualifier, "level", Math.Max(num, item.GetTargetVideoLevel(qualifier) ?? num).ToString(CultureInfo.InvariantCulture));
-                                }
-                            }
+                            ApplyVideoLevelCondition(item, condition, value, qualifier);
 
                             break;
                         }
@@ -530,21 +332,7 @@ namespace MediaBrowser.Model.Dlna
                                 continue;
                             }
 
-                            if (int.TryParse(value, CultureInfo.InvariantCulture, out var num))
-                            {
-                                if (condition.Condition == ProfileConditionType.Equals)
-                                {
-                                    item.MaxWidth = num;
-                                }
-                                else if (condition.Condition == ProfileConditionType.LessThanEqual)
-                                {
-                                    item.MaxWidth = Math.Min(num, item.MaxWidth ?? num);
-                                }
-                                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                                {
-                                    item.MaxWidth = Math.Max(num, item.MaxWidth ?? num);
-                                }
-                            }
+                            ApplyWidthCondition(item, condition, value);
 
                             break;
                         }
@@ -555,59 +343,27 @@ namespace MediaBrowser.Model.Dlna
             }
         }
 
-        private static void ApplyAudioBitrateCondition(StreamInfo item, ProfileCondition condition, string value)
+        private static void ApplyVideoProfileCondition(StreamInfo item, ProfileCondition condition, string conditionValue, string? qualifier)
         {
-            if (int.TryParse(value, CultureInfo.InvariantCulture, out var num))
-            {
-                if (condition.Condition == ProfileConditionType.Equals)
-                {
-                    item.AudioBitrate = num;
-                }
-                else if (condition.Condition == ProfileConditionType.LessThanEqual)
-                {
-                    item.AudioBitrate = Math.Min(num, item.AudioBitrate ?? num);
-                }
-                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                {
-                    item.AudioBitrate = Math.Max(num, item.AudioBitrate ?? num);
-                }
-            }
-        }
+            // Change from split by | to comma
+            // Strip spaces to avoid having to encode
+            var values = conditionValue
+                .Split('|', StringSplitOptions.RemoveEmptyEntries);
 
-        private static void ApplyAudioSampleRateCondition(StreamInfo item, ProfileCondition condition, string value)
-        {
-            if (int.TryParse(value, CultureInfo.InvariantCulture, out var num))
+            if (condition.Condition == ProfileConditionType.Equals)
             {
-                if (condition.Condition == ProfileConditionType.Equals)
-                {
-                    item.AudioSampleRate = num;
-                }
-                else if (condition.Condition == ProfileConditionType.LessThanEqual)
-                {
-                    item.AudioSampleRate = Math.Min(num, item.AudioSampleRate ?? num);
-                }
-                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                {
-                    item.AudioSampleRate = Math.Max(num, item.AudioSampleRate ?? num);
-                }
+                item.SetOption(qualifier, "profile", string.Join(',', values));
             }
-        }
-
-        private static void ApplyAudioChannelsCondition(StreamInfo item, ProfileCondition condition, string value, string? qualifier)
-        {
-            if (int.TryParse(value, CultureInfo.InvariantCulture, out var num))
+            else if (condition.Condition == ProfileConditionType.EqualsAny)
             {
-                if (condition.Condition == ProfileConditionType.Equals)
+                var currentValue = item.GetOption(qualifier, "profile");
+                if (!string.IsNullOrEmpty(currentValue) && values.Any(value => value == currentValue))
                 {
-                    item.SetOption(qualifier, "audiochannels", num.ToString(CultureInfo.InvariantCulture));
+                    item.SetOption(qualifier, "profile", currentValue);
                 }
-                else if (condition.Condition == ProfileConditionType.LessThanEqual)
+                else
                 {
-                    item.SetOption(qualifier, "audiochannels", Math.Min(num, item.GetTargetAudioChannels(qualifier) ?? num).ToString(CultureInfo.InvariantCulture));
-                }
-                else if (condition.Condition == ProfileConditionType.GreaterThanEqual)
-                {
-                    item.SetOption(qualifier, "audiochannels", Math.Max(num, item.GetTargetAudioChannels(qualifier) ?? num).ToString(CultureInfo.InvariantCulture));
+                    item.SetOption(qualifier, "profile", string.Join(',', values));
                 }
             }
         }

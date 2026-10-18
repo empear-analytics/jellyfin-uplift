@@ -91,17 +91,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasSubs = HasSubtitlesToEncode(state);
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
-            var hasAssSubs = hasSubs
-                && (string.Equals(state.SubtitleStream.Codec, "ass", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(state.SubtitleStream.Codec, "ssa", StringComparison.OrdinalIgnoreCase));
+            var hasAssSubs = HasAssSubtitles(state, hasSubs);
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
             var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
-            var doOclTranspose = !string.IsNullOrEmpty(transposeDir)
-                && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.TransposeOpenclReversal);
-            var swapWAndH = Math.Abs(rotation) == 90 && (isSwDecoder || (isD3d11vaDecoder && doOclTranspose));
+            var transposeDir = GetTransposeDirection(state, rotation);
+            var doOclTranspose = IsAmdOclTransposeAvailable(transposeDir);
+            var swapWAndH = IsAmdRotatedWidthHeightSwapped(rotation, isSwDecoder, isD3d11vaDecoder, doOclTranspose);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
@@ -116,7 +113,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // sw deint
                 AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
-                var outFormat = doOclTonemap ? "yuv420p10le" : "yuv420p";
+                var outFormat = GetAmdSwOutputFormat(doOclTonemap);
                 var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
                 // sw scale
                 mainFilters.Add(swScaleFilter);
@@ -125,12 +122,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // keep video at memory except ocl tonemap,
                 // since the overhead caused by hwupload >>> using sw filter.
                 // sw => hw
-                if (doOclTonemap)
-                {
-                    mainFilters.Add("hwupload=derive_device=d3d11va:extra_hw_frames=24");
-                    mainFilters.Add("format=d3d11");
-                    mainFilters.Add("hwmap=derive_device=opencl:mode=read");
-                }
+                AddAmdOclTonemapUpload(mainFilters, doOclTonemap);
             }
 
             if (isD3d11vaDecoder)
@@ -140,42 +132,26 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add("hwmap=derive_device=opencl:mode=read");
 
                 // hw deint
-                if (doDeintH2645)
-                {
-                    var deintFilter = GetHwDeinterlaceFilter(state, options, "opencl");
-                    mainFilters.Add(deintFilter);
-                }
+                AddAmdOclHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
 
                 // hw transpose
-                if (doOclTranspose)
-                {
-                    mainFilters.Add($"transpose_opencl=dir={transposeDir}");
-                }
+                AddAmdOclTransposeFilter(mainFilters, doOclTranspose, transposeDir);
 
-                var outFormat = doOclTonemap ? string.Empty : "nv12";
+                var outFormat = GetAmdOclScaleOutputFormat(doOclTonemap);
                 var hwScaleFilter = GetHwScaleFilter("scale", "opencl", outFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
                 // hw scale
                 mainFilters.Add(hwScaleFilter);
             }
 
             // hw tonemap
-            if (doOclTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "opencl", "nv12", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
             var memoryOutput = false;
             var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
             if (isD3d11vaDecoder && isSwEncoder)
             {
                 memoryOutput = true;
-
-                // OUTPUT nv12 surface(memory)
-                // prefer hwmap to hwdownload on opencl.
-                var hwTransferFilter = hasGraphicalSubs ? "hwdownload" : "hwmap=mode=read";
-                mainFilters.Add(hwTransferFilter);
-                mainFilters.Add("format=nv12");
+                AddAmdHwTransferToMemory(mainFilters, hasGraphicalSubs);
             }
 
             // OUTPUT yuv420p surface
@@ -184,18 +160,9 @@ namespace MediaBrowser.Controller.MediaEncoding
                 memoryOutput = true;
             }
 
-            if (memoryOutput)
-            {
-                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
-            }
+            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
-            if (NeedsAmfHwOutputMap(isDxInDxOut, isUploadForOclTonemap, hasSubs))
-            {
-                // OUTPUT d3d11(nv12) surface(vram)
-                // reverse-mapping via d3d11-opencl interop.
-                mainFilters.Add("hwmap=derive_device=d3d11va:mode=write:reverse=1");
-                mainFilters.Add("format=d3d11");
-            }
+            AddAmdD3d11OutputMapping(mainFilters, isDxInDxOut, isUploadForOclTonemap, hasSubs);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
@@ -213,8 +180,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     }
                     else if (hasTextSubs)
                     {
-                        var framerate = state.VideoStream?.RealFrameRate;
-                        var subFramerate = hasAssSubs ? Math.Min(framerate ?? 25, 60) : 10;
+                        var subFramerate = GetAmdSubtitleFramerate(state, hasAssSubs);
 
                         // alphasrc=s=1280x720:r=10:start=0,format=yuva420p,subtitles,hwupload
                         var alphaSrcFilter = GetAlphaSrcFilter(state, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH, subFramerate);
@@ -223,8 +189,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                         subFilters.Add("format=yuva420p");
                         subFilters.Add(subTextSubtitlesFilter);
 
-                        alphaFormatOpt = _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayOpenclAlphaFormat)
-                            ? ":alpha_format=premultiplied" : string.Empty;
+                        alphaFormatOpt = GetAmdOverlayAlphaFormatOption();
                     }
 
                     subFilters.Add("hwupload=derive_device=opencl");
@@ -244,16 +209,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
-        }
-
-        private static bool NeedsAmfHwUpload(bool isSwDecoder, bool isAmfEncoder, bool isUploadForOclTonemap)
-        {
-            return isSwDecoder && isAmfEncoder && !isUploadForOclTonemap;
-        }
-
-        private static bool NeedsAmfHwOutputMap(bool isDxInDxOut, bool isUploadForOclTonemap, bool hasSubs)
-        {
-            return (isDxInDxOut || isUploadForOclTonemap) && !hasSubs;
         }
     }
 }
