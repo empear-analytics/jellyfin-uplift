@@ -92,19 +92,29 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 var requestedProfile = requestedProfiles[0];
                 // strip spaces because they may be stripped out on the query string as well
-                if (IsProfileNotRequested(videoStream, requestedProfiles))
+                if (!StreamCopyIsProfileScoreAccepted(videoStream, requestedProfiles, requestedProfile))
                 {
-                    var currentScore = GetVideoProfileScore(videoStream.Codec, videoStream.Profile);
-                    var requestedScore = GetVideoProfileScore(videoStream.Codec, requestedProfile);
-
-                    if (currentScore == -1 || currentScore > requestedScore)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
 
             return CanCopyGivenRangeRotationSizeAndFrameRate(state, request, videoStream);
+        }
+
+        private bool StreamCopyIsProfileScoreAccepted(MediaStream videoStream, string[] requestedProfiles, string requestedProfile)
+        {
+            if (IsProfileNotRequested(videoStream, requestedProfiles))
+            {
+                var currentScore = GetVideoProfileScore(videoStream.Codec, videoStream.Profile);
+                var requestedScore = GetVideoProfileScore(videoStream.Codec, requestedProfile);
+
+                if (currentScore == -1 || currentScore > requestedScore)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private bool CanCopyGivenRangeRotationSizeAndFrameRate(EncodingJobInfo state, BaseEncodingJobOptions request, MediaStream videoStream)
