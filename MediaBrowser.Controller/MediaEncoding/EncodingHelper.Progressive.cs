@@ -293,11 +293,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // asked for a raw container (added in #10321 for I2S/MCU clients): applying it to every
             // pcm_* codec also strips the RIFF header from a `stream.wav` request, which then serves
             // headerless PCM behind an audio/wav content type.
-            var audioEncoder = GetAudioEncoder(state);
-            if (IsRawPcmOutput(state, audioEncoder))
-            {
-                audioTranscodeParams.Add(string.Concat("-f ", audioEncoder.AsSpan(4)));
-            }
+            AddProgressiveRawPcmMuxerParam(audioTranscodeParams, state);
 
             var sampleRate = state.OutputAudioSampleRate;
             if (sampleRate.HasValue)
@@ -306,18 +302,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // Without the downmix filter, -ac 2 alone drops the LFE channel.
-            var audioFilterParam = GetAudioFilterParam(state, encodingOptions);
-            if (!string.IsNullOrEmpty(audioFilterParam))
-            {
-                audioTranscodeParams.Add(audioFilterParam.TrimStart());
-            }
+            AddProgressiveAudioFilterParam(audioTranscodeParams, state, encodingOptions);
 
             // Copy the movflags from GetProgressiveVideoFullCommandLine
             // See #9248 and the associated PR for why this is needed
-            if (_mp4ContainerNames.Contains(state.OutputContainer))
-            {
-                audioTranscodeParams.Add("-movflags empty_moov+delay_moov");
-            }
+            AddProgressiveMp4MovflagsParam(audioTranscodeParams, state);
 
             var threads = GetNumberOfThreads(state, encodingOptions, null);
 
@@ -335,6 +324,32 @@ namespace MediaBrowser.Controller.MediaEncoding
                 string.Empty,
                 string.Empty,
                 string.Empty).Trim();
+        }
+
+        private void AddProgressiveRawPcmMuxerParam(List<string> audioTranscodeParams, EncodingJobInfo state)
+        {
+            var audioEncoder = GetAudioEncoder(state);
+            if (IsRawPcmOutput(state, audioEncoder))
+            {
+                audioTranscodeParams.Add(string.Concat("-f ", audioEncoder.AsSpan(4)));
+            }
+        }
+
+        private void AddProgressiveAudioFilterParam(List<string> audioTranscodeParams, EncodingJobInfo state, EncodingOptions encodingOptions)
+        {
+            var audioFilterParam = GetAudioFilterParam(state, encodingOptions);
+            if (!string.IsNullOrEmpty(audioFilterParam))
+            {
+                audioTranscodeParams.Add(audioFilterParam.TrimStart());
+            }
+        }
+
+        private void AddProgressiveMp4MovflagsParam(List<string> audioTranscodeParams, EncodingJobInfo state)
+        {
+            if (_mp4ContainerNames.Contains(state.OutputContainer))
+            {
+                audioTranscodeParams.Add("-movflags empty_moov+delay_moov");
+            }
         }
 
         private static bool IsRawPcmOutput(EncodingJobInfo state, string audioEncoder)
