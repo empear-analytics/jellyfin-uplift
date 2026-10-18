@@ -814,21 +814,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (state.SubtitleStream.IsExternal)
             {
-                var charsetParam = string.Empty;
-
-                if (!string.IsNullOrEmpty(state.SubtitleStream.Language))
-                {
-                    var charenc = _subtitleEncoder.GetSubtitleFileCharacterSet(
-                            state.SubtitleStream,
-                            state.SubtitleStream.Language,
-                            state.MediaSource,
-                            CancellationToken.None).GetAwaiter().GetResult();
-
-                    if (!string.IsNullOrEmpty(charenc))
-                    {
-                        charsetParam = ":charenc=" + charenc;
-                    }
-                }
+                var charsetParam = GetSubtitleCharsetParam(state);
 
                 return string.Format(
                     CultureInfo.InvariantCulture,
@@ -854,6 +840,27 @@ namespace MediaBrowser.Controller.MediaEncoding
                 sub2videoParam,
                 fontParam,
                 setPtsParam);
+        }
+
+        private string GetSubtitleCharsetParam(EncodingJobInfo state)
+        {
+            var charsetParam = string.Empty;
+
+            if (!string.IsNullOrEmpty(state.SubtitleStream.Language))
+            {
+                var charenc = _subtitleEncoder.GetSubtitleFileCharacterSet(
+                        state.SubtitleStream,
+                        state.SubtitleStream.Language,
+                        state.MediaSource,
+                        CancellationToken.None).GetAwaiter().GetResult();
+
+                if (!string.IsNullOrEmpty(charenc))
+                {
+                    charsetParam = ":charenc=" + charenc;
+                }
+            }
+
+            return charsetParam;
         }
 
         /// <summary>
