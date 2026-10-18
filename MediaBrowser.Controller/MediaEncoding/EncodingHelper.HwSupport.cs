@@ -45,15 +45,20 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         private bool IsVaapiFullSupported()
         {
-            return _mediaEncoder.SupportsHwaccel("drm")
-                   && _mediaEncoder.SupportsHwaccel("vaapi")
-                   && _mediaEncoder.SupportsFilter("scale_vaapi")
-                   && _mediaEncoder.SupportsFilter("deinterlace_vaapi")
+            return IsVaapiDrmScaleDeinterlaceSupported()
                    && _mediaEncoder.SupportsFilter("tonemap_vaapi")
                    && _mediaEncoder.SupportsFilter("procamp_vaapi")
                    && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayVaapiFrameSync)
                    && _mediaEncoder.SupportsFilter("transpose_vaapi")
                    && _mediaEncoder.SupportsFilter("hwupload_vaapi");
+        }
+
+        private bool IsVaapiDrmScaleDeinterlaceSupported()
+        {
+            return _mediaEncoder.SupportsHwaccel("drm")
+                   && _mediaEncoder.SupportsHwaccel("vaapi")
+                   && _mediaEncoder.SupportsFilter("scale_vaapi")
+                   && _mediaEncoder.SupportsFilter("deinterlace_vaapi");
         }
 
         private bool IsRkmppFullSupported()
