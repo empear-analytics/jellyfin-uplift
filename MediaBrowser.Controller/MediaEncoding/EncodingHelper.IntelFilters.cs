@@ -262,7 +262,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             /* Make sub and overlay filters for subtitle stream */
             var context = new IntelQsvDx11FilterContext(
-                state,
+                hasSubs,
                 hasGraphicalSubs,
                 hasTextSubs,
                 hasAssSubs,
@@ -279,62 +279,62 @@ namespace MediaBrowser.Controller.MediaEncoding
             var overlayFilters = new List<string>();
             if (isQsvInQsvOut)
             {
-                if (hasSubs)
-                {
-                    AddIntelQsvDx11QsvOutSubtitleFilters(subFilters, overlayFilters, context);
-                }
+                AddIntelQsvDx11QsvOutSubtitleFilters(state, subFilters, overlayFilters, context);
             }
             else if (memoryOutput)
             {
-                if (hasGraphicalSubs)
-                {
-                    AddIntelQsvDx11MemorySubtitleFilters(subFilters, overlayFilters, context);
-                }
+                AddIntelQsvDx11MemorySubtitleFilters(subFilters, overlayFilters, context);
             }
 
             return (mainFilters, subFilters, overlayFilters);
         }
 
-        private void AddIntelQsvDx11QsvOutSubtitleFilters(List<string> subFilters, List<string> overlayFilters, IntelQsvDx11FilterContext context)
+        private void AddIntelQsvDx11QsvOutSubtitleFilters(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters, IntelQsvDx11FilterContext context)
         {
-            if (context.HasGraphicalSubs)
+            if (context.HasSubs)
             {
-                // overlay_qsv can handle overlay scaling, setup a smaller height to reduce transfer overhead
-                var subPreProcFilters = GetGraphicalSubPreProcessFilters(context.SwpInW, context.SwpInH, context.SubW, context.SubH, context.ReqW, context.ReqH, context.ReqMaxW, 1080);
-                subFilters.Add(subPreProcFilters);
-                subFilters.Add("format=bgra");
+                if (context.HasGraphicalSubs)
+                {
+                    // overlay_qsv can handle overlay scaling, setup a smaller height to reduce transfer overhead
+                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(context.SwpInW, context.SwpInH, context.SubW, context.SubH, context.ReqW, context.ReqH, context.ReqMaxW, 1080);
+                    subFilters.Add(subPreProcFilters);
+                    subFilters.Add("format=bgra");
+                }
+                else if (context.HasTextSubs)
+                {
+                    var framerate = state.VideoStream?.RealFrameRate;
+                    var subFramerate = GetSubtitleFramerate(context.HasAssSubs, framerate);
+
+                    // alphasrc=s=1280x720:r=10:start=0,format=bgra,subtitles,hwupload
+                    var alphaSrcFilter = GetAlphaSrcFilter(state, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, 1080, subFramerate);
+                    var subTextSubtitlesFilter = GetTextSubtitlesFilter(state, true, true);
+                    subFilters.Add(alphaSrcFilter);
+                    subFilters.Add("format=bgra");
+                    subFilters.Add(subTextSubtitlesFilter);
+                }
+
+                // qsv requires a fixed pool size.
+                // default to 64 otherwise it will fail on certain iGPU.
+                subFilters.Add("hwupload=derive_device=qsv:extra_hw_frames=64");
+
+                var (overlayW, overlayH) = GetFixedOutputSize(context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                var overlaySize = GetOverlaySizeOption(overlayW, overlayH);
+                var overlayQsvFilter = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "overlay_qsv=eof_action=pass:repeatlast=0{0}",
+                    overlaySize);
+                overlayFilters.Add(overlayQsvFilter);
             }
-            else if (context.HasTextSubs)
-            {
-                var framerate = context.State.VideoStream?.RealFrameRate;
-                var subFramerate = GetSubtitleFramerate(context.HasAssSubs, framerate);
-
-                // alphasrc=s=1280x720:r=10:start=0,format=bgra,subtitles,hwupload
-                var alphaSrcFilter = GetAlphaSrcFilter(context.State, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, 1080, subFramerate);
-                var subTextSubtitlesFilter = GetTextSubtitlesFilter(context.State, true, true);
-                subFilters.Add(alphaSrcFilter);
-                subFilters.Add("format=bgra");
-                subFilters.Add(subTextSubtitlesFilter);
-            }
-
-            // qsv requires a fixed pool size.
-            // default to 64 otherwise it will fail on certain iGPU.
-            subFilters.Add("hwupload=derive_device=qsv:extra_hw_frames=64");
-
-            var (overlayW, overlayH) = GetFixedOutputSize(context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
-            var overlaySize = GetOverlaySizeOption(overlayW, overlayH);
-            var overlayQsvFilter = string.Format(
-                CultureInfo.InvariantCulture,
-                "overlay_qsv=eof_action=pass:repeatlast=0{0}",
-                overlaySize);
-            overlayFilters.Add(overlayQsvFilter);
         }
 
         private static void AddIntelQsvDx11MemorySubtitleFilters(List<string> subFilters, List<string> overlayFilters, IntelQsvDx11FilterContext context)
         {
-            var subPreProcFilters = GetGraphicalSubPreProcessFilters(context.SwpInW, context.SwpInH, context.SubW, context.SubH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
-            subFilters.Add(subPreProcFilters);
-            overlayFilters.Add("overlay=eof_action=pass:repeatlast=0");
+            if (context.HasGraphicalSubs)
+            {
+                var subPreProcFilters = GetGraphicalSubPreProcessFilters(context.SwpInW, context.SwpInH, context.SubW, context.SubH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                subFilters.Add(subPreProcFilters);
+                overlayFilters.Add("overlay=eof_action=pass:repeatlast=0");
+            }
         }
 
         private static string GetSwDecoderOutputFormat(bool doOclTonemap, bool hasGraphicalSubs)
@@ -971,7 +971,7 @@ namespace MediaBrowser.Controller.MediaEncoding
         }
 
         private readonly record struct IntelQsvDx11FilterContext(
-            EncodingJobInfo State,
+            bool HasSubs,
             bool HasGraphicalSubs,
             bool HasTextSubs,
             bool HasAssSubs,
