@@ -252,14 +252,22 @@ namespace MediaBrowser.Controller.MediaEncoding
                 EncoderPreset.slow => " -preset 7",
                 EncoderPreset.medium => " -preset 8",
                 EncoderPreset.fast => " -preset 9",
+                _ => VideoEncoderSvtAv1FasterPreset(encoderPreset)
+            };
+
+            return param;
+        }
+
+        private static string VideoEncoderSvtAv1FasterPreset(EncoderPreset encoderPreset)
+        {
+            return encoderPreset switch
+            {
                 EncoderPreset.faster => " -preset 10",
                 EncoderPreset.veryfast => " -preset 11",
                 EncoderPreset.superfast => " -preset 12",
                 EncoderPreset.ultrafast => " -preset 13",
                 _ => " -preset 10"
             };
-
-            return param;
         }
 
         private string AppendVaapiCompressionLevel(string param, EncoderPreset encoderPreset)
