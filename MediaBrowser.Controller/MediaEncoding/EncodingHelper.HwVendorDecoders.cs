@@ -605,29 +605,6 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return null;
             }
 
-            if (is8bitSwFormatsRkmpp)
-            {
-                if (string.Equals(videoStream.Codec, "mpeg1video", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "mpeg1video", bitDepth, hwSurface);
-                }
-
-                if (string.Equals(videoStream.Codec, "mpeg2video", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "mpeg2video", bitDepth, hwSurface);
-                }
-
-                if (string.Equals(videoStream.Codec, "mpeg4", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "mpeg4", bitDepth, hwSurface);
-                }
-
-                if (string.Equals(videoStream.Codec, "vp8", StringComparison.OrdinalIgnoreCase))
-                {
-                    return GetHwaccelType(state, options, "vp8", bitDepth, hwSurface);
-                }
-            }
-
             var context = new HwDecoderRkmppContext(
                 state,
                 options,
@@ -635,7 +612,36 @@ namespace MediaBrowser.Controller.MediaEncoding
                 bitDepth,
                 hwSurface,
                 isAfbcSupported,
+                is8bitSwFormatsRkmpp,
                 is8_10bitSwFormatsRkmpp);
+            return ResolveRkmppEightBitAccelType(context);
+        }
+
+        private string ResolveRkmppEightBitAccelType(HwDecoderRkmppContext context)
+        {
+            if (context.Is8bitSwFormatsRkmpp)
+            {
+                if (string.Equals(context.VideoStream.Codec, "mpeg1video", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GetHwaccelType(context.State, context.Options, "mpeg1video", context.BitDepth, context.HwSurface);
+                }
+
+                if (string.Equals(context.VideoStream.Codec, "mpeg2video", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GetHwaccelType(context.State, context.Options, "mpeg2video", context.BitDepth, context.HwSurface);
+                }
+
+                if (string.Equals(context.VideoStream.Codec, "mpeg4", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GetHwaccelType(context.State, context.Options, "mpeg4", context.BitDepth, context.HwSurface);
+                }
+
+                if (string.Equals(context.VideoStream.Codec, "vp8", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GetHwaccelType(context.State, context.Options, "vp8", context.BitDepth, context.HwSurface);
+                }
+            }
+
             return ResolveRkmppWideSwFormatAccelType(context);
         }
 
@@ -761,6 +767,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             int BitDepth,
             bool HwSurface,
             bool IsAfbcSupported,
+            bool Is8bitSwFormatsRkmpp,
             bool Is8_10bitSwFormatsRkmpp);
     }
 }
