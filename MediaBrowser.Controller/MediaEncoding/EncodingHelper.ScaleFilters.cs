@@ -310,7 +310,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? requestedMaxHeight)
         {
             var isV4l2 = string.Equals(videoEncoder, "h264_v4l2m2m", StringComparison.OrdinalIgnoreCase);
-            var isMjpeg = videoEncoder is not null && videoEncoder.Contains("mjpeg", StringComparison.OrdinalIgnoreCase);
+            var isMjpeg = IsMjpegVideoEncoder(videoEncoder);
             var scaleVal = isV4l2 ? 64 : 2;
             var targetAr = isMjpeg ? "(a*sar)" : "a"; // manually calculate AR when using mjpeg encoder
 
@@ -361,6 +361,11 @@ namespace MediaBrowser.Controller.MediaEncoding
         private static bool AreBothDimensionsRequested(int? requestedWidthOrMaxWidth, int? requestedHeightOrMaxHeight)
         {
             return requestedWidthOrMaxWidth.HasValue && requestedHeightOrMaxHeight.HasValue;
+        }
+
+        private static bool IsMjpegVideoEncoder(string videoEncoder)
+        {
+            return videoEncoder is not null && videoEncoder.Contains("mjpeg", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetScaleFilterForMaxWidthOrHeight(int? requestedMaxWidth, int? requestedMaxHeight, int scaleVal, string targetAr)
