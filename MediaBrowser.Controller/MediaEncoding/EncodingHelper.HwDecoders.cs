@@ -923,24 +923,37 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            if (is8_10bitSwFormatsVaapi)
+            var context = new HwDecoderVaapiContext(
+                state,
+                options,
+                videoStream,
+                bitDepth,
+                hwSurface,
+                is8_10bitSwFormatsVaapi,
+                is8_10_12bitSwFormatsVaapi);
+            return ResolveVaapiWideSwFormatAccelType(context);
+        }
+
+        private string ResolveVaapiWideSwFormatAccelType(HwDecoderVaapiContext context)
+        {
+            if (context.Is8_10bitSwFormatsVaapi)
             {
-                if (string.Equals("vp9", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals("vp9", context.VideoStream.Codec, StringComparison.OrdinalIgnoreCase))
                 {
-                    return GetHwaccelType(state, options, "vp9", bitDepth, hwSurface);
+                    return GetHwaccelType(context.State, context.Options, "vp9", context.BitDepth, context.HwSurface);
                 }
 
-                if (string.Equals("av1", videoStream.Codec, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals("av1", context.VideoStream.Codec, StringComparison.OrdinalIgnoreCase))
                 {
-                    return GetHwaccelType(state, options, "av1", bitDepth, hwSurface);
+                    return GetHwaccelType(context.State, context.Options, "av1", context.BitDepth, context.HwSurface);
                 }
             }
 
-            if (is8_10_12bitSwFormatsVaapi)
+            if (context.Is8_10_12bitSwFormatsVaapi)
             {
-                if (IsHevcStreamCodec(videoStream))
+                if (IsHevcStreamCodec(context.VideoStream))
                 {
-                    return GetHwaccelType(state, options, "hevc", bitDepth, hwSurface);
+                    return GetHwaccelType(context.State, context.Options, "hevc", context.BitDepth, context.HwSurface);
                 }
             }
 
@@ -1206,5 +1219,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool HwSurface,
             bool Is8_10bitSwFormatsQsv,
             bool Is8_10_12bitSwFormatsQsv);
+
+        private readonly record struct HwDecoderVaapiContext(
+            EncodingJobInfo State,
+            EncodingOptions Options,
+            MediaStream VideoStream,
+            int BitDepth,
+            bool HwSurface,
+            bool Is8_10bitSwFormatsVaapi,
+            bool Is8_10_12bitSwFormatsVaapi);
     }
 }
