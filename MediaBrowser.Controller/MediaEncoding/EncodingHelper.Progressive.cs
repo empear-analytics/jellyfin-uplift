@@ -211,6 +211,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return args;
             }
 
+            return AppendProgressiveTranscodedAudioArgs(args, state, encodingOptions, codec);
+        }
+
+        private string AppendProgressiveTranscodedAudioArgs(string args, EncodingJobInfo state, EncodingOptions encodingOptions, string codec)
+        {
             var channels = state.OutputAudioChannels;
 
             // Must match the condition under which GetAudioFilterParam emits the downmix filter.
