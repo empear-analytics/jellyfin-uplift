@@ -88,9 +88,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isSwEncoder = !isRkmppEncoder;
             var isMjpegEncoder = vidEncoder.Contains("mjpeg", StringComparison.OrdinalIgnoreCase);
             var isDrmInDrmOut = isRkmppDecoder && isRkmppEncoder;
-            var isEncoderSupportAfbc = isRkmppEncoder
-                && (vidEncoder.Contains("h264", StringComparison.OrdinalIgnoreCase)
-                    || vidEncoder.Contains("hevc", StringComparison.OrdinalIgnoreCase));
+            var isEncoderSupportAfbc = IsRkmppAfbcEncoder(isRkmppEncoder, vidEncoder);
 
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doOclTonemap = IsHwTonemapAvailable(state, options);
@@ -251,6 +249,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             var intermediateFormat = doOclTonemap ? "nv15" : (isMjpegEncoder ? "bgra" : outFormat);
             var hwScaleFilterFirstPass = $"scale_rkrga=w=iw/7.9:h=ih/7.9:format={intermediateFormat}:force_original_aspect_ratio=increase:force_divisible_by=4:afbc=1";
             mainFilters.Add(hwScaleFilterFirstPass);
+        }
+
+        private static bool IsRkmppAfbcEncoder(bool isRkmppEncoder, string vidEncoder)
+        {
+            return isRkmppEncoder
+                && (vidEncoder.Contains("h264", StringComparison.OrdinalIgnoreCase)
+                    || vidEncoder.Contains("hevc", StringComparison.OrdinalIgnoreCase));
         }
     }
 }
