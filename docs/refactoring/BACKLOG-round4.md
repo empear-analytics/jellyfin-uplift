@@ -87,7 +87,7 @@ Update as tasks land.
 | Task | Baseline | Current | Status |
 | --- | --- | --- | --- |
 | R4-01 | 5.15 | - | not started |
-| R4-02 | 5.85 | - | not started |
+| R4-02 | 5.85 | 6.45 | Sonnet. Rule 10 helper `IsDisabledByQualifier` on 3 of the 4 qualifier guard blocks (4 blocks WORSE: Complex Method cc 66); `ApplyTranscodingConditions` is a `switch` statement, so rule 10 (no switch inside the block) stops there. Candidate: rule 10 for a block with its own switch. |
 | R4-03 | 6.85 | - | not started |
 | R4-04 | 7.32 | - | not started |
 | R4-05 | 7.51 | - | not started |
@@ -99,7 +99,7 @@ Update as tasks land.
 | R4-11 | 8.01 | - | not started |
 | R4-12 | 8.03 | - | not started |
 | R4-13 | 8.04 | - | not started |
-| R4-14 | 8.15 | - | not started |
+| R4-14 | 8.15 | 9.38 + 9.66 (AspectRatio.cs) | Sonnet. P with `x = default;` on both TryParse predicates, Recipe S split of aspect-ratio parsing, rule 7 tail. Group: P before the split was DOWN (revealed duplication), UP after. Left: file-level Overall Code Complexity (second split FLAT). Candidate: rule 7 for an if-return chain inside an `if` block. |
 | R4-15 | 8.16 | - | not started |
 | R4-16 | 8.19 | - | not started |
 | R4-17 | 8.24 | - | not started |
