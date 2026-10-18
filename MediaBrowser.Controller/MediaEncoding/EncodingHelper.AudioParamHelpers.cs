@@ -151,5 +151,37 @@ namespace MediaBrowser.Controller.MediaEncoding
             return state.TranscodingType != TranscodingJobType.Progressive
                 && ((resultChannels > 2 && resultChannels < 6) || resultChannels == 7);
         }
+
+        private int? GetAudioTranscodeChannels(EncodingJobInfo state, BaseEncodingJobOptions request, string codec, int? resultChannels)
+        {
+            var isTranscodingAudio = !IsCopyCodec(codec);
+
+            if (isTranscodingAudio)
+            {
+                var audioEncoder = GetAudioEncoder(state);
+                if (!_audioTranscodeChannelLookup.TryGetValue(audioEncoder, out var transcoderChannelLimit))
+                {
+                    // Set default max transcoding channels to 8 to prevent encoding errors due to asking for too many channels.
+                    transcoderChannelLimit = 8;
+                }
+
+                // Set resultChannels to minimum between resultChannels, TranscodingMaxAudioChannels, transcoderChannelLimit
+                resultChannels = transcoderChannelLimit < resultChannels ? transcoderChannelLimit : resultChannels ?? transcoderChannelLimit;
+
+                if (request.TranscodingMaxAudioChannels < resultChannels)
+                {
+                    resultChannels = request.TranscodingMaxAudioChannels;
+                }
+
+                // Avoid transcoding to audio channels other than 1ch, 2ch, 6ch (5.1 layout) and 8ch (7.1 layout).
+                // https://developer.apple.com/documentation/http_live_streaming/hls_authoring_specification_for_apple_devices
+                if (HasUnsupportedHlsChannelLayout(state, resultChannels))
+                {
+                    resultChannels = GetHlsCompatibleChannelCount(resultChannels);
+                }
+            }
+
+            return resultChannels;
+        }
     }
 }
