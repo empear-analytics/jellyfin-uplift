@@ -122,12 +122,31 @@ Reply with exactly this, filled in:
 ```
 Task: R4-37 (MediaBrowser.Model/Dlna/StreamBuilder.VideoStream.cs)
 Baseline score: 9.26
-Final score:    <x.xx>
-Steps completed: <n> of 1
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    9.27
+Steps completed: 1 of 1 (Recipe E rule 9 on BuildStreamVideoItem; one commit)
+Steps reverted:  9 candidates measured alone, all FLAT, reverted (none committed):
+                 framerate ternary (E rule 9), timestamp ternary, isSecondaryAudio ternary,
+                 GlobalMaxAudioChannels ternary, directAudioStream ternary, video and audio
+                 leading-run predicates (P), max-bitrate run (E rule 9), audio-limits run
+                 (E rule 9). Also the all-seven extraction set on top of the base: WORSE,
+                 Large Method revealed at LoC 75 once Complex Method went away.
+Smells left without a recipe: Complex Method (cc 12, still flagged; LoC too high for Large
+                 Method to clear with rules 9/P/G alone); Excess Number of Function Arguments
+                 (9 args, signature frozen by the brief; rule 12 is outside this brief's rules)
+Build: PASS (0 errors, 211 warnings, no new warning)
+Tests: PASS (full solution: all projects pass; Model 808/808, Integration 429 passed, 3 skipped)
+Commits: 7c99a65d2d
+Unsure about: (1) The +0.01 gain comes from removing two code lines (LoC), not a smell:
+                 the metric appears to respond to method size. (2) Pair F1+F2 (both E rule 9
+                 runs in BuildStreamVideoItem) measured 9.27 -> 9.28 UP together, each alone
+                 FLAT. NOT committed: the brief says keep only the best candidate measured
+                 alone. Playbook rule 1 allows several applications of one recipe in one method,
+                 so it can be approved as a second commit if the coordinator wants it.
+                 (3) Recipe G does not apply: no nesting of depth 4 or more.
 ```
+
+Candidate scores (base 9.26 unless noted): framerate 9.26 (cc 10), timestamp 9.26 (cc 11),
+isSecondaryAudio 9.26 (cc 11), GlobalMaxAudioChannels 9.26 (cc 11), directAudioStream 9.26
+(cc 11), video lead-run P 9.26 (cc 11), audio lead-run P 9.26 (cc 11), qualifier run 9.27 UP
+(committed). On top of the commit: each candidate 9.27 FLAT, F1+F2 9.28 UP (not committed),
+and all remaining singles together 9.28 WORSE (Large Method).
