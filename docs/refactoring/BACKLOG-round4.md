@@ -96,7 +96,7 @@ Update as tasks land.
 | R4-08 | 7.86 | - | not started |
 | R4-09 | 7.91 | 8.32 | Sonnet. Rule 12 context structs (12 members each) for the subtitle sections of both methods; moving the whole `if (hasSubs)`/`if (hasGraphicalSubs)` statements (guard inside the helper, flag in the context) removed the bumps. Left: hw-decoder branches need 17+ values, procamp block writes outer locals. Probes FLAT/DOWN: sw-decoder block, `||` predicates, shared struct across the two methods. Candidates: rule 12 with the guard inside the helper (done here), two structs per method. |
 | R4-10 | 7.98 | - | not started |
-| R4-11 | 8.01 | - | not started |
+| R4-11 | 8.01 | 8.81 | Sonnet. Rule 11 applied twice on GetExtraTypeNameKey (arms 4/4/3, three methods; single split 8.12); Recipe P local-function predicate `ShouldRenewName` on PrepareExtra (held back in round 3, 8.54 UP); P `IsExtrasTypeFolder` on FindExtraCandidates. G on the if/else-if loop body WORSE twice (Bumpy Road). Left: nesting 4 in FindExtraCandidates (block calls a local function that captures state), Overall Code Complexity. Candidates: block that calls a local function. |
 | R4-12 | 8.03 | - | not started |
 | R4-13 | 8.04 | - | not started |
 | R4-14 | 8.15 | 9.38 + 9.66 (AspectRatio.cs) | Sonnet. P with `x = default;` on both TryParse predicates, Recipe S split of aspect-ratio parsing, rule 7 tail. Group: P before the split was DOWN (revealed duplication), UP after. Left: file-level Overall Code Complexity (second split FLAT). Candidate: rule 7 for an if-return chain inside an `if` block. |
