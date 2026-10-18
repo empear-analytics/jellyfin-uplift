@@ -33,8 +33,7 @@ namespace MediaBrowser.Controller.MediaEncoding
     {
         private static int GetBitDepthCompensatedBitrate(int bitrate, MediaStream videoStream, int targetBitDepth)
         {
-            if (targetBitDepth >= 10
-                || (videoStream.BitDepth is int bitDepth && bitDepth <= targetBitDepth)
+            if (IsBitrateCompensationUnneededForBitDepth(videoStream, targetBitDepth)
                 || videoStream.BitRate is not int sourceBitrate)
             {
                 return bitrate;
@@ -51,6 +50,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             };
 
             return Convert.ToInt32(bitrate * factor);
+        }
+
+        private static bool IsBitrateCompensationUnneededForBitDepth(MediaStream videoStream, int targetBitDepth)
+        {
+            return targetBitDepth >= 10
+                || (videoStream.BitDepth is int bitDepth && bitDepth <= targetBitDepth);
         }
 
         public int GetVideoBitrateParamValue(BaseEncodingJobOptions request, MediaStream videoStream, string outputVideoCodec)
