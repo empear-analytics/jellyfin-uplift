@@ -538,15 +538,22 @@ namespace MediaBrowser.MediaEncoding.Probing
             }
 
             var parts = sar.Split(':');
-            if (parts.Length == 2
-                && double.TryParse(parts[0], CultureInfo.InvariantCulture, out var num)
-                && double.TryParse(parts[1], CultureInfo.InvariantCulture, out var den)
-                && den > 0)
+            if (TryParseSarRatioParts(parts, out var num, out var den))
             {
                 return IsClose(num / den, 1.0, 0.01);
             }
 
             return string.Equals(sar, "1:1", StringComparison.Ordinal);
+        }
+
+        private static bool TryParseSarRatioParts(string[] parts, out double num, out double den)
+        {
+            num = default;
+            den = default;
+            return parts.Length == 2
+                && double.TryParse(parts[0], CultureInfo.InvariantCulture, out num)
+                && double.TryParse(parts[1], CultureInfo.InvariantCulture, out den)
+                && den > 0;
         }
 
         /// <summary>
