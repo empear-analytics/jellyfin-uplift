@@ -338,6 +338,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 AppendRkmppHwDeviceArgs(args, isRkmppDecoder, isHwTonemapAvailable);
             }
 
+            return GetHwDeviceArgsWithDecoder(args, vidDecoder);
+        }
+
+        private static string GetHwDeviceArgsWithDecoder(StringBuilder args, string vidDecoder)
+        {
             if (!string.IsNullOrEmpty(vidDecoder))
             {
                 args.Append(vidDecoder);
