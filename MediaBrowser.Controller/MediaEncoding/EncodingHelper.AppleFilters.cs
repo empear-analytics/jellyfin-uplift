@@ -92,12 +92,12 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doVtTonemap = IsVideoToolboxTonemapAvailable(state, options);
-            var doMetalTonemap = !doVtTonemap && IsHwTonemapAvailable(state, options);
-            var usingHwSurface = isVtDecoder && (_mediaEncoder.EncoderVersion >= _minFFmpegWorkingVtHwSurface);
+            var doMetalTonemap = IsAppleMetalTonemapNeeded(state, options, doVtTonemap);
+            var usingHwSurface = IsAppleHwSurfaceWorking(isVtDecoder);
 
             var rotation = state.VideoStream?.Rotation ?? 0;
             var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
-            var doVtTranspose = !string.IsNullOrEmpty(transposeDir) && _mediaEncoder.SupportsFilter("transpose_vt");
+            var doVtTranspose = IsAppleVtTransposeAvailable(transposeDir);
             var swapWAndH = Math.Abs(rotation) == 90 && doVtTranspose;
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;

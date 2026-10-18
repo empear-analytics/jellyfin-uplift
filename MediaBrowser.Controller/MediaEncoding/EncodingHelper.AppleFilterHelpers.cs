@@ -94,5 +94,20 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             return scaleFormat;
         }
+
+        private bool IsAppleVtTransposeAvailable(string transposeDir)
+        {
+            return !string.IsNullOrEmpty(transposeDir) && _mediaEncoder.SupportsFilter("transpose_vt");
+        }
+
+        private bool IsAppleHwSurfaceWorking(bool isVtDecoder)
+        {
+            return isVtDecoder && (_mediaEncoder.EncoderVersion >= _minFFmpegWorkingVtHwSurface);
+        }
+
+        private bool IsAppleMetalTonemapNeeded(EncodingJobInfo state, EncodingOptions options, bool doVtTonemap)
+        {
+            return !doVtTonemap && IsHwTonemapAvailable(state, options);
+        }
     }
 }
