@@ -25,9 +25,12 @@ your task, your worktree and anything specific to the file. Everything below app
 ## How you work
 
 - Follow the task file and the playbook exactly. The playbook is a closed catalogue: a change that
-  is not one of its recipes exactly as written (a lookup table, a new type, merging nested `if`s
-  into one condition, a `continue` turned into a `return`, a change to a signature) is not yours to
-  make. Report it as a candidate.
+  is not one of its recipes exactly as written (a lookup table, a type other than the context struct
+  of Recipe E rule 12, merging nested `if`s into one condition, a change to a signature) is not yours
+  to make. Report it as a candidate. The recipes of 2026-10-18 are in force: rules 10 (a block that
+  ends in `continue`), 11 (a suffix of a `switch` expression's arms) and 12 (a context struct) of
+  Recipe E, `x = default;` for `out` parameters and local-function predicates in Recipe P, Recipe D
+  for two differing values, and a pair of FLAT steps of two recipes in one commit.
 - Before a step that adds methods, follow "Choosing the next step": measure the candidate
   applications on their own first and commit the best `UP` one.
 - After every step, before committing it, run all four checks from section 7 of the task file.
