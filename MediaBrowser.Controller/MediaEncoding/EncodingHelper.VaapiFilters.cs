@@ -250,18 +250,23 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 if (hasGraphicalSubs)
                 {
-                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
-                    subFilters.Add(subPreProcFilters);
-                    overlayFilters.Add("overlay=eof_action=pass:repeatlast=0");
-
-                    if (isVaapiEncoder)
-                    {
-                        overlayFilters.Add("hwupload_vaapi");
-                    }
+                    AddVaapiMemoryGraphicalSubtitleFilters(context, isVaapiEncoder, subFilters, overlayFilters);
                 }
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static void AddVaapiMemoryGraphicalSubtitleFilters(VaapiIntelFullContext context, bool isVaapiEncoder, List<string> subFilters, List<string> overlayFilters)
+        {
+            var subPreProcFilters = GetGraphicalSubPreProcessFilters(context.SwpInW, context.SwpInH, context.SubW, context.SubH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+            subFilters.Add(subPreProcFilters);
+            overlayFilters.Add("overlay=eof_action=pass:repeatlast=0");
+
+            if (isVaapiEncoder)
+            {
+                overlayFilters.Add("hwupload_vaapi");
+            }
         }
 
         private void AddVaapiVaInVaOutSubtitleFilters(VaapiIntelFullContext context, List<string> subFilters, List<string> overlayFilters)
