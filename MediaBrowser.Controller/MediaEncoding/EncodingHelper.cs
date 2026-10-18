@@ -603,6 +603,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 return "aac";
             }
 
+            return GetNonAacAudioEncoder(codec);
+        }
+
+        private static string GetNonAacAudioEncoder(string codec)
+        {
             if (string.Equals(codec, "mp3", StringComparison.OrdinalIgnoreCase))
             {
                 return "libmp3lame";
