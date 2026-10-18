@@ -120,12 +120,12 @@ Reply with exactly this, filled in:
 ```
 Task: R4-53 (Emby.Server.Implementations/Library/LibraryManager.Images.cs)
 Baseline score: 9.66
-Final score:    <x.xx>
-Steps completed: <n> of 1
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    10.00
+Steps completed: 1 of 1
+Steps reverted:  0 committed. Four candidates measured alone, none committed: missing-file `if` moved under rule 10 alone FLAT 9.66; Recipe P on the catch filter `when (ex is InvalidOperationException or IOException)` FLAT 9.66; metadata statements `size`/blur/date moved under rule 9 FLAT 9.66. The whole foreach body under rule 10 scored UP 10.00 and was the one committed.
+Smells left without a recipe: NONE
+Build: PASS (0 errors, 211 warnings, as base)
+Tests: PASS (full solution: all 17 projects, 0 failed; Server.Implementations 1102 passed, Integration 429 passed)
+Commits: 034799394b (refactor(LibraryManager.Images): simplify UpdateImagesAsync)
+Unsure about: (1) Rule 10 applied to the whole foreach body, which is the loop body itself: the `image` local is declared inside the moved block, so nothing after it reads it. The call site is `if (await UpdateImagesRefreshImageAsync(item, img)) { continue; }` as the last loop statement, which is redundant but is the rule's exact form. (2) New method name UpdateImagesRefreshImageAsync: the only other UpdateImages* name in LibraryManager*.cs is UpdateImagesAsync. (3) Candidate for a new recipe, not measured (out of catalogue): the `if (!img.IsLocalFile)` try block alone, which leaves the iteration with `continue` and also produces the single value `image`. Rule 10 returns bool and rule 4 returns one value, so combining them would need a tuple, out parameter or sentinel.
 ```
