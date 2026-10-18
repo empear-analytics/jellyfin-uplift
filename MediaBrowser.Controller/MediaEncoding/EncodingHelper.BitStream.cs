@@ -139,6 +139,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 shouldRemoveDovi = shouldRemoveDovi || !shouldRemoveHdr10Plus;
             }
 
+            return GetBitStreamDynamicHdrRemovalPlan(videoStream, requestHasDOVI, shouldRemoveDovi, shouldRemoveHdr10Plus);
+        }
+
+        private static DynamicHdrMetadataRemovalPlan GetBitStreamDynamicHdrRemovalPlan(MediaStream videoStream, bool requestHasDOVI, bool shouldRemoveDovi, bool shouldRemoveHdr10Plus)
+        {
             if (shouldRemoveDovi)
             {
                 return DynamicHdrMetadataRemovalPlan.RemoveDovi;
