@@ -6,12 +6,18 @@ is specific to Claude Code.
 
 ## Claude Code specifics
 
-**Measure with the scripts, not the MCP server.** `python tools/codehealth_check.py <file>`
-runs the CodeScene CLI directly. The CodeScene MCP server, if you have it, drops answers
-that take longer than five seconds; `EncodingHelper.cs` takes about seven, so its score
-comes back empty without an error.
+**Measure through the CodeScene MCP server, with the scripts.** `python tools/codehealth_check.py <file>`
+and `python tools/codehealth_sweep.py` review each file through the CodeScene MCP server (so the
+measurement is recorded on the CodeScene side) and keep the verdict logic of the campaign. They
+fall back to the CodeScene CLI for a file, or for the whole run, when the server is unavailable.
+Do not call the server by hand for the per-commit check: you would lose the UP / FLAT / WORSE
+verdict. (An earlier note said the server returns nothing for files that take more than five
+seconds, such as `EncodingHelper.cs`. That is true only for a one-shot call that closes the
+input at once; the scripts keep it open, and the scores are identical to the CLI's.)
 
-`.mcp.json`, if present, is machine-specific and intentionally not committed.
+The server is started from `.mcp.json`; the scripts read its `codescene` entry. `.mcp.json`
+is machine-specific and intentionally not committed, and a session loads the `.mcp.json` of its
+own root folder.
 
 ## Refactoring campaign
 
