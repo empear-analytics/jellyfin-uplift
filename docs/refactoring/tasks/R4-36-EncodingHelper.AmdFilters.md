@@ -121,13 +121,13 @@ Reply with exactly this, filled in:
 
 ```
 Task: R4-36 (MediaBrowser.Controller/MediaEncoding/EncodingHelper.AmdFilters.cs)
-Baseline score: 9.26
-Final score:    <x.xx>
-Steps completed: <n> of 1
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Baseline score: 9.48 (HEAD at start; the 9.26 above is stale, the coordinator gave 9.48)
+Final score:    9.52
+Steps completed: 1 of 1 (software-decoder block, rule 12 second struct AmdSecondSwDecoderContext)
+Steps reverted:  2 (d3d11va candidate, multi-line layout: 9.46 DOWN; sw candidate, multi-line layout: 9.46 DOWN)
+Smells left without a recipe: NONE without a recipe. Complex Method cc 13 in GetAmdDx11VidFiltersPrefered remains: the d3d11va block is blocked (rule 12 allows two structs per method and the method has two; a shared decoder struct would be 13 members, see Unsure about)
+Build: PASS (0 errors, 211 warnings, none in the file)
+Tests: PASS (Controller 1411/1411, Integration 429 passed 3 skipped, full solution 0 failed)
+Commits: 30ee3fbfab (software-decoder block); plus a docs-only commit for this report block
+Unsure about: (1) Layout matters for the score: the same statement with the 12-argument construction on 14 lines scores 9.46 DOWN, on one line 9.52 UP. Diagnostics on scratch copies (not committed): struct alone and unused helper alone both 9.48; the block removed with no call site 9.53; the construction replaced by default(...) 9.52. The score seems to track the method's line count, not the argument count. The playbook is silent on layout. (2) The d3d11va candidate on one line also measured 9.52 UP, a tie with the sw candidate; I committed the sw candidate, as it came first in the task. Either alone is valid, not both (a third struct is not allowed). (3) The baseline 9.26 in this file is stale; I proceeded at 9.48 as the coordinator stated. (4) Not measured, not committed, for ruling only: one struct for both decoder blocks would have 13 members when each guard flag moves into its helper as a parameter (9 shared values, 2 software-only: VidEncoder, ThreeDFormat; 2 d3d11va-only: DoOclTranspose, TransposeDir), above the limit of 12, and the helpers have no free parameter slot. Leaving the guard at the call site would give 11, but rule 12 says to move the whole statement, so I did not pursue it.
 ```
