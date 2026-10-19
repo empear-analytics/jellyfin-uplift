@@ -277,68 +277,78 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 AppendQsvHwDeviceArgs(args, options, isLinux, isHwDecoder, isHwTonemapAvailable);
             }
-            else if (optHwaccelType == HardwareAccelerationType.nvenc)
+            else
             {
-                if (IsNvencHwaccelUnsupported(isLinux, isWindows))
+                return HwDeviceDispatchRemaining(new HwDeviceDispatchContext(optHwaccelType, args, vidDecoder, vidEncoder, isLinux, isWindows, isMacOS, isHwTonemapAvailable));
+            }
+
+            return GetHwDeviceArgsWithDecoder(args, vidDecoder);
+        }
+
+        private string HwDeviceDispatchRemaining(HwDeviceDispatchContext context)
+        {
+            if (context.OptHwaccelType == HardwareAccelerationType.nvenc)
+            {
+                if (IsNvencHwaccelUnsupported(context.IsLinux, context.IsWindows))
                 {
                     return string.Empty;
                 }
 
-                if (IsHwDeviceNvencUnused(vidDecoder, vidEncoder))
+                if (IsHwDeviceNvencUnused(context.VidDecoder, context.VidEncoder))
                 {
                     return string.Empty;
                 }
 
-                args.Append(GetCudaDeviceArgs(0, CudaAlias))
+                context.Args.Append(GetCudaDeviceArgs(0, CudaAlias))
                      .Append(GetFilterHwDeviceArgs(CudaAlias));
             }
-            else if (optHwaccelType == HardwareAccelerationType.amf)
+            else if (context.OptHwaccelType == HardwareAccelerationType.amf)
             {
-                if (IsAmfHwaccelUnsupported(isWindows))
+                if (IsAmfHwaccelUnsupported(context.IsWindows))
                 {
                     return string.Empty;
                 }
 
-                if (IsHwDeviceAmfUnused(vidDecoder, vidEncoder))
+                if (IsHwDeviceAmfUnused(context.VidDecoder, context.VidEncoder))
                 {
                     return string.Empty;
                 }
 
-                AppendAmfHwDeviceArgs(args);
+                AppendAmfHwDeviceArgs(context.Args);
             }
-            else if (optHwaccelType == HardwareAccelerationType.videotoolbox)
+            else if (context.OptHwaccelType == HardwareAccelerationType.videotoolbox)
             {
-                if (IsVideotoolboxHwaccelUnsupported(isMacOS))
+                if (IsVideotoolboxHwaccelUnsupported(context.IsMacOS))
                 {
                     return string.Empty;
                 }
 
-                if (IsHwDeviceVideotoolboxUnused(vidDecoder, vidEncoder))
+                if (IsHwDeviceVideotoolboxUnused(context.VidDecoder, context.VidEncoder))
                 {
                     return string.Empty;
                 }
 
                 // videotoolbox hw filter does not require device selection
-                args.Append(GetVideoToolboxDeviceArgs(VideotoolboxAlias));
+                context.Args.Append(GetVideoToolboxDeviceArgs(VideotoolboxAlias));
             }
-            else if (optHwaccelType == HardwareAccelerationType.rkmpp)
+            else if (context.OptHwaccelType == HardwareAccelerationType.rkmpp)
             {
-                if (IsRkmppHwaccelUnsupported(isLinux))
+                if (IsRkmppHwaccelUnsupported(context.IsLinux))
                 {
                     return string.Empty;
                 }
 
-                var isRkmppDecoder = vidDecoder.Contains("rkmpp", StringComparison.OrdinalIgnoreCase);
-                var isRkmppEncoder = vidEncoder.Contains("rkmpp", StringComparison.OrdinalIgnoreCase);
+                var isRkmppDecoder = context.VidDecoder.Contains("rkmpp", StringComparison.OrdinalIgnoreCase);
+                var isRkmppEncoder = context.VidEncoder.Contains("rkmpp", StringComparison.OrdinalIgnoreCase);
                 if (IsHwDeviceUnused(isRkmppDecoder, isRkmppEncoder))
                 {
                     return string.Empty;
                 }
 
-                AppendRkmppHwDeviceArgs(args, isRkmppDecoder, isHwTonemapAvailable);
+                AppendRkmppHwDeviceArgs(context.Args, isRkmppDecoder, context.IsHwTonemapAvailable);
             }
 
-            return GetHwDeviceArgsWithDecoder(args, vidDecoder);
+            return GetHwDeviceArgsWithDecoder(context.Args, context.VidDecoder);
         }
 
         private static string GetHwDeviceArgsWithDecoder(StringBuilder args, string vidDecoder)
@@ -556,5 +566,15 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             args.Append(filterDevArgs);
         }
+
+        private readonly record struct HwDeviceDispatchContext(
+            HardwareAccelerationType OptHwaccelType,
+            StringBuilder Args,
+            string VidDecoder,
+            string VidEncoder,
+            bool IsLinux,
+            bool IsWindows,
+            bool IsMacOS,
+            bool IsHwTonemapAvailable);
     }
 }
