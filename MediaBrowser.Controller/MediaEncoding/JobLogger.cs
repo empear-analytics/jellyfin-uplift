@@ -106,16 +106,31 @@ namespace MediaBrowser.Controller.MediaEncoding
                 {
                     bytesTranscoded = ParseBytesTranscoded(part, bytesTranscoded);
                 }
-                else if (part.StartsWith("bitrate=", StringComparison.OrdinalIgnoreCase))
+                else
                 {
-                    bitRate = ParseBitRate(part, bitRate);
+                    bitRate = ParseLogLineBitRate(part, bitRate);
                 }
             }
 
-            if (framerate.HasValue || percent.HasValue)
+            if (ParseLogLineHasProgress(framerate, percent))
             {
                 state.ReportTranscodingProgress(transcodingPosition, framerate, percent, bytesTranscoded, bitRate);
             }
+        }
+
+        private static bool ParseLogLineHasProgress(float? framerate, double? percent)
+        {
+            return framerate.HasValue || percent.HasValue;
+        }
+
+        private static int? ParseLogLineBitRate(string part, int? bitRate)
+        {
+            if (part.StartsWith("bitrate=", StringComparison.OrdinalIgnoreCase))
+            {
+                bitRate = ParseBitRate(part, bitRate);
+            }
+
+            return bitRate;
         }
 
         private static double GetTotalMilliseconds(EncodingJobInfo state)
