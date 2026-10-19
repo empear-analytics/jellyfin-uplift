@@ -141,13 +141,20 @@ Reply with exactly this, filled in:
 
 ```
 Task: R4-17 (MediaBrowser.Controller/MediaEncoding/EncodingHelper.VideoFilters.cs)
-Baseline score: 8.24
-Final score:    <x.xx>
-Steps completed: <n> of 3
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Baseline score: 8.54 (the file's score at the start of round 5 HEAD; the 8.24 above is stale)
+Final score:    8.81
+Steps completed: 1 of 3 (step 2, GetSwVidFilterChain, as named in this run's brief; steps 1 and 3 not run)
+Steps reverted:  1 candidate in step 2 (replace the if/else tonemap-or-format block with a helper taking
+                 a SwFilterChainContext struct: FLAT 8.81 -> 8.81, cc still 8, no gain). Also measured alone,
+                 both FLAT: the deinterlace block extraction (cc 10 -> 9) and the software decoder check (cc 10 -> 9)
+Smells left without a recipe: Primitive Obsession (file); Overall Code Complexity (file);
+                 Excess Number of Function Arguments on GetLibplaceboFilter (step 3, not run in this run)
+Build: PASS (dotnet build Jellyfin.sln --no-incremental, 0 errors, 211 warnings)
+Tests: PASS (full solution: Controller 1411, Integration 429 + 3 skipped, all projects 0 failed)
+Commits: 36eb952e05 refactor(EncodingHelper.VideoFilters): simplify GetSwVidFilterChain (8.54 -> 8.81)
+Unsure about: The two extractions are both Recipe E (rule 9 with the guard moved, and rule 9 with a single
+                 value) in one method; each alone FLAT, together UP. Rule 1 allows this, but the brief says to keep
+                 only the best UP candidate. Blocked: the else-if chain tail (if (hasTextSubs) ... else if
+                 (hasGraphicalSubs)) only mutates lists and assigns or returns nothing, so rule 13 does not match
+                 its shape. Not measured. Recipe G and P: no match in the body.
 ```
