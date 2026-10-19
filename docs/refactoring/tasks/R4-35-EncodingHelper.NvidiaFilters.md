@@ -121,13 +121,17 @@ Reply with exactly this, filled in:
 
 ```
 Task: R4-35 (MediaBrowser.Controller/MediaEncoding/EncodingHelper.NvidiaFilters.cs)
-Baseline score: 9.25
-Final score:    <x.xx>
-Steps completed: <n> of 1
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Baseline score: 9.47 at HEAD 5338b1c343 (the task file says 9.25; the file was already at 9.47 after the earlier subtitle commit, per the round brief)
+Final score:    9.47 (no code commit)
+Steps completed: 0 of 1
+Steps reverted:  2. Second context struct (Recipe E rule 12), each candidate measured alone:
+                 (a) sw-decoder block -> NvidiaSecondAddSwDecoderFilters, struct NvidiaSecondSwDecoderContext (12 members): 9.47 -> 9.44 DOWN;
+                 (b) nv-decoder block -> NvidiaSecondAddNvDecoderFilters, struct NvidiaSecondNvDecoderContext (12 members): 9.47 -> 9.44 DOWN.
+                 Both leave Complex Method (cc 16 -> 14 / 15). Diagnostic, not a candidate: the second struct alone, unused, is FLAT (9.47); the drop comes from the added helper method.
+                 A shared decoder struct for both blocks needs 14 members (too many), so it is not possible.
+Smells left without a recipe: NONE. Complex Method in GetNvidiaVidFiltersPrefered (cc 16) remains; Recipe E rule 12 was tried twice and scored DOWN; Recipes G and P were not applied (no named block for them in this task).
+Build: PASS (dotnet build Jellyfin.sln --no-incremental: 0 errors, 211 warnings)
+Tests: PASS, with one flake. Full solution run: Controller 1411/1411, Integration 429 passed / 3 skipped. One failure in Jellyfin.Providers.Tests: Jellyfin.Providers.Tests.MediaInfo.AtlFlacRegressionTests.AtlParser_MalformedFlac_DoesNotHang (timeout after 5000 ms under load). Rerun alone: passed. Classed as a flake; not rerun in a loop.
+Commits: none for code (no candidate scored UP). Report commit only.
+Unsure about: (1) the baseline 9.25 vs 9.47 mismatch, followed the round brief; (2) the new private helper method alone appears to cost 0.03 in this file, the cause was not isolated (codehealth JSON carries no file-level breakdown); (3) the NvidiaSecond prefix was applied to the two new helper methods as well as the structs; (4) a Recipe S split was not tried, since it is out of scope for this task and the playbook says never first.
 ```
