@@ -23,11 +23,23 @@ import re
 import shutil
 import subprocess
 import threading
+import time
 from pathlib import Path
 
 
 class McpUnavailable(Exception):
     pass
+
+
+class McpToolError(McpUnavailable):
+    """The server answered, but the tool reported an error."""
+
+
+# The server answers "Access token is invalid or expired" when its calls come too fast or in
+# parallel, although the same token works again after a pause (seen in round 5: about 85 s).
+# Such an answer is retried after a pause before it counts as a failure.
+THROTTLE_MESSAGE = "access token is invalid or expired"
+RETRY_PAUSES = (20, 45, 90)
 
 
 class McpClient:
@@ -110,11 +122,21 @@ class McpClient:
             return message.get("result", {})
 
     def call(self, tool: str, arguments: dict) -> str:
+        for attempt in range(len(RETRY_PAUSES) + 1):
+            try:
+                return self._call_once(tool, arguments)
+            except McpToolError as exc:
+                if THROTTLE_MESSAGE not in str(exc).lower() or attempt == len(RETRY_PAUSES):
+                    raise
+                time.sleep(RETRY_PAUSES[attempt])
+        raise AssertionError("unreachable")
+
+    def _call_once(self, tool: str, arguments: dict) -> str:
         result = self._request("tools/call", {"name": tool, "arguments": arguments})
         text = "".join(p.get("text", "") for p in result.get("content", []) if p.get("type") == "text")
         if result.get("isError"):
             detail = " ".join(text.split())[:300]
-            raise McpUnavailable(f"{tool} returned an error" + (f": {detail}" if detail else ""))
+            raise McpToolError(f"{tool} returned an error" + (f": {detail}" if detail else ""))
         return text
 
     def close(self) -> None:
