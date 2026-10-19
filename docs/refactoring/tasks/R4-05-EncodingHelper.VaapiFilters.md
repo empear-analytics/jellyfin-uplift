@@ -191,3 +191,31 @@ Unsure about:
   - The task file baseline (7.51, Intel cc 16, Vaapi chain cc 12) is stale. HEAD 90a884fe55 measures 7.82 with
     Intel cc 19.
 ```
+
+### Round 6 (void tail, Haiku 5.5)
+
+```
+Task: R4-05 (MediaBrowser.Controller/MediaEncoding/EncodingHelper.VaapiFilters.cs), void tail candidate
+Baseline score: 7.82 (HEAD 9a5aa80194, measured)
+Final score:    7.86 (commit a462f3a2f3)
+Steps completed: 1 (commit a462f3a2f3: Recipe E rule 13, void tail, with rule 12 struct)
+  - else if (isVaapiDecoder) of GetAmdVaapiFullVidFiltersPrefered moved to private void
+    VaapiVoidAmdDecoderFilters(context, state, options, mainFilters); original gets else { ... }.
+    Struct VaapiVoidAmdDecoderContext, 12 members (IsVaapiDecoder, DoDeintH2645, InW, InH, ReqW,
+    ReqH, ReqMaxW, ReqMaxH, DoVkTranspose, DoVkTonemap, HasSubs, IsMjpegEncoder); helper has 4
+    parameters. transposeDir is not read by the branch, so it is not a member.
+    Measured alone: 7.86 UP (Amd cc 16 -> 14, Amd Bumpy Road 3 -> 2; new helper not flagged).
+Candidates measured: only the one above. No other candidate measured in this run.
+Smells left:
+  - Bumpy Road Ahead: GetAmdVaapiFullVidFiltersPrefered (2 bumps, lines 515-623),
+    GetIntelVaapiFullVidFiltersPrefered (2 bumps). Not attempted in this run.
+  - Complex Method: GetIntelVaapiFullVidFiltersPrefered cc 19, GetVaapiLimitedVidFiltersPrefered cc 14,
+    GetAmdVaapiFullVidFiltersPrefered cc 14, GetVaapiVidFilterChain cc 10. Not attempted in this run.
+  - Primitive Obsession (file level; no recipe).
+Build: PASS (dotnet build Jellyfin.sln --no-incremental: 0 errors, 211 warnings, the base count)
+Tests: Controller 1411 passed; Integration 429 passed, 3 skipped; full solution (dotnet test Jellyfin.sln
+  --no-build) 0 failed, 21 skipped.
+Guard: PASS (110 literals unchanged)
+Unsure about: nothing for this step. The round-5 open question (whether a void else-if tail is a recipe)
+  is answered by rule 13's void form in the playbook as of 2026-10-19.
+```
