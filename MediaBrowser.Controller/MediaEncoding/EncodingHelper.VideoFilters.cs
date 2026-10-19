@@ -319,8 +319,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var reqMaxH = state.BaseRequest.MaxHeight;
             var threeDFormat = state.MediaSource.Video3DFormat;
 
-            var vidDecoder = GetHardwareVideoDecoder(state, options) ?? string.Empty;
-            var isSwDecoder = string.IsNullOrEmpty(vidDecoder);
+            var isSwDecoder = SwFilterChainIsSoftwareDecoder(state, options);
             var isVaapiEncoder = vidEncoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
             var isV4l2Encoder = vidEncoder.Contains("h264_v4l2m2m", StringComparison.OrdinalIgnoreCase);
 
@@ -344,11 +343,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // INPUT sw surface(memory/copy-back from vram)
             // sw deint
-            if (doDeintH2645)
-            {
-                var deintFilter = GetSwDeinterlaceFilter(state, options);
-                mainFilters.Add(deintFilter);
-            }
+            SwFilterChainAddDeinterlace(state, options, doDeintH2645, mainFilters);
 
             var outFormat = isSwDecoder ? "yuv420p" : "nv12";
             var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
@@ -387,6 +382,21 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private bool SwFilterChainIsSoftwareDecoder(EncodingJobInfo state, EncodingOptions options)
+        {
+            var vidDecoder = GetHardwareVideoDecoder(state, options) ?? string.Empty;
+            return string.IsNullOrEmpty(vidDecoder);
+        }
+
+        private static void SwFilterChainAddDeinterlace(EncodingJobInfo state, EncodingOptions options, bool doDeintH2645, List<string> mainFilters)
+        {
+            if (doDeintH2645)
+            {
+                var deintFilter = GetSwDeinterlaceFilter(state, options);
+                mainFilters.Add(deintFilter);
+            }
         }
 
         private static string ResolveSwOutputFormat(string outFormat, bool isVaapiEncoder, bool isV4l2Encoder)
