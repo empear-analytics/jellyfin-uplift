@@ -316,7 +316,17 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 AppendAmfHwDeviceArgs(context.Args);
             }
-            else if (context.OptHwaccelType == HardwareAccelerationType.videotoolbox)
+            else
+            {
+                return HwDeviceDispatchTail(context);
+            }
+
+            return GetHwDeviceArgsWithDecoder(context.Args, context.VidDecoder);
+        }
+
+        private string HwDeviceDispatchTail(HwDeviceDispatchContext context)
+        {
+            if (context.OptHwaccelType == HardwareAccelerationType.videotoolbox)
             {
                 if (IsVideotoolboxHwaccelUnsupported(context.IsMacOS))
                 {
