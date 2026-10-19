@@ -148,13 +148,46 @@ Reply with exactly this, filled in:
 
 ```
 Task: R4-05 (MediaBrowser.Controller/MediaEncoding/EncodingHelper.VaapiFilters.cs)
-Baseline score: 7.51
-Final score:    <x.xx>
-Steps completed: <n> of 4
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Baseline score: 7.51 (task file); 7.82 at HEAD 90a884fe55 (round 5 start), measured and as the coordinator stated
+Final score:    7.82 (no step kept)
+Steps completed: 0 of 4 (the second-struct experiment on the decoder family; no step kept)
+Steps reverted:  0 committed; 3 candidates measured alone and reverted, none kept
+  - Amd decoder chain (`if (isSwDecoder)` ... `else if (isVaapiDecoder)`), second struct VaapiSecondAmdDecoderContext
+    (10 members), helper AddVaapiSecondAmdDecoderFilters(context, decoder, mainFilters): 7.95 UP. Amd Bumpy Road gone,
+    Amd cc 16 -> 12; the new helper is flagged for Bumpy Road (2 bumps). Best UP candidate, NOT kept: the helper also
+    takes the first struct VaapiAmdFullContext (the software branch calls AddVaapiAmdSwScaleFilters(context, ...) and
+    reads state, options, doVkTonemap, reqW..reqMaxH from it). Rule 12 says each struct serves one family.
+  - Intel decoder chain, second struct VaapiSecondIntelDecoderContext (10 members), helper
+    AddVaapiSecondIntelDecoderFilters(context, decoder, options, mainFilters), first struct built above the chain:
+    7.90 UP. Intel cc 19 -> 15, Intel Bumpy Road stays at 2. Not kept, same reason (reads the first struct).
+  - Amd vaapi branch alone as the tail of the chain (`else if (isVaapiDecoder)` moved to a void helper, struct
+    VaapiSecondAmdDecoderContext with 12 members, state, options, mainFilters plain): 7.86 UP. Amd cc 16 -> 14, Amd
+    Bumpy Road 3 -> 2. Not kept: a void tail is not a rule 13 form (rule 13 covers only assign and return tails).
+  - No exact candidate exists. Cap: 12 struct members + 3 plain parameters = 15 values.
+    Intel decoder chain needs 16 values: guards isSwDecoder and isVaapiDecoder, doTonemap, doOclTonemap,
+    doDeintH2645, isMjpegEncoder, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH,
+    transposeDir, doVaVppTranspose. The Intel software block is the head of the else-if chain, and rule 13 moves
+    only the tail, so it cannot move alone. The Intel vaapi tail alone needs 13 with its guard.
+    Amd decoder chain needs 15 values plus the first struct, which its software branch passes on.
+    Amd vaapi tail alone fits exactly (12 members, 4 parameters), but needs the void tail of candidate 3.
+Smells left without a recipe: Primitive Obsession (file level; no recipe).
+Smells left with recipe-level candidates only:
+  - Bumpy Road Ahead: GetAmdVaapiFullVidFiltersPrefered (3 bumps), GetIntelVaapiFullVidFiltersPrefered (2 bumps).
+    Tried via rule 12: the three candidates above, none kept.
+  - Complex Method: GetIntelVaapiFullVidFiltersPrefered cc 19 (task file says 16), GetAmdVaapiFullVidFiltersPrefered
+    cc 16, GetVaapiLimitedVidFiltersPrefered cc 14, GetVaapiVidFilterChain cc 10 (task file says 12). Not measured
+    beyond the struct candidates, which were the scope of this run.
+Build: PASS (dotnet build Jellyfin.sln --no-incremental: 0 errors, 211 warnings, the base count)
+Tests: PASS apart from one flake. dotnet test Jellyfin.sln --no-build: 5943 passed, 21 skipped, 1 failed.
+  The failure is Jellyfin.Providers.Tests.MediaInfo.AtlFlacRegressionTests.AtlParser_MalformedFlac_DoesNotHang
+  ("Test execution timed out after 5000 milliseconds" under full-suite load, on unchanged HEAD). Run alone it passes
+  (1 of 1, 80 ms). Flake; not caused by this run; not looped.
+Commits: no code commit; report commit only (docs/refactoring/tasks/R4-05 file, see git log)
+Unsure about:
+  - Whether rule 12 allows a decoder block to read the first struct. Candidates 1 and 2 (7.95, 7.90) depend on it.
+    The coordinator should rule on it before either is taken. Candidate patches are not in any commit; they are
+    described above and can be re-derived from it.
+  - Whether a void else-if tail should be a recipe (candidate 3, 7.86).
+  - The task file baseline (7.51, Intel cc 16, Vaapi chain cc 12) is stale. HEAD 90a884fe55 measures 7.82 with
+    Intel cc 19.
 ```
