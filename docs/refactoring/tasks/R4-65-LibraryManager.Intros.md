@@ -120,12 +120,15 @@ Reply with exactly this, filled in:
 ```
 Task: R4-65 (Emby.Server.Implementations/Library/LibraryManager.Intros.cs)
 Baseline score: 9.84
-Final score:    <x.xx>
-Steps completed: <n> of 1
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    10.00
+Steps completed: 1 of 1
+Steps reverted:  0. Candidates measured alone, none committed (all FLAT except the one kept):
+                 rule 13 else-if tail to IntrosResolveFromPath 9.84 (FLAT, bumps 3 to 2 in ResolveIntro, 2 in the helper);
+                 rule 9 id block to IntrosResolveById 9.84 (FLAT); rule 9 else log to IntrosLogMissingPathAndId 9.84 (FLAT);
+                 recipe P has-path to IntrosHasPath 9.84 (FLAT); rule 9 path try body to IntrosResolvePathVideo 10.00 (UP, kept).
+Smells left without a recipe: NONE
+Build: PASS (dotnet build Jellyfin.sln --no-incremental, 0 errors, 211 warnings as on the base)
+Tests: PASS (Server.Implementations 1102 passed, Integration 429 passed; full solution 5944 passed, 21 skipped, 0 failed)
+Commits: 0184d70ef3 (refactor(LibraryManager.Intros): simplify ResolveIntro, 9.84 to 10.00); this report commit follows it
+Unsure about: The moved try body contains `return null;`. In IntrosResolvePathVideo it becomes `return null;` from the helper, and ResolveIntro stores that in `video` and falls through to its final `return video;`. That is the same value as before (the try body is the last thing before that return), checked by hand, not by a random-input comparison. Rule 9 does not state this shape explicitly; if the coordinator reads it as outside rule 9, this step is the one to reject.
 ```

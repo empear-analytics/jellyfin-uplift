@@ -134,23 +134,34 @@ namespace MediaBrowser.Model.Dlna
                 }
 
                 // Look for supported embedded subs of a convertible format
-                foreach (var profile in subtitleProfiles)
+                var convertibleProfile = SubtitleProfileConvertibleEmbed(subtitleProfiles, subtitleStream, playMethod, outputContainer);
+                if (convertibleProfile is not null)
                 {
-                    if (IsProfileUnusableForEmbed(profile, subtitleStream, playMethod, outputContainer))
-                    {
-                        continue;
-                    }
-
-                    if (IsConvertibleTextSubtitle(subtitleStream, profile))
-                    {
-                        return profile;
-                    }
+                    return convertibleProfile;
                 }
             }
 
             // Look for an external or hls profile that matches the stream type (text/graphical) and doesn't require conversion
             var context = new ExternalOrEncodeContext(mediaSource, subtitleStream, subtitleProfiles, playMethod, transcoderSupport);
             return GetExternalOrEncodeSubtitleProfile(context);
+        }
+
+        private static SubtitleProfile? SubtitleProfileConvertibleEmbed(SubtitleProfile[] subtitleProfiles, MediaStream subtitleStream, PlayMethod playMethod, string? outputContainer)
+        {
+            foreach (var profile in subtitleProfiles)
+            {
+                if (IsProfileUnusableForEmbed(profile, subtitleStream, playMethod, outputContainer))
+                {
+                    continue;
+                }
+
+                if (IsConvertibleTextSubtitle(subtitleStream, profile))
+                {
+                    return profile;
+                }
+            }
+
+            return null;
         }
 
         private static SubtitleProfile GetExternalOrEncodeSubtitleProfile(ExternalOrEncodeContext context)

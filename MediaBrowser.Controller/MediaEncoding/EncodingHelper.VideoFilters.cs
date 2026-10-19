@@ -319,8 +319,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var reqMaxH = state.BaseRequest.MaxHeight;
             var threeDFormat = state.MediaSource.Video3DFormat;
 
-            var vidDecoder = GetHardwareVideoDecoder(state, options) ?? string.Empty;
-            var isSwDecoder = string.IsNullOrEmpty(vidDecoder);
+            var isSwDecoder = SwFilterChainIsSoftwareDecoder(state, options);
             var isVaapiEncoder = vidEncoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
             var isV4l2Encoder = vidEncoder.Contains("h264_v4l2m2m", StringComparison.OrdinalIgnoreCase);
 
@@ -344,11 +343,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // INPUT sw surface(memory/copy-back from vram)
             // sw deint
-            if (doDeintH2645)
-            {
-                var deintFilter = GetSwDeinterlaceFilter(state, options);
-                mainFilters.Add(deintFilter);
-            }
+            SwFilterChainAddDeinterlace(state, options, doDeintH2645, mainFilters);
 
             var outFormat = isSwDecoder ? "yuv420p" : "nv12";
             var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
@@ -387,6 +382,21 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private bool SwFilterChainIsSoftwareDecoder(EncodingJobInfo state, EncodingOptions options)
+        {
+            var vidDecoder = GetHardwareVideoDecoder(state, options) ?? string.Empty;
+            return string.IsNullOrEmpty(vidDecoder);
+        }
+
+        private static void SwFilterChainAddDeinterlace(EncodingJobInfo state, EncodingOptions options, bool doDeintH2645, List<string> mainFilters)
+        {
+            if (doDeintH2645)
+            {
+                var deintFilter = GetSwDeinterlaceFilter(state, options);
+                mainFilters.Add(deintFilter);
+            }
         }
 
         private static string ResolveSwOutputFormat(string outFormat, bool isVaapiEncoder, bool isV4l2Encoder)
@@ -470,50 +480,63 @@ namespace MediaBrowser.Controller.MediaEncoding
                 HardwareAccelerationType.amf => GetAmdVidFilterChain(state, options, outputVideoCodec),
                 HardwareAccelerationType.qsv => GetIntelVidFilterChain(state, options, outputVideoCodec),
                 HardwareAccelerationType.nvenc => GetNvidiaVidFilterChain(state, options, outputVideoCodec),
-                HardwareAccelerationType.videotoolbox => GetAppleVidFilterChain(state, options, outputVideoCodec),
-                HardwareAccelerationType.rkmpp => GetRkmppVidFilterChain(state, options, outputVideoCodec),
-                _ => GetSwVidFilterChain(state, options, outputVideoCodec),
+                _ => VideoFilterChainOtherHardware(state, options, outputVideoCodec),
             };
 
             mainFilters?.RemoveAll(string.IsNullOrEmpty);
             subFilters?.RemoveAll(string.IsNullOrEmpty);
             overlayFilters?.RemoveAll(string.IsNullOrEmpty);
 
-            var framerate = GetFramerateParam(state);
-            if (ShouldAddFpsFilter(mainFilters, framerate))
+            return VideoFilterOverlayParam(state, new VideoFilterContext(mainFilters, subFilters, overlayFilters, hasSubs, hasTextSubs));
+        }
+
+        private (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) VideoFilterChainOtherHardware(EncodingJobInfo state, EncodingOptions options, string outputVideoCodec)
+        {
+            return options.HardwareAccelerationType switch
             {
-                AddFpsFilter(state, mainFilters, framerate);
+                HardwareAccelerationType.videotoolbox => GetAppleVidFilterChain(state, options, outputVideoCodec),
+                HardwareAccelerationType.rkmpp => GetRkmppVidFilterChain(state, options, outputVideoCodec),
+                _ => GetSwVidFilterChain(state, options, outputVideoCodec),
+            };
+        }
+
+        private string VideoFilterOverlayParam(EncodingJobInfo state, VideoFilterContext context)
+        {
+            var framerate = GetFramerateParam(state);
+            if (ShouldAddFpsFilter(context.MainFilters, framerate))
+            {
+                AddFpsFilter(state, context.MainFilters, framerate);
             }
 
-            var mainStr = JoinMainFiltersForVideoProcessing(mainFilters);
+            var mainStr = JoinMainFiltersForVideoProcessing(context.MainFilters);
 
-            if (overlayFilters?.Count == 0)
+            if (context.OverlayFilters?.Count == 0)
             {
                 // -vf "scale..."
                 return GetMainOnlyVideoFilterParam(mainStr);
             }
 
-            if (HasSubtitleOverlay(state, subFilters, overlayFilters))
+            if (HasSubtitleOverlay(state, context.SubFilters, context.OverlayFilters))
             {
                 // overlay graphical/text subtitles
                 var subStr = string.Format(
                         CultureInfo.InvariantCulture,
                         "{0}",
-                        string.Join(',', subFilters));
+                        string.Join(',', context.SubFilters));
 
                 var overlayStr = string.Format(
                         CultureInfo.InvariantCulture,
                         "{0}",
-                        string.Join(',', overlayFilters));
+                        string.Join(',', context.OverlayFilters));
 
                 var mapPrefix = Convert.ToInt32(state.SubtitleStream.IsExternal);
                 var subtitleStreamIndex = GetSubtitleStreamIndexForFfmpeg(state.MediaSource, state.SubtitleStream);
                 var videoStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.VideoStream);
 
-                if (hasSubs)
+                if (context.HasSubs)
                 {
                     // -filter_complex "[0:s]scale=s[sub]..."
-                    var filterStr = GetSubtitleFilterComplexTemplate(mainStr, hasTextSubs);
+                    var filterStr = GetSubtitleFilterComplexTemplate(mainStr, context.HasTextSubs);
 
                     return string.Format(
                         CultureInfo.InvariantCulture,
@@ -593,5 +616,12 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && subFilters?.Count > 0
                 && state.SubtitleStream is not null;
         }
+
+        private readonly record struct VideoFilterContext(
+            List<string> MainFilters,
+            List<string> SubFilters,
+            List<string> OverlayFilters,
+            bool HasSubs,
+            bool HasTextSubs);
     }
 }

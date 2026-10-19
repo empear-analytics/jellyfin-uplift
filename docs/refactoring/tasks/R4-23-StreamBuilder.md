@@ -165,12 +165,12 @@ Reply with exactly this, filled in:
 ```
 Task: R4-23 (MediaBrowser.Model/Dlna/StreamBuilder.cs)
 Baseline score: 8.94
-Final score:    <x.xx>
-Steps completed: <n> of 7
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    9.68
+Steps completed: 1 of 7 (step 1, GetTranscodeReasonForFailedCondition, Recipe E rule 11 chain; steps 2-7 not attempted, see below)
+Steps reverted:  0 of the committed step. Measured and not kept (score in brackets): one helper of the last 3, 4, 5, 6 cases (9.02, 9.05, 9.07, 9.10, UP but below the chain); one helper of the last 7 to 14 cases (8.89, DOWN, the helper stays Complex Method); chains of 4-case groups (8.81, DOWN: Code Duplication, six helpers), 5-case groups (8.81, DOWN), 7-case groups (8.97, UP), 8-case groups (8.89, DOWN), 9 and 13 (8.84 and 8.89, DOWN); mixed partitions 6,7,7,6 and 7,7,6,6 (9.20, UP), 8,6,6,6 and 6,6,6,8 (9.38, UP, with one Complex Method left). Chosen: 2,6,6,6,6 (cases from the end in six-case groups), 9.68 UP with no Complex Method; 6,6,6,6,2 and 5,6,6,6,3 tie at 9.68 and were not chosen.
+Smells left without a recipe: Excess Number of Function Arguments on six private methods (SetDirectPlaySubtitle 6, ApplyVideoTranscodeProfile 7, GetVideoTranscodeProfile 5, GetAudioCopyRank 7, GetVideoDirectPlayProfile 8, SelectDirectPlayMethod 5). Not attempted in this run: Recipe E rule 12 only gives the new helper at most four parameters and leaves the original method's count unchanged, and no recipe changes a private signature, so these cannot clear within the catalogue.
+Build: PASS (dotnet build Jellyfin.sln --no-incremental: 0 errors, 211 warnings, same as base)
+Tests: PASS (dotnet test Jellyfin.sln --no-build: every project passed, 0 failed; Model 808 passed, Integration 429 passed and 3 skipped (Skip attributes in source), Controller 1411 passed)
+Commits: 4952589f6d refactor(StreamBuilder): simplify GetTranscodeReasonForFailedCondition (8.94 to 9.68, UP), plus the commit that fills in this report
+Unsure about: (1) Helper names: contiguous groups mix properties, so each helper is named by its first property (TranscodeReasonForAudioProfileCondition, TranscodeReasonForIsInterlacedCondition, TranscodeReasonForRefFramesCondition, TranscodeReasonForVideoLevelCondition); no name clashes in any StreamBuilder*.cs part. (2) Four rule 11 applications in one commit, allowed by rule 1 (same recipe, same method). (3) Recipes G, P and rule 9 were not applied: this method has no nesting, no compound condition and no run of statements to extract. (4) Setup slip: a mis-expanded path created an empty folder inside the worktree; I removed it, and the worktree is clean. Scratch folder is %TEMP%\h-R4-23, deleted at the end.
 ```

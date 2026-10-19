@@ -107,23 +107,8 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             mainFilters.Add(GetOverwriteColorPropertiesParam(state, doOclTonemap));
 
-            if (isSwDecoder)
-            {
-                // INPUT sw surface(memory)
-                // sw deint
-                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                var outFormat = GetAmdSwOutputFormat(doOclTonemap);
-                var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-                // sw scale
-                mainFilters.Add(swScaleFilter);
-                mainFilters.Add($"format={outFormat}");
-
-                // keep video at memory except ocl tonemap,
-                // since the overhead caused by hwupload >>> using sw filter.
-                // sw => hw
-                AddAmdOclTonemapUpload(mainFilters, doOclTonemap);
-            }
+            var swDecoderContext = new AmdSecondSwDecoderContext(isSwDecoder, doDeintH2645, doOclTonemap, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH, mainFilters);
+            AddAmdSecondSwDecoderFilters(state, options, swDecoderContext);
 
             if (isD3d11vaDecoder)
             {
@@ -192,6 +177,27 @@ namespace MediaBrowser.Controller.MediaEncoding
             return (mainFilters, subFilters, overlayFilters);
         }
 
+        private void AddAmdSecondSwDecoderFilters(EncodingJobInfo state, EncodingOptions options, AmdSecondSwDecoderContext context)
+        {
+            if (context.IsSwDecoder)
+            {
+                // INPUT sw surface(memory)
+                // sw deint
+                AddSwDeinterlaceFilter(state, options, context.MainFilters, context.DoDeintH2645);
+
+                var outFormat = GetAmdSwOutputFormat(context.DoOclTonemap);
+                var swScaleFilter = GetSwScaleFilter(state, options, context.VidEncoder, context.SwpInW, context.SwpInH, context.ThreeDFormat, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                // sw scale
+                context.MainFilters.Add(swScaleFilter);
+                context.MainFilters.Add($"format={outFormat}");
+
+                // keep video at memory except ocl tonemap,
+                // since the overhead caused by hwupload >>> using sw filter.
+                // sw => hw
+                AddAmdOclTonemapUpload(context.MainFilters, context.DoOclTonemap);
+            }
+        }
+
         private void AddAmdDxInDxOutSubtitleFilters(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters, AmdSubtitleFilterContext context)
         {
             if (context.HasSubs)
@@ -247,5 +253,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? ReqH,
             int? ReqMaxW,
             int? ReqMaxH);
+
+        private readonly record struct AmdSecondSwDecoderContext(
+            bool IsSwDecoder,
+            bool DoDeintH2645,
+            bool DoOclTonemap,
+            string VidEncoder,
+            int? SwpInW,
+            int? SwpInH,
+            Video3DFormat? ThreeDFormat,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH,
+            List<string> MainFilters);
     }
 }

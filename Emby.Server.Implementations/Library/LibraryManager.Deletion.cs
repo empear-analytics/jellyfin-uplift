@@ -473,6 +473,11 @@ namespace Emby.Server.Implementations.Library
 
         private string? GetInternalItemsPath(BaseItem item)
         {
+            return DeletionInternalItemsPathFor(item);
+        }
+
+        private string? DeletionInternalItemsPathFor(BaseItem item)
+        {
             return item switch
             {
                 Genre => _configurationManager.ApplicationPaths.GenrePath,
@@ -480,6 +485,14 @@ namespace Emby.Server.Implementations.Library
                 MusicGenre => _configurationManager.ApplicationPaths.MusicGenrePath,
                 Person => _configurationManager.ApplicationPaths.PeoplePath,
                 Studio => _configurationManager.ApplicationPaths.StudioPath,
+                _ => DeletionInternalItemsPathTail(item)
+            };
+        }
+
+        private string? DeletionInternalItemsPathTail(BaseItem item)
+        {
+            return item switch
+            {
                 Year => _configurationManager.ApplicationPaths.YearPath,
                 _ => null
             };

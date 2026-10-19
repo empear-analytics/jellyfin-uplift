@@ -140,6 +140,15 @@ namespace MediaBrowser.Model.Dlna
                 case ProfileConditionValue.AudioChannels:
                     return TranscodeReason.AudioChannelsNotSupported;
 
+                default:
+                    return TranscodeReasonForAudioProfileCondition(condition);
+            }
+        }
+
+        private static TranscodeReason TranscodeReasonForAudioProfileCondition(ProfileCondition condition)
+        {
+            switch (condition.Property)
+            {
                 case ProfileConditionValue.AudioProfile:
                     return TranscodeReason.AudioProfileNotSupported;
 
@@ -160,6 +169,15 @@ namespace MediaBrowser.Model.Dlna
                     // TODO
                     return 0;
 
+                default:
+                    return TranscodeReasonForIsInterlacedCondition(condition);
+            }
+        }
+
+        private static TranscodeReason TranscodeReasonForIsInterlacedCondition(ProfileCondition condition)
+        {
+            switch (condition.Property)
+            {
                 case ProfileConditionValue.IsInterlaced:
                     return TranscodeReason.InterlacedVideoNotSupported;
 
@@ -181,6 +199,15 @@ namespace MediaBrowser.Model.Dlna
                     // TODO
                     return 0;
 
+                default:
+                    return TranscodeReasonForRefFramesCondition(condition);
+            }
+        }
+
+        private static TranscodeReason TranscodeReasonForRefFramesCondition(ProfileCondition condition)
+        {
+            switch (condition.Property)
+            {
                 case ProfileConditionValue.RefFrames:
                     return TranscodeReason.RefFramesNotSupported;
 
@@ -199,6 +226,15 @@ namespace MediaBrowser.Model.Dlna
                 case ProfileConditionValue.VideoFramerate:
                     return TranscodeReason.VideoFramerateNotSupported;
 
+                default:
+                    return TranscodeReasonForVideoLevelCondition(condition);
+            }
+        }
+
+        private static TranscodeReason TranscodeReasonForVideoLevelCondition(ProfileCondition condition)
+        {
+            switch (condition.Property)
+            {
                 case ProfileConditionValue.VideoLevel:
                     return TranscodeReason.VideoLevelNotSupported;
 

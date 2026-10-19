@@ -107,49 +107,10 @@ namespace Emby.Server.Implementations.Library
 
             foreach (var img in outdated)
             {
-                var image = img;
-                if (!img.IsLocalFile)
+                if (await UpdateImagesRefreshImageAsync(item, img).ConfigureAwait(false))
                 {
-                    try
-                    {
-                        var index = item.GetImageIndex(img);
-                        image = await ConvertImageToLocal(item, img, index, true).ConfigureAwait(false);
-                    }
-                    catch (ArgumentException)
-                    {
-                        _logger.LogWarning("Cannot get image index for {ImagePath}", img.Path);
-                        continue;
-                    }
-                    catch (Exception ex) when (ex is InvalidOperationException or IOException)
-                    {
-                        _logger.LogWarning(ex, "Cannot fetch image from {ImagePath}", img.Path);
-                        continue;
-                    }
-                    catch (HttpRequestException ex)
-                    {
-                        _logger.LogWarning(ex, "Cannot fetch image from {ImagePath}. Http status code: {HttpStatus}", img.Path, ex.StatusCode);
-                        continue;
-                    }
-                }
-
-                if (IsMissingImageFile(image))
-                {
-                    _logger.LogWarning(
-                        "{ImageType} image for {ItemName} ({ItemId}) not found at \"{ImagePath}\", source was {SourcePath}",
-                        img.Type,
-                        item.Name,
-                        item.Id,
-                        image.Path,
-                        img.Path);
                     continue;
                 }
-
-                ImageDimensions size;
-                size = UpdateImageDimensions(item, image);
-
-                UpdateImageBlurHash(image, size);
-
-                UpdateImageDateModified(image);
             }
 
             item.ValidateImages();
@@ -157,6 +118,55 @@ namespace Emby.Server.Implementations.Library
             await _persistenceService.SaveImagesAsync(item).ConfigureAwait(false);
 
             RegisterItem(item);
+        }
+
+        private async Task<bool> UpdateImagesRefreshImageAsync(BaseItem item, ItemImageInfo img)
+        {
+            var image = img;
+            if (!img.IsLocalFile)
+            {
+                try
+                {
+                    var index = item.GetImageIndex(img);
+                    image = await ConvertImageToLocal(item, img, index, true).ConfigureAwait(false);
+                }
+                catch (ArgumentException)
+                {
+                    _logger.LogWarning("Cannot get image index for {ImagePath}", img.Path);
+                    return true;
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or IOException)
+                {
+                    _logger.LogWarning(ex, "Cannot fetch image from {ImagePath}", img.Path);
+                    return true;
+                }
+                catch (HttpRequestException ex)
+                {
+                    _logger.LogWarning(ex, "Cannot fetch image from {ImagePath}. Http status code: {HttpStatus}", img.Path, ex.StatusCode);
+                    return true;
+                }
+            }
+
+            if (IsMissingImageFile(image))
+            {
+                _logger.LogWarning(
+                    "{ImageType} image for {ItemName} ({ItemId}) not found at \"{ImagePath}\", source was {SourcePath}",
+                    img.Type,
+                    item.Name,
+                    item.Id,
+                    image.Path,
+                    img.Path);
+                return true;
+            }
+
+            ImageDimensions size;
+            size = UpdateImageDimensions(item, image);
+
+            UpdateImageBlurHash(image, size);
+
+            UpdateImageDateModified(image);
+
+            return false;
         }
 
         private ItemImageInfo[] GetOutdatedImages(BaseItem item, bool forceUpdate)

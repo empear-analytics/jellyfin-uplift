@@ -131,3 +131,26 @@ Tests: PASS / FAIL
 Commits: <sha list>
 Unsure about: <free text, or NONE>
 ```
+
+## 10. Run report (h-R4-50b, re-run)
+
+```
+Task: R4-50 (MediaBrowser.Model/Dlna/StreamBuilder.AudioStream.cs)
+Baseline score: 9.53
+Final score:    9.84
+Steps completed: 1 of 1 (Recipe E rule 7 tail with rule 12 context struct, 9.53 -> 9.84 UP)
+Steps reverted:  1   (rule 9 single-value extraction of the GetCompatibilityAudioCodec call in the
+                      DirectPlay block, measured alone: FLAT 9.84 -> 9.84)
+Candidates not measured: Recipe G on the outer `if (directPlayMethod is PlayMethod.DirectPlay)`:
+                      the body falls through into the DirectStream block, so inverting it needs a
+                      merged condition or goto (both forbidden). Recipe P: no compound boolean left.
+Smells left without a recipe: Bumpy Road Ahead (bumps 2) in GetOptimalAudioStream, lines 51-120.
+                      The DirectPlay and DirectStream blocks both assign the local transcodeReasons
+                      and return StreamInfo on some paths; a helper would need a tuple or out value.
+Build: PASS (0 errors, 211 warnings, same as base; none in StreamBuilder.AudioStream.cs)
+Tests: PASS (full solution, 17 test projects, 0 failed; Model 808/808;
+       Integration 429 passed, 3 skipped)
+Commits: b920e3ab35 refactor(StreamBuilder.AudioStream): simplify GetOptimalAudioStream (9.84 UP)
+Unsure about: The 3 Integration and 17 Server.Implementations skips were not compared against
+       the base. The rule 9 candidate was FLAT and is reverted, not committed.
+```

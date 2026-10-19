@@ -539,29 +539,7 @@ namespace Emby.Server.Implementations.Library
             // If a position has been reported, and if we know the duration
             if (HasProgressOnNonBookItem(item, positionTicks, hasRuntime))
             {
-                var pctIn = decimal.Divide(positionTicks, runtimeTicks) * 100;
-
-                if (pctIn < _config.Configuration.MinResumePct)
-                {
-                    // ignore progress during the beginning
-                    positionTicks = 0;
-                }
-                else if (IsNearEndOfItem(pctIn, positionTicks, runtimeTicks))
-                {
-                    // mark as completed close to the end
-                    positionTicks = 0;
-                    data.Played = playedToCompletion = true;
-                }
-                else
-                {
-                    // Enforce MinResumeDuration
-                    var durationSeconds = TimeSpan.FromTicks(runtimeTicks).TotalSeconds;
-                    if (durationSeconds < _config.Configuration.MinResumeDurationSeconds)
-                    {
-                        positionTicks = 0;
-                        data.Played = playedToCompletion = true;
-                    }
-                }
+                (positionTicks, playedToCompletion) = PlayStateNonBookProgress(data, positionTicks, runtimeTicks, playedToCompletion);
             }
             else if (HasProgressOnAudioBook(item, positionTicks, hasRuntime))
             {
@@ -592,6 +570,35 @@ namespace Emby.Server.Implementations.Library
             data.PlaybackPositionTicks = positionTicks;
 
             return playedToCompletion;
+        }
+
+        private (long PositionTicks, bool PlayedToCompletion) PlayStateNonBookProgress(UserItemData data, long positionTicks, long runtimeTicks, bool playedToCompletion)
+        {
+            var pctIn = decimal.Divide(positionTicks, runtimeTicks) * 100;
+
+            if (pctIn < _config.Configuration.MinResumePct)
+            {
+                // ignore progress during the beginning
+                positionTicks = 0;
+            }
+            else if (IsNearEndOfItem(pctIn, positionTicks, runtimeTicks))
+            {
+                // mark as completed close to the end
+                positionTicks = 0;
+                data.Played = playedToCompletion = true;
+            }
+            else
+            {
+                // Enforce MinResumeDuration
+                var durationSeconds = TimeSpan.FromTicks(runtimeTicks).TotalSeconds;
+                if (durationSeconds < _config.Configuration.MinResumeDurationSeconds)
+                {
+                    positionTicks = 0;
+                    data.Played = playedToCompletion = true;
+                }
+            }
+
+            return (positionTicks, playedToCompletion);
         }
 
         private static long ApplyItemPlayStateSupport(BaseItem item, UserItemData data, long positionTicks)

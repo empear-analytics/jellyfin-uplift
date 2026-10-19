@@ -119,7 +119,11 @@ blocks of nested logic). Each "bump" is a missing method.
     `switch` statement of those sections, and the original's `default:` becomes
     `default: return Helper(x);`. Sections that fall through to each other (stacked `case` labels)
     move together. Measure the split point: a helper with more than about five sections can stay
-    a Complex Method.
+    a Complex Method. The same applies to a `switch` **statement** whose sections end in `break`
+    (no `return`): the last sections, with `default:`, move to a helper holding a `switch`
+    statement of those sections, each section keeping its `break`, and the original's `default:`
+    becomes `default: Helper(x); break;`. Only whole sections move, and nothing after the switch
+    depends on a section that moved.
 12. **Shared inputs (a context struct).** A block that needs more than four values from its method
     may take them as one `private readonly record struct`, nested in the class at the end of the
     file that holds the method. A method may have two such structs when its blocks need different
@@ -150,6 +154,9 @@ blocks of nested logic). Each "bump" is a missing method.
     when the moved branches assign or return the same single variable, change no other local that
     is read afterwards, and the new method has at most four parameters. It is a form of rules 7
     and 9, written out because it is the most common blocker in `else if` dispatch code.
+    The tail may also be void: when the moved branches only add to or change objects passed in
+    (such as a list), and assign no local read afterwards, the new method returns nothing and the
+    original gets `else { Helper(...); }`.
 
 **Before:**
 
@@ -674,3 +681,5 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-18 | Recipe E rule 12: up to two context structs per method, one per family of blocks; the whole statement that holds the block moves, guard included. | One struct per method was full at 12 members in every EncodingHelper filter method (R4-09, R4-35, R4-36, R4-05, R4-19), leaving the decoder blocks (12 to 17 values) blocked; moving the whole `if (hasSubs)` statement instead of its inside is what removed the bumps (R4-09, R4-35, R4-36). Compiled and compared on 20,000 random inputs. Adopted by the campaign owner. |
 | 2026-10-18 | Recipe E rule 13: the tail of an `if` / `else if` chain moves to a helper (`else { x = Helper(...); }` or `else { return Helper(...); }`). | Used already by R4-03 under rules 7 and 9 on `GetEncoderParam`, `AppendLevelParam` and `NormalizeTranscodingLevel` (6.85 to 8.03, Bumpy Road gone); also the shape of `GetHwDeviceAndDecoderArgs` (R4-06, still six bumps). Compiled and compared on 20,000 random inputs. Adopted by the campaign owner. |
 | 2026-10-18 | Recipe D: a logging message template is never a value moved into a helper parameter (CA2254). | R4-48 `PathManager`: the two-value merge adopted earlier the same day fails the build with CA2254, so no step was possible. Correction of the earlier row. Made under the campaign owner's mandate. |
+| 2026-10-19 | Recipe E rule 11 also covers a `switch` statement whose sections end in `break` (no `return`): a suffix of the sections, with `default:`, moves to a helper switch, each section keeping its `break`. | Measured in round 5: `ApplyParam` (R4-18, 34 sections) and `ApplyTranscodingConditions` (R4-02) are void switches of this shape. Compiled with warnings as errors and compared with the original on 20,000 random inputs (0 failures). Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-19 | Recipe E rule 13 also covers a void tail: branches that only add to or change objects passed in (no assigned local read afterwards) move to a void helper, called from `else { Helper(...); }`. | Round 5: the Amd vaapi branch of `EncodingHelper.VaapiFilters` (R4-05, 7.86 UP as a void tail, not committed under the old rule). Compiled with warnings as errors and compared with the original on 20,000 random inputs (0 failures). Made under the campaign owner's mandate, not individually reviewed. |

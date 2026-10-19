@@ -127,12 +127,26 @@ Reply with exactly this, filled in:
 ```
 Task: R4-43 (Emby.Server.Implementations/Library/LibraryManager.Changes.cs)
 Baseline score: 9.38
-Final score:    <x.xx>
-Steps completed: <n> of 2
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    10.00
+Steps completed: 1 of 2 (step 1 committed; step 2 not needed, score already 10.00)
+Steps reverted:  1 (the step-1 candidate, see below: build failed with CS8602, fixed by the
+                 nullable case 2 parameter, then re-measured UP; the committed version is the fixed one)
+                 Measured and reverted alone: predicate IsLibraryItem in NotifyItemsAdded (FLAT, 9.38)
+Smells left without a recipe: NONE reported by CodeScene. Recipe D as a merge of the two copies
+                 is not allowed (four differing places, one a log template); see Unsure about.
+Build: PASS (dotnet build Jellyfin.sln --no-incremental, 0 errors, 211 warnings = base)
+Tests: PASS (Server.Implementations 1102 passed, 17 skipped; Integration 429 passed, 3 skipped;
+       full Jellyfin.sln --no-build: all 17 test projects pass, 0 failures)
+Commits: d64bd98a6f refactor(LibraryManager.Changes): simplify NotifyItemsAdded (9.38 -> 10.00, UP)
+Unsure about: (1) The 10.00 comes from moving the try/catch of NotifyItemsAdded into
+                 ChangesRaiseItemAdded (Recipe E rule 9). The two notify methods still have the same
+                 shape, and the copy in NotifyItemsUpdated is unchanged. CodeScene no longer reports
+                 Code Duplication. The UpdateItemsAsync copy was measured alone as well (also 10.00, UP,
+                 not committed, not built): the tie went to task order.
+             (2) Recipe D was not measured: the copies differ in the event (ItemAdded/ItemUpdated), the
+                 Parent expression, UpdateReason, and the log template (CA2254). The playbook allows at
+                 most two differing values, so no Recipe D step is legal here.
+             (3) The new helper takes the checked event as a parameter (nullable flow case 2). The
+                 event is read once per item, before the event arguments are built, as before.
+             (4) New method names start with Changes, per the task instructions.
 ```

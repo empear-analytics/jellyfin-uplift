@@ -119,12 +119,12 @@ Reply with exactly this, filled in:
 ```
 Task: R4-49 (MediaBrowser.MediaEncoding/Probing/ProbeResultNormalizer.ItunesArray.cs)
 Baseline score: 9.38
-Final score:    <x.xx>
-Steps completed: <n> of 1
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    10.00
+Steps completed: 1 of 1
+Steps reverted:  0 committed (4 candidates measured and reverted, none committed: Recipe G on the NodeType guard 9.53 WORSE; rule 10 on the empty-element block 9.38 FLAT; P on the while condition 9.38 FLAT; P on the element check 9.38 FLAT. Rule 10 on the switch only also measured 10.00 UP, not chosen: same score as the committed step)
+Smells left without a recipe: NONE
+Build: PASS (dotnet build Jellyfin.sln --no-incremental, 0 errors, 211 warnings)
+Tests: PASS (full solution, dotnet test Jellyfin.sln --no-build: 0 failed)
+Commits: 56e755831b (refactor(ProbeResultNormalizer.ItunesArray): simplify ReadValueArray, Recipe E rule 10, 9.38 -> 10.00)
+Unsure about: The recipe named for this file, G, measured WORSE (9.53, new Bumpy Road and Complex Method at cc 9). The committed step is Recipe E rule 10 on the whole if/else block, which the task lists as allowed. Two rule 10 candidates both scored 10.00: the whole block (chosen, because the block sits directly in the loop body, as rule 10 describes) and the switch alone (nested in the if). The helper ItunesArrayReadEntry keeps the switch with its breaks and returns true at the former continue. The call site leaves a trailing continue at the end of the loop body, which is the playbook's call-site form and is a no-op.
 ```

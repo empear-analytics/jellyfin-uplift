@@ -125,12 +125,16 @@ Reply with exactly this, filled in:
 ```
 Task: R4-27 (Emby.Server.Implementations/Library/LibraryManager.Deletion.cs)
 Baseline score: 9.09
-Final score:    <x.xx>
-Steps completed: <n> of 1
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    9.09 (no refactor committed)
+Steps completed: 0 of 1
+Steps reverted:  0 committed; candidates measured and reverted, none committed:
+  - Recipe E rule 9 (wrapper around the single return statement, DeletionInternalItemsPathFor): 9.09 FLAT
+  - Recipe E rule 11 (suffix of the switch arms, DeletionInternalItemsPathTail), outside the rules named in the brief: 9.38 UP at split points of 1, 2, 3 and 4 arms; not committed
+  - Recipe G and Recipe P: no applicable site (no nested condition, no compound && or ||)
+  - Recipe E rule 13: no else-if chain
+Smells left without a recipe: NONE in the brief's recipe set. Overall Code Complexity (indication 2) remains; the only applicable recipe is rule 11, which the brief did not name.
+Build: PASS (0 errors, 211 warnings, dotnet build Jellyfin.sln --no-incremental)
+Tests: PASS (full suite on unchanged HEAD). One failure: Jellyfin.Providers.Tests.MediaInfo.AtlFlacRegressionTests.AtlParser_MalformedFlac_DoesNotHang (5 s under load); passed when run alone, so a flake.
+Commits: none for the refactor; this report commit only
+Unsure about: whether rule 11 may be used here. It is the one candidate that scores UP (9.38), and it is not among the rules the brief named. If the coordinator adds it, one commit at any split point should do. Recipe D and the file-level smell are untouched.
 ```

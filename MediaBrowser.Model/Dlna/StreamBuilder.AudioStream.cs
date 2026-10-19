@@ -116,22 +116,27 @@ namespace MediaBrowser.Model.Dlna
                 playlistItem.TranscodeReasons = transcodeReasons;
             }
 
-            TranscodingProfile? transcodingProfile = FindAudioTranscodingProfile(options, playlistItem);
+            return OptimalAudioTranscodeStream(new OptimalAudioTranscodeContext(options, item, audioStream, playlistItem, transcodeReasons));
+        }
+
+        private StreamInfo? OptimalAudioTranscodeStream(OptimalAudioTranscodeContext context)
+        {
+            TranscodingProfile? transcodingProfile = FindAudioTranscodingProfile(context.Options, context.PlaylistItem);
 
             if (transcodingProfile is not null)
             {
-                if (!item.SupportsTranscoding)
+                if (!context.Item.SupportsTranscoding)
                 {
                     return null;
                 }
 
-                SetStreamInfoOptionsFromTranscodingProfile(item, playlistItem, transcodingProfile);
+                SetStreamInfoOptionsFromTranscodingProfile(context.Item, context.PlaylistItem, transcodingProfile);
 
-                ApplyAudioTranscodingProfileSettings(options, audioStream, playlistItem, transcodingProfile);
+                ApplyAudioTranscodingProfileSettings(context.Options, context.AudioStream, context.PlaylistItem, transcodingProfile);
             }
 
-            playlistItem.TranscodeReasons = transcodeReasons;
-            return playlistItem;
+            context.PlaylistItem.TranscodeReasons = context.TranscodeReasons;
+            return context.PlaylistItem;
         }
 
         private void ApplyAudioTranscodingProfileSettings(MediaOptions options, MediaStream audioStream, StreamInfo playlistItem, TranscodingProfile transcodingProfile)
@@ -453,5 +458,7 @@ namespace MediaBrowser.Model.Dlna
             return string.Equals(profile.AudioCodec, audioCodec, StringComparison.OrdinalIgnoreCase)
                    || string.Equals(profile.Container, audioCodec, StringComparison.OrdinalIgnoreCase);
         }
+
+        private readonly record struct OptimalAudioTranscodeContext(MediaOptions Options, MediaSourceInfo Item, MediaStream AudioStream, StreamInfo PlaylistItem, TranscodeReason TranscodeReasons);
     }
 }

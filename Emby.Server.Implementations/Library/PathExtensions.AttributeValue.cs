@@ -28,6 +28,11 @@ namespace Emby.Server.Implementations.Library
             // The code below only supports aliases for attributes in the form of "<alias>id".
             ReadOnlySpan<char> shortAttr = GetShortAlias(attribute);
 
+            return AttributeValueSearch(str, attribute, shortAttr);
+        }
+
+        private static string? AttributeValueSearch(ReadOnlySpan<char> str, ReadOnlySpan<char> attribute, ReadOnlySpan<char> shortAttr)
+        {
             for (int strIndex = 0, attributeIndex = 0; attributeIndex > -1;)
             {
                 // We may want to use imdbid pattern matching later, so we don't want to modify the original 'str'.
@@ -63,11 +68,7 @@ namespace Emby.Server.Implementations.Library
                     continue;
                 }
 
-                if (IsAliasFollowedById(shortAttr, subStr, attributeEnd))
-                {
-                    // We were searching for a shortened attribute, but it's followed by "id" - let's skip it.
-                    attributeEnd += 2;
-                }
+                attributeEnd = AttributeValueSkipId(shortAttr, subStr, attributeEnd);
 
                 // attributeEnd points at '='.
                 // We need at least 1 more character and the closing bracket after that.
@@ -95,23 +96,15 @@ namespace Emby.Server.Implementations.Library
             return FindImdbIdByPattern(str, attribute);
         }
 
-        private static bool IsAliasFollowedById(ReadOnlySpan<char> shortAttr, ReadOnlySpan<char> subStr, int attributeEnd)
+        private static int AttributeValueSkipId(ReadOnlySpan<char> shortAttr, ReadOnlySpan<char> subStr, int attributeEnd)
         {
-            return shortAttr.Length > 0
-                && attributeEnd + 1 < subStr.Length
-                && (subStr[attributeEnd] is 'i' or 'I')
-                && (subStr[attributeEnd + 1] is 'd' or 'D');
-        }
-
-        private static ReadOnlySpan<char> GetShortAlias(ReadOnlySpan<char> attribute)
-        {
-            return attribute switch
+            if (IsAliasFollowedById(shortAttr, subStr, attributeEnd))
             {
-                _ when attribute.Equals("tmdbid", StringComparison.OrdinalIgnoreCase) => "tmdb",
-                _ when attribute.Equals("tvdbid", StringComparison.OrdinalIgnoreCase) => "tvdb",
-                _ when attribute.Equals("imdbid", StringComparison.OrdinalIgnoreCase) => "imdb",
-                _ => ReadOnlySpan<char>.Empty
-            };
+                // We were searching for a shortened attribute, but it's followed by "id" - let's skip it.
+                attributeEnd += 2;
+            }
+
+            return attributeEnd;
         }
 
         private static char GetAttributeCloser(char attributeOpener)

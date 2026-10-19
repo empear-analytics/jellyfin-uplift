@@ -213,10 +213,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     hwScaleFilter += GetVppTonemapOption(doVppProcamp, procampParams, twoPassVppTonemap);
                 }
 
-                if (isD3d11vaDecoder)
-                {
-                    AddD3d11vaToQsvHwmap(mainFilters, hwScaleFilter, doDeintH2645);
-                }
+                IntelSecondAddD3d11vaToQsvHwmapIfNeeded(mainFilters, hwScaleFilter, doDeintH2645, isD3d11vaDecoder);
 
                 // hw deint
                 AddQsvHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
@@ -287,6 +284,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static void IntelSecondAddD3d11vaToQsvHwmapIfNeeded(List<string> mainFilters, string hwScaleFilter, bool doDeintH2645, bool isD3d11vaDecoder)
+        {
+            if (isD3d11vaDecoder)
+            {
+                AddD3d11vaToQsvHwmap(mainFilters, hwScaleFilter, doDeintH2645);
+            }
         }
 
         private void AddIntelQsvDx11QsvOutSubtitleFilters(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters, IntelQsvDx11FilterContext context)

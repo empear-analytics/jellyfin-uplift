@@ -122,12 +122,25 @@ Reply with exactly this, filled in:
 ```
 Task: R4-51 (MediaBrowser.Controller/MediaEncoding/JobLogger.cs)
 Baseline score: 9.53
-Final score:    <x.xx>
-Steps completed: <n> of 1
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    9.84
+Steps completed: 1 of 1 (one commit, two steps of two recipes: rule 1 pair)
+Steps reverted:  0 committed. Candidates measured alone on HEAD, both FLAT (9.53 -> 9.53), so
+                 not committed alone: Recipe P on the progress condition (ParseLogLine cc 9);
+                 Recipe E rule 13 on the bitrate else-if tail (ParseLogLine cc 9).
+                 Together: 9.84 UP, all checks pass.
+Smells left without a recipe: Bumpy Road Ahead (2 bumps) in ParseLogLine, not attempted. Neither
+                 bump is covered by the playbook: the fps= branch is not a tail of the else-if chain
+                 (rule 13), and the time= branch writes two outer variables (percent and
+                 transcodingPosition, Recipe E rule 4). Complex Method is gone (cc 10 to 9).
+Build: PASS (dotnet build Jellyfin.sln --no-incremental: 0 errors, 211 warnings, the base count)
+Tests: PASS (full solution, dotnet test Jellyfin.sln --no-build: 0 failed; Controller 1411,
+       MediaEncoding 280 (1 skipped), Server.Integration 429 (3 skipped); no failing test)
+Commits: 430e29488f refactor(JobLogger): simplify ParseLogLine (9.53 -> 9.84, UP)
+Unsure about: (1) Rule 13 applied to a single-branch tail (only the bitrate branch moves, as
+                 the task specified); the else branch is reached for every part the earlier
+                 branches did not match, and the helper returns bitRate unchanged when the prefix
+                 is absent, so behaviour is the same. (2) The task says one commit; this report is
+                 filled in a separate docs commit, as earlier rounds did. (3) Harness reported
+                 JobLogger.cs changed on disk after my own git checkout revert; git status was clean
+                 and the file matched HEAD, so I took no further action.
 ```

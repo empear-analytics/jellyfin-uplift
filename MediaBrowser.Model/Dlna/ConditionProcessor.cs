@@ -70,36 +70,8 @@ namespace MediaBrowser.Model.Dlna
                     return IsConditionSatisfied(condition, videoFramerate);
                 case ProfileConditionValue.VideoLevel:
                     return IsConditionSatisfied(condition, videoLevel);
-                case ProfileConditionValue.VideoProfile:
-                    return IsConditionSatisfied(condition, videoProfile);
-                case ProfileConditionValue.VideoRangeType:
-                    return IsConditionSatisfied(condition, videoRangeType);
-                case ProfileConditionValue.VideoCodecTag:
-                    return IsConditionSatisfied(condition, videoCodecTag);
-                case ProfileConditionValue.PacketLength:
-                    return IsConditionSatisfied(condition, packetLength);
-                case ProfileConditionValue.VideoBitDepth:
-                    return IsConditionSatisfied(condition, videoBitDepth);
-                case ProfileConditionValue.VideoBitrate:
-                    return IsConditionSatisfied(condition, videoBitrate);
-                case ProfileConditionValue.Height:
-                    return IsConditionSatisfied(condition, height);
-                case ProfileConditionValue.Width:
-                    return IsConditionSatisfied(condition, width);
-                case ProfileConditionValue.RefFrames:
-                    return IsConditionSatisfied(condition, refFrames);
-                case ProfileConditionValue.NumStreams:
-                    return IsConditionSatisfied(condition, numStreams);
-                case ProfileConditionValue.NumAudioStreams:
-                    return IsConditionSatisfied(condition, numAudioStreams);
-                case ProfileConditionValue.NumVideoStreams:
-                    return IsConditionSatisfied(condition, numVideoStreams);
-                case ProfileConditionValue.VideoTimestamp:
-                    return IsConditionSatisfied(condition, timestamp);
-                case ProfileConditionValue.VideoRotation:
-                    return IsConditionSatisfied(condition, videoRotation);
                 default:
-                    return true;
+                    return VideoConditionProfileRangeOrCodecTagSatisfied(new VideoConditionSizeContext(condition, refFrames, numStreams, numAudioStreams, numVideoStreams, timestamp, videoRotation, packetLength, videoBitDepth, videoBitrate, height, width), videoProfile, videoRangeType, videoCodecTag);
             }
         }
 
@@ -185,6 +157,61 @@ namespace MediaBrowser.Model.Dlna
                     return IsConditionSatisfied(condition, audioBitDepth);
                 default:
                     throw new ArgumentException("Unexpected condition on audio file: " + condition.Property);
+            }
+        }
+
+        private static bool VideoConditionProfileRangeOrCodecTagSatisfied(VideoConditionSizeContext context, string? videoProfile, VideoRangeType? videoRangeType, string? videoCodecTag)
+        {
+            switch (context.Condition.Property)
+            {
+                case ProfileConditionValue.VideoProfile:
+                    return IsConditionSatisfied(context.Condition, videoProfile);
+                case ProfileConditionValue.VideoRangeType:
+                    return IsConditionSatisfied(context.Condition, videoRangeType);
+                case ProfileConditionValue.VideoCodecTag:
+                    return IsConditionSatisfied(context.Condition, videoCodecTag);
+                default:
+                    return VideoConditionPacketBitrateOrSizeSatisfied(context);
+            }
+        }
+
+        private static bool VideoConditionPacketBitrateOrSizeSatisfied(VideoConditionSizeContext context)
+        {
+            switch (context.Condition.Property)
+            {
+                case ProfileConditionValue.PacketLength:
+                    return IsConditionSatisfied(context.Condition, context.PacketLength);
+                case ProfileConditionValue.VideoBitDepth:
+                    return IsConditionSatisfied(context.Condition, context.VideoBitDepth);
+                case ProfileConditionValue.VideoBitrate:
+                    return IsConditionSatisfied(context.Condition, context.VideoBitrate);
+                case ProfileConditionValue.Height:
+                    return IsConditionSatisfied(context.Condition, context.Height);
+                case ProfileConditionValue.Width:
+                    return IsConditionSatisfied(context.Condition, context.Width);
+                default:
+                    return VideoConditionRefFramesStreamsOrRotationSatisfied(new VideoConditionContext(context.Condition, context.RefFrames, context.NumStreams, context.NumAudioStreams, context.NumVideoStreams, context.Timestamp, context.VideoRotation));
+            }
+        }
+
+        private static bool VideoConditionRefFramesStreamsOrRotationSatisfied(VideoConditionContext context)
+        {
+            switch (context.Condition.Property)
+            {
+                case ProfileConditionValue.RefFrames:
+                    return IsConditionSatisfied(context.Condition, context.RefFrames);
+                case ProfileConditionValue.NumStreams:
+                    return IsConditionSatisfied(context.Condition, context.NumStreams);
+                case ProfileConditionValue.NumAudioStreams:
+                    return IsConditionSatisfied(context.Condition, context.NumAudioStreams);
+                case ProfileConditionValue.NumVideoStreams:
+                    return IsConditionSatisfied(context.Condition, context.NumVideoStreams);
+                case ProfileConditionValue.VideoTimestamp:
+                    return IsConditionSatisfied(context.Condition, context.Timestamp);
+                case ProfileConditionValue.VideoRotation:
+                    return IsConditionSatisfied(context.Condition, context.VideoRotation);
+                default:
+                    return true;
             }
         }
 
@@ -395,5 +422,28 @@ namespace MediaBrowser.Model.Dlna
                 _ => throw new InvalidOperationException("Unexpected ProfileConditionType: " + condition.Condition)
             };
         }
+
+        private readonly record struct VideoConditionContext(
+            ProfileCondition Condition,
+            int? RefFrames,
+            int NumStreams,
+            int? NumAudioStreams,
+            int? NumVideoStreams,
+            TransportStreamTimestamp? Timestamp,
+            int? VideoRotation);
+
+        private readonly record struct VideoConditionSizeContext(
+            ProfileCondition Condition,
+            int? RefFrames,
+            int NumStreams,
+            int? NumAudioStreams,
+            int? NumVideoStreams,
+            TransportStreamTimestamp? Timestamp,
+            int? VideoRotation,
+            int? PacketLength,
+            int? VideoBitDepth,
+            int? VideoBitrate,
+            int? Height,
+            int? Width);
     }
 }

@@ -570,25 +570,9 @@ namespace MediaBrowser.Controller.MediaEncoding
                     AddVaapiAmdSwScaleFilters(context, vidEncoder, threeDFormat, mainFilters);
                 }
             }
-            else if (isVaapiDecoder)
+            else
             {
-                // INPUT vaapi surface(vram)
-                if (NeedsVulkanInterop(doVkTranspose, doVkTonemap, hasSubs))
-                {
-                    AddAmdVaapiToVulkanMapFilters(mainFilters, doVkTranspose, doVkTonemap, hasSubs);
-                }
-                else
-                {
-                    // hw deint
-                    AddVaapiHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                    // hw scale
-                    var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", "nv12", false, inW, inH, reqW, reqH, reqMaxW, reqMaxH);
-
-                    hwScaleFilter = ApplyAmdVaapiMjpegFullRange(hwScaleFilter, isMjpegEncoder, doVkTonemap);
-
-                    mainFilters.Add(hwScaleFilter);
-                }
+                VaapiVoidAmdDecoderFilters(new VaapiVoidAmdDecoderContext(isVaapiDecoder, doDeintH2645, inW, inH, reqW, reqH, reqMaxW, reqMaxH, doVkTranspose, doVkTonemap, hasSubs, isMjpegEncoder), state, options, mainFilters);
             }
 
             // vk transpose
@@ -636,6 +620,30 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void VaapiVoidAmdDecoderFilters(VaapiVoidAmdDecoderContext context, EncodingJobInfo state, EncodingOptions options, List<string> mainFilters)
+        {
+            if (context.IsVaapiDecoder)
+            {
+                // INPUT vaapi surface(vram)
+                if (NeedsVulkanInterop(context.DoVkTranspose, context.DoVkTonemap, context.HasSubs))
+                {
+                    AddAmdVaapiToVulkanMapFilters(mainFilters, context.DoVkTranspose, context.DoVkTonemap, context.HasSubs);
+                }
+                else
+                {
+                    // hw deint
+                    AddVaapiHwDeinterlaceFilter(state, options, mainFilters, context.DoDeintH2645);
+
+                    // hw scale
+                    var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", "nv12", false, context.InW, context.InH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+
+                    hwScaleFilter = ApplyAmdVaapiMjpegFullRange(hwScaleFilter, context.IsMjpegEncoder, context.DoVkTonemap);
+
+                    mainFilters.Add(hwScaleFilter);
+                }
+            }
         }
 
         private void AddVaapiAmdSubtitleSourceFilters(VaapiAmdFullContext context, List<string> subFilters)
@@ -1050,5 +1058,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool IsHwmapForSubs,
             bool IsHwmapNotUsable,
             bool IsHwUnmapForTextSubs);
+
+        private readonly record struct VaapiVoidAmdDecoderContext(
+            bool IsVaapiDecoder,
+            bool DoDeintH2645,
+            int? InW,
+            int? InH,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH,
+            bool DoVkTranspose,
+            bool DoVkTonemap,
+            bool HasSubs,
+            bool IsMjpegEncoder);
     }
 }
