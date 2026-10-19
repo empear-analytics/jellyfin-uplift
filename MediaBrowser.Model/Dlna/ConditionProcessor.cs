@@ -70,14 +70,8 @@ namespace MediaBrowser.Model.Dlna
                     return IsConditionSatisfied(condition, videoFramerate);
                 case ProfileConditionValue.VideoLevel:
                     return IsConditionSatisfied(condition, videoLevel);
-                case ProfileConditionValue.VideoProfile:
-                    return IsConditionSatisfied(condition, videoProfile);
-                case ProfileConditionValue.VideoRangeType:
-                    return IsConditionSatisfied(condition, videoRangeType);
-                case ProfileConditionValue.VideoCodecTag:
-                    return IsConditionSatisfied(condition, videoCodecTag);
                 default:
-                    return VideoConditionPacketBitrateOrSizeSatisfied(new VideoConditionSizeContext(condition, refFrames, numStreams, numAudioStreams, numVideoStreams, timestamp, videoRotation, packetLength, videoBitDepth, videoBitrate, height, width));
+                    return VideoConditionProfileRangeOrCodecTagSatisfied(new VideoConditionSizeContext(condition, refFrames, numStreams, numAudioStreams, numVideoStreams, timestamp, videoRotation, packetLength, videoBitDepth, videoBitrate, height, width), videoProfile, videoRangeType, videoCodecTag);
             }
         }
 
@@ -163,6 +157,21 @@ namespace MediaBrowser.Model.Dlna
                     return IsConditionSatisfied(condition, audioBitDepth);
                 default:
                     throw new ArgumentException("Unexpected condition on audio file: " + condition.Property);
+            }
+        }
+
+        private static bool VideoConditionProfileRangeOrCodecTagSatisfied(VideoConditionSizeContext context, string? videoProfile, VideoRangeType? videoRangeType, string? videoCodecTag)
+        {
+            switch (context.Condition.Property)
+            {
+                case ProfileConditionValue.VideoProfile:
+                    return IsConditionSatisfied(context.Condition, videoProfile);
+                case ProfileConditionValue.VideoRangeType:
+                    return IsConditionSatisfied(context.Condition, videoRangeType);
+                case ProfileConditionValue.VideoCodecTag:
+                    return IsConditionSatisfied(context.Condition, videoCodecTag);
+                default:
+                    return VideoConditionPacketBitrateOrSizeSatisfied(context);
             }
         }
 
