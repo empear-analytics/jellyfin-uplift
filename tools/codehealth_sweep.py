@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """Sweep every tracked C# file in Jellyfin through CodeScene Code Health.
 
-Runs the CodeScene CLI (`cs review --output-format=json`) once per file, in
-parallel, and records each file's score and the code smells behind it (category,
-function, lines), tagged with a category so the band distribution can be reported
-with or without tests and generated code.
+Reviews each file through the CodeScene MCP server (`code_health_review`), so that
+every measurement is recorded on the CodeScene side, and records each file's score and
+the code smells behind it (category, function, lines), tagged with a category so the
+band distribution can be reported with or without tests and generated code.
 
-The CLI is the one bundled with the CodeScene MCP server
-(%LOCALAPPDATA%/codehealth-mcp/MCP-<version>/cs.exe); set CS_CLI to override.
-Calling it directly rather than through the MCP server matters: the server drops
-any answer still in flight 5 seconds after its input closes, and large files
-(EncodingHelper.cs takes ~7 s) then come back silent, indistinguishable from a
-file with no functions. The CLI says which is which: {"score": null} means no
-functions; no JSON at all means the run failed.
+The server is started from the "codescene" entry of the repository's .mcp.json and kept
+open for the whole sweep (cs_mcp_client.py). An earlier note here said the server drops an
+answer still in flight 5 seconds after its input closes, so large files such as
+EncodingHelper.cs came back silent; that is true for a one-shot call that closes the input
+at once. A client that keeps the input open gets the same answers as the CLI. When the
+server cannot be reached, or gives no review for a file, the sweep falls back to the CodeScene
+CLI for that file (`cs review --output-format=json`): the one bundled with the MCP server
+(%LOCALAPPDATA%/codehealth-mcp/MCP-<version>/cs.exe); set CS_CLI to override. The CLI says
+which is which: {"score": null} means no functions; no JSON at all means the run failed.
+Use --backend cli or --backend mcp to force one of them.
 
 Started from the 3SX campaign's tools/codehealth_sweep.py.
 Requires CS_ACCESS_TOKEN in the environment.
@@ -25,11 +28,19 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cs_mcp_client import McpClient, McpUnavailable, parse_review  # noqa: E402
+
+BACKEND = "auto"  # auto: the MCP server, then the CLI; mcp: the server only; cli: the CLI only
+_mcp: McpClient | None = None
+_mcp_down = False
+_mcp_lock = threading.Lock()
 BANDS = ("red", "yellow", "green", "optimal")
 CATEGORIES = ("production", "test", "generated", "fuzz")
 
@@ -86,16 +97,38 @@ def candidates() -> list[str]:
     return sorted(line.strip() for line in out.splitlines() if line.strip())
 
 
-def review(exe: str, rel: str) -> dict:
+def mcp_data(rel: str) -> dict | None:
+    """The review of one file from the MCP server, or None when it cannot give one."""
+    global _mcp, _mcp_down
+    if BACKEND == "cli" or _mcp_down:
+        return None
+    with _mcp_lock:
+        try:
+            if _mcp is None:
+                _mcp = McpClient.from_repo(REPO)
+            text = _mcp.call("code_health_review", {"file_path": str(REPO / rel)})
+        except McpUnavailable as exc:
+            _mcp_down = True
+            print("note: the CodeScene MCP server is unavailable (%s)" % exc, file=sys.stderr)
+            return None
+    return parse_review(text)
+
+
+def review(exe: str | None, rel: str) -> dict:
     """One file. Returns {'score': float|None, 'smells': [...]} or {'error': text}."""
-    env = dict(os.environ, CS_DISABLE_VERSION_CHECK="1")
-    proc = subprocess.run([exe, "review", "--output-format=json", rel], cwd=REPO, env=env,
-                          capture_output=True, text=True, encoding="utf-8", errors="replace")
-    try:
-        data = json.loads(proc.stdout)
-    except json.JSONDecodeError:
-        lines = [ln for ln in (proc.stderr or "").splitlines() if "version" not in ln.lower()]
-        return {"error": " ".join(" ".join(lines).split())[:200] or "no output"}
+    data = mcp_data(rel)
+    if data is None and BACKEND == "mcp":
+        return {"error": "the MCP server gave no review"}
+    if data is None:
+        exe = exe or find_cli()
+        env = dict(os.environ, CS_DISABLE_VERSION_CHECK="1")
+        proc = subprocess.run([exe, "review", "--output-format=json", rel], cwd=REPO, env=env,
+                              capture_output=True, text=True, encoding="utf-8", errors="replace")
+        try:
+            data = json.loads(proc.stdout)
+        except json.JSONDecodeError:
+            lines = [ln for ln in (proc.stderr or "").splitlines() if "version" not in ln.lower()]
+            return {"error": " ".join(" ".join(lines).split())[:200] or "no output"}
     smells = []
     for item in data.get("review", []):
         smells.append({
@@ -113,7 +146,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("-o", "--output",
                     default=str(REPO / "docs" / "refactoring" / "codehealth-baseline.json"))
-    ap.add_argument("--jobs", type=int, default=8, help="CLI processes in parallel")
+    ap.add_argument("--jobs", type=int, default=8, help="CLI processes in parallel (the MCP server is used one file at a time)")
+    ap.add_argument("--backend", choices=("auto", "mcp", "cli"), default="auto",
+                    help="auto (default): the MCP server, then the CLI; mcp: the server only; cli: the CLI only")
     ap.add_argument("--limit", type=int, default=0, help="review only the first N files")
     ap.add_argument("files", nargs="*", help="review these files only (default: every tracked .cs)")
     args = ap.parse_args()
@@ -121,7 +156,9 @@ def main() -> int:
     if not os.environ.get("CS_ACCESS_TOKEN"):
         print("warning: CS_ACCESS_TOKEN is not set", file=sys.stderr)
 
-    exe = find_cli()
+    global BACKEND
+    BACKEND = args.backend
+    exe = find_cli() if BACKEND != "mcp" else None
     files = args.files or candidates()
     if args.limit:
         files = files[:args.limit]
@@ -129,9 +166,10 @@ def main() -> int:
                             text=True).stdout.strip()
     dirty = bool(subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=REPO,
                                 capture_output=True, text=True).stdout.strip())
-    version = cli_version(exe)
-    print("cs %s: %s" % (version, exe))
-    print("reviewing %d files, %d jobs" % (len(files), args.jobs))
+    version = cli_version(exe) if exe else "unknown"
+    print("cs %s: %s" % (version, exe or "MCP server"))
+    print("reviewing %d files via %s" % (len(files), {"auto": "the MCP server (CLI as fallback)",
+                                                      "mcp": "the MCP server", "cli": "the CLI"}[BACKEND]))
 
     started = time.time()
     results = {}

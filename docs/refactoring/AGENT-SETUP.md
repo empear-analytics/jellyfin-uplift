@@ -18,13 +18,16 @@ here or in `CLAUDE.md`.
 
 ## What every harness needs
 
-The checks run from the shell, so no harness needs an MCP server:
+The checks run from the shell. They measure through the CodeScene MCP server, which they start
+themselves from the `codescene` entry of `.mcp.json` (`tools/cs_mcp_client.py`), so no harness has to
+provide an MCP server:
 
 | Need | How |
 | --- | --- |
 | .NET SDK 10 | `dotnet --version` reports 10.0.x (`global.json` pins the major version) |
 | Python 3.7 or later | for the tools in `tools/` (`python` on this machine is 3.7; that works) |
-| The CodeScene CLI | `tools/codehealth_check.py` finds the `cs` binary bundled with the CodeScene MCP server (`%LOCALAPPDATA%/codehealth-mcp/MCP-<version>/cs.exe`); set `CS_CLI` to point elsewhere |
+| `.mcp.json` and Node | the `codescene` entry names the server (`node .../codehealth-mcp/bin/cs-mcp.js`); `tools/cs_mcp_client.py` reads it |
+| The CodeScene CLI (fallback) | `tools/codehealth_check.py` and `codehealth_sweep.py` use it when the server cannot be reached or gives no review for a file; they find the `cs` binary bundled with the CodeScene MCP server (`%LOCALAPPDATA%/codehealth-mcp/MCP-<version>/cs.exe`); set `CS_CLI` to point elsewhere |
 | `CS_ACCESS_TOKEN` | in the environment, for the CLI |
 
 Check the setup with:
@@ -35,9 +38,11 @@ python tools/codehealth_check.py Jellyfin.Api/Helpers/HlsHelpers.cs
 
 It should print a score of 9.38 at `HEAD` and now, and the verdict `FLAT`.
 
-The CodeScene MCP server (`code_health_review`, `code_health_score`) is optional. Do not use
-it for `EncodingHelper.cs`: the server drops answers that take longer than five seconds,
-and that file takes about seven, so the score silently comes back empty.
+The scripts call the MCP server's `code_health_review`. An earlier version of this file said not to use
+the server for `EncodingHelper.cs`, because the server drops an answer still in flight when its input
+closes after five seconds. That holds for a one-shot call; the scripts keep the input open for the whole
+run and get the same scores as the CLI (checked on 37 files of rounds 4 and 5, `EncodingHelper.cs` among
+them). `--backend cli` forces the CLI and `--backend mcp` forbids the fallback.
 
 ---
 
