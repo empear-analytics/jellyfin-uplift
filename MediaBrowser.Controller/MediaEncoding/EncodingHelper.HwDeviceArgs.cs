@@ -341,7 +341,17 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // videotoolbox hw filter does not require device selection
                 context.Args.Append(GetVideoToolboxDeviceArgs(VideotoolboxAlias));
             }
-            else if (context.OptHwaccelType == HardwareAccelerationType.rkmpp)
+            else
+            {
+                return HwDeviceDispatchRkmpp(context);
+            }
+
+            return GetHwDeviceArgsWithDecoder(context.Args, context.VidDecoder);
+        }
+
+        private string HwDeviceDispatchRkmpp(HwDeviceDispatchContext context)
+        {
+            if (context.OptHwaccelType == HardwareAccelerationType.rkmpp)
             {
                 if (IsRkmppHwaccelUnsupported(context.IsLinux))
                 {
