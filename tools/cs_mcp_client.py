@@ -111,9 +111,11 @@ class McpClient:
 
     def call(self, tool: str, arguments: dict) -> str:
         result = self._request("tools/call", {"name": tool, "arguments": arguments})
+        text = "".join(p.get("text", "") for p in result.get("content", []) if p.get("type") == "text")
         if result.get("isError"):
-            raise McpUnavailable(f"{tool} returned an error")
-        return "".join(p.get("text", "") for p in result.get("content", []) if p.get("type") == "text")
+            detail = " ".join(text.split())[:300]
+            raise McpUnavailable(f"{tool} returned an error" + (f": {detail}" if detail else ""))
+        return text
 
     def close(self) -> None:
         try:
