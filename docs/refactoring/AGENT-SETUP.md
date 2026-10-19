@@ -44,6 +44,13 @@ closes after five seconds. That holds for a one-shot call; the scripts keep the 
 run and get the same scores as the CLI (checked on 37 files of rounds 4 and 5, `EncodingHelper.cs` among
 them). `--backend cli` forces the CLI and `--backend mcp` forbids the fallback.
 
+The server throttles. Many calls at once, or several server processes in parallel, make it answer
+"Access token is invalid or expired" even though the token is fine: the same call works again after
+about a minute and a half. The client therefore retries after a pause, and the sweep uses one server
+process, one file at a time (about 0.7 s per file, so a scope-sized sweep takes about two minutes and
+the whole repository about half an hour; use `--backend cli` for the whole repository). If the server
+still fails after the retries, the run falls back to the CLI.
+
 ---
 
 ## Routing work by recipe, not by file
