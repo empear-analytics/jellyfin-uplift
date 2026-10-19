@@ -147,3 +147,41 @@ Tests: PASS / FAIL
 Commits: <sha list>
 Unsure about: <free text, or NONE>
 ```
+
+## 10. Run report (h-R4-08c, re-run)
+
+```
+Task: R4-08 (MediaBrowser.Model/Dlna/StreamBuilder.Subtitles.cs)
+Baseline score: 8.84 at HEAD (three earlier commits were already in; 7.86 above is the pre-campaign value)
+Final score:    9.24
+Steps completed: 1 of 2 (GetSubtitleProfile done; no UP candidate for GetExternalSubtitleProfile)
+Steps reverted:  none committed; measured candidates that were FLAT were reverted (see below)
+Candidates measured (codehealth_check.py, each alone):
+  On HEAD at 8.84:
+    GetSubtitleProfile, convertible embed loop (value or none)   9.24 UP  committed (2f3c8404ab)
+    GetSubtitleProfile, both embed loops                         9.24 UP  same score, larger step, not taken
+    GetSubtitleProfile, same-format embed loop (value or none)   9.09 UP  not taken (loop 2 scored higher)
+    GetExternalSubtitleProfile, rule 10 on both guards           8.89 UP  not taken (9.24 below)
+    GetExternalSubtitleProfile, rule 10 on allowConversion guard 8.84 FLAT
+    GetExternalSubtitleProfile, rule 10 on IsInfiniteStream guard 8.84 FLAT
+  On HEAD at 9.24 (after 2f3c8404ab):
+    GetExternalSubtitleProfile, rule 10 on both guards           9.24 FLAT (cc 11 to 9, bumps still 2)
+    GetSubtitleProfile, same-format embed loop (value or none)   9.24 FLAT
+    GetExternalSubtitleProfile, requiresConversion check (value or none, rule 9) 9.24 FLAT
+Smells left without a recipe:
+  - GetExternalSubtitleProfile: Bumpy Road Ahead (2 bumps), both inside the if (IsMatchingExternalOrHlsProfile)
+    block, which returns profile and also continues. Rule 10 forbids a return; rule 9 covers only a single value or none.
+  - GetExternalSubtitleProfile: Complex Method cc 11 (cc 9 after the rule 10 guard step, still flagged; that step is FLAT).
+  - Excess Number of Function Arguments: GetSubtitleProfile 7, GetExternalSubtitleProfile 6. Blocked by the frozen signatures.
+Build: PASS (dotnet build Jellyfin.sln --no-incremental: 0 errors, 211 warnings, none in StreamBuilder.Subtitles.cs)
+Tests: PASS (full solution, 17 test projects, 0 failed; Model 808/808; Integration 429 passed, 3 skipped)
+Guard: PASS (6 literals unchanged)
+Commits: 2f3c8404ab refactor(StreamBuilder.Subtitles): simplify GetSubtitleProfile (8.84 to 9.24 UP)
+Unsure about: The committed step is a value-or-none extraction. The loop returns the profile or none, the helper returns
+       SubtitleProfile? (null for none), and the caller does if (x is not null) return x;. I read this as Recipe E rule 9
+       ("produces a single value or none") with step 3, but the playbook does not state this call-site form; rule 7 gives a
+       return only for a tail. The file already returns null as none in GetExternalSubtitleProfile. Please rule on it.
+       Not measured, not in the catalogue: the if (IsMatchingExternalOrHlsProfile) block of GetExternalSubtitleProfile could
+       become value or none if its continue is read as none; it needs five values (a rule 12 struct) and the playbook has no
+       entry for continue becoming return null.
+```
