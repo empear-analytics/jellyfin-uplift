@@ -161,12 +161,31 @@ Reply with exactly this, filled in:
 ```
 Task: R4-15 (Jellyfin.Api/Controllers/DynamicHlsController.cs)
 Baseline score: 8.16
-Final score:    <x.xx>
-Steps completed: <n> of 5
-Steps reverted:  <n>   (list which, and why)
-Smells left without a recipe: <list, or NONE>
-Build: PASS / FAIL
-Tests: PASS / FAIL
-Commits: <sha list>
-Unsure about: <free text, or NONE>
+Final score:    8.16
+Steps completed: 0 of 5 (no code commit; step 2, GetLiveHlsStream, has no UP candidate)
+Steps reverted:  10 single Recipe P applications on GetLiveHlsStream (each FLAT, 8.16); cumulative
+                 4 (FLAT, 8.16, cc 9); cumulative 5 (DOWN, 8.14: cc 8, Complex Method gone, Large
+                 Method revealed on GetLiveHlsStream, 115 lines); cumulative 10 (DOWN, 8.14, same).
+                 Recipe E rules 9 and 12 cannot cover the 51-value object initializer (a struct holds
+                 at most 12 values, a method at most 4 parameters, so at most 26 values): not measured.
+Smells left without a recipe: Constructor Over-Injection (DynamicHlsController, 11 args);
+                 Primitive Obsession (file-level); Excess Number of Function Arguments on
+                 GetLiveHlsStream (51, frozen signature). Complex Method on GetLiveHlsStream (cc 13):
+                 Recipe P reduces cc but reveals Large Method, so it stays blocked until its line count falls.
+Build: PASS (0 errors, 211 warnings, dotnet build Jellyfin.sln --no-incremental)
+Tests: PASS (full solution, 17 test assemblies, 0 failed; Integration 432 total, 3 skipped)
+Commits: none for code. This report commit is the only one on the detached HEAD.
+Unsure about: (1) Recipe P is applied to a bool? ?? default that is not a condition (ten
+                 cases: Static, EnableAutoStreamCopy, AllowAudioStreamCopy, AllowVideoStreamCopy,
+                 CopyTimestamps, RequireAvc, DeInterlace, RequireNonAnamorphic, EnableMpegtsM2TsMode,
+                 EnableSubtitlesInManifest). The playbook says a boolean expression carrying ?? is a
+                 predicate, but it is written for conditions. None scored UP, so nothing was committed.
+                 (2) The Large Method was inferred to be GetLiveHlsStream (the only method whose
+                 span changed); the tool printed no method name for it.
+                 Candidates for new recipes: (a) ?? defaults of non-bool type in the initializer
+                 (SubtitleMethod at line 254, Context at line 269), which P does not cover; (b) a
+                 single statement with more values than a Recipe E context can hold (GetLiveHlsStream
+                 lines 222-276); (c) Large Method from a frozen parameter list.
+                 Other methods of this file, not measured: GetSegmentResult (cc 10, Bumpy Road 3,
+                 7 args), StartTranscodingForSegment (9 args), GetVideoEncodingArguments (5 args).
 ```
