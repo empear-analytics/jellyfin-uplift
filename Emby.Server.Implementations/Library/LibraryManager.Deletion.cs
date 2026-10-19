@@ -473,6 +473,11 @@ namespace Emby.Server.Implementations.Library
 
         private string? GetInternalItemsPath(BaseItem item)
         {
+            return DeletionInternalItemsPathFor(item);
+        }
+
+        private string? DeletionInternalItemsPathFor(BaseItem item)
+        {
             return item switch
             {
                 Genre => _configurationManager.ApplicationPaths.GenrePath,
