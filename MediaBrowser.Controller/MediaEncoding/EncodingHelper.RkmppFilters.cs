@@ -100,7 +100,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
-            var rotation = state.VideoStream?.Rotation ?? 0;
+            var rotation = GetVideoStreamRotation(state);
             var transposeDir = GetRkmppTransposeDirection(state, rotation);
             var doRkVppTranspose = !string.IsNullOrEmpty(transposeDir);
             var swapWAndH = NeedsRkmppSwapWAndH(rotation, isSwDecoder, isRkmppDecoder, doRkVppTranspose);
@@ -141,14 +141,10 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // ocl tonemap
-            if (doOclTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "opencl", "nv12", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
             var memoryOutput = false;
-            var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
+            var isUploadForOclTonemap = IsAmdUploadForOclTonemap(isSwDecoder, doOclTonemap);
             if (NeedsMemoryOutput(isRkmppDecoder, isSwEncoder, isUploadForOclTonemap))
             {
                 memoryOutput = true;
@@ -164,10 +160,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 memoryOutput = true;
             }
 
-            if (memoryOutput)
-            {
-                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
-            }
+            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
             if (isDrmInDrmOut)
             {
