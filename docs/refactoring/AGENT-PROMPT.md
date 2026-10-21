@@ -51,6 +51,11 @@ your task, your worktree and anything specific to the file. Everything below app
   Also added on 2026-10-21: rule 16, an exit helper for a block whose paths either `return` or fall
   through (void `return;`, one constant, or any expression with a `(Returned, Value)` struct as the last
   statement of a loop body); and in rule 14, a struct shared by two methods with identical runs.
+  Later on 2026-10-21 (the owner's goal: every smell gone that needs no public API change): rule 14
+  for Primitive Obsession / String Heavy Function Arguments (runs with a primitive in private methods of
+  any parameter count, applied as one group per commit); rule 12 with up to four structs; rule 15 with a
+  `Stopped` flag for `break`; rule 17 (stacked case labels to an `is A or B` predicate); and Recipe P
+  with a pattern variable as a `[NotNullWhen(true)] out` parameter.
 - Before a step that adds methods, follow "Choosing the next step": measure the candidate
   applications on their own first and commit the best `UP` one.
 - After every step, before committing it, run all four checks from section 7 of the task file.

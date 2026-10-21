@@ -144,8 +144,8 @@ blocks of nested logic). Each "bump" is a missing method.
     may take them as one `private readonly record struct`, nested in the class at the end of the
     file that holds the method. A method may have one such struct per family of blocks that need
     different sets of values (for example the subtitle blocks, the software-decoder blocks and the
-    hardware-decoder blocks), at most three; each struct serves one family of blocks and is
-    constructed immediately before the first block that uses it.
+    hardware-decoder blocks, the output blocks), at most four; each struct serves one family of blocks
+    and is constructed immediately before the first block that uses it.
     Only when:
     - the members are values the block only reads: locals that are not assigned between the
       struct's construction and the end of the block, and references (a list, the `state` object)
@@ -208,6 +208,18 @@ blocks of nested logic). Each "bump" is a missing method.
     a `readonly record struct` is copied by value, so the callee sees the same values.
     The method keeps its name, return type and accessibility. Public and protected signatures stay
     frozen; this rule never applies to them.
+    **For Primitive Obsession and String Heavy Function Arguments.** When the file reports either
+    smell, this rule also applies to a private method with four or fewer parameters, for a run of two
+    or more parameters of which at least one is a primitive (`bool`, `string`, a number, or one of
+    these nullable or as an array): every other condition above holds. CodeScene flags *Primitive
+    Obsession* when a file has more than about ten primitive arguments and they are more than about
+    30 % of all its function arguments (measured 2026-10-21; enums, structs and classes do not count),
+    so one such step is usually `FLAT` and the smell clears only after several. These steps may be
+    applied as **one group in one commit**, measured together; keep the group when it scores `UP`, and
+    stop adding methods as soon as the smell clears. Prefer runs whose values belong together (a codec
+    and its bit depth, a width and a height) and name the struct after what they describe
+    (`VideoSize`, not `FooParts`), and prefer methods whose run is passed through from a caller that
+    already has the struct.
 15. **A block that writes two or three locals read later (a result struct).** The block moves to a
     method that takes its inputs (plain parameters, or a rule 12 context) and the current values of
     the locals it writes, as one `private readonly record struct` (`FooResult`); the method's first
@@ -236,6 +248,11 @@ blocks of nested logic). Each "bump" is a missing method.
       result (`var closer = result.Closer;`) before the `if (result.Skipped) { continue; }`. The
       `default` is never read, because the loop continues on those paths. The current value passed
       in for it is `default`.
+    - **`break` (a Stopped flag):** the same two forms with `break` instead of `continue`: the member is
+      `bool Stopped`, each `break;` that targets the enclosing loop becomes
+      `return new FooResult(...current values..., true);`, and the call site assigns each local from the
+      result and then runs `if (result.Stopped) { break; }`. A block may not contain both `break` and
+      `continue`.
 16. **A block that either leaves the method or falls through (an exit helper).** A block (an `if`,
     an `if` / `else if` chain, or a nested block) whose every path ends either in a `return` or by
     falling through to the statement after it moves to a new method; the call site decides whether to
@@ -259,6 +276,17 @@ blocks of nested logic). Each "bump" is a missing method.
     The block's own nesting moves with it, so rule 16 removes a bump or a nesting level only where the
     block sits inside a loop or a deeper `if`; on a block at the top of a void method it is often
     `FLAT` (R6-15 `RegisterItem`). Measure it before relying on it.
+17. **Stacked case labels that do nothing (an `or` pattern).** A `switch` statement section with
+    several stacked `case` labels of constants (enum members, literals) whose body only leaves the
+    switch with `break;` (the switch then being followed by `return c;` with a constant `c`), or only
+    returns one constant `c`, is removed from the switch; before the switch the method gets
+    `if (IsFoo(x)) { return c; }`, where `x` is the switch expression (a local, a parameter or a member
+    access with no side effects) and `IsFoo` is a new `private static bool` that returns
+    `x is A or B or ...` with the labels in their original order. A comment in the section moves to the
+    predicate. Only when no label is `default`, none has a `when` clause or a pattern other than a
+    constant, and the switch statement keeps at least one section. CodeScene does not count `or`
+    pattern alternatives toward cyclomatic complexity (it counts `||`), so this lowers it by the number
+    of labels.
 
 **Before:**
 
@@ -433,6 +461,26 @@ private static bool TryParseDimensions(string[] parts, out int w, out int h)
     return parts.Length == 2 && int.TryParse(parts[0], out w) && int.TryParse(parts[1], out h) && w > 0 && h > 0;
 }
 ```
+
+**A pattern variable in the condition.** A condition `A && x is T t && R(t)` (or `x is T t && R(t)`),
+where `T` is a class or an interface and `t` is read after the condition (in the `if` body), cannot
+lose its terms to a plain predicate. It may become `A && IsFoo(x, out var t)` with
+
+```csharp
+private static bool IsFoo(BaseItem x, [NotNullWhen(true)] out T? t)
+{
+    t = x as T;
+    return t is not null && R(t);
+}
+```
+
+and a guarded prefix `G && e is T t` (where `e` may only be evaluated when `G` holds, such as
+`parents.First()` after `parents.Count == 1`) may become `TryFoo(..., out var t)` with
+`t = G ? e as T : null; return t is not null;`. For a class or interface, `x is T t` is exactly
+`(t = x as T) is not null`; the terms keep their order and short-circuit as before, so the same
+expressions run in the same cases. `x` and `e` are copied character for character, `R` likewise.
+Only for reference types `T` (never a struct or `T?` of a struct), and only when `t` is not assigned
+after the condition.
 
 **A predicate that calls a local function.** When the expression calls a local function of the
 method, the predicate is a local function too, declared next to the one it calls, taking the
@@ -818,3 +866,8 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-21 | Recipe E rule 14: two private methods with identical runs may share one struct, and a method may pass the struct it received on to another method that takes the same struct. | Made AFTER the fact for the sharing part: `DynamicHlsHelper` (`PlaylistVariantParts` shared by `AppendPlaylist` and `AppendDoviPlaylist`) was landed with one shared struct. Both are parameter plumbing: a `readonly record struct` is copied by value, so the callee sees the same values. Forwarding was proposed for `StreamInfo` (`AddSelectedSubtitleProfiles` to `AddSubtitleProfiles`), which was landed with a new struct built from `parts.X`. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 16: the declarations directly before the block that only the block reads may move with it. | Made AFTER the fact: `StreamBuilder.Subtitles.GetExternalSubtitleProfile` (9.24 to 9.68) moved `bool isVobSubMksProfile = ...;` with the `if` it feeds, which keeps the helper at four parameters; the declaration runs at the same point, in the same order. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 16: a note that it is often FLAT on a block at the top of a void method. | `LibraryManager.RegisterItem`, the case it was written for, measured FLAT: the two bumps moved into the helper. It scored UP where the block sat in a loop (`StreamBuilder.Subtitles`, 9.24 to 9.68) or at depth 2 (`EncodingHelper.HwDecoders`, 8.54 to 9.38). Wording only. |
+| 2026-10-21 | Recipe E rule 14 for Primitive Obsession and String Heavy Function Arguments: a run of two or more parameters with a primitive, in a private method of any parameter count, may become a struct; such steps may be one group in one commit. | The campaign owner asked to remove every smell that does not need a public API change. *Primitive Obsession* is left in most `EncodingHelper` parts, `StreamInfo`, `StreamingHelpers.Params` and others. Measured on 20 scratch files through the MCP server: the smell appears when more than about ten function arguments are primitive and they are more than about 30 % of all arguments (12 of 40: no; 13 of 40: yes; 10 of 20: no; 26 of 80: yes; 20 of 80: no); `bool`, `string`, `int?`, `long`, `double` and `string[]` count, an enum, a `readonly record struct` and a class do not. A single step rarely crosses the threshold, hence the group. The structs are parameter plumbing, as in rule 14. The cost is more small types; the rule asks for names that describe the values. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 12: at most four structs per method (one per family). | `EncodingHelper.IntelFilters.GetIntelQsvDx11VidFiltersPrefered` (cc 14) already has three; the output tail that brought its Vaapi sibling down needs a fourth (the output family). Parameter plumbing. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 15: a `Stopped` flag for `break`, like `Skipped` for `continue`. | `LibraryManager.GetCollectionFolders` (2 bumps): the loop body assigns `item` and breaks. Compiled under warnings as errors and compared with the original on 20,000 random parent/owner chains: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 17 (new): stacked case labels that only break (or return one constant) become an `is A or B or ...` predicate before the switch. | `StreamBuilder.TranscodingCases.IsUnsupportedPropertyCaseSkipped` (cc 11): eight "not supported yet" labels set a floor no split can lower. Measured through the MCP server: an `is` pattern with nine `or` alternatives adds nothing to cyclomatic complexity, while ten `||` terms give cc 10. Compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe P: a pattern variable in the condition becomes an `out` parameter of a `[NotNullWhen(true)]` predicate (`t = x as T`), or of a Try-predicate for a guarded prefix (`t = G ? e as T : null`). | `UserViewManager.OrderViews` and `LibraryManager.SetTopParentIdsOrAncestors` (Complex Conditional, listed as not covered). For a reference type `x is T t` is `(t = x as T) is not null`. Compiled under warnings as errors and compared with the original on 20,000 random inputs, with a side-effecting `R(t)` logged: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
