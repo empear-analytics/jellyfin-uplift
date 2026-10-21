@@ -113,21 +113,8 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             mainFilters.Add(GetOverwriteColorPropertiesParam(state, doCuTonemap));
 
-            if (isSwDecoder)
-            {
-                // INPUT sw surface(memory)
-                // sw deint
-                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                var outFormat = doCuTonemap ? "p010le" : "yuv420p";
-                var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-                // sw scale
-                mainFilters.Add(swScaleFilter);
-                mainFilters.Add($"format={outFormat}");
-
-                // sw => hw
-                AddNvidiaHwupload(mainFilters, doCuTonemap);
-            }
+            var swDecoderContext = new NvidiaDecoderSwContext(isSwDecoder, doDeintH2645, doCuTonemap, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
+            NvidiaDecoderAddSwFilters(state, options, mainFilters, swDecoderContext);
 
             if (isNvDecoder)
             {

@@ -87,5 +87,37 @@ namespace MediaBrowser.Controller.MediaEncoding
             var outFormat = doCuTonemap ? (isRext ? "p010" : string.Empty) : "yuv420p";
             return outFormat;
         }
+
+        private void NvidiaDecoderAddSwFilters(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, NvidiaDecoderSwContext context)
+        {
+            if (context.IsSwDecoder)
+            {
+                // INPUT sw surface(memory)
+                // sw deint
+                AddSwDeinterlaceFilter(state, options, mainFilters, context.DoDeintH2645);
+
+                var outFormat = context.DoCuTonemap ? "p010le" : "yuv420p";
+                var swScaleFilter = GetSwScaleFilter(state, options, context.VidEncoder, context.SwpInW, context.SwpInH, context.ThreeDFormat, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                // sw scale
+                mainFilters.Add(swScaleFilter);
+                mainFilters.Add($"format={outFormat}");
+
+                // sw => hw
+                AddNvidiaHwupload(mainFilters, context.DoCuTonemap);
+            }
+        }
+
+        private readonly record struct NvidiaDecoderSwContext(
+            bool IsSwDecoder,
+            bool DoDeintH2645,
+            bool DoCuTonemap,
+            string VidEncoder,
+            int? SwpInW,
+            int? SwpInH,
+            Video3DFormat? ThreeDFormat,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH);
     }
 }
