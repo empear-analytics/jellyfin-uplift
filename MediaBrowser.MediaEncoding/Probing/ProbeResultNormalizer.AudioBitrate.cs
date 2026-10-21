@@ -24,6 +24,15 @@ namespace MediaBrowser.MediaEncoding.Probing
                 "ac3" or "eac3" => isMultichannel ? 640000 : 192000,
                 "dts" or "dca" => IsDtsLossless(profile) ? channelCount * 700000 : (isMultichannel ? 1509000 : 768000),
                 "opus" => isMultichannel ? 256000 : 128000,
+                _ => EstimatedAudioBitrateOfLaterCodecs(codec.ToLowerInvariant(), channelCount)
+            };
+        }
+
+        private static int? EstimatedAudioBitrateOfLaterCodecs(string codec, int channelCount)
+        {
+            var isMultichannel = channelCount > 2;
+            return codec switch
+            {
                 "vorbis" => isMultichannel ? 320000 : 160000,
                 "wmav1" or "wmav2" or "wmapro" => isMultichannel ? 384000 : 192000,
                 "flac" or "alac" => channelCount * 480000,

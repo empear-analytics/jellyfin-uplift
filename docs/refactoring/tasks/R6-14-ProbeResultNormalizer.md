@@ -143,3 +143,10 @@ Tests: PASS / FAIL
 Commits: <sha list>
 Unsure about: <free text, or NONE>
 ```
+
+## 10. Report (R6-14, ProbeResultNormalizer.AudioBitrate.cs)
+
+Recipe E rule 11 on `GetEstimatedAudioBitrate`: last 4 arms (vorbis, wma, flac/alac, truehd/mlp) with the
+discard arm moved to `EstimatedAudioBitrateOfLaterCodecs(string codec, int channelCount)`, which derives
+`isMultichannel` itself. Score of the file 9.66 to 10.00. Measured alone: last 3 arms 9.68 (cc 9 left),
+last 4 arms 10.00, last 5 arms 10.00, two helpers (4 then 6 arms) 9.68.
