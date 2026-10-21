@@ -729,22 +729,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             // ocl tonemap
             AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
-            var memoryOutput = false;
-            var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
-            var isHwmapUsable = CanHwmapToMemory(isSwEncoder, doOclTonemap, isVaapiDecoder);
-            if (NeedsMemoryOutput(isHwDecoder, isSwEncoder, isUploadForOclTonemap))
-            {
-                memoryOutput = true;
-
-                // OUTPUT nv12 surface(memory)
-                // prefer hwmap to hwdownload on opencl/vaapi.
-                // qsv hwmap is not fully implemented for the time being.
-                mainFilters.Add(isHwmapUsable ? "hwmap=mode=read" : "hwdownload");
-                mainFilters.Add("format=nv12");
-            }
-
-            // OUTPUT nv12 surface(memory)
-            memoryOutput = MarkQsvSwUploadOutput(memoryOutput, isSwDecoder, isQsvEncoder);
+            var memoryContext = new IntelQsvMemoryOutputContext(isSwDecoder, doOclTonemap, isSwEncoder, isVaapiDecoder, isHwDecoder, isQsvEncoder);
+            var memoryOutput = GetIntelQsvVaapiMemoryOutput(memoryContext, mainFilters);
 
             AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
@@ -763,6 +749,27 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool GetIntelQsvVaapiMemoryOutput(IntelQsvMemoryOutputContext memoryContext, List<string> mainFilters)
+        {
+            var memoryOutput = false;
+            var isUploadForOclTonemap = memoryContext.IsSwDecoder && memoryContext.DoOclTonemap;
+            var isHwmapUsable = CanHwmapToMemory(memoryContext.IsSwEncoder, memoryContext.DoOclTonemap, memoryContext.IsVaapiDecoder);
+            if (NeedsMemoryOutput(memoryContext.IsHwDecoder, memoryContext.IsSwEncoder, isUploadForOclTonemap))
+            {
+                memoryOutput = true;
+
+                // OUTPUT nv12 surface(memory)
+                // prefer hwmap to hwdownload on opencl/vaapi.
+                // qsv hwmap is not fully implemented for the time being.
+                mainFilters.Add(isHwmapUsable ? "hwmap=mode=read" : "hwdownload");
+                mainFilters.Add("format=nv12");
+            }
+
+            // OUTPUT nv12 surface(memory)
+            memoryOutput = MarkQsvSwUploadOutput(memoryOutput, memoryContext.IsSwDecoder, memoryContext.IsQsvEncoder);
+            return memoryOutput;
         }
 
         private void AddIntelDecoderVaapiOrQsvHwFilters(EncodingJobInfo state, List<string> mainFilters, IntelQsvVaapiFilterContext context, IntelDecoderVaapiContext decoderContext)
@@ -1063,6 +1070,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             string TransposeDir,
             bool SwapWAndH,
             bool DoDeintH2645);
+
+        private readonly record struct IntelQsvMemoryOutputContext(bool IsSwDecoder, bool DoOclTonemap, bool IsSwEncoder, bool IsVaapiDecoder, bool IsHwDecoder, bool IsQsvEncoder);
 
         private readonly record struct VppProcampResult(bool TwoPassVppTonemap, bool DoVppProcamp, string ProcampParams);
 
