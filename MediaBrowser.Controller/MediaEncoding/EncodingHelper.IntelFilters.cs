@@ -716,16 +716,13 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // sw => hw
                 AddOpenclHwupload(mainFilters, doOclTonemap);
             }
-            else if (isVaapiDecoder || isQsvDecoder)
+            else
             {
-                AddIntelDecoderVaapiHwFilters(state, mainFilters, context, decoderContext);
+                AddIntelDecoderVaapiOrQsvHwFilters(state, mainFilters, context, decoderContext);
             }
 
             // vaapi vpp tonemap
-            if (NeedsHwVaapiVppTonemap(doVaVppTonemap, isHwDecoder))
-            {
-                AddVaapiVppTonemapFilters(options, mainFilters, isQsvDecoder, isMjpegEncoder);
-            }
+            AddIntelVaapiVppTonemapIfNeeded(mainFilters, decoderContext, doVaVppTonemap, isHwDecoder);
 
             AddQsvVaapiToOpenclMapping(mainFilters, doOclTonemap, isHwDecoder);
 
@@ -747,10 +744,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT nv12 surface(memory)
-            if (IsSwDecodeToQsvEncode(isSwDecoder, isQsvEncoder))
-            {
-                memoryOutput = true;
-            }
+            memoryOutput = MarkQsvSwUploadOutput(memoryOutput, isSwDecoder, isQsvEncoder);
 
             AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
@@ -763,12 +757,36 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 AddIntelQsvVaapiQsvOutSubtitleFilters(state, subFilters, overlayFilters, context);
             }
-            else if (memoryOutput)
+            else
             {
-                AddIntelQsvVaapiMemorySubtitleFilters(subFilters, overlayFilters, context);
+                AddIntelQsvVaapiMemoryOutputSubtitleFilters(subFilters, overlayFilters, context, memoryOutput);
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void AddIntelDecoderVaapiOrQsvHwFilters(EncodingJobInfo state, List<string> mainFilters, IntelQsvVaapiFilterContext context, IntelDecoderVaapiContext decoderContext)
+        {
+            if (decoderContext.IsVaapiDecoder || decoderContext.IsQsvDecoder)
+            {
+                AddIntelDecoderVaapiHwFilters(state, mainFilters, context, decoderContext);
+            }
+        }
+
+        private void AddIntelVaapiVppTonemapIfNeeded(List<string> mainFilters, IntelDecoderVaapiContext decoderContext, bool doVaVppTonemap, bool isHwDecoder)
+        {
+            if (NeedsHwVaapiVppTonemap(doVaVppTonemap, isHwDecoder))
+            {
+                AddVaapiVppTonemapFilters(decoderContext.Options, mainFilters, decoderContext.IsQsvDecoder, decoderContext.IsMjpegEncoder);
+            }
+        }
+
+        private static void AddIntelQsvVaapiMemoryOutputSubtitleFilters(List<string> subFilters, List<string> overlayFilters, IntelQsvVaapiFilterContext context, bool memoryOutput)
+        {
+            if (memoryOutput)
+            {
+                AddIntelQsvVaapiMemorySubtitleFilters(subFilters, overlayFilters, context);
+            }
         }
 
         private void AddIntelDecoderVaapiHwFilters(EncodingJobInfo state, List<string> mainFilters, IntelQsvVaapiFilterContext context, IntelDecoderVaapiContext decoderContext)
