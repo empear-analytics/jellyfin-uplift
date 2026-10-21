@@ -121,7 +121,7 @@ Update as tasks land.
 | R6-38 | 9.38 | - | not started |
 | R6-39 | 9.38 | - | not started |
 | R6-40 | 9.38 | - | not started |
-| R6-41 | 9.47 | - | not started |
+| R6-41 | 9.47 | 9.60 | Sonnet. Three commits (UP): the software-decoder block and the nvidia-decoder block moved whole (guard inside) to helpers with an 11-member struct each, placed in EncodingHelper.NvidiaFilterHelpers.cs (stays 9.68; the same step in the main file was DOWN in round 5), 9.47 to 9.54; then the existing subtitle struct's construction written on one line, 9.54 to 9.60. CAVEAT: the last commit is layout only (score follows line count). Left: Complex Method cc 13 (memory-output section reads a local `memoryOutput` later), Primitive Obsession in the helpers file. |
 | R6-42 | 9.52 | - | not started |
 | R6-43 | 9.66 | - | not started |
 | R6-44 | 9.66 | - | not started |
