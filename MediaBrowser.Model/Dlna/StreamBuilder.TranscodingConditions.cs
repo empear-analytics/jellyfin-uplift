@@ -22,35 +22,26 @@ namespace MediaBrowser.Model.Dlna
             IEnumerable<CodecProfile> codecProfiles,
             string container,
             string codec,
-            int? audioChannels,
-            int? audioBitrate,
-            int? audioSampleRate,
-            int? audioBitDepth,
-            string audioProfile,
-            bool? isSecondaryAudio)
+            GetProfileConditionsForVideoAudioParts parts)
         {
             return codecProfiles
                 .Where(profile => profile.Type == CodecType.VideoAudio &&
                     profile.ContainsAnyCodec(codec, container) &&
-                    profile.ApplyConditions.All(applyCondition => ConditionProcessor.IsVideoAudioConditionSatisfied(applyCondition, audioChannels, audioBitrate, audioSampleRate, audioBitDepth, audioProfile, isSecondaryAudio)))
+                    profile.ApplyConditions.All(applyCondition => ConditionProcessor.IsVideoAudioConditionSatisfied(applyCondition, parts.AudioChannels, parts.AudioBitrate, parts.AudioSampleRate, parts.AudioBitDepth, parts.AudioProfile, parts.IsSecondaryAudio)))
                 .SelectMany(profile => profile.Conditions)
-                .Where(condition => !ConditionProcessor.IsVideoAudioConditionSatisfied(condition, audioChannels, audioBitrate, audioSampleRate, audioBitDepth, audioProfile, isSecondaryAudio));
+                .Where(condition => !ConditionProcessor.IsVideoAudioConditionSatisfied(condition, parts.AudioChannels, parts.AudioBitrate, parts.AudioSampleRate, parts.AudioBitDepth, parts.AudioProfile, parts.IsSecondaryAudio));
         }
 
         private static IEnumerable<ProfileCondition> GetProfileConditionsForAudio(
             IEnumerable<CodecProfile> codecProfiles,
             string container,
-            string? codec,
-            int? audioChannels,
-            int? audioBitrate,
-            int? audioSampleRate,
-            int? audioBitDepth,
+            GetProfileConditionsForAudioParts parts,
             bool checkConditions)
         {
             var conditions = codecProfiles
                 .Where(profile => profile.Type == CodecType.Audio &&
-                    profile.ContainsAnyCodec(codec, container) &&
-                    profile.ApplyConditions.All(applyCondition => ConditionProcessor.IsAudioConditionSatisfied(applyCondition, audioChannels, audioBitrate, audioSampleRate, audioBitDepth)))
+                    profile.ContainsAnyCodec(parts.Codec, container) &&
+                    profile.ApplyConditions.All(applyCondition => ConditionProcessor.IsAudioConditionSatisfied(applyCondition, parts.AudioChannels, parts.AudioBitrate, parts.AudioSampleRate, parts.AudioBitDepth)))
                 .SelectMany(profile => profile.Conditions);
 
             if (!checkConditions)
@@ -58,10 +49,10 @@ namespace MediaBrowser.Model.Dlna
                 return conditions;
             }
 
-            return conditions.Where(condition => !ConditionProcessor.IsAudioConditionSatisfied(condition, audioChannels, audioBitrate, audioSampleRate, audioBitDepth));
+            return conditions.Where(condition => !ConditionProcessor.IsAudioConditionSatisfied(condition, parts.AudioChannels, parts.AudioBitrate, parts.AudioSampleRate, parts.AudioBitDepth));
         }
 
-        private void ApplyTranscodingConditions(StreamInfo item, IEnumerable<ProfileCondition> conditions, string? qualifier, bool enableQualifiedConditions, bool enableNonQualifiedConditions)
+        private void ApplyTranscodingConditions(StreamInfo item, IEnumerable<ProfileCondition> conditions, ApplyTranscodingConditionsParts parts)
         {
             foreach (ProfileCondition condition in conditions)
             {
@@ -78,7 +69,7 @@ namespace MediaBrowser.Model.Dlna
                     continue;
                 }
 
-                var context = new TranscodingCaseContext(item, condition, value, qualifier, enableQualifiedConditions, enableNonQualifiedConditions);
+                var context = new TranscodingCaseContext(item, condition, value, parts.Qualifier, parts.EnableQualifiedConditions, parts.EnableNonQualifiedConditions);
 
                 if (TranscodingCaseIsSkipped(context))
                 {
@@ -86,5 +77,11 @@ namespace MediaBrowser.Model.Dlna
                 }
             }
         }
+
+        private readonly record struct GetProfileConditionsForVideoAudioParts(int? AudioChannels, int? AudioBitrate, int? AudioSampleRate, int? AudioBitDepth, string AudioProfile, bool? IsSecondaryAudio);
+
+        private readonly record struct GetProfileConditionsForAudioParts(string? Codec, int? AudioChannels, int? AudioBitrate, int? AudioSampleRate, int? AudioBitDepth);
+
+        private readonly record struct ApplyTranscodingConditionsParts(string? Qualifier, bool EnableQualifiedConditions, bool EnableNonQualifiedConditions);
     }
 }

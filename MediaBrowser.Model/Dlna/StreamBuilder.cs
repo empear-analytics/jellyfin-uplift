@@ -680,7 +680,7 @@ namespace MediaBrowser.Model.Dlna
 
                     if ((playlistItem.TranscodeReasons & (VideoReasons | TranscodeReason.ContainerBitrateExceedsLimit)) != 0)
                     {
-                        ApplyTranscodingConditions(playlistItem, transcodingProfile.Conditions, null, true, true);
+                        ApplyTranscodingConditions(playlistItem, transcodingProfile.Conditions, new ApplyTranscodingConditionsParts(null, true, true));
                     }
                 }
             }

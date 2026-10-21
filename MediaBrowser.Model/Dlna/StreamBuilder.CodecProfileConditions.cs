@@ -26,7 +26,7 @@ namespace MediaBrowser.Model.Dlna
                 {
                     if (condition.ContainsAnyCodec(transcodingVideoCodec, container, useSubContainer))
                     {
-                        ApplyTranscodingConditions(playlistItem, condition.Conditions, transcodingVideoCodec, true, true);
+                        ApplyTranscodingConditions(playlistItem, condition.Conditions, new ApplyTranscodingConditionsParts(transcodingVideoCodec, true, true));
                         continue;
                     }
                 }
@@ -41,7 +41,7 @@ namespace MediaBrowser.Model.Dlna
                 {
                     if (codecProfile.ContainsAnyCodec(transcodingAudioCodec, container))
                     {
-                        ApplyTranscodingConditions(playlistItem, codecProfile.Conditions, transcodingAudioCodec, true, true);
+                        ApplyTranscodingConditions(playlistItem, codecProfile.Conditions, new ApplyTranscodingConditionsParts(transcodingAudioCodec, true, true));
                         break;
                     }
                 }

@@ -146,8 +146,8 @@ namespace MediaBrowser.Model.Dlna
             var inputAudioSampleRate = audioStream.SampleRate;
             var inputAudioBitDepth = audioStream.BitDepth;
 
-            var audioTranscodingConditions = GetProfileConditionsForAudio(options.Profile.CodecProfiles, transcodingProfile.Container, transcodingProfile.AudioCodec, inputAudioChannels, inputAudioBitrate, inputAudioSampleRate, inputAudioBitDepth, false).ToArray();
-            ApplyTranscodingConditions(playlistItem, audioTranscodingConditions, null, true, true);
+            var audioTranscodingConditions = GetProfileConditionsForAudio(options.Profile.CodecProfiles, transcodingProfile.Container, new GetProfileConditionsForAudioParts(transcodingProfile.AudioCodec, inputAudioChannels, inputAudioBitrate, inputAudioSampleRate, inputAudioBitDepth), false).ToArray();
+            ApplyTranscodingConditions(playlistItem, audioTranscodingConditions, new ApplyTranscodingConditionsParts(null, true, true));
 
             // Honor requested max channels
             playlistItem.GlobalMaxAudioChannels = options.MaxAudioChannels;

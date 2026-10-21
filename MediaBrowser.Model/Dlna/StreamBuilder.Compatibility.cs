@@ -148,8 +148,8 @@ namespace MediaBrowser.Model.Dlna
             var audioBitDepth = audioStream.BitDepth;
 
             var audioFailureConditions = isVideo
-                ? GetProfileConditionsForVideoAudio(profile.CodecProfiles, container, audioCodec, audioChannels, audioBitrate, audioSampleRate, audioBitDepth, audioProfile, isSecondaryAudio)
-                : GetProfileConditionsForAudio(profile.CodecProfiles, container, audioCodec, audioChannels, audioBitrate, audioSampleRate, audioBitDepth, true);
+                ? GetProfileConditionsForVideoAudio(profile.CodecProfiles, container, audioCodec, new GetProfileConditionsForVideoAudioParts(audioChannels, audioBitrate, audioSampleRate, audioBitDepth, audioProfile, isSecondaryAudio))
+                : GetProfileConditionsForAudio(profile.CodecProfiles, container, new GetProfileConditionsForAudioParts(audioCodec, audioChannels, audioBitrate, audioSampleRate, audioBitDepth), true);
 
             var failures = AggregateFailureConditions(mediaSource, profile, "AudioCodecProfile", audioFailureConditions);
 
