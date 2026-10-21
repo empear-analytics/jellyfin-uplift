@@ -226,6 +226,12 @@ blocks of nested logic). Each "bump" is a missing method.
       `return new FooResult(...current values..., true);`, the end of the block returns
       `new FooResult(..., false)`, and the call site assigns each local from the result and then
       runs `if (result.Skipped) { continue; }`.
+      In this form a local declared inside the block and read after it (only on the paths where the
+      block does not continue) may also be a member: the block assigns it on every path that falls
+      through, each `continue;` returns `default` for it, and the call site declares it from the
+      result (`var closer = result.Closer;`) before the `if (result.Skipped) { continue; }`. The
+      `default` is never read, because the loop continues on those paths. The current value passed
+      in for it is `default`.
 
 **Before:**
 
@@ -780,3 +786,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-21 | Recipe E rule 15: a block that writes two or three locals read later moves to a method that takes and returns their values in a private readonly record struct (an exception to step 4's "no result class"). | The most common remaining blocker: `JobLogger.ParseLogLine` (percent, transcodingPosition; measured 10.00 in this form, 9.68 DOWN with plain parameters), `UserDataManager.UpdatePlayState` (whose round-5 tuple return this replaces in spirit), `PathExtensions.AttributeValueSearch` (attributeIndex, attributeEnd). Compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 15 in a loop: the whole loop body may hold `continue` (each becomes a return of the current values), or a block may carry a `Skipped` flag in its result (each `continue` returns the flag set; the call site continues after assigning the locals). Rule 9: a block that calls a local function becomes a local function. | `ProbeResultNormalizer.Itunes.ReadFromDictNode` (9.09 to 10.00 on a scratch copy), `PathExtensions.AttributeValueSearch` (10.00 on a scratch copy with the flag form), `LibraryManager.Extras.FindExtraCandidates` (9.38 to 10.00 on a scratch copy with a local function). Both loop forms compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 11 mixed sections: the trailing `return v;` is left out of a method whose remaining sections all return. | `StreamBuilder.TranscodingCases` (R6, Opus): a second split, and the split that would move the "Not supported yet" section, both failed to build with CS0162 (unreachable code) because the rule required the `return v;` in every method of the chain. Removing a statement the compiler proves unreachable changes no behaviour. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 15, Skipped form: a local declared inside the block and read after it may be a result member, declared at the call site from the result. | `PathExtensions.AttributeValueSearch` (`attributeCloser`; the block scored 10.00 on a scratch copy). Compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
