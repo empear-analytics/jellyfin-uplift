@@ -255,36 +255,47 @@ namespace MediaBrowser.Model.Dlna
                     continue;
                 }
 
-                bool isVobSubMksProfile = IsVobSubMksProfile(profile, subtitleStream);
-
-                if (IsMatchingExternalOrHlsProfile(profile, subtitleStream, isVobSubMksProfile))
+                var exit = MatchExternalSubtitleProfile(mediaSource, subtitleStream, profile, allowConversion);
+                if (exit.Returned)
                 {
-                    bool requiresConversion = DoesRequireConversion(isVobSubMksProfile, subtitleStream, profile);
-
-                    if (!requiresConversion)
-                    {
-                        return profile;
-                    }
-
-                    if (!allowConversion)
-                    {
-                        continue;
-                    }
-
-                    // TODO: Build this into subtitleStream.SupportsExternalStream
-                    if (mediaSource.IsInfiniteStream)
-                    {
-                        continue;
-                    }
-
-                    if (CanConvertToExternalTextSubtitle(subtitleStream, profile))
-                    {
-                        return profile;
-                    }
+                    return exit.Value;
                 }
             }
 
             return null;
+        }
+
+        private static ExternalProfileExit MatchExternalSubtitleProfile(MediaSourceInfo mediaSource, MediaStream subtitleStream, SubtitleProfile profile, bool allowConversion)
+        {
+            bool isVobSubMksProfile = IsVobSubMksProfile(profile, subtitleStream);
+
+            if (IsMatchingExternalOrHlsProfile(profile, subtitleStream, isVobSubMksProfile))
+            {
+                bool requiresConversion = DoesRequireConversion(isVobSubMksProfile, subtitleStream, profile);
+
+                if (!requiresConversion)
+                {
+                    return new ExternalProfileExit(true, profile);
+                }
+
+                if (!allowConversion)
+                {
+                    return new ExternalProfileExit(false, default);
+                }
+
+                // TODO: Build this into subtitleStream.SupportsExternalStream
+                if (mediaSource.IsInfiniteStream)
+                {
+                    return new ExternalProfileExit(false, default);
+                }
+
+                if (CanConvertToExternalTextSubtitle(subtitleStream, profile))
+                {
+                    return new ExternalProfileExit(true, profile);
+                }
+            }
+
+            return new ExternalProfileExit(false, default);
         }
 
         private static bool IsProfileUnusableForExternal(SubtitleProfile profile, MediaStream subtitleStream, PlayMethod playMethod, ITranscoderSupport transcoderSupport)
@@ -371,5 +382,7 @@ namespace MediaBrowser.Model.Dlna
             SubtitleProfile[] SubtitleProfiles,
             PlayMethod PlayMethod,
             ITranscoderSupport TranscoderSupport);
+
+        private readonly record struct ExternalProfileExit(bool Returned, SubtitleProfile? Value);
     }
 }
