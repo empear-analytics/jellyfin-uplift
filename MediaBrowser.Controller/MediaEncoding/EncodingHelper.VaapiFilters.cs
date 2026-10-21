@@ -142,7 +142,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var doVaVppTonemap = CanDoVaapiVppTonemap(state, options, isVaapiDecoder);
             var doOclTonemap = NeedsOclTonemap(state, options, doVaVppTonemap);
-            var doTonemap = doVaVppTonemap || doOclTonemap;
+            var doTonemap = IsVaapiAnyTonemap(doVaVppTonemap, doOclTonemap);
             var doDeintH2645 = IsDeinterlaceAvailable(state);
 
             var hasSubs = HasSubtitlesToEncode(state);
@@ -257,6 +257,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // hw scale
                 mainFilters.Add(hwScaleFilter);
             }
+        }
+
+        private static bool IsVaapiAnyTonemap(bool doVaVppTonemap, bool doOclTonemap)
+        {
+            return doVaVppTonemap || doOclTonemap;
         }
 
         private void AddVaapiVaInVaOutSubtitleFiltersIfAny(VaapiIntelFullContext context, List<string> subFilters, List<string> overlayFilters, bool hasSubs)
