@@ -73,29 +73,32 @@ namespace MediaBrowser.Model.Dlna
 
         private static bool IsUnsupportedPropertyCaseSkipped(TranscodingCaseContext context)
         {
+            if (IsNotSupportedYetProperty(context.Condition.Property))
+            {
+                return false;
+            }
+
             switch (context.Condition.Property)
             {
-                case ProfileConditionValue.AudioProfile:
-                case ProfileConditionValue.Has64BitOffsets:
-                case ProfileConditionValue.PacketLength:
-                case ProfileConditionValue.NumStreams:
-                case ProfileConditionValue.NumAudioStreams:
-                case ProfileConditionValue.NumVideoStreams:
-                case ProfileConditionValue.IsSecondaryAudio:
-                case ProfileConditionValue.VideoTimestamp:
-                    {
-                        // Not supported yet
-                        break;
-                    }
-
                 case ProfileConditionValue.RefFrames:
                     return IsRefFramesCaseSkipped(context);
 
                 default:
                     return IsVideoProfileFamilyCaseSkipped(context);
             }
+        }
 
-            return false;
+        private static bool IsNotSupportedYetProperty(ProfileConditionValue property)
+        {
+            // Not supported yet
+            return property is ProfileConditionValue.AudioProfile
+                or ProfileConditionValue.Has64BitOffsets
+                or ProfileConditionValue.PacketLength
+                or ProfileConditionValue.NumStreams
+                or ProfileConditionValue.NumAudioStreams
+                or ProfileConditionValue.NumVideoStreams
+                or ProfileConditionValue.IsSecondaryAudio
+                or ProfileConditionValue.VideoTimestamp;
         }
 
         private static bool IsVideoProfileFamilyCaseSkipped(TranscodingCaseContext context)
