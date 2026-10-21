@@ -145,6 +145,16 @@ public static partial class StreamingHelpers
             case 23:
                 // Duplicating ItemId because of MediaMonkey
                 break;
+            default:
+                StreamingParamApplyRest4(parameter);
+                break;
+        }
+    }
+
+    private static void StreamingParamApplyRest4(StreamingParam parameter)
+    {
+        switch (parameter.I)
+        {
             case 24:
                 ApplyCopyTimestamps(parameter.VideoRequest, parameter.Val);
                 break;
@@ -160,6 +170,16 @@ public static partial class StreamingHelpers
             case 28:
                 parameter.Request.Tag = parameter.Val;
                 break;
+            default:
+                StreamingParamApplyRest5(parameter);
+                break;
+        }
+    }
+
+    private static void StreamingParamApplyRest5(StreamingParam parameter)
+    {
+        switch (parameter.I)
+        {
             case 29:
                 ApplyRequireAvc(parameter.VideoRequest, parameter.Val);
                 break;
