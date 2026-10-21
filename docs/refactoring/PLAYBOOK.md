@@ -202,8 +202,8 @@ blocks of nested logic). Each "bump" is a missing method.
     - a method may have at most two runs, each contiguous and in order, each with its own struct;
     - the struct has at most twelve members, the method ends with at most four parameters, and each
       construction is written on one line.
-    Two private methods of the class whose runs have the same names, types and order may share one
-    struct. Where a method that received the struct passes the same run, unchanged, to another method
+    Two or more private methods of the class whose runs have the same names, types and order may share
+    one struct. Where a method that received the struct passes the same run, unchanged, to another method
     that takes the same struct, it may pass the struct itself (`parts`) instead of building a new one:
     a `readonly record struct` is copied by value, so the callee sees the same values.
     The method keeps its name, return type and accessibility. Public and protected signatures stay
@@ -212,14 +212,20 @@ blocks of nested logic). Each "bump" is a missing method.
     smell, this rule also applies to a private method with four or fewer parameters, for a run of two
     or more parameters of which at least one is a primitive (`bool`, `string`, a number, or one of
     these nullable or as an array): every other condition above holds. CodeScene flags *Primitive
-    Obsession* when a file has more than about ten primitive arguments and they are more than about
-    30 % of all its function arguments (measured 2026-10-21; enums, structs and classes do not count),
+    Obsession* when a file has more than ten primitive arguments and they are more than 30 % of all its
+    function arguments (measured 2026-10-21: 26 of 89 passes, 27 of 89 is flagged; `Guid` counts as
+    primitive; enums, classes and structs do not, and the members of a `readonly record struct` are not
+    counted as function arguments); *String Heavy Function Arguments* works the same way for strings,
     so one such step is usually `FLAT` and the smell clears only after several. These steps may be
     applied as **one group in one commit**, measured together; keep the group when it scores `UP`, and
     stop adding methods as soon as the smell clears. Prefer runs whose values belong together (a codec
     and its bit depth, a width and a height) and name the struct after what they describe
     (`VideoSize`, not `FooParts`), and prefer methods whose run is passed through from a caller that
-    already has the struct.
+    already has the struct. The struct parameter may be named after the struct (`size.Width`) instead of
+    `parts`. A value used inside an interpolated string stays a plain parameter (the guard counts the
+    interpolated string as one literal), as in rule 12. A group may change the call sites of its methods
+    in other files of the same class. The file then sits just under the threshold: a later step that
+    adds a primitive parameter can bring the smell back, so measure every later step.
 15. **A block that writes two or three locals read later (a result struct).** The block moves to a
     method that takes its inputs (plain parameters, or a rule 12 context) and the current values of
     the locals it writes, as one `private readonly record struct` (`FooResult`); the method's first
@@ -284,7 +290,11 @@ blocks of nested logic). Each "bump" is a missing method.
     access with no side effects) and `IsFoo` is a new `private static bool` that returns
     `x is A or B or ...` with the labels in their original order. A comment in the section moves to the
     predicate. Only when no label is `default`, none has a `when` clause or a pattern other than a
-    constant, and the switch statement keeps at least one section. CodeScene does not count `or`
+    constant, and the switch statement keeps at least one section. When every section left in the
+    switch returns, the trailing `return c;` after it becomes unreachable (CS0162) and is left out, as
+    in rule 11. **In a switch expression**, adjacent arms whose patterns are constants (no `when`) and
+    whose result expressions are identical become one arm `A or B => r`, in their original order (run
+    the guard with `--dedup`). CodeScene does not count `or`
     pattern alternatives toward cyclomatic complexity (it counts `||`), so this lowers it by the number
     of labels.
 
@@ -871,3 +881,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-21 | Recipe E rule 15: a `Stopped` flag for `break`, like `Skipped` for `continue`. | `LibraryManager.GetCollectionFolders` (2 bumps): the loop body assigns `item` and breaks. Compiled under warnings as errors and compared with the original on 20,000 random parent/owner chains: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 17 (new): stacked case labels that only break (or return one constant) become an `is A or B or ...` predicate before the switch. | `StreamBuilder.TranscodingCases.IsUnsupportedPropertyCaseSkipped` (cc 11): eight "not supported yet" labels set a floor no split can lower. Measured through the MCP server: an `is` pattern with nine `or` alternatives adds nothing to cyclomatic complexity, while ten `||` terms give cc 10. Compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe P: a pattern variable in the condition becomes an `out` parameter of a `[NotNullWhen(true)]` predicate (`t = x as T`), or of a Try-predicate for a guarded prefix (`t = G ? e as T : null`). | `UserViewManager.OrderViews` and `LibraryManager.SetTopParentIdsOrAncestors` (Complex Conditional, listed as not covered). For a reference type `x is T t` is `(t = x as T) is not null`. Compiled under warnings as errors and compared with the original on 20,000 random inputs, with a side-effecting `R(t)` logged: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Rules 14 and 17, wording from the first agents to use them: sharing by two **or more** methods; the measured Primitive Obsession threshold (strictly more than 30 % and more than ten; `Guid` counts; struct members are not arguments); a struct parameter named after its struct; interpolated-string values stay plain; a group may change call sites in other files of the class; rule 17 leaves out an unreachable trailing `return c;`, and merges adjacent switch-expression arms with identical results. | Reports of the o4 agents: `StreamingHelpers.Params` (four and ten methods sharing a struct), `EncodingHelper.VideoEncoderParams` (bitrate values in interpolated strings, a call site in the split-off file), `LibraryManager.Views` (`Guid`), `StreamBuilder.TranscodingCases` (CS0162). The switch-expression form: `HlsCodecStringHelpers.Vp9.GetVp9ExtendedProfileString` 9.38 to 9.68; adjacent constant arms with one result match exactly the same inputs. Made under the campaign owner's mandate, not individually reviewed. |
