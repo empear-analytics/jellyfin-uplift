@@ -261,28 +261,38 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 AppendVaapiHwDeviceArgs(args, options, isVaapiDecoder, isHwTonemapAvailable);
             }
-            else if (optHwaccelType == HardwareAccelerationType.qsv)
+            else
             {
-                if (IsQsvHwaccelUnsupported(isLinux, isWindows))
+                return HwDeviceDispatchQsv(options, new HwDeviceDispatchContext(optHwaccelType, args, vidDecoder, vidEncoder, isLinux, isWindows, isMacOS, isHwTonemapAvailable));
+            }
+
+            return GetHwDeviceArgsWithDecoder(args, vidDecoder);
+        }
+
+        private string HwDeviceDispatchQsv(EncodingOptions options, HwDeviceDispatchContext context)
+        {
+            if (context.OptHwaccelType == HardwareAccelerationType.qsv)
+            {
+                if (IsQsvHwaccelUnsupported(context.IsLinux, context.IsWindows))
                 {
                     return string.Empty;
                 }
 
-                var isQsvEncoder = vidEncoder.Contains("qsv", StringComparison.OrdinalIgnoreCase);
-                var isHwDecoder = IsQsvHwDecoder(vidDecoder);
+                var isQsvEncoder = context.VidEncoder.Contains("qsv", StringComparison.OrdinalIgnoreCase);
+                var isHwDecoder = IsQsvHwDecoder(context.VidDecoder);
                 if (IsHwDeviceUnused(isHwDecoder, isQsvEncoder))
                 {
                     return string.Empty;
                 }
 
-                AppendQsvHwDeviceArgs(args, options, isLinux, isHwDecoder, isHwTonemapAvailable);
+                AppendQsvHwDeviceArgs(context.Args, options, context.IsLinux, isHwDecoder, context.IsHwTonemapAvailable);
             }
             else
             {
-                return HwDeviceDispatchRemaining(new HwDeviceDispatchContext(optHwaccelType, args, vidDecoder, vidEncoder, isLinux, isWindows, isMacOS, isHwTonemapAvailable));
+                return HwDeviceDispatchRemaining(context);
             }
 
-            return GetHwDeviceArgsWithDecoder(args, vidDecoder);
+            return GetHwDeviceArgsWithDecoder(context.Args, context.VidDecoder);
         }
 
         private string HwDeviceDispatchRemaining(HwDeviceDispatchContext context)
