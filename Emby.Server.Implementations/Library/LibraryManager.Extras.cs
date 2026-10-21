@@ -171,20 +171,7 @@ namespace Emby.Server.Implementations.Library
                 var current = filtered[i];
                 if (IsExtrasTypeFolder(current))
                 {
-                    var filesInSubFolder = _fileSystem.GetFiles(current.FullName, null, false, false);
-                    var filesInSubFolderList = filesInSubFolder.ToList();
-
-                    bool subFolderIsMixedFolder = filesInSubFolderList.Count > 1;
-
-                    foreach (var file in filesInSubFolderList)
-                    {
-                        if (!_extraResolver.TryGetExtraTypeForOwner(file.FullName, ownerVideoInfo, out var extraType, out var extraRule))
-                        {
-                            continue;
-                        }
-
-                        AddCandidate(file, extraType.Value, extraRule, subFolderIsMixedFolder);
-                    }
+                    AddFolderCandidates(current, ownerVideoInfo);
                 }
                 else if (!current.IsDirectory && _extraResolver.TryGetExtraTypeForOwner(current.FullName, ownerVideoInfo, out var extraType, out var extraRule))
                 {
@@ -193,6 +180,24 @@ namespace Emby.Server.Implementations.Library
             }
 
             return candidates;
+
+            void AddFolderCandidates(FileSystemMetadata current, VideoFileInfo ownerVideoInfo)
+            {
+                var filesInSubFolder = _fileSystem.GetFiles(current.FullName, null, false, false);
+                var filesInSubFolderList = filesInSubFolder.ToList();
+
+                bool subFolderIsMixedFolder = filesInSubFolderList.Count > 1;
+
+                foreach (var file in filesInSubFolderList)
+                {
+                    if (!_extraResolver.TryGetExtraTypeForOwner(file.FullName, ownerVideoInfo, out var extraType, out var extraRule))
+                    {
+                        continue;
+                    }
+
+                    AddCandidate(file, extraType.Value, extraRule, subFolderIsMixedFolder);
+                }
+            }
 
             void AddCandidate(FileSystemMetadata file, ExtraType extraType, ExtraRule extraRule, bool isInMixedFolder)
             {
