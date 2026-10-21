@@ -31,9 +31,9 @@ namespace MediaBrowser.Controller.MediaEncoding
 {
     public partial class EncodingHelper
     {
-        private static void AddAmdD3d11OutputMapping(List<string> mainFilters, bool isDxInDxOut, bool isUploadForOclTonemap, bool hasSubs)
+        private static void AddAmdD3d11OutputMapping(List<string> mainFilters, AddAmdD3d11OutputMappingParts parts)
         {
-            if (NeedsAmfHwOutputMap(isDxInDxOut, isUploadForOclTonemap, hasSubs))
+            if (NeedsAmfHwOutputMap(new NeedsAmfHwOutputMapParts(parts.IsDxInDxOut, parts.IsUploadForOclTonemap, parts.HasSubs)))
             {
                 // OUTPUT d3d11(nv12) surface(vram)
                 // reverse-mapping via d3d11-opencl interop.
@@ -51,14 +51,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             mainFilters.Add("format=nv12");
         }
 
-        private static bool NeedsAmfHwUpload(bool isSwDecoder, bool isAmfEncoder, bool isUploadForOclTonemap)
+        private static bool NeedsAmfHwUpload(NeedsAmfHwUploadParts parts)
         {
-            return isSwDecoder && isAmfEncoder && !isUploadForOclTonemap;
+            return parts.IsSwDecoder && parts.IsAmfEncoder && !parts.IsUploadForOclTonemap;
         }
 
-        private static bool NeedsAmfHwOutputMap(bool isDxInDxOut, bool isUploadForOclTonemap, bool hasSubs)
+        private static bool NeedsAmfHwOutputMap(NeedsAmfHwOutputMapParts parts)
         {
-            return (isDxInDxOut || isUploadForOclTonemap) && !hasSubs;
+            return (parts.IsDxInDxOut || parts.IsUploadForOclTonemap) && !parts.HasSubs;
         }
 
         private static void AddAmdOclTonemapUpload(List<string> mainFilters, bool doOclTonemap)
@@ -88,9 +88,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
         }
 
-        private static bool IsAmdRotatedWidthHeightSwapped(int rotation, bool isSwDecoder, bool isD3d11vaDecoder, bool doOclTranspose)
+        private static bool IsAmdRotatedWidthHeightSwapped(IsAmdRotatedWidthHeightSwappedParts parts)
         {
-            return Math.Abs(rotation) == 90 && (isSwDecoder || (isD3d11vaDecoder && doOclTranspose));
+            return Math.Abs(parts.Rotation) == 90 && (parts.IsSwDecoder || (parts.IsD3d11vaDecoder && parts.DoOclTranspose));
         }
 
         private bool IsAmdOclTransposeAvailable(string transposeDir)
@@ -155,5 +155,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? ReqMaxW,
             int? ReqMaxH,
             List<string> MainFilters);
+
+        private readonly record struct NeedsAmfHwUploadParts(bool IsSwDecoder, bool IsAmfEncoder, bool IsUploadForOclTonemap);
+
+        private readonly record struct AddAmdD3d11OutputMappingParts(bool IsDxInDxOut, bool IsUploadForOclTonemap, bool HasSubs);
+
+        private readonly record struct NeedsAmfHwOutputMapParts(bool IsDxInDxOut, bool IsUploadForOclTonemap, bool HasSubs);
+
+        private readonly record struct IsAmdRotatedWidthHeightSwappedParts(int Rotation, bool IsSwDecoder, bool IsD3d11vaDecoder, bool DoOclTranspose);
     }
 }

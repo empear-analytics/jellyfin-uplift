@@ -98,7 +98,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var rotation = state.VideoStream?.Rotation ?? 0;
             var transposeDir = GetTransposeDirection(state, rotation);
             var doOclTranspose = IsAmdOclTransposeAvailable(transposeDir);
-            var swapWAndH = IsAmdRotatedWidthHeightSwapped(rotation, isSwDecoder, isD3d11vaDecoder, doOclTranspose);
+            var swapWAndH = IsAmdRotatedWidthHeightSwapped(new IsAmdRotatedWidthHeightSwappedParts(rotation, isSwDecoder, isD3d11vaDecoder, doOclTranspose));
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
@@ -125,14 +125,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT yuv420p surface
-            if (NeedsAmfHwUpload(isSwDecoder, isAmfEncoder, isUploadForOclTonemap))
+            if (NeedsAmfHwUpload(new NeedsAmfHwUploadParts(isSwDecoder, isAmfEncoder, isUploadForOclTonemap)))
             {
                 memoryOutput = true;
             }
 
             AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
-            AddAmdD3d11OutputMapping(mainFilters, isDxInDxOut, isUploadForOclTonemap, hasSubs);
+            AddAmdD3d11OutputMapping(mainFilters, new AddAmdD3d11OutputMappingParts(isDxInDxOut, isUploadForOclTonemap, hasSubs));
 
             /* Make sub and overlay filters for subtitle stream */
             var context = new AmdSubtitleFilterContext(
