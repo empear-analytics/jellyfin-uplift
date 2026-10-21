@@ -133,6 +133,7 @@ class McpClient:
 
     def _call_once(self, tool: str, arguments: dict) -> str:
         result = self._request("tools/call", {"name": tool, "arguments": arguments})
+        text = "".join(p.get("text", "") for p in result.get("content", []) if p.get("type") == "text")
         if result.get("isError"):
             detail = " ".join(text.split())[:300]
             raise McpToolError(f"{tool} returned an error" + (f": {detail}" if detail else ""))
