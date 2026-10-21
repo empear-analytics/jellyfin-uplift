@@ -195,10 +195,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT nv12 surface(memory)
-            if (IsSwDecodeToVaapiEncode(isSwDecoder, isVaapiEncoder))
-            {
-                memoryOutput = true;
-            }
+            memoryOutput = MarkVaapiSwUploadOutput(memoryOutput, isSwDecoder, isVaapiEncoder);
 
             AddVaapiMemoryOutputTail(context, mainFilters, memoryOutput, isVaapiEncoder);
 
@@ -207,17 +204,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             var overlayFilters = new List<string>();
             if (isVaInVaOut)
             {
-                if (hasSubs)
-                {
-                    AddVaapiVaInVaOutSubtitleFilters(context, subFilters, overlayFilters);
-                }
+                AddVaapiVaInVaOutSubtitleFiltersIfAny(context, subFilters, overlayFilters, hasSubs);
             }
             else if (memoryOutput)
             {
-                if (hasGraphicalSubs)
-                {
-                    AddVaapiMemoryGraphicalSubtitleFilters(context, isVaapiEncoder, subFilters, overlayFilters);
-                }
+                AddVaapiMemoryGraphicalSubtitleFiltersIfAny(context, isVaapiEncoder, subFilters, overlayFilters);
             }
 
             return (mainFilters, subFilters, overlayFilters);
@@ -266,6 +257,32 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // hw scale
                 mainFilters.Add(hwScaleFilter);
             }
+        }
+
+        private void AddVaapiVaInVaOutSubtitleFiltersIfAny(VaapiIntelFullContext context, List<string> subFilters, List<string> overlayFilters, bool hasSubs)
+        {
+            if (hasSubs)
+            {
+                AddVaapiVaInVaOutSubtitleFilters(context, subFilters, overlayFilters);
+            }
+        }
+
+        private static void AddVaapiMemoryGraphicalSubtitleFiltersIfAny(VaapiIntelFullContext context, bool isVaapiEncoder, List<string> subFilters, List<string> overlayFilters)
+        {
+            if (context.HasGraphicalSubs)
+            {
+                AddVaapiMemoryGraphicalSubtitleFilters(context, isVaapiEncoder, subFilters, overlayFilters);
+            }
+        }
+
+        private static bool MarkVaapiSwUploadOutput(bool memoryOutput, bool isSwDecoder, bool isVaapiEncoder)
+        {
+            if (IsSwDecodeToVaapiEncode(isSwDecoder, isVaapiEncoder))
+            {
+                memoryOutput = true;
+            }
+
+            return memoryOutput;
         }
 
         private static void AddVaapiMemoryGraphicalSubtitleFilters(VaapiIntelFullContext context, bool isVaapiEncoder, List<string> subFilters, List<string> overlayFilters)
