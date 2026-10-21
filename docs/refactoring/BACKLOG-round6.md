@@ -94,7 +94,7 @@ Update as tasks land.
 | R6-11 | 8.54 | - | not started |
 | R6-12 | 8.54 | - | not started |
 | R6-13 | 8.77 | 9.23 | Sonnet. One commit (UP): rule 11 for a void switch applied three times to ApplyParam (sections 6,6,6,16 in four methods; about 35 split points measured). Five or more groups make a new Primitive Obsession (WORSE). Left: ApplyParamRest3 cc 17, frozen GetStreamingState signature. |
-| R6-14 | 8.79 | 9.09 (+ ProbeResultNormalizer.AudioBitrate.cs 9.66) | Haiku (round 5 run R4-20, landed late). Recipe S: GetEstimatedAudioBitrate, IsAudioBitrateNotEstimable and IsDtsLossless moved unchanged to a new partial file. Every rule 11 split of the switch had been WORSE or DOWN (Primitive Obsession from the helper's parameters); the file split was UP outright. Complex Method cc 12 remains in the new file. |
+| R6-14 | 8.79 | 9.09 (+ ProbeResultNormalizer.AudioBitrate.cs 9.66 -> 10.00, Sonnet: rule 11 on GetEstimatedAudioBitrate, last 4 arms to EstimatedAudioBitrateOfLaterCodecs, which derives isMultichannel from channelCount itself; in the big file the same split had been WORSE; the guard warns about one added literal `2`, the repeated `> 2`) | Haiku (round 5 run R4-20, landed late). Recipe S: GetEstimatedAudioBitrate, IsAudioBitrateNotEstimable and IsDtsLossless moved unchanged to a new partial file. Every rule 11 split of the switch had been WORSE or DOWN (Primitive Obsession from the helper's parameters); the file split was UP outright. Complex Method cc 12 remains in the new file. |
 | R6-15 | 8.81 | - | not started |
 | R6-16 | 8.81 | - | not started |
 | R6-17 | 8.81 | - | not started |
