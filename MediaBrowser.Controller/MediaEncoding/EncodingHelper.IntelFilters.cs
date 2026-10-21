@@ -132,24 +132,11 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             mainFilters.Add(GetOverwriteColorPropertiesParam(state, doTonemap));
 
+            var context = new IntelQsvDx11FilterContext(hasSubs, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
+            var decoderContext = new IntelDecoderDx11Context(options, doDeintH2645, doOclTonemap, vidEncoder, isMjpegEncoder, threeDFormat);
             if (isSwDecoder)
             {
-                // INPUT sw surface(memory)
-                // sw deint
-                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                var outFormat = GetSwDecoderOutputFormat(doOclTonemap, hasGraphicalSubs);
-                var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-                swScaleFilter = ApplyMjpegFullRangeSwScale(swScaleFilter, isMjpegEncoder, doOclTonemap);
-
-                // sw scale
-                mainFilters.Add(swScaleFilter);
-                mainFilters.Add($"format={outFormat}");
-
-                // keep video at memory except ocl tonemap,
-                // since the overhead caused by hwupload >>> using sw filter.
-                // sw => hw
-                AddOpenclHwupload(mainFilters, doOclTonemap);
+                AddIntelDecoderDx11SwFilters(state, mainFilters, context, decoderContext);
             }
             else if (isD3d11vaDecoder || isQsvDecoder)
             {
@@ -258,20 +245,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             AddQsvReverseMapping(mainFilters, isQsvInQsvOut, doOclTonemap);
 
             /* Make sub and overlay filters for subtitle stream */
-            var context = new IntelQsvDx11FilterContext(
-                hasSubs,
-                hasGraphicalSubs,
-                hasTextSubs,
-                hasAssSubs,
-                swpInW,
-                swpInH,
-                subW,
-                subH,
-                reqW,
-                reqH,
-                reqMaxW,
-                reqMaxH);
-
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
             if (isQsvInQsvOut)
@@ -284,6 +257,26 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static void AddIntelDecoderDx11SwFilters(EncodingJobInfo state, List<string> mainFilters, IntelQsvDx11FilterContext context, IntelDecoderDx11Context decoderContext)
+        {
+            // INPUT sw surface(memory)
+            // sw deint
+            AddSwDeinterlaceFilter(state, decoderContext.Options, mainFilters, decoderContext.DoDeintH2645);
+
+            var outFormat = GetSwDecoderOutputFormat(decoderContext.DoOclTonemap, context.HasGraphicalSubs);
+            var swScaleFilter = GetSwScaleFilter(state, decoderContext.Options, decoderContext.VidEncoder, context.SwpInW, context.SwpInH, decoderContext.ThreeDFormat, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+            swScaleFilter = ApplyMjpegFullRangeSwScale(swScaleFilter, decoderContext.IsMjpegEncoder, decoderContext.DoOclTonemap);
+
+            // sw scale
+            mainFilters.Add(swScaleFilter);
+            mainFilters.Add($"format={outFormat}");
+
+            // keep video at memory except ocl tonemap,
+            // since the overhead caused by hwupload >>> using sw filter.
+            // sw => hw
+            AddOpenclHwupload(mainFilters, decoderContext.DoOclTonemap);
         }
 
         private static void IntelSecondAddD3d11vaToQsvHwmapIfNeeded(List<string> mainFilters, string hwScaleFilter, bool doDeintH2645, bool isD3d11vaDecoder)
@@ -981,6 +974,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? ReqH,
             int? ReqMaxW,
             int? ReqMaxH);
+
+        private readonly record struct IntelDecoderDx11Context(
+            EncodingOptions Options,
+            bool DoDeintH2645,
+            bool DoOclTonemap,
+            string VidEncoder,
+            bool IsMjpegEncoder,
+            Video3DFormat? ThreeDFormat);
 
         private readonly record struct IntelQsvVaapiFilterContext(
             bool HasSubs,
