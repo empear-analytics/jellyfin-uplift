@@ -40,7 +40,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Emby.Server.Implementations.Library
 {
-    public class MediaSourceManager : IMediaSourceManager, IDisposable
+    public partial class MediaSourceManager : IMediaSourceManager, IDisposable
     {
         // Do not use a pipe here because Roku http requests to the server will fail, without any explicit error message.
         private const char LiveStreamIdDelimiter = '_';
@@ -97,81 +97,6 @@ namespace Emby.Server.Implementations.Library
         public void AddParts(IEnumerable<IMediaSourceProvider> providers)
         {
             _providers = providers.ToArray();
-        }
-
-        public IReadOnlyList<MediaStream> GetMediaStreams(MediaStreamQuery query)
-        {
-            var list = _mediaStreamRepository.GetMediaStreams(query);
-
-            foreach (var stream in list)
-            {
-                stream.SupportsExternalStream = StreamSupportsExternalStream(stream);
-            }
-
-            return list;
-        }
-
-        private static bool StreamSupportsExternalStream(MediaStream stream)
-        {
-            if (stream.IsExternal)
-            {
-                return true;
-            }
-
-            if (stream.IsTextSubtitleStream)
-            {
-                return true;
-            }
-
-            if (stream.IsPgsSubtitleStream)
-            {
-                return true;
-            }
-
-            if (stream.IsVobSubSubtitleStream)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        public IReadOnlyList<MediaStream> GetMediaStreams(Guid itemId)
-        {
-            var list = GetMediaStreams(new MediaStreamQuery
-            {
-                ItemId = itemId
-            });
-
-            return GetMediaStreamsForItem(list);
-        }
-
-        private IReadOnlyList<MediaStream> GetMediaStreamsForItem(IReadOnlyList<MediaStream> streams)
-        {
-            foreach (var stream in streams)
-            {
-                if (stream.Type == MediaStreamType.Subtitle)
-                {
-                    stream.SupportsExternalStream = StreamSupportsExternalStream(stream);
-                }
-            }
-
-            return streams;
-        }
-
-        /// <inheritdoc />
-        public IReadOnlyList<MediaAttachment> GetMediaAttachments(MediaAttachmentQuery query)
-        {
-            return _mediaAttachmentRepository.GetMediaAttachments(query);
-        }
-
-        /// <inheritdoc />
-        public IReadOnlyList<MediaAttachment> GetMediaAttachments(Guid itemId)
-        {
-            return GetMediaAttachments(new MediaAttachmentQuery
-            {
-                ItemId = itemId
-            });
         }
 
         public async Task<IReadOnlyList<MediaSourceInfo>> GetPlaybackMediaSources(BaseItem item, User user, bool allowMediaProbe, bool enablePathSubstitution, CancellationToken cancellationToken)
