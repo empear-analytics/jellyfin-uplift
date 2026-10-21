@@ -116,20 +116,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             var swDecoderContext = new NvidiaDecoderSwContext(isSwDecoder, doDeintH2645, doCuTonemap, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
             NvidiaDecoderAddSwFilters(state, options, mainFilters, swDecoderContext);
 
-            if (isNvDecoder)
-            {
-                // INPUT cuda surface(vram)
-                // hw deint
-                AddNvidiaHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                // hw transpose
-                AddNvidiaHwTransposeFilter(mainFilters, doCuTranspose, transposeDir);
-
-                var outFormat = GetNvidiaHwOutFormat(state, doCuTonemap);
-                var hwScaleFilter = GetHwScaleFilter("scale", "cuda", outFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                // hw scale
-                mainFilters.Add(hwScaleFilter);
-            }
+            var nvDecoderContext = new NvidiaDecoderCudaContext(isNvDecoder, doDeintH2645, doCuTranspose, doCuTonemap, transposeDir, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
+            NvidiaDecoderAddCudaFilters(state, options, mainFilters, nvDecoderContext);
 
             // hw tonemap
             AddNvidiaHwTonemapFilter(options, mainFilters, doCuTonemap, isMjpegEncoder);
