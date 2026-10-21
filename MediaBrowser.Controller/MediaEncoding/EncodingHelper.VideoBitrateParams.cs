@@ -115,7 +115,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             int factor = 2;
             var codec = state.ActualOutputVideoCodec;
             var level = state.GetRequestedLevel(codec);
-            if (IsH264BelowLevel51(codec, level))
+            if (IsH264BelowLevel51(new EncoderParamCodecLevel(codec, level)))
             {
                 factor = 1;
             }
