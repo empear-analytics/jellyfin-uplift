@@ -120,5 +120,40 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             return doOclTonemap ? string.Empty : "nv12";
         }
+
+        private void AddAmdDecoderD3d11vaFilters(EncodingJobInfo state, EncodingOptions options, AmdDecoderD3d11vaContext context)
+        {
+            if (context.IsD3d11vaDecoder)
+            {
+                // INPUT d3d11 surface(vram)
+                // map from d3d11va to opencl via d3d11-opencl interop.
+                context.MainFilters.Add("hwmap=derive_device=opencl:mode=read");
+
+                // hw deint
+                AddAmdOclHwDeinterlaceFilter(state, options, context.MainFilters, context.DoDeintH2645);
+
+                // hw transpose
+                AddAmdOclTransposeFilter(context.MainFilters, context.DoOclTranspose, context.TransposeDir);
+
+                var outFormat = GetAmdOclScaleOutputFormat(context.DoOclTonemap);
+                var hwScaleFilter = GetHwScaleFilter("scale", "opencl", outFormat, false, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                // hw scale
+                context.MainFilters.Add(hwScaleFilter);
+            }
+        }
+
+        private readonly record struct AmdDecoderD3d11vaContext(
+            bool IsD3d11vaDecoder,
+            bool DoDeintH2645,
+            bool DoOclTranspose,
+            string TransposeDir,
+            bool DoOclTonemap,
+            int? SwpInW,
+            int? SwpInH,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH,
+            List<string> MainFilters);
     }
 }
