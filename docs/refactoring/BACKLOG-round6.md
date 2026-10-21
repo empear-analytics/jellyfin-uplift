@@ -124,7 +124,7 @@ Update as tasks land.
 | R6-41 | 9.47 | 9.60 | Sonnet. Three commits (UP): the software-decoder block and the nvidia-decoder block moved whole (guard inside) to helpers with an 11-member struct each, placed in EncodingHelper.NvidiaFilterHelpers.cs (stays 9.68; the same step in the main file was DOWN in round 5), 9.47 to 9.54; then the existing subtitle struct's construction written on one line, 9.54 to 9.60. CAVEAT: the last commit is layout only (score follows line count). Left: Complex Method cc 13 (memory-output section reads a local `memoryOutput` later), Primitive Obsession in the helpers file. |
 | R6-42 | 9.52 | 9.56 | Sonnet. Landed after the rule 12 change of 2026-10-21 (one struct per family, at most three): the d3d11va block of GetAmdDx11VidFiltersPrefered moved whole to `AddAmdDecoderD3d11vaFilters` in AmdFilterSteps.cs (stays 9.68) with a new 12-member struct, the method's third (one per family). Reuse of an existing struct was impossible (three values missing). Left: Complex Method cc 12. |
 | R6-43 | 9.66 | - | not started |
-| R6-44 | 9.66 | - | not started |
+| R6-44 | 9.66 | 9.66 | Sonnet. No commit. The new Recipe D branch merge (`shortAttr` / `attribute`) was FLAT: the file's smell is Complex Method cc 12 and the `?:` counts as a branch like the `if`. The same plus a rule 9 helper was DOWN (9.09, Overall Code Complexity). |
 | R6-45 | 9.68 | - | not started |
 | R6-46 | 9.68 | - | not started |
 | R6-47 | 9.68 | - | not started |
