@@ -53,34 +53,44 @@ namespace MediaBrowser.MediaEncoding.Probing
                 // Loop through each element
                 while (!reader.EOF && reader.ReadState == ReadState.Interactive)
                 {
-                    if (reader.NodeType == XmlNodeType.Element)
+                    if (ReadPlistNode(reader, info))
                     {
-                        switch (reader.Name)
-                        {
-                            case "dict":
-                                if (reader.IsEmptyElement)
-                                {
-                                    reader.Read();
-                                    continue;
-                                }
-
-                                using (var subtree = reader.ReadSubtree())
-                                {
-                                    ReadFromDictNode(subtree, info);
-                                }
-
-                                break;
-                            default:
-                                reader.Skip();
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        reader.Read();
+                        continue;
                     }
                 }
             }
+        }
+
+        private bool ReadPlistNode(XmlReader reader, MediaInfo info)
+        {
+            if (reader.NodeType == XmlNodeType.Element)
+            {
+                switch (reader.Name)
+                {
+                    case "dict":
+                        if (reader.IsEmptyElement)
+                        {
+                            reader.Read();
+                            return true;
+                        }
+
+                        using (var subtree = reader.ReadSubtree())
+                        {
+                            ReadFromDictNode(subtree, info);
+                        }
+
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
+                }
+            }
+            else
+            {
+                reader.Read();
+            }
+
+            return false;
         }
 
         private static string PrepareXmlForParsing(string xml)
