@@ -888,6 +888,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             mainFilters.Add(GetOverwriteColorPropertiesParam(state, doOclTonemap));
 
+            var hwDecoderContext = new VaapiLimitedHwDecoderContext(options, doDeintH2645, doOclTonemap, isMjpegEncoder, isVaapiDecoder, inW, inH, reqW, reqH, reqMaxW, reqMaxH, mainFilters);
             var outFormat = string.Empty;
             if (isSwDecoder)
             {
@@ -908,22 +909,9 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // sw => hw
                 AddOpenclHwupload(mainFilters, doOclTonemap);
             }
-            else if (isVaapiDecoder)
+            else
             {
-                // INPUT vaapi surface(vram)
-                // hw deint
-                AddVaapiHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                outFormat = doOclTonemap ? string.Empty : "nv12";
-                var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", outFormat, false, inW, inH, reqW, reqH, reqMaxW, reqMaxH);
-
-                hwScaleFilter = ApplyVaapiMjpegScaleOptions(hwScaleFilter, isMjpegEncoder, doOclTonemap);
-
-                // allocate extra pool sizes for vaapi vpp
-                hwScaleFilter = ApplyVaapiExtraHwFrames(hwScaleFilter);
-
-                // hw scale
-                mainFilters.Add(hwScaleFilter);
+                AddVaapiLimitedHwDecoderFilters(state, hwDecoderContext);
             }
 
             AddLimitedOpenclMappingIfNeeded(mainFilters, doOclTonemap, isVaapiDecoder, isi965Driver);
@@ -942,34 +930,58 @@ namespace MediaBrowser.Controller.MediaEncoding
             memoryOutput = AddVaapiLimitedMemoryOutput(context, mainFilters, memoryOutput);
 
             // OUTPUT nv12 surface(memory)
-            if (IsSwDecodeToVaapiEncode(isSwDecoder, isVaapiEncoder))
-            {
-                memoryOutput = true;
-            }
+            memoryOutput = MarkVaapiSwUploadOutput(memoryOutput, isSwDecoder, isVaapiEncoder);
 
             AddVaapiLimitedSubtitleOutput(context, mainFilters, memoryOutput);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
-            if (memoryOutput)
+            var subtitleContext = new VaapiLimitedSubtitleContext(memoryOutput, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
+            AddVaapiLimitedSubtitleFilters(context, subtitleContext, subFilters, overlayFilters);
+
+            return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void AddVaapiLimitedHwDecoderFilters(EncodingJobInfo state, VaapiLimitedHwDecoderContext context)
+        {
+            if (context.IsVaapiDecoder)
             {
-                if (hasGraphicalSubs)
+                // INPUT vaapi surface(vram)
+                // hw deint
+                AddVaapiHwDeinterlaceFilter(state, context.Options, context.MainFilters, context.DoDeintH2645);
+
+                var outFormat = context.DoOclTonemap ? string.Empty : "nv12";
+                var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", outFormat, false, context.InW, context.InH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+
+                hwScaleFilter = ApplyVaapiMjpegScaleOptions(hwScaleFilter, context.IsMjpegEncoder, context.DoOclTonemap);
+
+                // allocate extra pool sizes for vaapi vpp
+                hwScaleFilter = ApplyVaapiExtraHwFrames(hwScaleFilter);
+
+                // hw scale
+                context.MainFilters.Add(hwScaleFilter);
+            }
+        }
+
+        private static void AddVaapiLimitedSubtitleFilters(VaapiLimitedContext context, VaapiLimitedSubtitleContext subtitleContext, List<string> subFilters, List<string> overlayFilters)
+        {
+            if (subtitleContext.MemoryOutput)
+            {
+                if (context.HasGraphicalSubs)
                 {
-                    var subW = state.SubtitleStream?.Width;
-                    var subH = state.SubtitleStream?.Height;
-                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
+                    var subW = context.State.SubtitleStream?.Width;
+                    var subH = context.State.SubtitleStream?.Height;
+                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(subtitleContext.SwpInW, subtitleContext.SwpInH, subW, subH, subtitleContext.ReqW, subtitleContext.ReqH, subtitleContext.ReqMaxW, subtitleContext.ReqMaxH);
                     subFilters.Add(subPreProcFilters);
                     overlayFilters.Add("overlay=eof_action=pass:repeatlast=0");
 
-                    if (isVaapiEncoder)
+                    if (context.IsVaapiEncoder)
                     {
                         overlayFilters.Add("hwupload_vaapi");
                     }
                 }
             }
-
-            return (mainFilters, subFilters, overlayFilters);
         }
 
         private static bool AddVaapiLimitedMemoryOutput(VaapiLimitedContext context, List<string> mainFilters, bool memoryOutput)
@@ -1110,5 +1122,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool IsMjpegEncoder,
             int? InW,
             int? InH);
+
+        private readonly record struct VaapiLimitedHwDecoderContext(EncodingOptions Options, bool DoDeintH2645, bool DoOclTonemap, bool IsMjpegEncoder, bool IsVaapiDecoder, int? InW, int? InH, int? ReqW, int? ReqH, int? ReqMaxW, int? ReqMaxH, List<string> MainFilters);
+
+        private readonly record struct VaapiLimitedSubtitleContext(bool MemoryOutput, int? SwpInW, int? SwpInH, int? ReqW, int? ReqH, int? ReqMaxW, int? ReqMaxH);
     }
 }
