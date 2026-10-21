@@ -825,7 +825,7 @@ namespace MediaBrowser.Model.Dlna
             var videoCodecProfileReasons = parts.VideoStream is null ? default : GetCompatibilityVideoCodec(options, parts.MediaSource, container, parts.VideoStream);
 
             // Check audio candidates profile conditions
-            var audioStreamMatches = parts.CandidateAudioStreams.ToDictionary(s => s, audioStream => GetCompatibilityAudioCodecDirect(options, parts.MediaSource, container, audioStream, true, parts.MediaSource.IsSecondaryAudio(audioStream) ?? false));
+            var audioStreamMatches = parts.CandidateAudioStreams.ToDictionary(s => s, audioStream => GetCompatibilityAudioCodecDirect(new GetCompatibilityAudioCodecDirectParts(options, parts.MediaSource, container, audioStream), true, parts.MediaSource.IsSecondaryAudio(audioStream) ?? false));
 
             TranscodeReason subtitleProfileReasons = GetDirectPlaySubtitleReasons(options, parts.MediaSource, parts.SubtitleStream, container);
 

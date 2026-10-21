@@ -156,18 +156,15 @@ namespace MediaBrowser.Model.Dlna
         /// <summary>
         /// Check the compatibility of the audio codec for direct playback.
         /// </summary>
-        /// <param name="options">Media options.</param>
-        /// <param name="mediaSource">Media source.</param>
-        /// <param name="container">Container.</param>
-        /// <param name="audioStream">Audio stream.</param>
+        /// <param name="parts">Options, media source, container and audio stream.</param>
         /// <param name="isVideo">The media source is video.</param>
         /// <param name="isSecondaryAudio">The audio stream is secondary.</param>
         /// <returns>Transcode reasons if the audio stream is not fully compatible for direct playback.</returns>
-        private TranscodeReason GetCompatibilityAudioCodecDirect(MediaOptions options, MediaSourceInfo mediaSource, string container, MediaStream audioStream, bool isVideo, bool isSecondaryAudio)
+        private TranscodeReason GetCompatibilityAudioCodecDirect(GetCompatibilityAudioCodecDirectParts parts, bool isVideo, bool isSecondaryAudio)
         {
-            var failures = GetCompatibilityAudioCodec(new GetCompatibilityAudioCodecParts(options, mediaSource, container, audioStream), null, isVideo, isSecondaryAudio);
+            var failures = GetCompatibilityAudioCodec(new GetCompatibilityAudioCodecParts(parts.Options, parts.MediaSource, parts.Container, parts.AudioStream), null, isVideo, isSecondaryAudio);
 
-            if (audioStream.IsExternal)
+            if (parts.AudioStream.IsExternal)
             {
                 failures |= TranscodeReason.AudioIsExternal;
             }
@@ -176,5 +173,7 @@ namespace MediaBrowser.Model.Dlna
         }
 
         private readonly record struct GetCompatibilityAudioCodecParts(MediaOptions Options, MediaSourceInfo MediaSource, string Container, MediaStream AudioStream);
+
+        private readonly record struct GetCompatibilityAudioCodecDirectParts(MediaOptions Options, MediaSourceInfo MediaSource, string Container, MediaStream AudioStream);
     }
 }
