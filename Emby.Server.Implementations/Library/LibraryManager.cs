@@ -1188,27 +1188,11 @@ namespace Emby.Server.Implementations.Library
         {
             while (item is not null)
             {
-                var parent = item.GetParent();
-
-                if (parent is AggregateFolder)
+                var result = StepTowardCollectionRoot(new CollectionRootStep(item, false));
+                item = result.Item;
+                if (result.Stopped)
                 {
                     break;
-                }
-
-                if (parent is null)
-                {
-                    var owner = item.GetOwner();
-
-                    if (owner is null)
-                    {
-                        break;
-                    }
-
-                    item = owner;
-                }
-                else
-                {
-                    item = parent;
                 }
             }
 
@@ -1218,6 +1202,35 @@ namespace Emby.Server.Implementations.Library
             }
 
             return GetCollectionFoldersInternal(item, allUserRootChildren);
+        }
+
+        private static CollectionRootStep StepTowardCollectionRoot(CollectionRootStep current)
+        {
+            var item = current.Item;
+            var parent = item.GetParent();
+
+            if (parent is AggregateFolder)
+            {
+                return new CollectionRootStep(item, true);
+            }
+
+            if (parent is null)
+            {
+                var owner = item.GetOwner();
+
+                if (owner is null)
+                {
+                    return new CollectionRootStep(item, true);
+                }
+
+                item = owner;
+            }
+            else
+            {
+                item = parent;
+            }
+
+            return new CollectionRootStep(item, false);
         }
 
         private static List<Folder> GetCollectionFoldersInternal(BaseItem item, IEnumerable<Folder> allUserRootChildren)
@@ -1359,5 +1372,7 @@ namespace Emby.Server.Implementations.Library
             SetTopParentOrAncestorIds(query);
             return _itemRepository.GetMediaStreamLanguages(query, mediaStreamType);
         }
+
+        private readonly record struct CollectionRootStep(BaseItem Item, bool Stopped);
     }
 }
