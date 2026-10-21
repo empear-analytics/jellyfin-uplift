@@ -665,6 +665,8 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             mainFilters.Add(GetOverwriteColorPropertiesParam(state, doTonemap));
 
+            var context = new IntelQsvVaapiFilterContext(hasSubs, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
+            var decoderContext = new IntelDecoderVaapiContext(options, isVaapiDecoder, isQsvDecoder, isMjpegEncoder, doOclTonemap, doTonemap, doVppTranspose, transposeDir, swapWAndH, doDeintH2645);
             if (isSwDecoder)
             {
                 // INPUT sw surface(memory)
@@ -686,40 +688,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else if (isVaapiDecoder || isQsvDecoder)
             {
-                var hwFilterSuffix = GetHwFilterSuffix(isVaapiDecoder);
-                var isRext = IsVideoStreamHevcRext(state);
-                var doVppFullRangeOut = CanDoQsvVppFullRangeOut(isMjpegEncoder);
-                var doVppScaleModeHq = CanDoQsvVppScaleModeHq(isMjpegEncoder);
-
-                // INPUT vaapi/qsv surface(vram)
-                // hw deint
-                if (doDeintH2645)
-                {
-                    var deintFilter = GetHwDeinterlaceFilter(state, options, hwFilterSuffix);
-                    mainFilters.Add(deintFilter);
-                }
-
-                // hw transpose(vaapi vpp)
-                AddIntelVaapiTransposeFilter(mainFilters, isVaapiDecoder, doVppTranspose, transposeDir);
-
-                var outFormat = GetHwScaleOutputFormat(doTonemap, isQsvDecoder, doVppTranspose, isRext);
-                var swapOutputWandH = NeedsQsvOutputSwap(isQsvDecoder, doVppTranspose, swapWAndH);
-                var hwScalePrefix = GetHwScalePrefix(isQsvDecoder);
-                var hwScaleFilter = GetHwScaleFilter(hwScalePrefix, hwFilterSuffix, outFormat, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-
-                hwScaleFilter = AppendQsvVppTransposeOption(hwScaleFilter, isQsvDecoder, doVppTranspose, transposeDir);
-
-                if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
-                {
-                    hwScaleFilter += GetHwScaleFullRangeOption(isQsvDecoder, doVppFullRangeOut, doOclTonemap);
-                    hwScaleFilter += GetHwScaleModeOption(isQsvDecoder, doVppScaleModeHq);
-                }
-
-                // allocate extra pool sizes for vaapi vpp scale
-                hwScaleFilter = AppendVaapiExtraHwFramesOption(hwScaleFilter, isVaapiDecoder);
-
-                // hw transpose(qsv vpp) & scale
-                mainFilters.Add(hwScaleFilter);
+                AddIntelDecoderVaapiHwFilters(state, mainFilters, context, decoderContext);
             }
 
             // vaapi vpp tonemap
@@ -758,20 +727,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             AddQsvInQsvOutMapping(mainFilters, isQsvInQsvOut, doOclTonemap, isVaapiDecoder);
 
             /* Make sub and overlay filters for subtitle stream */
-            var context = new IntelQsvVaapiFilterContext(
-                hasSubs,
-                hasGraphicalSubs,
-                hasTextSubs,
-                hasAssSubs,
-                swpInW,
-                swpInH,
-                subW,
-                subH,
-                reqW,
-                reqH,
-                reqMaxW,
-                reqMaxH);
-
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
             if (isQsvInQsvOut)
@@ -784,6 +739,44 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void AddIntelDecoderVaapiHwFilters(EncodingJobInfo state, List<string> mainFilters, IntelQsvVaapiFilterContext context, IntelDecoderVaapiContext decoderContext)
+        {
+            var hwFilterSuffix = GetHwFilterSuffix(decoderContext.IsVaapiDecoder);
+            var isRext = IsVideoStreamHevcRext(state);
+            var doVppFullRangeOut = CanDoQsvVppFullRangeOut(decoderContext.IsMjpegEncoder);
+            var doVppScaleModeHq = CanDoQsvVppScaleModeHq(decoderContext.IsMjpegEncoder);
+
+            // INPUT vaapi/qsv surface(vram)
+            // hw deint
+            if (decoderContext.DoDeintH2645)
+            {
+                var deintFilter = GetHwDeinterlaceFilter(state, decoderContext.Options, hwFilterSuffix);
+                mainFilters.Add(deintFilter);
+            }
+
+            // hw transpose(vaapi vpp)
+            AddIntelVaapiTransposeFilter(mainFilters, decoderContext.IsVaapiDecoder, decoderContext.DoVppTranspose, decoderContext.TransposeDir);
+
+            var outFormat = GetHwScaleOutputFormat(decoderContext.DoTonemap, decoderContext.IsQsvDecoder, decoderContext.DoVppTranspose, isRext);
+            var swapOutputWandH = NeedsQsvOutputSwap(decoderContext.IsQsvDecoder, decoderContext.DoVppTranspose, decoderContext.SwapWAndH);
+            var hwScalePrefix = GetHwScalePrefix(decoderContext.IsQsvDecoder);
+            var hwScaleFilter = GetHwScaleFilter(hwScalePrefix, hwFilterSuffix, outFormat, swapOutputWandH, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+
+            hwScaleFilter = AppendQsvVppTransposeOption(hwScaleFilter, decoderContext.IsQsvDecoder, decoderContext.DoVppTranspose, decoderContext.TransposeDir);
+
+            if (NeedsVppMjpegOptions(hwScaleFilter, decoderContext.IsMjpegEncoder))
+            {
+                hwScaleFilter += GetHwScaleFullRangeOption(decoderContext.IsQsvDecoder, doVppFullRangeOut, decoderContext.DoOclTonemap);
+                hwScaleFilter += GetHwScaleModeOption(decoderContext.IsQsvDecoder, doVppScaleModeHq);
+            }
+
+            // allocate extra pool sizes for vaapi vpp scale
+            hwScaleFilter = AppendVaapiExtraHwFramesOption(hwScaleFilter, decoderContext.IsVaapiDecoder);
+
+            // hw transpose(qsv vpp) & scale
+            mainFilters.Add(hwScaleFilter);
         }
 
         private void AddIntelQsvVaapiQsvOutSubtitleFilters(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters, IntelQsvVaapiFilterContext context)
@@ -1002,5 +995,17 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? ReqH,
             int? ReqMaxW,
             int? ReqMaxH);
+
+        private readonly record struct IntelDecoderVaapiContext(
+            EncodingOptions Options,
+            bool IsVaapiDecoder,
+            bool IsQsvDecoder,
+            bool IsMjpegEncoder,
+            bool DoOclTonemap,
+            bool DoTonemap,
+            bool DoVppTranspose,
+            string TransposeDir,
+            bool SwapWAndH,
+            bool DoDeintH2645);
     }
 }
