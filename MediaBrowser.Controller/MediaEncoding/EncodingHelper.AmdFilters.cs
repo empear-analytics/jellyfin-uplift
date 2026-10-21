@@ -95,7 +95,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
-            var rotation = state.VideoStream?.Rotation ?? 0;
+            var rotation = GetVideoStreamRotation(state);
             var transposeDir = GetTransposeDirection(state, rotation);
             var doOclTranspose = IsAmdOclTransposeAvailable(transposeDir);
             var swapWAndH = IsAmdRotatedWidthHeightSwapped(new IsAmdRotatedWidthHeightSwappedParts(rotation, isSwDecoder, isD3d11vaDecoder, doOclTranspose));
