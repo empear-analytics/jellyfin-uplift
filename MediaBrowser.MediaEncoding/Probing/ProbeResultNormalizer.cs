@@ -173,7 +173,15 @@ namespace MediaBrowser.MediaEncoding.Probing
             info.ProductionYear = FFProbeHelpers.GetDictionaryNumericValue(tags, "date");
 
             // Several different forms of retail/premiere date
-            info.PremiereDate =
+            info.PremiereDate = GetPremiereDate(tags);
+
+            // Set common metadata for music (audio) and music videos (video)
+            info.Album = tags.GetValueOrDefault("album");
+        }
+
+        private static DateTime? GetPremiereDate(Dictionary<string, string> tags)
+        {
+            return
                 FFProbeHelpers.GetDictionaryDateTime(tags, "originaldate") ??
                 FFProbeHelpers.GetDictionaryDateTime(tags, "retaildate") ??
                 FFProbeHelpers.GetDictionaryDateTime(tags, "retail date") ??
@@ -181,9 +189,6 @@ namespace MediaBrowser.MediaEncoding.Probing
                 FFProbeHelpers.GetDictionaryDateTime(tags, "date_released") ??
                 FFProbeHelpers.GetDictionaryDateTime(tags, "date") ??
                 FFProbeHelpers.GetDictionaryDateTime(tags, "creation_time");
-
-            // Set common metadata for music (audio) and music videos (video)
-            info.Album = tags.GetValueOrDefault("album");
         }
 
         private void SetContainerAndBitrate(MediaInfo info, InternalMediaInfoResult data)
