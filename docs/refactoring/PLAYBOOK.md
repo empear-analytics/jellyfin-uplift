@@ -167,6 +167,23 @@ blocks of nested logic). Each "bump" is a missing method.
     The tail may also be void: when the moved branches only add to or change objects passed in
     (such as a list), and assign no local read afterwards, the new method returns nothing and the
     original gets `else { Helper(...); }`.
+14. **A private method with too many parameters (a parameter object).** A contiguous run of a
+    `private` method's parameters, kept in their order, becomes one `private readonly record struct`
+    nested at the end of the file that holds the method; every call site passes `new FooParts(...)`
+    in place of that run, with the same argument expressions in the same order, so each argument is
+    still evaluated once, left to right. Inside the method each parameter `x` of the run is replaced
+    by `parts.X` (the same name with an upper-case first letter), and nothing else changes. Only when:
+    - the method is `private` (not `public`, `protected` or `internal`: those may be called by plugins
+      or tests), not `virtual`, `override`, `abstract` or part of an interface, and is never used as a
+      method group, a delegate or by name (`nameof`); and no other method of the class has its name;
+    - every call site is in the same class, uses positional arguments for the run, and passes no
+      named argument inside it;
+    - no parameter of the run is `ref`, `out`, `in` or `params`, has a default value, or is assigned
+      inside the method (the struct is read-only);
+    - the struct has at most twelve members, the method ends with at most four parameters, and each
+      construction is written on one line.
+    The method keeps its name, return type and accessibility. Public and protected signatures stay
+    frozen; this rule never applies to them.
 
 **Before:**
 
@@ -714,3 +731,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-21 | Recipe E rule 12: a helper may take both structs of its method; the guard may stay at the call site when the whole statement needs more than fifteen values; a struct construction is written on one line. | Round 5: the Amd and Intel decoder chains of `EncodingHelper.VaapiFilters` (R4-05: 7.95 and 7.90 UP, but the helper read both structs), the sw-decoder and hw-scale blocks of `EncodingHelper.RkmppFilters` (R4-19: 9.12 and 9.13 UP, whole statements need 16 values), the Intel software-decoder block (R4-09: 16 values), and the layout finding of R4-36. Parameter plumbing only: no statement changes. Not adopted: `??` defaults in Recipe P (no run gained), a larger member cap. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 12: one struct per family of blocks, at most three per method (it was two). | Made AFTER the fact: two commits already landed broke the old wording, which the coordinator missed when landing them: `GetNvidiaVidFiltersPrefered` (R6-41) and `GetRkmppVidFiltersPrefered` (R6-29) each build three structs, one per family (subtitles, software decoder, hardware decoder). A third held candidate (R6-42, `GetAmdDx11VidFiltersPrefered`, 9.52 to 9.56) has the same shape. Each struct still serves one family and is constructed once; the change is parameter plumbing. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe D: the two branches of an `if` / `else` that differ only in one value become one body after choosing the value with `?:`. | Found in `PathExtensions.AttributeValueSearch` (the `shortAttr` / `attribute` branches; a `ref`/`out` helper would need five parameters, which CodeScene flags). Measured there (R6-44): FLAT, because the file's smell is cyclomatic complexity and the `?:` counts like the `if`; the recipe text was corrected the same day to say it helps only where it removes nesting. Compiled under warnings as errors (string and `ReadOnlySpan<char>` forms) and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 14: a parameter object for a private method (a contiguous run of its parameters, in order, becomes a private readonly record struct; call sites build it in place). | 31 of the 61 scope files below 10.00 carry Excess Number of Function Arguments; where the method is private (all of `StreamBuilder.cs`'s, `StreamBuilder.TranscodingConditions`, `EncodingHelper.StreamCopy`, `StreamBuilder.VideoStream`, `UserViewManager`, the helper files), no other recipe can remove it. Compiled under warnings as errors and compared with the original on 20,000 random inputs, including a trace of the order in which call-site arguments are evaluated: 0 failures. Public and protected signatures stay frozen. Made under the campaign owner's mandate, not individually reviewed. |

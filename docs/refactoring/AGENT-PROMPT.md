@@ -26,7 +26,8 @@ your task, your worktree and anything specific to the file. Everything below app
 
 - Follow the task file and the playbook exactly. The playbook is a closed catalogue: a change that
   is not one of its recipes exactly as written (a lookup table, a type other than the context struct
-  of Recipe E rule 12, merging nested `if`s into one condition, a change to a signature) is not yours
+  of Recipe E rule 12, merging nested `if`s into one condition, a change to a signature other than rule 14's
+  parameter object for a private method) is not yours
   to make. Report it as a candidate. The recipes of 2026-10-18 are in force: rules 10 (a block that
   ends in `continue`), 11 (a suffix of a `switch` expression's arms) and 12 (a context struct) of
   Recipe E, `x = default;` for `out` parameters and local-function predicates in Recipe P, Recipe D
@@ -43,6 +44,8 @@ your task, your worktree and anything specific to the file. Everything below app
   call site when the whole statement needs more than fifteen values; write a struct construction on one line.
   Later on 2026-10-21: one struct per family of blocks, at most three per method; and Recipe D for the two
   branches of an `if` / `else` that differ only in one value (choose the value with `?:`, keep one body).
+  Also on 2026-10-21: rule 14 of Recipe E, a parameter object for a PRIVATE method with too many parameters
+  (read its conditions exactly; public, protected and internal signatures stay frozen).
 - Before a step that adds methods, follow "Choosing the next step": measure the candidate
   applications on their own first and commit the best `UP` one.
 - After every step, before committing it, run all four checks from section 7 of the task file.
