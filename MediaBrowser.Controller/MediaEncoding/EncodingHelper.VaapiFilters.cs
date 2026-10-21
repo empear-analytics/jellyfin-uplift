@@ -560,26 +560,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var context = new VaapiAmdFullContext(state, options, doVkTonemap, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
 
-            if (isSwDecoder)
-            {
-                // INPUT sw surface(memory)
-                // sw deint
-                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                if (NeedsVulkanTonemapOrSubs(doVkTonemap, hasSubs))
-                {
-                    // sw => hw
-                    AddVulkanHwupload(mainFilters);
-                }
-                else
-                {
-                    AddVaapiAmdSwScaleFilters(context, vidEncoder, threeDFormat, mainFilters);
-                }
-            }
-            else
-            {
-                VaapiVoidAmdDecoderFilters(new VaapiVoidAmdDecoderContext(isVaapiDecoder, doDeintH2645, inW, inH, reqW, reqH, reqMaxW, reqMaxH, doVkTranspose, doVkTonemap, hasSubs, isMjpegEncoder), state, options, mainFilters);
-            }
+            VaapiDecoderAmdFilters(context, new VaapiDecoderAmdContext(isSwDecoder, isVaapiDecoder, hasSubs, doDeintH2645, doVkTranspose, vidEncoder, threeDFormat, isMjpegEncoder, inW, inH), mainFilters);
 
             // vk transpose
             AddVulkanTransposeIfNeeded(mainFilters, doVkTranspose, transposeDir);
@@ -628,24 +609,40 @@ namespace MediaBrowser.Controller.MediaEncoding
             return (mainFilters, subFilters, overlayFilters);
         }
 
-        private void VaapiVoidAmdDecoderFilters(VaapiVoidAmdDecoderContext context, EncodingJobInfo state, EncodingOptions options, List<string> mainFilters)
+        private void VaapiDecoderAmdFilters(VaapiAmdFullContext context, VaapiDecoderAmdContext decoder, List<string> mainFilters)
         {
-            if (context.IsVaapiDecoder)
+            if (decoder.IsSwDecoder)
+            {
+                // INPUT sw surface(memory)
+                // sw deint
+                AddSwDeinterlaceFilter(context.State, context.Options, mainFilters, decoder.DoDeintH2645);
+
+                if (NeedsVulkanTonemapOrSubs(context.DoVkTonemap, decoder.HasSubs))
+                {
+                    // sw => hw
+                    AddVulkanHwupload(mainFilters);
+                }
+                else
+                {
+                    AddVaapiAmdSwScaleFilters(context, decoder.VidEncoder, decoder.ThreeDFormat, mainFilters);
+                }
+            }
+            else if (decoder.IsVaapiDecoder)
             {
                 // INPUT vaapi surface(vram)
-                if (NeedsVulkanInterop(context.DoVkTranspose, context.DoVkTonemap, context.HasSubs))
+                if (NeedsVulkanInterop(decoder.DoVkTranspose, context.DoVkTonemap, decoder.HasSubs))
                 {
-                    AddAmdVaapiToVulkanMapFilters(mainFilters, context.DoVkTranspose, context.DoVkTonemap, context.HasSubs);
+                    AddAmdVaapiToVulkanMapFilters(mainFilters, decoder.DoVkTranspose, context.DoVkTonemap, decoder.HasSubs);
                 }
                 else
                 {
                     // hw deint
-                    AddVaapiHwDeinterlaceFilter(state, options, mainFilters, context.DoDeintH2645);
+                    AddVaapiHwDeinterlaceFilter(context.State, context.Options, mainFilters, decoder.DoDeintH2645);
 
                     // hw scale
-                    var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", "nv12", false, context.InW, context.InH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                    var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", "nv12", false, decoder.InW, decoder.InH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
 
-                    hwScaleFilter = ApplyAmdVaapiMjpegFullRange(hwScaleFilter, context.IsMjpegEncoder, context.DoVkTonemap);
+                    hwScaleFilter = ApplyAmdVaapiMjpegFullRange(hwScaleFilter, decoder.IsMjpegEncoder, context.DoVkTonemap);
 
                     mainFilters.Add(hwScaleFilter);
                 }
@@ -1077,18 +1074,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool IsHwmapNotUsable,
             bool IsHwUnmapForTextSubs);
 
-        private readonly record struct VaapiVoidAmdDecoderContext(
+        private readonly record struct VaapiDecoderAmdContext(
+            bool IsSwDecoder,
             bool IsVaapiDecoder,
-            bool DoDeintH2645,
-            int? InW,
-            int? InH,
-            int? ReqW,
-            int? ReqH,
-            int? ReqMaxW,
-            int? ReqMaxH,
-            bool DoVkTranspose,
-            bool DoVkTonemap,
             bool HasSubs,
-            bool IsMjpegEncoder);
+            bool DoDeintH2645,
+            bool DoVkTranspose,
+            string VidEncoder,
+            Video3DFormat? ThreeDFormat,
+            bool IsMjpegEncoder,
+            int? InW,
+            int? InH);
     }
 }
