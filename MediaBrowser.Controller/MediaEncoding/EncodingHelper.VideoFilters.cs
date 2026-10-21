@@ -50,7 +50,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 var useBwdif = CanUseCudaBwdif(options);
 
-                return FormatBwdifYadifDeinterlaceFilter("{0}_cuda={1}:-1:0", useBwdif, doubleRateDeint);
+                return FormatBwdifYadifDeinterlaceFilter(new FormatBwdifYadifDeinterlaceFilterParts("{0}_cuda={1}:-1:0", useBwdif, doubleRateDeint));
             }
 
             if (hwDeintSuffix.Contains("opencl", StringComparison.OrdinalIgnoreCase))
@@ -59,7 +59,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 if (SupportsOpenclDeinterlaceFilters())
                 {
-                    return FormatBwdifYadifDeinterlaceFilter("{0}_opencl={1}:-1:0", useBwdif, doubleRateDeint);
+                    return FormatBwdifYadifDeinterlaceFilter(new FormatBwdifYadifDeinterlaceFilterParts("{0}_opencl={1}:-1:0", useBwdif, doubleRateDeint));
                 }
             }
 
@@ -80,19 +80,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 var useBwdif = CanUseVideotoolboxBwdif(options);
 
-                return FormatBwdifYadifDeinterlaceFilter("{0}_videotoolbox={1}:-1:0", useBwdif, doubleRateDeint);
+                return FormatBwdifYadifDeinterlaceFilter(new FormatBwdifYadifDeinterlaceFilterParts("{0}_videotoolbox={1}:-1:0", useBwdif, doubleRateDeint));
             }
 
             return string.Empty;
         }
 
-        private static string FormatBwdifYadifDeinterlaceFilter(string format, bool useBwdif, bool doubleRateDeint)
+        private static string FormatBwdifYadifDeinterlaceFilter(FormatBwdifYadifDeinterlaceFilterParts parts)
         {
             return string.Format(
                 CultureInfo.InvariantCulture,
-                format,
-                useBwdif ? "bwdif" : "yadif",
-                doubleRateDeint ? "1" : "0");
+                parts.Format,
+                parts.UseBwdif ? "bwdif" : "yadif",
+                parts.DoubleRateDeint ? "1" : "0");
         }
 
         private static bool IsHwDoubleRateDeinterlace(EncodingJobInfo state, EncodingOptions options)
@@ -225,7 +225,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var tonemapArg = string.Empty;
 
             // libplacebo only support full range RGB
-            forceFullRange = IsLibplaceboFullRangeRequired(parts.VideoFormat, forceFullRange);
+            forceFullRange = IsLibplaceboFullRangeRequired(new IsLibplaceboFullRangeRequiredParts(parts.VideoFormat, forceFullRange));
 
             if (parts.DoTonemap)
             {
@@ -244,11 +244,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 tonemapArg);
         }
 
-        private static bool IsLibplaceboFullRangeRequired(string videoFormat, bool forceFullRange)
+        private static bool IsLibplaceboFullRangeRequired(IsLibplaceboFullRangeRequiredParts parts)
         {
-            return forceFullRange
-                || (videoFormat ?? string.Empty).Contains("rgb", StringComparison.OrdinalIgnoreCase)
-                || (videoFormat ?? string.Empty).Contains("bgr", StringComparison.OrdinalIgnoreCase);
+            return parts.ForceFullRange
+                || (parts.VideoFormat ?? string.Empty).Contains("rgb", StringComparison.OrdinalIgnoreCase)
+                || (parts.VideoFormat ?? string.Empty).Contains("bgr", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetLibplaceboTonemapArg(EncodingOptions options, bool forceFullRange, string tonemapArg)
@@ -337,7 +337,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var outFormat = isSwDecoder ? "yuv420p" : "nv12";
             var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-            outFormat = ResolveSwOutputFormat(outFormat, isVaapiEncoder, isV4l2Encoder);
+            outFormat = ResolveSwOutputFormat(outFormat, new ResolveSwOutputFormatParts(isVaapiEncoder, isV4l2Encoder));
 
             // sw scale
             mainFilters.Add(swScaleFilter);
@@ -345,7 +345,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // sw tonemap
             if (doToneMap)
             {
-                AddSwTonemapFilter(options, mainFilters, requireDoviReshaping, outFormat);
+                AddSwTonemapFilter(options, mainFilters, new AddSwTonemapFilterParts(requireDoviReshaping, outFormat));
             }
             else
             {
@@ -389,13 +389,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
         }
 
-        private static string ResolveSwOutputFormat(string outFormat, bool isVaapiEncoder, bool isV4l2Encoder)
+        private static string ResolveSwOutputFormat(string outFormat, ResolveSwOutputFormatParts parts)
         {
-            if (isVaapiEncoder)
+            if (parts.IsVaapiEncoder)
             {
                 outFormat = "nv12";
             }
-            else if (isV4l2Encoder)
+            else if (parts.IsV4l2Encoder)
             {
                 outFormat = "yuv420p";
             }
@@ -408,10 +408,10 @@ namespace MediaBrowser.Controller.MediaEncoding
             return doToneMap && state.VideoStream.VideoRangeType == VideoRangeType.DOVI;
         }
 
-        private static void AddSwTonemapFilter(EncodingOptions options, List<string> mainFilters, bool requireDoviReshaping, string outFormat)
+        private static void AddSwTonemapFilter(EncodingOptions options, List<string> mainFilters, AddSwTonemapFilterParts parts)
         {
             // tonemapx requires yuv420p10 input for dovi reshaping, let ffmpeg convert the frame when necessary
-            var tonemapFormat = requireDoviReshaping ? "yuv420p" : outFormat;
+            var tonemapFormat = parts.RequireDoviReshaping ? "yuv420p" : parts.OutFormat;
             var tonemapArgString = "tonemapx=tonemap={0}:desat={1}:peak={2}:t=bt709:m=bt709:p=bt709:format={3}";
 
             if (options.TonemappingParam != 0)
@@ -526,7 +526,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 if (context.HasSubs)
                 {
                     // -filter_complex "[0:s]scale=s[sub]..."
-                    var filterStr = GetSubtitleFilterComplexTemplate(mainStr, context.HasTextSubs);
+                    var filterStr = GetSubtitleFilterComplexTemplate(new GetSubtitleFilterComplexTemplateParts(mainStr, context.HasTextSubs));
 
                     return string.Format(
                         CultureInfo.InvariantCulture,
@@ -557,15 +557,15 @@ namespace MediaBrowser.Controller.MediaEncoding
             return mainStr;
         }
 
-        private static string GetSubtitleFilterComplexTemplate(string mainStr, bool hasTextSubs)
+        private static string GetSubtitleFilterComplexTemplate(GetSubtitleFilterComplexTemplateParts parts)
         {
-            var filterStr = string.IsNullOrEmpty(mainStr)
+            var filterStr = string.IsNullOrEmpty(parts.MainStr)
                 ? " -filter_complex \"[{0}:{1}]{4}[sub];[0:{2}][sub]{5}\""
                 : " -filter_complex \"[{0}:{1}]{4}[sub];[0:{2}]{3}[main];[main][sub]{5}\"";
 
-            if (hasTextSubs)
+            if (parts.HasTextSubs)
             {
-                filterStr = string.IsNullOrEmpty(mainStr)
+                filterStr = string.IsNullOrEmpty(parts.MainStr)
                     ? " -filter_complex \"{4}[sub];[0:{2}][sub]{5}\""
                     : " -filter_complex \"{4}[sub];[0:{2}]{3}[main];[main][sub]{5}\"";
             }
@@ -615,5 +615,15 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool HasTextSubs);
 
         private readonly record struct GetLibplaceboFilterParts(string VideoFormat, bool DoTonemap, int? VideoWidth, int? VideoHeight, int? RequestedWidth, int? RequestedHeight, int? RequestedMaxWidth, int? RequestedMaxHeight);
+
+        private readonly record struct ResolveSwOutputFormatParts(bool IsVaapiEncoder, bool IsV4l2Encoder);
+
+        private readonly record struct AddSwTonemapFilterParts(bool RequireDoviReshaping, string OutFormat);
+
+        private readonly record struct FormatBwdifYadifDeinterlaceFilterParts(string Format, bool UseBwdif, bool DoubleRateDeint);
+
+        private readonly record struct IsLibplaceboFullRangeRequiredParts(string VideoFormat, bool ForceFullRange);
+
+        private readonly record struct GetSubtitleFilterComplexTemplateParts(string MainStr, bool HasTextSubs);
     }
 }
