@@ -102,21 +102,8 @@ namespace MediaBrowser.Model.Dlna
 
             ApplyAudioBitrateLimit(options, playlistItem, audioStream);
 
-            bool? isSecondaryAudio = audioStream is null ? null : item.IsSecondaryAudio(audioStream);
-            int? inputAudioBitrate = audioStream?.BitRate;
-            int? audioChannels = audioStream?.Channels;
-            string? audioProfile = audioStream?.Profile;
-            int? inputAudioSampleRate = audioStream?.SampleRate;
-            int? inputAudioBitDepth = audioStream?.BitDepth;
-
-            var appliedAudioConditions = options.Profile.CodecProfiles
-                .Where(i => i.Type == CodecType.VideoAudio &&
-                    i.ContainsAnyCodec(playlistItem.AudioCodecs, container) &&
-                    i.ApplyConditions.All(applyCondition => ConditionProcessor.IsVideoAudioConditionSatisfied(applyCondition, audioChannels, inputAudioBitrate, inputAudioSampleRate, inputAudioBitDepth, audioProfile, isSecondaryAudio)))
-                // Reverse codec profiles for backward compatibility - first codec profile has higher priority
-                .Reverse();
-
-            ApplyAudioCodecProfileConditions(playlistItem, appliedAudioConditions, container);
+            var audioConditionContext = new AudioConditionContext(options, item, container, audioStream);
+            ApplyAudioConditions(playlistItem, audioConditionContext);
 
             var maxBitrateSetting = options.GetMaxBitrate(false);
             // Honor max rate
@@ -153,5 +140,26 @@ namespace MediaBrowser.Model.Dlna
                 playlistItem.SubtitleStreamIndex,
                 playlistItem.TranscodeReasons);
         }
+
+        private void ApplyAudioConditions(StreamInfo playlistItem, AudioConditionContext context)
+        {
+            bool? isSecondaryAudio = context.AudioStream is null ? null : context.Item.IsSecondaryAudio(context.AudioStream);
+            int? inputAudioBitrate = context.AudioStream?.BitRate;
+            int? audioChannels = context.AudioStream?.Channels;
+            string? audioProfile = context.AudioStream?.Profile;
+            int? inputAudioSampleRate = context.AudioStream?.SampleRate;
+            int? inputAudioBitDepth = context.AudioStream?.BitDepth;
+
+            var appliedAudioConditions = context.Options.Profile.CodecProfiles
+                .Where(i => i.Type == CodecType.VideoAudio &&
+                    i.ContainsAnyCodec(playlistItem.AudioCodecs, context.Container) &&
+                    i.ApplyConditions.All(applyCondition => ConditionProcessor.IsVideoAudioConditionSatisfied(applyCondition, audioChannels, inputAudioBitrate, inputAudioSampleRate, inputAudioBitDepth, audioProfile, isSecondaryAudio)))
+                // Reverse codec profiles for backward compatibility - first codec profile has higher priority
+                .Reverse();
+
+            ApplyAudioCodecProfileConditions(playlistItem, appliedAudioConditions, context.Container);
+        }
+
+        private readonly record struct AudioConditionContext(MediaOptions Options, MediaSourceInfo Item, string? Container, MediaStream? AudioStream);
     }
 }
