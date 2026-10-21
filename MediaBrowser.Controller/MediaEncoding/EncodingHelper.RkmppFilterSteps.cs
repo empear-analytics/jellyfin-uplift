@@ -114,6 +114,31 @@ namespace MediaBrowser.Controller.MediaEncoding
             return hwScaleFilter;
         }
 
+        private static void RkmppDecoderAddHwScaleFilters(List<string> mainFilters, string hwScaleFilter, string outFormat, RkmppDecoderHwScaleContext context)
+        {
+            var isScaleRatioSupported = IsScaleRatioSupported(context.InW, context.InH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH, 8.0f);
+
+            // RGA3 hardware only support (1/8 ~ 8) scaling in each blit operation,
+            // but in Trickplay there's a case: (3840/320 == 12), enable 2pass for it
+            if (context.DoScaling && !isScaleRatioSupported)
+            {
+                AddRkmppScaleFirstPass(mainFilters, context.DoOclTonemap, context.IsMjpegEncoder, outFormat);
+            }
+
+            // The RKMPP MJPEG encoder on some newer chip models no longer supports RGB input.
+            // Use 2pass here to enable RGA output of full-range YUV in the 2nd pass.
+            if (NeedsRkrgaMjpegFirstPass(context.IsMjpegEncoder, context.DoOclTonemap, context.DoScaling, isScaleRatioSupported))
+            {
+                var hwScaleFilterFirstPass = "vpp_rkrga=format=bgra:afbc=1";
+                mainFilters.Add(hwScaleFilterFirstPass);
+            }
+
+            hwScaleFilter = AppendRkmppHwScaleOptions(hwScaleFilter, context.DoRkVppTranspose, context.TransposeDir, context.IsFullAfbcPipeline);
+
+            // hw transpose & scale
+            mainFilters.Add(hwScaleFilter);
+        }
+
         private readonly record struct RkmppSubtitleFilterContext(
             bool IsEncoderSupportAfbc,
             bool HasGraphicalSubs,
@@ -127,5 +152,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? ReqH,
             int? ReqMaxW,
             int? ReqMaxH);
+
+        private readonly record struct RkmppDecoderHwScaleContext(
+            int? InW,
+            int? InH,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH,
+            bool DoOclTonemap,
+            bool IsMjpegEncoder,
+            bool DoScaling,
+            bool DoRkVppTranspose,
+            bool IsFullAfbcPipeline,
+            string TransposeDir);
     }
 }

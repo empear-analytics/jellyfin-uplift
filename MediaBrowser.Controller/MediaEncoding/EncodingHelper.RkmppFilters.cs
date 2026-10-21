@@ -144,29 +144,10 @@ namespace MediaBrowser.Controller.MediaEncoding
                 var hwScaleFilter = GetHwScaleFilter("vpp", "rkrga", outFormat, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
                 var doScaling = !string.IsNullOrEmpty(GetHwScaleFilter("vpp", "rkrga", string.Empty, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH));
 
+                var hwScaleContext = new RkmppDecoderHwScaleContext(inW, inH, reqW, reqH, reqMaxW, reqMaxH, doOclTonemap, isMjpegEncoder, doScaling, doRkVppTranspose, isFullAfbcPipeline, transposeDir);
                 if (NeedsRkrgaScaleFilters(hasSubs, doRkVppTranspose, isFullAfbcPipeline, doScaling))
                 {
-                    var isScaleRatioSupported = IsScaleRatioSupported(inW, inH, reqW, reqH, reqMaxW, reqMaxH, 8.0f);
-
-                    // RGA3 hardware only support (1/8 ~ 8) scaling in each blit operation,
-                    // but in Trickplay there's a case: (3840/320 == 12), enable 2pass for it
-                    if (doScaling && !isScaleRatioSupported)
-                    {
-                        AddRkmppScaleFirstPass(mainFilters, doOclTonemap, isMjpegEncoder, outFormat);
-                    }
-
-                    // The RKMPP MJPEG encoder on some newer chip models no longer supports RGB input.
-                    // Use 2pass here to enable RGA output of full-range YUV in the 2nd pass.
-                    if (NeedsRkrgaMjpegFirstPass(isMjpegEncoder, doOclTonemap, doScaling, isScaleRatioSupported))
-                    {
-                        var hwScaleFilterFirstPass = "vpp_rkrga=format=bgra:afbc=1";
-                        mainFilters.Add(hwScaleFilterFirstPass);
-                    }
-
-                    hwScaleFilter = AppendRkmppHwScaleOptions(hwScaleFilter, doRkVppTranspose, transposeDir, isFullAfbcPipeline);
-
-                    // hw transpose & scale
-                    mainFilters.Add(hwScaleFilter);
+                    RkmppDecoderAddHwScaleFilters(mainFilters, hwScaleFilter, outFormat, hwScaleContext);
                 }
             }
 
