@@ -122,7 +122,7 @@ Update as tasks land.
 | R6-39 | 9.38 | - | not started |
 | R6-40 | 9.38 | - | not started |
 | R6-41 | 9.47 | 9.60 | Sonnet. Three commits (UP): the software-decoder block and the nvidia-decoder block moved whole (guard inside) to helpers with an 11-member struct each, placed in EncodingHelper.NvidiaFilterHelpers.cs (stays 9.68; the same step in the main file was DOWN in round 5), 9.47 to 9.54; then the existing subtitle struct's construction written on one line, 9.54 to 9.60. CAVEAT: the last commit is layout only (score follows line count). Left: Complex Method cc 13 (memory-output section reads a local `memoryOutput` later), Primitive Obsession in the helpers file. |
-| R6-42 | 9.52 | - | not started |
+| R6-42 | 9.52 | 9.52 | Sonnet. NOT landed. One candidate scored 9.52 to 9.56 UP (commit 8d332de93b, unreachable once the worktree is removed): the d3d11va block of GetAmdDx11VidFiltersPrefered moved whole to `AddAmdDecoderD3d11vaFilters` in AmdFilterSteps.cs with a new 12-member struct. It gives the method THREE structs; rule 12 allows two. Reuse of an existing struct was impossible (three values missing, 6 parameters). The brief given to the agent wrongly allowed a third. Needs a ruling on a third struct per method. |
 | R6-43 | 9.66 | - | not started |
 | R6-44 | 9.66 | - | not started |
 | R6-45 | 9.68 | - | not started |
