@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using Jellyfin.Data;
@@ -119,8 +120,7 @@ namespace Emby.Server.Implementations.Library
                 {
                     var index = Array.IndexOf(orders, i.Id);
                     if (index == -1
-                        && i is UserView view
-                        && !view.DisplayParentId.IsEmpty())
+                        && IsUserViewWithDisplayParent(i, out var view))
                     {
                         index = Array.IndexOf(orders, view.DisplayParentId);
                     }
@@ -130,6 +130,12 @@ namespace Emby.Server.Implementations.Library
                 .ThenBy(sorted.IndexOf)
                 .ThenBy(i => i.SortName)
                 .ToArray();
+        }
+
+        private static bool IsUserViewWithDisplayParent(Folder i, [NotNullWhen(true)] out UserView view)
+        {
+            view = i as UserView;
+            return view is not null && !view.DisplayParentId.IsEmpty();
         }
 
         private void AddFolderOrPresetView(List<Folder> list, Folder folder, CollectionType? folderViewType, UserViewQuery query)
