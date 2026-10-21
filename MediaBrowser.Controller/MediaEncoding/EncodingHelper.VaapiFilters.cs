@@ -687,7 +687,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         private void AddVaapiLibplaceboFilters(VaapiAmdFullContext context, bool isMjpegEncoder, List<string> mainFilters)
         {
-            var libplaceboFilter = GetLibplaceboFilter(context.Options, "bgra", context.DoVkTonemap, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH, isMjpegEncoder);
+            var libplaceboFilter = GetLibplaceboFilter(context.Options, new GetLibplaceboFilterParts("bgra", context.DoVkTonemap, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH), isMjpegEncoder);
             mainFilters.Add(libplaceboFilter);
             mainFilters.Add("format=vulkan");
         }

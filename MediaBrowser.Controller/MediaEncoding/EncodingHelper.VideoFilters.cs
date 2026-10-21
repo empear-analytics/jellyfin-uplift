@@ -207,37 +207,27 @@ namespace MediaBrowser.Controller.MediaEncoding
             return args;
         }
 
-        private string GetLibplaceboFilter(
-            EncodingOptions options,
-            string videoFormat,
-            bool doTonemap,
-            int? videoWidth,
-            int? videoHeight,
-            int? requestedWidth,
-            int? requestedHeight,
-            int? requestedMaxWidth,
-            int? requestedMaxHeight,
-            bool forceFullRange)
+        private string GetLibplaceboFilter(EncodingOptions options, GetLibplaceboFilterParts parts, bool forceFullRange)
         {
             var (outWidth, outHeight) = GetFixedOutputSize(
-                videoWidth,
-                videoHeight,
-                requestedWidth,
-                requestedHeight,
-                requestedMaxWidth,
-                requestedMaxHeight);
+                parts.VideoWidth,
+                parts.VideoHeight,
+                parts.RequestedWidth,
+                parts.RequestedHeight,
+                parts.RequestedMaxWidth,
+                parts.RequestedMaxHeight);
 
-            var isFormatFixed = !string.IsNullOrEmpty(videoFormat);
-            var isSizeFixed = IsOutputSizeChanged(videoWidth, videoHeight, outWidth, outHeight);
+            var isFormatFixed = !string.IsNullOrEmpty(parts.VideoFormat);
+            var isSizeFixed = IsOutputSizeChanged(parts.VideoWidth, parts.VideoHeight, outWidth, outHeight);
 
             var sizeArg = isSizeFixed ? (":w=" + outWidth.Value + ":h=" + outHeight.Value) : string.Empty;
-            var formatArg = isFormatFixed ? (":format=" + videoFormat) : string.Empty;
+            var formatArg = isFormatFixed ? (":format=" + parts.VideoFormat) : string.Empty;
             var tonemapArg = string.Empty;
 
             // libplacebo only support full range RGB
-            forceFullRange = IsLibplaceboFullRangeRequired(videoFormat, forceFullRange);
+            forceFullRange = IsLibplaceboFullRangeRequired(parts.VideoFormat, forceFullRange);
 
-            if (doTonemap)
+            if (parts.DoTonemap)
             {
                 tonemapArg = GetLibplaceboTonemapArg(options, forceFullRange, tonemapArg);
             }
@@ -623,5 +613,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             List<string> OverlayFilters,
             bool HasSubs,
             bool HasTextSubs);
+
+        private readonly record struct GetLibplaceboFilterParts(string VideoFormat, bool DoTonemap, int? VideoWidth, int? VideoHeight, int? RequestedWidth, int? RequestedHeight, int? RequestedMaxWidth, int? RequestedMaxHeight);
     }
 }
