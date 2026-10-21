@@ -101,9 +101,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
-            var rotation = state.VideoStream?.Rotation ?? 0;
+            var rotation = GetVideoStreamRotation(state);
             var transposeDir = GetTransposeDirection(state, rotation);
-            var doCuTranspose = !string.IsNullOrEmpty(transposeDir) && _mediaEncoder.SupportsFilter("transpose_cuda");
+            var doCuTranspose = IsCudaTransposeAvailable(transposeDir);
             var swapWAndH = NeedsVaapiSwapWAndH(rotation, isSwDecoder, isNvDecoder, doCuTranspose);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
@@ -157,6 +157,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private bool IsCudaTransposeAvailable(string transposeDir)
+        {
+            return !string.IsNullOrEmpty(transposeDir) && _mediaEncoder.SupportsFilter("transpose_cuda");
+        }
+
+        private static int GetVideoStreamRotation(EncodingJobInfo state)
+        {
+            return state.VideoStream?.Rotation ?? 0;
         }
 
         private void AddNvidiaCuInCuOutSubtitleFilters(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters, NvidiaSubtitleFilterContext context)
