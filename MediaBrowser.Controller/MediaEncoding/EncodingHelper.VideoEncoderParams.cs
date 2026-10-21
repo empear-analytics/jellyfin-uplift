@@ -149,10 +149,10 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && requestedLevel < 51;
         }
 
-        private string GetEncoderParam(EncoderPreset? preset, EncoderPreset defaultPreset, EncodingOptions encodingOptions, string videoEncoder, bool isLibX265)
+        private string GetEncoderParam(GetEncoderParamParts parts, EncodingOptions encodingOptions, string videoEncoder, bool isLibX265)
         {
             var param = string.Empty;
-            var encoderPreset = preset ?? defaultPreset;
+            var encoderPreset = parts.Preset ?? parts.DefaultPreset;
             if (IsLibX264OrLibX265(videoEncoder, isLibX265))
             {
                 param = AppendX26xPresetAndCrf(param, encoderPreset, encodingOptions, isLibX265);
@@ -613,7 +613,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isLibX265 = string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase);
             var encodingPreset = encodingOptions.EncoderPreset;
 
-            param += GetEncoderParam(encodingPreset, defaultPreset, encodingOptions, videoEncoder, isLibX265);
+            param += GetEncoderParam(new GetEncoderParamParts(encodingPreset, defaultPreset), encodingOptions, videoEncoder, isLibX265);
             param += GetVideoBitrateParam(state, videoEncoder);
 
             var framerate = GetFramerateParam(state);
@@ -1078,5 +1078,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                  string.Equals(videoEncoder, "hevc_vaapi", StringComparison.OrdinalIgnoreCase)) &&
                  _mediaEncoder.EncoderVersion >= _minFFmpegVaapiH26xEncA53CcSei;
         }
+
+        private readonly record struct GetEncoderParamParts(EncoderPreset? Preset, EncoderPreset DefaultPreset);
     }
 }
