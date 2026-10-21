@@ -149,40 +149,46 @@ namespace MediaBrowser.Controller.MediaEncoding
             // hw tonemap
             AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
+            var outputContext = new IntelQsvDx11OutputContext(isSwDecoder, doOclTonemap, isSwEncoder, isHwDecoder, isQsvEncoder, isQsvInQsvOut, state, mainFilters);
+            return GetIntelQsvDx11OutputFilters(context, outputContext);
+        }
+
+        private (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetIntelQsvDx11OutputFilters(IntelQsvDx11FilterContext context, IntelQsvDx11OutputContext outputContext)
+        {
             var memoryOutput = false;
-            var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
-            var isHwmapUsable = isSwEncoder && doOclTonemap;
-            if (NeedsMemoryOutput(isHwDecoder, isSwEncoder, isUploadForOclTonemap))
+            var isUploadForOclTonemap = outputContext.IsSwDecoder && outputContext.DoOclTonemap;
+            var isHwmapUsable = outputContext.IsSwEncoder && outputContext.DoOclTonemap;
+            if (NeedsMemoryOutput(outputContext.IsHwDecoder, outputContext.IsSwEncoder, isUploadForOclTonemap))
             {
                 memoryOutput = true;
 
                 // OUTPUT nv12 surface(memory)
                 // prefer hwmap to hwdownload on opencl.
                 // qsv hwmap is not fully implemented for the time being.
-                mainFilters.Add(isHwmapUsable ? "hwmap=mode=read" : "hwdownload");
-                mainFilters.Add("format=nv12");
+                outputContext.MainFilters.Add(isHwmapUsable ? "hwmap=mode=read" : "hwdownload");
+                outputContext.MainFilters.Add("format=nv12");
             }
 
             // OUTPUT nv12 surface(memory)
-            memoryOutput = MarkQsvSwUploadOutput(memoryOutput, isSwDecoder, isQsvEncoder);
+            memoryOutput = MarkQsvSwUploadOutput(memoryOutput, outputContext.IsSwDecoder, outputContext.IsQsvEncoder);
 
-            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
+            AddMemoryOutputTextSubtitlesFilter(outputContext.State, outputContext.MainFilters, memoryOutput, context.HasTextSubs);
 
-            AddQsvReverseMapping(mainFilters, isQsvInQsvOut, doOclTonemap);
+            AddQsvReverseMapping(outputContext.MainFilters, outputContext.IsQsvInQsvOut, outputContext.DoOclTonemap);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
-            if (isQsvInQsvOut)
+            if (outputContext.IsQsvInQsvOut)
             {
-                AddIntelQsvDx11QsvOutSubtitleFilters(state, subFilters, overlayFilters, context);
+                AddIntelQsvDx11QsvOutSubtitleFilters(outputContext.State, subFilters, overlayFilters, context);
             }
             else
             {
                 AddIntelQsvDx11MemoryOutputSubtitleFilters(subFilters, overlayFilters, context, memoryOutput);
             }
 
-            return (mainFilters, subFilters, overlayFilters);
+            return (outputContext.MainFilters, subFilters, overlayFilters);
         }
 
         private static bool MarkQsvSwUploadOutput(bool memoryOutput, bool isSwDecoder, bool isQsvEncoder)
@@ -1081,5 +1087,7 @@ namespace MediaBrowser.Controller.MediaEncoding
         private readonly record struct VppProcampResult(bool TwoPassVppTonemap, bool DoVppProcamp, string ProcampParams);
 
         private readonly record struct IntelDecoderDx11HwContext(EncodingOptions Options, bool IsD3d11vaDecoder, bool IsQsvDecoder, bool DoVppTonemap, bool DoOclTonemap, bool DoVppTranspose, bool SwapWAndH, string TransposeDir, bool IsMjpegEncoder, bool DoDeintH2645, List<string> MainFilters);
+
+        private readonly record struct IntelQsvDx11OutputContext(bool IsSwDecoder, bool DoOclTonemap, bool IsSwEncoder, bool IsHwDecoder, bool IsQsvEncoder, bool IsQsvInQsvOut, EncodingJobInfo State, List<string> MainFilters);
     }
 }
