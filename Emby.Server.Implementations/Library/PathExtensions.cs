@@ -57,14 +57,6 @@ namespace Emby.Server.Implementations.Library
             return true;
         }
 
-        private static bool IsMissingOrLongerThanPath([NotNullWhen(false)] string? path, [NotNullWhen(false)] string? subPath, [NotNullWhen(false)] string? newSubPath)
-        {
-            return string.IsNullOrEmpty(path)
-                || string.IsNullOrEmpty(subPath)
-                || string.IsNullOrEmpty(newSubPath)
-                || subPath.Length > path.Length;
-        }
-
         /// <summary>
         /// Retrieves the full resolved path and normalizes path separators to the <see cref="Path.DirectorySeparatorChar"/>.
         /// </summary>
