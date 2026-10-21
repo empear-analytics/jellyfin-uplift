@@ -10,19 +10,10 @@ namespace MediaBrowser.Model.Dlna
     {
         private static bool IsDisabledByQualifier(string? qualifier, bool enableQualifiedConditions, bool enableNonQualifiedConditions)
         {
-            if (string.IsNullOrEmpty(qualifier))
+            var enabled = string.IsNullOrEmpty(qualifier) ? enableNonQualifiedConditions : enableQualifiedConditions;
+            if (!enabled)
             {
-                if (!enableNonQualifiedConditions)
-                {
-                    return true;
-                }
-            }
-            else
-            {
-                if (!enableQualifiedConditions)
-                {
-                    return true;
-                }
+                return true;
             }
 
             return false;
