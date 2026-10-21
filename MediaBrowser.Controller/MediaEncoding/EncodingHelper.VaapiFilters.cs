@@ -164,47 +164,9 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             mainFilters.Add(GetOverwriteColorPropertiesParam(state, doTonemap));
 
-            if (isSwDecoder)
-            {
-                // INPUT sw surface(memory)
-                // sw deint
-                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
+            var context = new VaapiIntelFullContext(state, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
 
-                var outFormat = doOclTonemap ? "yuv420p10le" : "nv12";
-                var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-                swScaleFilter = ApplyMjpegFullRangeSwScale(swScaleFilter, isMjpegEncoder, doOclTonemap);
-
-                // sw scale
-                mainFilters.Add(swScaleFilter);
-                mainFilters.Add($"format={outFormat}");
-
-                // keep video at memory except ocl tonemap,
-                // since the overhead caused by hwupload >>> using sw filter.
-                // sw => hw
-                AddOpenclHwupload(mainFilters, doOclTonemap);
-            }
-            else if (isVaapiDecoder)
-            {
-                var isRext = IsVideoStreamHevcRext(state);
-
-                // INPUT vaapi surface(vram)
-                // hw deint
-                AddVaapiHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                // hw transpose
-                AddVaapiTransposeFilter(mainFilters, transposeDir, doVaVppTranspose);
-
-                var outFormat = doTonemap ? (isRext ? "p010" : string.Empty) : "nv12";
-                var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", outFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-
-                hwScaleFilter = ApplyVaapiMjpegScaleOptions(hwScaleFilter, isMjpegEncoder, doOclTonemap);
-
-                // allocate extra pool sizes for vaapi vpp
-                hwScaleFilter = ApplyVaapiExtraHwFrames(hwScaleFilter);
-
-                // hw scale
-                mainFilters.Add(hwScaleFilter);
-            }
+            VaapiDecoderIntelFilters(context, new VaapiDecoderIntelContext(isSwDecoder, isVaapiDecoder, doOclTonemap, doTonemap, isMjpegEncoder, transposeDir, doVaVppTranspose, vidEncoder, threeDFormat, doDeintH2645), options, mainFilters);
 
             // vaapi vpp tonemap
             if (NeedsHwVaapiVppTonemap(doVaVppTonemap, isVaapiDecoder))
@@ -238,7 +200,6 @@ namespace MediaBrowser.Controller.MediaEncoding
                 memoryOutput = true;
             }
 
-            var context = new VaapiIntelFullContext(state, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
             AddVaapiMemoryOutputTail(context, mainFilters, memoryOutput, isVaapiEncoder);
 
             /* Make sub and overlay filters for subtitle stream */
@@ -260,6 +221,51 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void VaapiDecoderIntelFilters(VaapiIntelFullContext context, VaapiDecoderIntelContext decoder, EncodingOptions options, List<string> mainFilters)
+        {
+            if (decoder.IsSwDecoder)
+            {
+                // INPUT sw surface(memory)
+                // sw deint
+                AddSwDeinterlaceFilter(context.State, options, mainFilters, decoder.DoDeintH2645);
+
+                var outFormat = decoder.DoOclTonemap ? "yuv420p10le" : "nv12";
+                var swScaleFilter = GetSwScaleFilter(context.State, options, decoder.VidEncoder, context.SwpInW, context.SwpInH, decoder.ThreeDFormat, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                swScaleFilter = ApplyMjpegFullRangeSwScale(swScaleFilter, decoder.IsMjpegEncoder, decoder.DoOclTonemap);
+
+                // sw scale
+                mainFilters.Add(swScaleFilter);
+                mainFilters.Add($"format={outFormat}");
+
+                // keep video at memory except ocl tonemap,
+                // since the overhead caused by hwupload >>> using sw filter.
+                // sw => hw
+                AddOpenclHwupload(mainFilters, decoder.DoOclTonemap);
+            }
+            else if (decoder.IsVaapiDecoder)
+            {
+                var isRext = IsVideoStreamHevcRext(context.State);
+
+                // INPUT vaapi surface(vram)
+                // hw deint
+                AddVaapiHwDeinterlaceFilter(context.State, options, mainFilters, decoder.DoDeintH2645);
+
+                // hw transpose
+                AddVaapiTransposeFilter(mainFilters, decoder.TransposeDir, decoder.DoVaVppTranspose);
+
+                var outFormat = decoder.DoTonemap ? (isRext ? "p010" : string.Empty) : "nv12";
+                var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", outFormat, false, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+
+                hwScaleFilter = ApplyVaapiMjpegScaleOptions(hwScaleFilter, decoder.IsMjpegEncoder, decoder.DoOclTonemap);
+
+                // allocate extra pool sizes for vaapi vpp
+                hwScaleFilter = ApplyVaapiExtraHwFrames(hwScaleFilter);
+
+                // hw scale
+                mainFilters.Add(hwScaleFilter);
+            }
         }
 
         private static void AddVaapiMemoryGraphicalSubtitleFilters(VaapiIntelFullContext context, bool isVaapiEncoder, List<string> subFilters, List<string> overlayFilters)
@@ -1032,6 +1038,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? ReqH,
             int? ReqMaxW,
             int? ReqMaxH);
+
+        private readonly record struct VaapiDecoderIntelContext(
+            bool IsSwDecoder,
+            bool IsVaapiDecoder,
+            bool DoOclTonemap,
+            bool DoTonemap,
+            bool IsMjpegEncoder,
+            string TransposeDir,
+            bool DoVaVppTranspose,
+            string VidEncoder,
+            Video3DFormat? ThreeDFormat,
+            bool DoDeintH2645);
 
         private readonly record struct VaapiAmdFullContext(
             EncodingJobInfo State,
