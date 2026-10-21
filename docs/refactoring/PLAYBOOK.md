@@ -215,7 +215,8 @@ blocks of nested logic). Each "bump" is a missing method.
     Obsession* when a file has more than ten primitive arguments and they are more than 30 % of all its
     function arguments (measured 2026-10-21: 26 of 89 passes, 27 of 89 is flagged; `Guid` counts as
     primitive; enums, classes and structs do not, and the members of a `readonly record struct` are not
-    counted as function arguments); *String Heavy Function Arguments* works the same way for strings,
+    counted as function arguments; constructors appear not to be counted); *String Heavy Function
+    Arguments* works the same way for strings,
     so one such step is usually `FLAT` and the smell clears only after several. These steps may be
     applied as **one group in one commit**, measured together; keep the group when it scores `UP`, and
     stop adding methods as soon as the smell clears. Prefer runs whose values belong together (a codec
@@ -258,7 +259,7 @@ blocks of nested logic). Each "bump" is a missing method.
       `bool Stopped`, each `break;` that targets the enclosing loop becomes
       `return new FooResult(...current values..., true);`, and the call site assigns each local from the
       result and then runs `if (result.Stopped) { break; }`. A block may not contain both `break` and
-      `continue`.
+      `continue`. The current values passed in carry `false` for `Stopped`.
 16. **A block that either leaves the method or falls through (an exit helper).** A block (an `if`,
     an `if` / `else if` chain, or a nested block) whose every path ends either in a `return` or by
     falling through to the statement after it moves to a new method; the call site decides whether to
@@ -281,7 +282,9 @@ blocks of nested logic). Each "bump" is a missing method.
     with it, in their order (as in rule 9), so that they still run at the same point.
     The block's own nesting moves with it, so rule 16 removes a bump or a nesting level only where the
     block sits inside a loop or a deeper `if`; on a block at the top of a void method it is often
-    `FLAT` (R6-15 `RegisterItem`). Measure it before relying on it.
+    `FLAT` (R6-15 `RegisterItem`). Measure it before relying on it. The `if` inside an `else` branch
+    (`else { if (c) { ... } }`, or the inner block of an `else if` branch) is a block of its own: replacing
+    it gives `else if (Helper(...)) { return; }`, which removed both bumps of `RegisterItem`.
 17. **Stacked case labels that do nothing (an `or` pattern).** A `switch` statement section with
     several stacked `case` labels of constants (enum members, literals) whose body only leaves the
     switch with `break;` (the switch then being followed by `return c;` with a constant `c`), or only
@@ -490,7 +493,7 @@ and a guarded prefix `G && e is T t` (where `e` may only be evaluated when `G` h
 `(t = x as T) is not null`; the terms keep their order and short-circuit as before, so the same
 expressions run in the same cases. `x` and `e` are copied character for character, `R` likewise.
 Only for reference types `T` (never a struct or `T?` of a struct), and only when `t` is not assigned
-after the condition.
+after the condition. In a file with `#nullable disable`, write `out T t` without `?` (CS8632).
 
 **A predicate that calls a local function.** When the expression calls a local function of the
 method, the predicate is a local function too, declared next to the one it calls, taking the
@@ -882,3 +885,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-21 | Recipe E rule 17 (new): stacked case labels that only break (or return one constant) become an `is A or B or ...` predicate before the switch. | `StreamBuilder.TranscodingCases.IsUnsupportedPropertyCaseSkipped` (cc 11): eight "not supported yet" labels set a floor no split can lower. Measured through the MCP server: an `is` pattern with nine `or` alternatives adds nothing to cyclomatic complexity, while ten `||` terms give cc 10. Compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe P: a pattern variable in the condition becomes an `out` parameter of a `[NotNullWhen(true)]` predicate (`t = x as T`), or of a Try-predicate for a guarded prefix (`t = G ? e as T : null`). | `UserViewManager.OrderViews` and `LibraryManager.SetTopParentIdsOrAncestors` (Complex Conditional, listed as not covered). For a reference type `x is T t` is `(t = x as T) is not null`. Compiled under warnings as errors and compared with the original on 20,000 random inputs, with a side-effecting `R(t)` logged: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Rules 14 and 17, wording from the first agents to use them: sharing by two **or more** methods; the measured Primitive Obsession threshold (strictly more than 30 % and more than ten; `Guid` counts; struct members are not arguments); a struct parameter named after its struct; interpolated-string values stay plain; a group may change call sites in other files of the class; rule 17 leaves out an unreachable trailing `return c;`, and merges adjacent switch-expression arms with identical results. | Reports of the o4 agents: `StreamingHelpers.Params` (four and ten methods sharing a struct), `EncodingHelper.VideoEncoderParams` (bitrate values in interpolated strings, a call site in the split-off file), `LibraryManager.Views` (`Guid`), `StreamBuilder.TranscodingCases` (CS0162). The switch-expression form: `HlsCodecStringHelpers.Vp9.GetVp9ExtendedProfileString` 9.38 to 9.68; adjacent constant arms with one result match exactly the same inputs. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Wording from the o4 server agent: `out T t` without `?` under `#nullable disable`; the Stopped flag passes `false` in; rule 16 on the inner `if` of an `else` branch; constructors appear not to count toward Primitive Obsession. | `UserViewManager` (nullable disabled), `LibraryManager.GetCollectionFolders` and `RegisterItem` (8.81 to 9.38 in three steps), `MediaSourceManager` (38 of 130 arguments is 29 %, yet flagged; 38 of 117 without the constructor is 32 %). Wording only. |
