@@ -139,6 +139,29 @@ namespace MediaBrowser.Controller.MediaEncoding
             mainFilters.Add(hwScaleFilter);
         }
 
+        private void RkmppDecoderAddSwFilters(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, RkmppDecoderSwContext context)
+        {
+            // INPUT sw surface(memory)
+            // sw deint
+            AddSwDeinterlaceFilter(state, options, mainFilters, context.DoDeintH2645);
+
+            var outFormat = GetRkmppSwOutFormat(context.DoOclTonemap, context.HasGraphicalSubs);
+            var swScaleFilter = GetSwScaleFilter(state, options, context.VidEncoder, context.SwpInW, context.SwpInH, context.ThreeDFormat, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+            swScaleFilter = AppendRkmppSwScaleOptions(swScaleFilter, context.IsMjpegEncoder, context.DoOclTonemap);
+
+            // sw scale
+            mainFilters.Add(swScaleFilter);
+            mainFilters.Add($"format={outFormat}");
+
+            // keep video at memory except ocl tonemap,
+            // since the overhead caused by hwupload >>> using sw filter.
+            // sw => hw
+            if (context.DoOclTonemap)
+            {
+                mainFilters.Add("hwupload=derive_device=opencl");
+            }
+        }
+
         private readonly record struct RkmppSubtitleFilterContext(
             bool IsEncoderSupportAfbc,
             bool HasGraphicalSubs,
@@ -166,5 +189,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool DoRkVppTranspose,
             bool IsFullAfbcPipeline,
             string TransposeDir);
+
+        private readonly record struct RkmppDecoderSwContext(
+            string VidEncoder,
+            bool DoDeintH2645,
+            bool DoOclTonemap,
+            bool HasGraphicalSubs,
+            bool IsMjpegEncoder,
+            int? SwpInW,
+            int? SwpInH,
+            Video3DFormat? ThreeDFormat,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH);
     }
 }

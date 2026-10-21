@@ -112,27 +112,10 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             mainFilters.Add(GetOverwriteColorPropertiesParam(state, doOclTonemap));
 
+            var swDecoderContext = new RkmppDecoderSwContext(vidEncoder, doDeintH2645, doOclTonemap, hasGraphicalSubs, isMjpegEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
             if (isSwDecoder)
             {
-                // INPUT sw surface(memory)
-                // sw deint
-                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                var outFormat = GetRkmppSwOutFormat(doOclTonemap, hasGraphicalSubs);
-                var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-                swScaleFilter = AppendRkmppSwScaleOptions(swScaleFilter, isMjpegEncoder, doOclTonemap);
-
-                // sw scale
-                mainFilters.Add(swScaleFilter);
-                mainFilters.Add($"format={outFormat}");
-
-                // keep video at memory except ocl tonemap,
-                // since the overhead caused by hwupload >>> using sw filter.
-                // sw => hw
-                if (doOclTonemap)
-                {
-                    mainFilters.Add("hwupload=derive_device=opencl");
-                }
+                RkmppDecoderAddSwFilters(state, options, mainFilters, swDecoderContext);
             }
             else if (isRkmppDecoder)
             {
