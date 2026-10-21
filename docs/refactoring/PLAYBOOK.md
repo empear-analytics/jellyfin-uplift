@@ -98,7 +98,10 @@ blocks of nested logic). Each "bump" is a missing method.
    (a log call, building one string, computing one value) may be extracted under the rules
    above when it produces a single value or none. Keep the statements and their order as they
    were. This is allowed because a single complex statement can carry the complexity (for
-   example many `??` operators); the step must still score `UP`.
+   example many `??` operators); the step must still score `UP`. When the block calls a local
+   function of the method, the new method is itself a local function, declared next to the one it
+   calls (a private method cannot reach a local function); it takes the values it reads as
+   parameters, as a private method would.
 10. **A block that leaves a loop iteration with `continue`.** A block inside a loop body, in which
     some paths end in `continue` and the others fall out of the block, moves to a method that
     returns `bool`. Each `continue;` that targeted the enclosing loop becomes `return true;`, the
@@ -211,6 +214,15 @@ blocks of nested logic). Each "bump" is a missing method.
     - the struct has at most three members, the method at most four parameters, and each
       construction is on one line.
     Every other local the block writes must be declared inside it and not read after it.
+    **In a loop.** Two forms allow `continue` (and only `continue` that targets the enclosing loop):
+    - when the block is the **whole body** of the loop, each `continue;` becomes
+      `return new FooResult(...current values...);`, the end of the body returns the same, and the call
+      site is the assignment of each local from the result, with nothing after it in the body;
+    - otherwise the struct gets one more member, `bool Skipped` (so at most two written locals plus
+      `Skipped`, three members in all): each `continue;` becomes
+      `return new FooResult(...current values..., true);`, the end of the block returns
+      `new FooResult(..., false)`, and the call site assigns each local from the result and then
+      runs `if (result.Skipped) { continue; }`.
 
 **Before:**
 
@@ -763,3 +775,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-21 | Recipe S: a file may be split into up to four new files (it was at most two groupings), when the original and every new file reach 10.00 and the methods move unchanged. | Made AFTER the fact, like the rule 12 change the same day: a split agent working toward the campaign owner's goal of 10.00 for every scope file split `EncodingHelper.HwSupport`, `AudioParamHelpers`, `Bitrate` and `ProbeResultNormalizer.MediaStream`, `Video` into 13 new files (two to four each); every one- or two-file grouping it measured left the original or a new file below 10.00. All 18 files now score 10.00, the guard passes with `--together`, and no method body changed. The cost is more files; the backlog row lists them. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 11, mixed sections: a switch statement directly followed by `return v;` may have sections ending in `return` or `break`; a suffix of whole sections (or a single section, its `break` becoming the helper's final `return v;`) moves to a helper ending in the same `return v;`. | Proposed by the agent on `StreamBuilder.TranscodingCases.TranscodingCaseIsSkipped` (cc 44 to 27 with per-section helpers, a suffix split measured 9.63 UP); the per-section form was landed the same day as rules 7/9 after the coordinator checked that only `return false;` follows the switch. Compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 15: a block that writes two or three locals read later moves to a method that takes and returns their values in a private readonly record struct (an exception to step 4's "no result class"). | The most common remaining blocker: `JobLogger.ParseLogLine` (percent, transcodingPosition; measured 10.00 in this form, 9.68 DOWN with plain parameters), `UserDataManager.UpdatePlayState` (whose round-5 tuple return this replaces in spirit), `PathExtensions.AttributeValueSearch` (attributeIndex, attributeEnd). Compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 15 in a loop: the whole loop body may hold `continue` (each becomes a return of the current values), or a block may carry a `Skipped` flag in its result (each `continue` returns the flag set; the call site continues after assigning the locals). Rule 9: a block that calls a local function becomes a local function. | `ProbeResultNormalizer.Itunes.ReadFromDictNode` (9.09 to 10.00 on a scratch copy), `PathExtensions.AttributeValueSearch` (10.00 on a scratch copy with the flag form), `LibraryManager.Extras.FindExtraCandidates` (9.38 to 10.00 on a scratch copy with a local function). Both loop forms compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
