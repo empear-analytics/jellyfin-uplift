@@ -81,7 +81,7 @@ Update as tasks land.
 
 | Task | Baseline | Current | Status |
 | --- | --- | --- | --- |
-| R6-01 | 6.45 | - | not started |
+| R6-01 | 6.45 | 9.68 (+ StreamBuilder.TranscodingCases.cs 8.69) | Sonnet. Group: Recipe S split (6.55), then rule 10 with the whole switch inside the block moved to `TranscodingCaseIsSkipped` with a rule 12 struct (9.68; the new file fell from 9.84 to 8.50, Complex Method cc 44), then a Recipe D reuse of `IsDisabledByQualifier` (new file 8.69). CAVEAT: the complexity was relocated, not removed: the original rose by 3.13 while the new file lost 1.15 (DOWN against its own first score); a per-file reading would call that a violation. Rule 11 chains inside the original were WORSE (new smells). Left: frozen signatures; cc 44 in the new file (sections end in `return true` as well as `break`, so rule 11 cannot split it). |
 | R6-02 | 7.78 | - | not started |
 | R6-03 | 7.86 | - | not started |
 | R6-04 | 7.98 | - | not started |
