@@ -117,8 +117,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
             var memoryOutput = false;
-            var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
-            if (isD3d11vaDecoder && isSwEncoder)
+            var isUploadForOclTonemap = IsAmdUploadForOclTonemap(isSwDecoder, doOclTonemap);
+            if (IsAmdD3d11vaToSwEncoder(isD3d11vaDecoder, isSwEncoder))
             {
                 memoryOutput = true;
                 AddAmdHwTransferToMemory(mainFilters, hasGraphicalSubs);
@@ -138,7 +138,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var context = new AmdSubtitleFilterContext(hasSubs, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
-            if (isDxInDxOut || isUploadForOclTonemap)
+            if (NeedsAmdOpenclSubtitleOverlay(isDxInDxOut, isUploadForOclTonemap))
             {
                 AddAmdDxInDxOutSubtitleFilters(state, subFilters, overlayFilters, context);
             }
@@ -148,6 +148,21 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool IsAmdD3d11vaToSwEncoder(bool isD3d11vaDecoder, bool isSwEncoder)
+        {
+            return isD3d11vaDecoder && isSwEncoder;
+        }
+
+        private static bool NeedsAmdOpenclSubtitleOverlay(bool isDxInDxOut, bool isUploadForOclTonemap)
+        {
+            return isDxInDxOut || isUploadForOclTonemap;
+        }
+
+        private static bool IsAmdUploadForOclTonemap(bool isSwDecoder, bool doOclTonemap)
+        {
+            return isSwDecoder && doOclTonemap;
         }
 
         private void AddAmdSecondSwDecoderFilters(EncodingJobInfo state, EncodingOptions options, AmdSecondSwDecoderContext context)
