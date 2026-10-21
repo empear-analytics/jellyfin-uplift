@@ -202,6 +202,10 @@ blocks of nested logic). Each "bump" is a missing method.
     - a method may have at most two runs, each contiguous and in order, each with its own struct;
     - the struct has at most twelve members, the method ends with at most four parameters, and each
       construction is written on one line.
+    Two private methods of the class whose runs have the same names, types and order may share one
+    struct. Where a method that received the struct passes the same run, unchanged, to another method
+    that takes the same struct, it may pass the struct itself (`parts`) instead of building a new one:
+    a `readonly record struct` is copied by value, so the callee sees the same values.
     The method keeps its name, return type and accessibility. Public and protected signatures stay
     frozen; this rule never applies to them.
 15. **A block that writes two or three locals read later (a result struct).** The block moves to a
@@ -232,6 +236,25 @@ blocks of nested logic). Each "bump" is a missing method.
       result (`var closer = result.Closer;`) before the `if (result.Skipped) { continue; }`. The
       `default` is never read, because the loop continues on those paths. The current value passed
       in for it is `default`.
+16. **A block that either leaves the method or falls through (an exit helper).** A block (an `if`,
+    an `if` / `else if` chain, or a nested block) whose every path ends either in a `return` or by
+    falling through to the statement after it moves to a new method; the call site decides whether to
+    return. Three forms:
+    - **void method, `return;`:** the helper returns `bool`; each `return;` becomes `return true;`, the
+      end of the helper is `return false;`, and the call site is `if (Helper(...)) { return; }`;
+    - **one constant:** every `return` in the block returns the same constant (`null`, a literal or a
+      `const`): as above, and the call site is `if (Helper(...)) { return <constant>; }`;
+    - **any expressions, as the last statement of a loop body:** here a `continue;` that targets the
+      enclosing loop counts as falling through. The helper returns a
+      `private readonly record struct FooExit(bool Returned, T Value)`, where `T` is the method's return
+      type; each `return e;` becomes `return new FooExit(true, e);`, each `continue;` and the end
+      become `return new FooExit(false, default);`, and the call site is
+      `var exit = Foo(...); if (exit.Returned) { return exit.Value; }`, with nothing after it in the body.
+    Only when the block contains no `break`, `goto`, `yield` or `await`, no `continue` other than in
+    the third form, and assigns no local that is read after it (then rule 15 or nothing applies); the
+    helper takes at most four parameters (or a rule 12 context), and the block's statements otherwise
+    move unchanged. A `return` inside the block keeps its expression exactly; only where it ends up
+    changes.
 
 **Before:**
 
@@ -787,3 +810,5 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-21 | Recipe E rule 15 in a loop: the whole loop body may hold `continue` (each becomes a return of the current values), or a block may carry a `Skipped` flag in its result (each `continue` returns the flag set; the call site continues after assigning the locals). Rule 9: a block that calls a local function becomes a local function. | `ProbeResultNormalizer.Itunes.ReadFromDictNode` (9.09 to 10.00 on a scratch copy), `PathExtensions.AttributeValueSearch` (10.00 on a scratch copy with the flag form), `LibraryManager.Extras.FindExtraCandidates` (9.38 to 10.00 on a scratch copy with a local function). Both loop forms compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 11 mixed sections: the trailing `return v;` is left out of a method whose remaining sections all return. | `StreamBuilder.TranscodingCases` (R6, Opus): a second split, and the split that would move the "Not supported yet" section, both failed to build with CS0162 (unreachable code) because the rule required the `return v;` in every method of the chain. Removing a statement the compiler proves unreachable changes no behaviour. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 15, Skipped form: a local declared inside the block and read after it may be a result member, declared at the call site from the result. | `PathExtensions.AttributeValueSearch` (`attributeCloser`; the block scored 10.00 on a scratch copy). Compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 16 (new): an exit helper for a block whose paths either leave the method or fall through; three forms (void `return;`, one constant, any expression as the last statement of a loop body with a `(Returned, Value)` struct). | Reported as the blocker by all three agents of the second Opus batch: `LibraryManager.RegisterItem` (void `return;`), `EncodingHelper.HwDecoders.GetHwaccelType` (`return null;` at nesting 4), `StreamBuilder.Subtitles.GetExternalSubtitleProfile` (`return profile` mixed with `continue`). Compiled under warnings as errors and compared with the original on 20,000 random inputs for each form, with side effects inside the block and a returned `null` in the third form: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 14: two private methods with identical runs may share one struct, and a method may pass the struct it received on to another method that takes the same struct. | Made AFTER the fact for the sharing part: `DynamicHlsHelper` (`PlaylistVariantParts` shared by `AppendPlaylist` and `AppendDoviPlaylist`) was landed with one shared struct. Both are parameter plumbing: a `readonly record struct` is copied by value, so the callee sees the same values. Forwarding was proposed for `StreamInfo` (`AddSelectedSubtitleProfiles` to `AddSubtitleProfiles`), which was landed with a new struct built from `parts.X`. Made under the campaign owner's mandate, not individually reviewed. |

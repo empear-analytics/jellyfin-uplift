@@ -48,6 +48,9 @@ your task, your worktree and anything specific to the file. Everything below app
   (read its conditions exactly; public, protected and internal signatures stay frozen).
   Later the same day: rule 11 for a switch whose sections mix `return` and `break` (followed by `return v;`),
   and rule 15, a result struct for a block that writes two or three locals read later.
+  Also added on 2026-10-21: rule 16, an exit helper for a block whose paths either `return` or fall
+  through (void `return;`, one constant, or any expression with a `(Returned, Value)` struct as the last
+  statement of a loop body); and in rule 14, a struct shared by two methods with identical runs.
 - Before a step that adds methods, follow "Choosing the next step": measure the candidate
   applications on their own first and commit the best `UP` one.
 - After every step, before committing it, run all four checks from section 7 of the task file.
