@@ -147,19 +147,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // OUTPUT cuda(yuv420p) surface(vram)
 
             /* Make sub and overlay filters for subtitle stream */
-            var context = new NvidiaSubtitleFilterContext(
-                hasSubs,
-                hasGraphicalSubs,
-                hasTextSubs,
-                hasAssSubs,
-                swpInW,
-                swpInH,
-                subW,
-                subH,
-                reqW,
-                reqH,
-                reqMaxW,
-                reqMaxH);
+            var context = new NvidiaSubtitleFilterContext(hasSubs, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
             if (isCuInCuOut)
