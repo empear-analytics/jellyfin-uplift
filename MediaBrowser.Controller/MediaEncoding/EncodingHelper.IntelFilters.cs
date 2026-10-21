@@ -111,7 +111,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doVppTonemap = IsIntelVppTonemapAvailable(state, options);
             var doOclTonemap = NeedsOclTonemap(state, options, doVppTonemap);
-            var doTonemap = doVppTonemap || doOclTonemap;
+            var doTonemap = IsVaapiAnyTonemap(doVppTonemap, doOclTonemap);
 
             var hasSubs = HasSubtitlesToEncode(state);
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
