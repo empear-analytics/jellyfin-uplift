@@ -304,7 +304,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return string.Empty;
                 }
 
-                if (IsHwDeviceNvencUnused(context.VidDecoder, context.VidEncoder))
+                if (IsHwDeviceNvencUnused(new IsHwDeviceNvencUnusedParts(context.VidDecoder, context.VidEncoder)))
                 {
                     return string.Empty;
                 }
@@ -319,7 +319,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return string.Empty;
                 }
 
-                if (IsHwDeviceAmfUnused(context.VidDecoder, context.VidEncoder))
+                if (IsHwDeviceAmfUnused(new IsHwDeviceAmfUnusedParts(context.VidDecoder, context.VidEncoder)))
                 {
                     return string.Empty;
                 }
@@ -343,7 +343,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return string.Empty;
                 }
 
-                if (IsHwDeviceVideotoolboxUnused(context.VidDecoder, context.VidEncoder))
+                if (IsHwDeviceVideotoolboxUnused(new IsHwDeviceVideotoolboxUnusedParts(context.VidDecoder, context.VidEncoder)))
                 {
                     return string.Empty;
                 }
@@ -396,24 +396,24 @@ namespace MediaBrowser.Controller.MediaEncoding
             return !isHwDecoder && !isHwEncoder;
         }
 
-        private static bool IsHwDeviceNvencUnused(string vidDecoder, string vidEncoder)
+        private static bool IsHwDeviceNvencUnused(IsHwDeviceNvencUnusedParts parts)
         {
-            var isNvencEncoder = vidEncoder.Contains("nvenc", StringComparison.OrdinalIgnoreCase);
-            var isHwDecoder = IsNvencHwDecoder(vidDecoder);
+            var isNvencEncoder = parts.VidEncoder.Contains("nvenc", StringComparison.OrdinalIgnoreCase);
+            var isHwDecoder = IsNvencHwDecoder(parts.VidDecoder);
             return IsHwDeviceUnused(isHwDecoder, isNvencEncoder);
         }
 
-        private static bool IsHwDeviceAmfUnused(string vidDecoder, string vidEncoder)
+        private static bool IsHwDeviceAmfUnused(IsHwDeviceAmfUnusedParts parts)
         {
-            var isD3d11vaDecoder = vidDecoder.Contains("d3d11va", StringComparison.OrdinalIgnoreCase);
-            var isAmfEncoder = vidEncoder.Contains("amf", StringComparison.OrdinalIgnoreCase);
+            var isD3d11vaDecoder = parts.VidDecoder.Contains("d3d11va", StringComparison.OrdinalIgnoreCase);
+            var isAmfEncoder = parts.VidEncoder.Contains("amf", StringComparison.OrdinalIgnoreCase);
             return IsHwDeviceUnused(isD3d11vaDecoder, isAmfEncoder);
         }
 
-        private static bool IsHwDeviceVideotoolboxUnused(string vidDecoder, string vidEncoder)
+        private static bool IsHwDeviceVideotoolboxUnused(IsHwDeviceVideotoolboxUnusedParts parts)
         {
-            var isVideotoolboxDecoder = vidDecoder.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase);
-            var isVideotoolboxEncoder = vidEncoder.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase);
+            var isVideotoolboxDecoder = parts.VidDecoder.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase);
+            var isVideotoolboxEncoder = parts.VidEncoder.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase);
             return IsHwDeviceUnused(isVideotoolboxDecoder, isVideotoolboxEncoder);
         }
 
@@ -606,5 +606,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool IsWindows,
             bool IsMacOS,
             bool IsHwTonemapAvailable);
+
+        private readonly record struct IsHwDeviceNvencUnusedParts(string VidDecoder, string VidEncoder);
+
+        private readonly record struct IsHwDeviceAmfUnusedParts(string VidDecoder, string VidEncoder);
+
+        private readonly record struct IsHwDeviceVideotoolboxUnusedParts(string VidDecoder, string VidEncoder);
     }
 }
