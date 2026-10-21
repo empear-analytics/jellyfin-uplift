@@ -141,3 +141,5 @@ Update as tasks land.
 | R6-58 | 9.68 | - | not started |
 | R6-59 | 9.84 | - | not started |
 | R6-60 | 9.84 | - | not started |
+
+| R6-01 (follow-up) | 8.69 (TranscodingCases.cs) | 8.82 | Sonnet. The new Recipe D branch merge on `IsDisabledByQualifier`: each branch held a nested `if (!flag) return true;`, so choosing the flag first removes a nesting level and the Bumpy Road (UP). Same recipe FLAT on three other sites with no nested conditional (StreamBuilder.AudioStream 9.84, StreamBuilder.VideoStreamOptions 10.00, ProbeResultNormalizer.MediaStream 9.38), as the corrected recipe text predicts. |
