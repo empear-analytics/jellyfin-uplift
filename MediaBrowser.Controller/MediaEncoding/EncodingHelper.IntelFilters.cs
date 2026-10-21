@@ -134,85 +134,14 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var context = new IntelQsvDx11FilterContext(hasSubs, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
             var decoderContext = new IntelDecoderDx11Context(options, doDeintH2645, doOclTonemap, vidEncoder, isMjpegEncoder, threeDFormat);
+            var hwDecoderContext = new IntelDecoderDx11HwContext(options, isD3d11vaDecoder, isQsvDecoder, doVppTonemap, doOclTonemap, doVppTranspose, swapWAndH, transposeDir, isMjpegEncoder, doDeintH2645, mainFilters);
             if (isSwDecoder)
             {
                 AddIntelDecoderDx11SwFilters(state, mainFilters, context, decoderContext);
             }
-            else if (isD3d11vaDecoder || isQsvDecoder)
+            else
             {
-                var isRext = IsVideoStreamHevcRext(state);
-                var twoPassVppTonemap = false;
-                var doVppFullRangeOut = CanDoQsvVppFullRangeOut(isMjpegEncoder);
-                var doVppScaleModeHq = CanDoQsvVppScaleModeHq(isMjpegEncoder);
-                var doVppProcamp = false;
-                var procampParams = string.Empty;
-                var procampParamsString = string.Empty;
-                if (doVppTonemap)
-                {
-                    if (isRext)
-                    {
-                        // VPP tonemap requires p010 input
-                        twoPassVppTonemap = true;
-                    }
-
-                    if (IsVppTonemappingBrightnessInRange(options))
-                    {
-                        procampParamsString += ":brightness={0}";
-                        twoPassVppTonemap = doVppProcamp = true;
-                    }
-
-                    if (IsVppTonemappingContrastInRange(options))
-                    {
-                        procampParamsString += ":contrast={1}";
-                        twoPassVppTonemap = doVppProcamp = true;
-                    }
-
-                    if (doVppProcamp)
-                    {
-                        procampParamsString += ":procamp=1:async_depth=2";
-                        procampParams = string.Format(
-                            CultureInfo.InvariantCulture,
-                            procampParamsString,
-                            options.VppTonemappingBrightness,
-                            options.VppTonemappingContrast);
-                    }
-                }
-
-                var outFormat = GetVppOutputFormat(doOclTonemap, doVppTranspose, isRext, twoPassVppTonemap);
-
-                var swapOutputWandH = doVppTranspose && swapWAndH;
-                var hwScaleFilter = GetHwScaleFilter("vpp", "qsv", outFormat, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-
-                // d3d11va doesn't support dynamic pool size, use vpp filter ctx to relay
-                // to prevent encoder async and bframes from exhausting the decoder pool.
-                hwScaleFilter = AppendVppPassthroughOption(hwScaleFilter, isD3d11vaDecoder);
-
-                hwScaleFilter = AppendVppTransposeOption(hwScaleFilter, doVppTranspose, transposeDir);
-
-                if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
-                {
-                    hwScaleFilter += GetVppFullRangeOption(doVppFullRangeOut, doOclTonemap);
-                    hwScaleFilter += doVppScaleModeHq ? ":scale_mode=hq" : string.Empty;
-                }
-
-                if (NeedsVppTonemapOptions(hwScaleFilter, doVppTonemap))
-                {
-                    hwScaleFilter += GetVppTonemapOption(doVppProcamp, procampParams, twoPassVppTonemap);
-                }
-
-                IntelSecondAddD3d11vaToQsvHwmapIfNeeded(mainFilters, hwScaleFilter, doDeintH2645, isD3d11vaDecoder);
-
-                // hw deint
-                AddQsvHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                // hw transpose & scale & tonemap(w/o procamp)
-                mainFilters.Add(hwScaleFilter);
-
-                // hw tonemap(w/ procamp)
-                AddTwoPassVppTonemapFilter(mainFilters, doVppTonemap, twoPassVppTonemap);
-
-                // force bt709 just in case vpp tonemap is not triggered or using MSDK instead of VPL.
-                AddBt709OverwriteFilter(state, mainFilters, doVppTonemap);
+                AddIntelDecoderDx11HwFilters(state, context, hwDecoderContext);
             }
 
             AddQsvToOpenclMapping(mainFilters, doOclTonemap, isHwDecoder);
@@ -235,10 +164,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT nv12 surface(memory)
-            if (IsSwDecodeToQsvEncode(isSwDecoder, isQsvEncoder))
-            {
-                memoryOutput = true;
-            }
+            memoryOutput = MarkQsvSwUploadOutput(memoryOutput, isSwDecoder, isQsvEncoder);
 
             AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
@@ -251,12 +177,123 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 AddIntelQsvDx11QsvOutSubtitleFilters(state, subFilters, overlayFilters, context);
             }
-            else if (memoryOutput)
+            else
             {
-                AddIntelQsvDx11MemorySubtitleFilters(subFilters, overlayFilters, context);
+                AddIntelQsvDx11MemoryOutputSubtitleFilters(subFilters, overlayFilters, context, memoryOutput);
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private static bool MarkQsvSwUploadOutput(bool memoryOutput, bool isSwDecoder, bool isQsvEncoder)
+        {
+            if (IsSwDecodeToQsvEncode(isSwDecoder, isQsvEncoder))
+            {
+                memoryOutput = true;
+            }
+
+            return memoryOutput;
+        }
+
+        private static void AddIntelQsvDx11MemoryOutputSubtitleFilters(List<string> subFilters, List<string> overlayFilters, IntelQsvDx11FilterContext context, bool memoryOutput)
+        {
+            if (memoryOutput)
+            {
+                AddIntelQsvDx11MemorySubtitleFilters(subFilters, overlayFilters, context);
+            }
+        }
+
+        private static VppProcampResult GetVppProcampResult(EncodingOptions options, bool doVppTonemap, bool isRext, VppProcampResult current)
+        {
+            var twoPassVppTonemap = current.TwoPassVppTonemap;
+            var doVppProcamp = current.DoVppProcamp;
+            var procampParams = current.ProcampParams;
+            var procampParamsString = string.Empty;
+            if (doVppTonemap)
+            {
+                if (isRext)
+                {
+                    // VPP tonemap requires p010 input
+                    twoPassVppTonemap = true;
+                }
+
+                if (IsVppTonemappingBrightnessInRange(options))
+                {
+                    procampParamsString += ":brightness={0}";
+                    twoPassVppTonemap = doVppProcamp = true;
+                }
+
+                if (IsVppTonemappingContrastInRange(options))
+                {
+                    procampParamsString += ":contrast={1}";
+                    twoPassVppTonemap = doVppProcamp = true;
+                }
+
+                if (doVppProcamp)
+                {
+                    procampParamsString += ":procamp=1:async_depth=2";
+                    procampParams = string.Format(
+                        CultureInfo.InvariantCulture,
+                        procampParamsString,
+                        options.VppTonemappingBrightness,
+                        options.VppTonemappingContrast);
+                }
+            }
+
+            return new VppProcampResult(twoPassVppTonemap, doVppProcamp, procampParams);
+        }
+
+        private void AddIntelDecoderDx11HwFilters(EncodingJobInfo state, IntelQsvDx11FilterContext context, IntelDecoderDx11HwContext hwContext)
+        {
+            if (hwContext.IsD3d11vaDecoder || hwContext.IsQsvDecoder)
+            {
+                var isRext = IsVideoStreamHevcRext(state);
+                var twoPassVppTonemap = false;
+                var doVppFullRangeOut = CanDoQsvVppFullRangeOut(hwContext.IsMjpegEncoder);
+                var doVppScaleModeHq = CanDoQsvVppScaleModeHq(hwContext.IsMjpegEncoder);
+                var doVppProcamp = false;
+                var procampParams = string.Empty;
+                var procampResult = GetVppProcampResult(hwContext.Options, hwContext.DoVppTonemap, isRext, new VppProcampResult(twoPassVppTonemap, doVppProcamp, procampParams));
+                twoPassVppTonemap = procampResult.TwoPassVppTonemap;
+                doVppProcamp = procampResult.DoVppProcamp;
+                procampParams = procampResult.ProcampParams;
+
+                var outFormat = GetVppOutputFormat(hwContext.DoOclTonemap, hwContext.DoVppTranspose, isRext, twoPassVppTonemap);
+
+                var swapOutputWandH = hwContext.DoVppTranspose && hwContext.SwapWAndH;
+                var hwScaleFilter = GetHwScaleFilter("vpp", "qsv", outFormat, swapOutputWandH, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+
+                // d3d11va doesn't support dynamic pool size, use vpp filter ctx to relay
+                // to prevent encoder async and bframes from exhausting the decoder pool.
+                hwScaleFilter = AppendVppPassthroughOption(hwScaleFilter, hwContext.IsD3d11vaDecoder);
+
+                hwScaleFilter = AppendVppTransposeOption(hwScaleFilter, hwContext.DoVppTranspose, hwContext.TransposeDir);
+
+                if (NeedsVppMjpegOptions(hwScaleFilter, hwContext.IsMjpegEncoder))
+                {
+                    hwScaleFilter += GetVppFullRangeOption(doVppFullRangeOut, hwContext.DoOclTonemap);
+                    hwScaleFilter += doVppScaleModeHq ? ":scale_mode=hq" : string.Empty;
+                }
+
+                if (NeedsVppTonemapOptions(hwScaleFilter, hwContext.DoVppTonemap))
+                {
+                    hwScaleFilter += GetVppTonemapOption(doVppProcamp, procampParams, twoPassVppTonemap);
+                }
+
+                IntelSecondAddD3d11vaToQsvHwmapIfNeeded(hwContext.MainFilters, hwScaleFilter, hwContext.DoDeintH2645, hwContext.IsD3d11vaDecoder);
+
+                // hw deint
+                AddQsvHwDeinterlaceFilter(state, hwContext.Options, hwContext.MainFilters, hwContext.DoDeintH2645);
+
+                // hw transpose & scale & tonemap(w/o procamp)
+                hwContext.MainFilters.Add(hwScaleFilter);
+
+                // hw tonemap(w/ procamp)
+                AddTwoPassVppTonemapFilter(hwContext.MainFilters, hwContext.DoVppTonemap, twoPassVppTonemap);
+
+                // force bt709 just in case vpp tonemap is not triggered or using MSDK instead of VPL.
+                AddBt709OverwriteFilter(state, hwContext.MainFilters, hwContext.DoVppTonemap);
+            }
         }
 
         private static void AddIntelDecoderDx11SwFilters(EncodingJobInfo state, List<string> mainFilters, IntelQsvDx11FilterContext context, IntelDecoderDx11Context decoderContext)
@@ -1008,5 +1045,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             string TransposeDir,
             bool SwapWAndH,
             bool DoDeintH2645);
+
+        private readonly record struct VppProcampResult(bool TwoPassVppTonemap, bool DoVppProcamp, string ProcampParams);
+
+        private readonly record struct IntelDecoderDx11HwContext(EncodingOptions Options, bool IsD3d11vaDecoder, bool IsQsvDecoder, bool DoVppTonemap, bool DoOclTonemap, bool DoVppTranspose, bool SwapWAndH, string TransposeDir, bool IsMjpegEncoder, bool DoDeintH2645, List<string> MainFilters);
     }
 }
