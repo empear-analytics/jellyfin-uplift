@@ -188,7 +188,7 @@ namespace Emby.Server.Implementations.Library
                         ? "TvShows"
                         : "Movies";
 
-                    list.Add(GetUserView(parents, viewType, localizationKey, string.Empty, user, query.PresetViews));
+                    list.Add(GetUserView(new GetUserViewParts(parents, viewType, localizationKey), string.Empty, user, query.PresetViews));
                 }
             }
         }
@@ -250,26 +250,20 @@ namespace Emby.Server.Implementations.Library
             return GetUserSubViewWithName(name, parentId, type, sortName);
         }
 
-        private Folder GetUserView(
-            List<ICollectionFolder> parents,
-            CollectionType? viewType,
-            string localizationKey,
-            string sortName,
-            User user,
-            CollectionType?[] presetViews)
+        private Folder GetUserView(GetUserViewParts parts, string sortName, User user, CollectionType?[] presetViews)
         {
-            if (parents.Count == 1 && parents.All(i => i.CollectionType == viewType))
+            if (parts.Parents.Count == 1 && parts.Parents.All(i => i.CollectionType == parts.ViewType))
             {
-                if (!presetViews.Contains(viewType))
+                if (!presetViews.Contains(parts.ViewType))
                 {
-                    return (Folder)parents[0];
+                    return (Folder)parts.Parents[0];
                 }
 
-                return GetUserView((Folder)parents[0], viewType, string.Empty);
+                return GetUserView((Folder)parts.Parents[0], parts.ViewType, string.Empty);
             }
 
-            var name = _localizationManager.GetServerLocalizedString(localizationKey);
-            return _libraryManager.GetNamedView(user, name, viewType, sortName);
+            var name = _localizationManager.GetServerLocalizedString(parts.LocalizationKey);
+            return _libraryManager.GetNamedView(user, name, parts.ViewType, sortName);
         }
 
         public UserView GetUserView(Folder parent, CollectionType? viewType, string sortName)
@@ -519,5 +513,7 @@ namespace Emby.Server.Implementations.Library
 
             return _libraryManager.GetItemList(query, parents);
         }
+
+        private readonly record struct GetUserViewParts(List<ICollectionFolder> Parents, CollectionType? ViewType, string LocalizationKey);
     }
 }
