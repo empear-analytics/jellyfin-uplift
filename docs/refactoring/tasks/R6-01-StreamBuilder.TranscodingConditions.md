@@ -156,3 +156,19 @@ Tests: PASS / FAIL
 Commits: <sha list>
 Unsure about: <free text, or NONE>
 ```
+
+## 10. Report (round 6)
+
+```
+Task: R6-01 (MediaBrowser.Model/Dlna/StreamBuilder.TranscodingConditions.cs)
+Baseline score: 6.45
+Final score:    9.68 (new file StreamBuilder.TranscodingCases.cs: 8.69)
+Steps completed: 3 of 3 commits (split, rule 10 with the whole switch, Recipe D reuse)
+Steps reverted:  none committed; candidates below were measured and discarded
+Smells left without a recipe: Excess Number of Function Arguments in GetProfileConditionsForVideoAudio (9),
+  GetProfileConditionsForAudio (8), ApplyTranscodingConditions (5; private but frozen signature);
+  in TranscodingCases.cs: Complex Method TranscodingCaseIsSkipped (cc 44), Bumpy Road in IsDisabledByQualifier
+Build: PASS (211 warnings)
+Tests: PASS (full solution)
+Commits: ba406e8ebb (split, 6.45 to 6.55), e19d1ca0c5 (9.68), c16f215599 (cases file 8.50 to 8.69)
+```
