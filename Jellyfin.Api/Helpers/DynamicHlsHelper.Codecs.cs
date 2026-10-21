@@ -41,8 +41,7 @@ public partial class DynamicHlsHelper
     private int? GetOutputVideoCodecLevel(StreamState state)
     {
         string levelString = string.Empty;
-        if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-            && state.VideoStream is not null
+        if (IsCopyCodecWithVideoStream(state)
             && HasLevel(state.VideoStream.Level))
         {
             levelString = state.VideoStream.Level.Value.ToString(CultureInfo.InvariantCulture);
@@ -276,14 +275,19 @@ public partial class DynamicHlsHelper
     {
         // Currently we only transcode to 8 bits AV1
         int bitDepth = 8;
-        if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-            && state.VideoStream is not null
+        if (IsCopyCodecWithVideoStream(state)
             && HasBitDepth(state.VideoStream.BitDepth))
         {
             bitDepth = state.VideoStream.BitDepth.Value;
         }
 
         return bitDepth;
+    }
+
+    private static bool IsCopyCodecWithVideoStream(StreamState state)
+    {
+        return EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
+            && state.VideoStream is not null;
     }
 
     private static bool HasLevel([NotNullWhen(true)] double? level)
