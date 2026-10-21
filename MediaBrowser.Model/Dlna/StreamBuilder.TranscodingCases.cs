@@ -66,6 +66,15 @@ namespace MediaBrowser.Model.Dlna
                 case ProfileConditionValue.IsInterlaced:
                     return IsInterlacedCaseSkipped(context);
 
+                default:
+                    return IsUnsupportedPropertyCaseSkipped(context);
+            }
+        }
+
+        private static bool IsUnsupportedPropertyCaseSkipped(TranscodingCaseContext context)
+        {
+            switch (context.Condition.Property)
+            {
                 case ProfileConditionValue.AudioProfile:
                 case ProfileConditionValue.Has64BitOffsets:
                 case ProfileConditionValue.PacketLength:
@@ -82,6 +91,17 @@ namespace MediaBrowser.Model.Dlna
                 case ProfileConditionValue.RefFrames:
                     return IsRefFramesCaseSkipped(context);
 
+                default:
+                    return IsVideoProfileFamilyCaseSkipped(context);
+            }
+
+            return false;
+        }
+
+        private static bool IsVideoProfileFamilyCaseSkipped(TranscodingCaseContext context)
+        {
+            switch (context.Condition.Property)
+            {
                 case ProfileConditionValue.VideoBitDepth:
                     return IsVideoBitDepthCaseSkipped(context);
 
@@ -97,8 +117,6 @@ namespace MediaBrowser.Model.Dlna
                 default:
                     return IsVideoOutputCaseSkipped(context);
             }
-
-            return false;
         }
 
         private static bool IsVideoOutputCaseSkipped(TranscodingCaseContext context)
