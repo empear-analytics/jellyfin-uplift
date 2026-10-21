@@ -68,8 +68,7 @@ public class PathManager : IPathManager
             return null;
         }
 
-        var id = parsed.ToString("D", CultureInfo.InvariantCulture).AsSpan();
-        return Path.Join(AttachmentCachePath, id[..2], id);
+        return JoinCacheFolderPath(AttachmentCachePath, parsed);
     }
 
     /// <inheritdoc />
@@ -81,8 +80,7 @@ public class PathManager : IPathManager
             return null;
         }
 
-        var id = parsed.ToString("D", CultureInfo.InvariantCulture).AsSpan();
-        return Path.Join(SubtitleCachePath, id[..2], id);
+        return JoinCacheFolderPath(SubtitleCachePath, parsed);
     }
 
     /// <inheritdoc />
@@ -142,5 +140,11 @@ public class PathManager : IPathManager
         paths.Add(GetChapterImageFolderPath(item));
 
         return paths;
+    }
+
+    private static string JoinCacheFolderPath(ReadOnlySpan<char> cachePath, Guid parsed)
+    {
+        var id = parsed.ToString("D", CultureInfo.InvariantCulture).AsSpan();
+        return Path.Join(cachePath, id[..2], id);
     }
 }
