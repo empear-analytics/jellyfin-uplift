@@ -135,19 +135,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             AddAmdD3d11OutputMapping(mainFilters, new AddAmdD3d11OutputMappingParts(isDxInDxOut, isUploadForOclTonemap, hasSubs));
 
             /* Make sub and overlay filters for subtitle stream */
-            var context = new AmdSubtitleFilterContext(
-                hasSubs,
-                hasGraphicalSubs,
-                hasTextSubs,
-                hasAssSubs,
-                swpInW,
-                swpInH,
-                subW,
-                subH,
-                reqW,
-                reqH,
-                reqMaxW,
-                reqMaxH);
+            var context = new AmdSubtitleFilterContext(hasSubs, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
             if (isDxInDxOut || isUploadForOclTonemap)
