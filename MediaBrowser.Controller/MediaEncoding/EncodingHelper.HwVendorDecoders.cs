@@ -36,7 +36,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isWindows = OperatingSystem.IsWindows();
             var isLinux = OperatingSystem.IsLinux();
 
-            if (IsQsvDecodingUnavailable(isWindows, isLinux, options))
+            if (IsQsvDecodingUnavailable(new IsQsvDecodingUnavailableParts(isWindows, isLinux), options))
             {
                 return null;
             }
@@ -44,7 +44,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isQsvOclSupported = IsQsvOclSupported();
             var isIntelDx11OclSupported = IsIntelDx11OclSupported(isWindows, isQsvOclSupported);
             var isIntelVaapiOclSupported = IsIntelVaapiOclSupported(state, isLinux, isQsvOclSupported);
-            var hwSurface = HasQsvHwSurface(isIntelDx11OclSupported, isIntelVaapiOclSupported);
+            var hwSurface = HasQsvHwSurface(new HasQsvHwSurfaceParts(isIntelDx11OclSupported, isIntelVaapiOclSupported));
 
             var is8bitSwFormatsQsv = Is8BitYuv420SwFormat(videoStream);
             var is8_10bitSwFormatsQsv = Is8Or10BitYuv420SwFormat(videoStream, is8bitSwFormatsQsv);
@@ -132,9 +132,9 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && isQsvOclSupported;
         }
 
-        private bool HasQsvHwSurface(bool isIntelDx11OclSupported, bool isIntelVaapiOclSupported)
+        private bool HasQsvHwSurface(HasQsvHwSurfaceParts parts)
         {
-            return (isIntelDx11OclSupported || isIntelVaapiOclSupported)
+            return (parts.IsIntelDx11OclSupported || parts.IsIntelVaapiOclSupported)
                 && _mediaEncoder.SupportsFilter("alphasrc");
         }
 
@@ -173,9 +173,9 @@ namespace MediaBrowser.Controller.MediaEncoding
                 || string.Equals(videoStream.Codec, "h265", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsQsvDecodingUnavailable(bool isWindows, bool isLinux, EncodingOptions options)
+        private static bool IsQsvDecodingUnavailable(IsQsvDecodingUnavailableParts parts, EncodingOptions options)
         {
-            return (!isWindows && !isLinux)
+            return (!parts.IsWindows && !parts.IsLinux)
                 || options.HardwareAccelerationType != HardwareAccelerationType.qsv;
         }
 
@@ -597,10 +597,10 @@ namespace MediaBrowser.Controller.MediaEncoding
             // TODO: add more 8/10bit and 4:2:2 formats for Rkmpp after finishing the ffcheck tool
             var is8bitSwFormatsRkmpp = Is8BitYuv420SwFormat(videoStream);
             var is10bitSwFormatsRkmpp = string.Equals("yuv420p10le", videoStream.PixelFormat, StringComparison.OrdinalIgnoreCase);
-            var is8_10bitSwFormatsRkmpp = Is8Or10BitRkmppSwFormat(is8bitSwFormatsRkmpp, is10bitSwFormatsRkmpp);
+            var is8_10bitSwFormatsRkmpp = Is8Or10BitRkmppSwFormat(new Is8Or10BitRkmppSwFormatParts(is8bitSwFormatsRkmpp, is10bitSwFormatsRkmpp));
 
             // nv15 and nv20 are bit-stream only formats
-            if (IsRkmppBitstreamOnlyFormat(is10bitSwFormatsRkmpp, hwSurface))
+            if (IsRkmppBitstreamOnlyFormat(new IsRkmppBitstreamOnlyFormatParts(is10bitSwFormatsRkmpp, hwSurface)))
             {
                 return null;
             }
@@ -679,9 +679,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             return null;
         }
 
-        private static bool Is8Or10BitRkmppSwFormat(bool is8bitSwFormatsRkmpp, bool is10bitSwFormatsRkmpp)
+        private static bool Is8Or10BitRkmppSwFormat(Is8Or10BitRkmppSwFormatParts parts)
         {
-            return is8bitSwFormatsRkmpp || is10bitSwFormatsRkmpp;
+            return parts.Is8bitSwFormatsRkmpp || parts.Is10bitSwFormatsRkmpp;
         }
 
         private static bool IsRkmppDecodingUnavailable(EncodingOptions options, bool isLinux)
@@ -701,9 +701,9 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && _mediaEncoder.SupportsFilter("alphasrc");
         }
 
-        private static bool IsRkmppBitstreamOnlyFormat(bool is10bitSwFormatsRkmpp, bool hwSurface)
+        private static bool IsRkmppBitstreamOnlyFormat(IsRkmppBitstreamOnlyFormatParts parts)
         {
-            return is10bitSwFormatsRkmpp && !hwSurface;
+            return parts.Is10bitSwFormatsRkmpp && !parts.HwSurface;
         }
 
         private static string AppendAfbcRgaOption(string accelType, bool isAfbcSupported)
@@ -769,5 +769,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool IsAfbcSupported,
             bool Is8bitSwFormatsRkmpp,
             bool Is8_10bitSwFormatsRkmpp);
+
+        private readonly record struct IsQsvDecodingUnavailableParts(bool IsWindows, bool IsLinux);
+
+        private readonly record struct HasQsvHwSurfaceParts(bool IsIntelDx11OclSupported, bool IsIntelVaapiOclSupported);
+
+        private readonly record struct Is8Or10BitRkmppSwFormatParts(bool Is8bitSwFormatsRkmpp, bool Is10bitSwFormatsRkmpp);
+
+        private readonly record struct IsRkmppBitstreamOnlyFormatParts(bool Is10bitSwFormatsRkmpp, bool HwSurface);
     }
 }
