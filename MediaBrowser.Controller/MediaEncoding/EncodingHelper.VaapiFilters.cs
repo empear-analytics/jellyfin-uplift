@@ -152,8 +152,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
-            var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+            var rotation = GetVideoStreamRotation(state);
+            var transposeDir = GetRkmppTransposeDirection(state, rotation);
             var doVaVppTranspose = !string.IsNullOrEmpty(transposeDir);
             var swapWAndH = NeedsVaapiSwapWAndH(rotation, isSwDecoder, isVaapiDecoder, doVaVppTranspose);
             var swpInW = swapWAndH ? inH : inW;
@@ -183,7 +183,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             AddVaapiReverseMapping(mainFilters, doOclTonemap, isVaInVaOut);
 
             var memoryOutput = false;
-            var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
+            var isUploadForOclTonemap = IsAmdUploadForOclTonemap(isSwDecoder, doOclTonemap);
             var isHwmapNotUsable = IsHwmapNotUsableForVaapi(isUploadForOclTonemap, isVaapiEncoder);
             if (NeedsMemoryOutput(isVaapiDecoder, isSwEncoder, isUploadForOclTonemap))
             {
@@ -563,8 +563,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
             var hasAssSubs = HasAssSubtitles(state, hasSubs);
 
-            var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+            var rotation = GetVideoStreamRotation(state);
+            var transposeDir = GetRkmppTransposeDirection(state, rotation);
             var doVkTranspose = isVaapiDecoder && !string.IsNullOrEmpty(transposeDir);
             var swapWAndH = NeedsVaapiSwapWAndH(rotation, isSwDecoder, isVaapiDecoder, doVkTranspose);
             var swpInW = swapWAndH ? inH : inW;
@@ -878,7 +878,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
 
-            var rotation = state.VideoStream?.Rotation ?? 0;
+            var rotation = GetVideoStreamRotation(state);
             var swapWAndH = NeedsSwSwapWAndH(rotation, isSwDecoder);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
