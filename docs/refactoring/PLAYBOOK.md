@@ -70,7 +70,8 @@ blocks of nested logic). Each "bump" is a missing method.
    private members after public ones). Make it `static` if it uses no instance members.
 3. Pass in every variable it reads as a parameter. Return the single value it produces.
 4. If the block writes to more than one outer variable, **skip it** and move to the next
-   bump. Do not invent `out` parameters, tuples, or a result class.
+   bump. Do not invent `out` parameters or tuples. The one exception is rule 15 below (a result
+   struct), under its conditions.
 5. If the block contains `await`, the new method is `async` and the call is awaited where
    the block was. Keep every `.ConfigureAwait(false)` exactly as it was.
 6. **A block that sets a flag only on some paths** (`changed = true;` inside an `if`) still
@@ -124,6 +125,15 @@ blocks of nested logic). Each "bump" is a missing method.
     statement of those sections, each section keeping its `break`, and the original's `default:`
     becomes `default: Helper(x); break;`. Only whole sections move, and nothing after the switch
     depends on a section that moved.
+    **Mixed sections.** When the switch statement is directly followed by `return v;` as the last
+    statement of the method (`v` a constant, or a local the switch does not assign), its sections may
+    end in `return` or in `break`: a suffix of whole sections, with `default:`, moves to a helper
+    holding a switch of those sections, each keeping its `return` or `break`, and the helper ends
+    with the same `return v;`; the original's `default:` becomes `default: return Helper(x);`. A
+    single section of that switch may also move on its own: `case X: return HelperX(...);`, the
+    helper holding the section's statements unchanged, its `break` becoming the helper's final
+    `return v;`. Only when nothing stands between the switch and `return v;`, and no section holds
+    `continue` or `goto`. Same conditions as above otherwise.
 12. **Shared inputs (a context struct).** A block that needs more than four values from its method
     may take them as one `private readonly record struct`, nested in the class at the end of the
     file that holds the method. A method may have one such struct per family of blocks that need
@@ -188,6 +198,19 @@ blocks of nested logic). Each "bump" is a missing method.
       construction is written on one line.
     The method keeps its name, return type and accessibility. Public and protected signatures stay
     frozen; this rule never applies to them.
+15. **A block that writes two or three locals read later (a result struct).** The block moves to a
+    method that takes its inputs (plain parameters, or a rule 12 context) and the current values of
+    the locals it writes, as one `private readonly record struct` (`FooResult`); the method's first
+    statements copy them into locals of the same names (`var percent = current.Percent;`), the block
+    follows unchanged, and the method returns `new FooResult(percent, position)`. The call site is
+    `var result = Foo(..., new FooResult(percent, position));` followed by one assignment per local
+    (`percent = result.Percent;`), in the struct's order. Only when:
+    - the block contains no `return`, `break`, `continue`, `goto`, `yield` or `await`;
+    - each written local is definitely assigned before the block, and none is captured by a lambda
+      or local function anywhere in the method, or passed as `ref` or `out`;
+    - the struct has at most three members, the method at most four parameters, and each
+      construction is on one line.
+    Every other local the block writes must be declared inside it and not read after it.
 
 **Before:**
 
@@ -738,3 +761,5 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-21 | Recipe E rule 14: a parameter object for a private method (a contiguous run of its parameters, in order, becomes a private readonly record struct; call sites build it in place). | 31 of the 61 scope files below 10.00 carry Excess Number of Function Arguments; where the method is private (all of `StreamBuilder.cs`'s, `StreamBuilder.TranscodingConditions`, `EncodingHelper.StreamCopy`, `StreamBuilder.VideoStream`, `UserViewManager`, the helper files), no other recipe can remove it. Compiled under warnings as errors and compared with the original on 20,000 random inputs, including a trace of the order in which call-site arguments are evaluated: 0 failures. Public and protected signatures stay frozen. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 14 extended: overloads of the same name are allowed; a parameter the method assigns is first copied into a local; at most two runs per method. | `UserViewManager.GetUserView` (a public overload of the same name; the private step scored 9.68 UP on a scratch copy) and `StreamBuilder.VideoStream.BuildStreamVideoItem` (9 parameters, `audioStream` assigned inside). Compiled under warnings as errors and compared with the original on 20,000 random inputs, with two runs, an assigned parameter, a public and a private overload of the same name, and an evaluation-order trace: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe S: a file may be split into up to four new files (it was at most two groupings), when the original and every new file reach 10.00 and the methods move unchanged. | Made AFTER the fact, like the rule 12 change the same day: a split agent working toward the campaign owner's goal of 10.00 for every scope file split `EncodingHelper.HwSupport`, `AudioParamHelpers`, `Bitrate` and `ProbeResultNormalizer.MediaStream`, `Video` into 13 new files (two to four each); every one- or two-file grouping it measured left the original or a new file below 10.00. All 18 files now score 10.00, the guard passes with `--together`, and no method body changed. The cost is more files; the backlog row lists them. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 11, mixed sections: a switch statement directly followed by `return v;` may have sections ending in `return` or `break`; a suffix of whole sections (or a single section, its `break` becoming the helper's final `return v;`) moves to a helper ending in the same `return v;`. | Proposed by the agent on `StreamBuilder.TranscodingCases.TranscodingCaseIsSkipped` (cc 44 to 27 with per-section helpers, a suffix split measured 9.63 UP); the per-section form was landed the same day as rules 7/9 after the coordinator checked that only `return false;` follows the switch. Compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 15: a block that writes two or three locals read later moves to a method that takes and returns their values in a private readonly record struct (an exception to step 4's "no result class"). | The most common remaining blocker: `JobLogger.ParseLogLine` (percent, transcodingPosition; measured 10.00 in this form, 9.68 DOWN with plain parameters), `UserDataManager.UpdatePlayState` (whose round-5 tuple return this replaces in spirit), `PathExtensions.AttributeValueSearch` (attributeIndex, attributeEnd). Compiled under warnings as errors and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |

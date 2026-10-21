@@ -46,6 +46,8 @@ your task, your worktree and anything specific to the file. Everything below app
   branches of an `if` / `else` that differ only in one value (choose the value with `?:`, keep one body).
   Also on 2026-10-21: rule 14 of Recipe E, a parameter object for a PRIVATE method with too many parameters
   (read its conditions exactly; public, protected and internal signatures stay frozen).
+  Later the same day: rule 11 for a switch whose sections mix `return` and `break` (followed by `return v;`),
+  and rule 15, a result struct for a block that writes two or three locals read later.
 - Before a step that adds methods, follow "Choosing the next step": measure the candidate
   applications on their own first and commit the best `UP` one.
 - After every step, before committing it, run all four checks from section 7 of the task file.
