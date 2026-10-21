@@ -107,43 +107,55 @@ namespace MediaBrowser.MediaEncoding.Probing
             // Loop through each element
             while (!reader.EOF && reader.ReadState == ReadState.Interactive)
             {
-                if (reader.NodeType == XmlNodeType.Element)
+                var result = ReadDictNodeStep(reader, info, new DictNodeState(currentKey, pairs));
+                currentKey = result.CurrentKey;
+                pairs = result.Pairs;
+            }
+        }
+
+        private DictNodeState ReadDictNodeStep(XmlReader reader, MediaInfo info, DictNodeState current)
+        {
+            var currentKey = current.CurrentKey;
+            var pairs = current.Pairs;
+
+            if (reader.NodeType == XmlNodeType.Element)
+            {
+                switch (reader.Name)
                 {
-                    switch (reader.Name)
-                    {
-                        case "key":
-                            if (!string.IsNullOrWhiteSpace(currentKey))
-                            {
-                                ProcessPairs(currentKey, pairs, info);
-                            }
+                    case "key":
+                        if (!string.IsNullOrWhiteSpace(currentKey))
+                        {
+                            ProcessPairs(currentKey, pairs, info);
+                        }
 
-                            currentKey = reader.ReadElementContentAsString();
-                            pairs = new List<NameValuePair>();
-                            break;
-                        case "string":
-                            AddStringValuePair(reader, pairs);
+                        currentKey = reader.ReadElementContentAsString();
+                        pairs = new List<NameValuePair>();
+                        break;
+                    case "string":
+                        AddStringValuePair(reader, pairs);
 
-                            break;
-                        case "array":
-                            if (reader.IsEmptyElement)
-                            {
-                                reader.Read();
-                                continue;
-                            }
+                        break;
+                    case "array":
+                        if (reader.IsEmptyElement)
+                        {
+                            reader.Read();
+                            return new DictNodeState(currentKey, pairs);
+                        }
 
-                            AddArrayPairs(reader, currentKey, pairs);
+                        AddArrayPairs(reader, currentKey, pairs);
 
-                            break;
-                        default:
-                            reader.Skip();
-                            break;
-                    }
-                }
-                else
-                {
-                    reader.Read();
+                        break;
+                    default:
+                        reader.Skip();
+                        break;
                 }
             }
+            else
+            {
+                reader.Read();
+            }
+
+            return new DictNodeState(currentKey, pairs);
         }
 
         private void AddArrayPairs(XmlReader reader, string currentKey, List<NameValuePair> pairs)
@@ -156,5 +168,7 @@ namespace MediaBrowser.MediaEncoding.Probing
                 }
             }
         }
+
+        private readonly record struct DictNodeState(string CurrentKey, List<NameValuePair> Pairs);
     }
 }
