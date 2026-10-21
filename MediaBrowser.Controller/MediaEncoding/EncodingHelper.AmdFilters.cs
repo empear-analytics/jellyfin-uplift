@@ -110,23 +110,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             var swDecoderContext = new AmdSecondSwDecoderContext(isSwDecoder, doDeintH2645, doOclTonemap, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH, mainFilters);
             AddAmdSecondSwDecoderFilters(state, options, swDecoderContext);
 
-            if (isD3d11vaDecoder)
-            {
-                // INPUT d3d11 surface(vram)
-                // map from d3d11va to opencl via d3d11-opencl interop.
-                mainFilters.Add("hwmap=derive_device=opencl:mode=read");
-
-                // hw deint
-                AddAmdOclHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                // hw transpose
-                AddAmdOclTransposeFilter(mainFilters, doOclTranspose, transposeDir);
-
-                var outFormat = GetAmdOclScaleOutputFormat(doOclTonemap);
-                var hwScaleFilter = GetHwScaleFilter("scale", "opencl", outFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                // hw scale
-                mainFilters.Add(hwScaleFilter);
-            }
+            var d3d11vaDecoderContext = new AmdDecoderD3d11vaContext(isD3d11vaDecoder, doDeintH2645, doOclTranspose, transposeDir, doOclTonemap, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH, mainFilters);
+            AddAmdDecoderD3d11vaFilters(state, options, d3d11vaDecoderContext);
 
             // hw tonemap
             AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
