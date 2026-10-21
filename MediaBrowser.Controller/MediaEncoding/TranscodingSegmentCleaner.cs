@@ -100,7 +100,7 @@ public partial class TranscodingSegmentCleaner : IDisposable
             var downloadPositionTicks = _job.DownloadPositionTicks ?? 0;
             var downloadPositionSeconds = Convert.ToInt64(TimeSpan.FromTicks(downloadPositionTicks).TotalSeconds);
 
-            if (downloadPositionSeconds > 0 && segmentKeepSeconds > 0 && downloadPositionSeconds > segmentKeepSeconds)
+            if (IsPastSegmentKeepWindow(downloadPositionSeconds, segmentKeepSeconds))
             {
                 var idxMaxToDelete = _job.GetHighestServedSegmentIndexEndingAtOrBefore(downloadPositionTicks - TimeSpan.FromSeconds(segmentKeepSeconds).Ticks);
 
@@ -110,6 +110,11 @@ public partial class TranscodingSegmentCleaner : IDisposable
                 }
             }
         }
+    }
+
+    private static bool IsPastSegmentKeepWindow(long downloadPositionSeconds, int segmentKeepSeconds)
+    {
+        return downloadPositionSeconds > 0 && segmentKeepSeconds > 0 && downloadPositionSeconds > segmentKeepSeconds;
     }
 
     private void DisposeTimer()
