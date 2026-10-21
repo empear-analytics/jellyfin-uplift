@@ -49,76 +49,22 @@ namespace MediaBrowser.Model.Dlna
             switch (context.Condition.Property)
             {
                 case ProfileConditionValue.AudioBitrate:
-                    {
-                        if (!context.EnableNonQualifiedConditions)
-                        {
-                            return true;
-                        }
-
-                        ApplyAudioBitrateCondition(context.Item, context.Condition, context.Value);
-
-                        break;
-                    }
+                    return IsAudioBitrateCaseSkipped(context);
 
                 case ProfileConditionValue.AudioSampleRate:
-                    {
-                        if (!context.EnableNonQualifiedConditions)
-                        {
-                            return true;
-                        }
-
-                        ApplyAudioSampleRateCondition(context.Item, context.Condition, context.Value);
-
-                        break;
-                    }
+                    return IsAudioSampleRateCaseSkipped(context);
 
                 case ProfileConditionValue.AudioChannels:
-                    {
-                        if (IsDisabledByQualifier(context.Qualifier, context.EnableQualifiedConditions, context.EnableNonQualifiedConditions))
-                        {
-                            return true;
-                        }
-
-                        ApplyAudioChannelsCondition(context.Item, context.Condition, context.Value, context.Qualifier);
-
-                        break;
-                    }
+                    return IsAudioChannelsCaseSkipped(context);
 
                 case ProfileConditionValue.IsAvc:
-                    {
-                        if (!context.EnableNonQualifiedConditions)
-                        {
-                            return true;
-                        }
-
-                        ApplyAvcCondition(context.Item, context.Condition, context.Value);
-
-                        break;
-                    }
+                    return IsAvcCaseSkipped(context);
 
                 case ProfileConditionValue.IsAnamorphic:
-                    {
-                        if (!context.EnableNonQualifiedConditions)
-                        {
-                            return true;
-                        }
-
-                        ApplyAnamorphicCondition(context.Item, context.Condition, context.Value);
-
-                        break;
-                    }
+                    return IsAnamorphicCaseSkipped(context);
 
                 case ProfileConditionValue.IsInterlaced:
-                    {
-                        if (IsDisabledByQualifier(context.Qualifier, context.EnableQualifiedConditions, context.EnableNonQualifiedConditions))
-                        {
-                            return true;
-                        }
-
-                        ApplyInterlacedCondition(context.Item, context.Condition, context.Value, context.Qualifier);
-
-                        break;
-                    }
+                    return IsInterlacedCaseSkipped(context);
 
                 case ProfileConditionValue.AudioProfile:
                 case ProfileConditionValue.Has64BitOffsets:
@@ -134,140 +80,245 @@ namespace MediaBrowser.Model.Dlna
                     }
 
                 case ProfileConditionValue.RefFrames:
-                    {
-                        if (IsDisabledByQualifier(context.Qualifier, context.EnableQualifiedConditions, context.EnableNonQualifiedConditions))
-                        {
-                            return true;
-                        }
-
-                        ApplyRefFramesCondition(context.Item, context.Condition, context.Value, context.Qualifier);
-
-                        break;
-                    }
+                    return IsRefFramesCaseSkipped(context);
 
                 case ProfileConditionValue.VideoBitDepth:
-                    {
-                        if (IsDisabledByQualifier(context.Qualifier, context.EnableQualifiedConditions, context.EnableNonQualifiedConditions))
-                        {
-                            return true;
-                        }
-
-                        ApplyVideoBitDepthCondition(context.Item, context.Condition, context.Value, context.Qualifier);
-
-                        break;
-                    }
+                    return IsVideoBitDepthCaseSkipped(context);
 
                 case ProfileConditionValue.VideoProfile:
-                    {
-                        if (string.IsNullOrEmpty(context.Qualifier))
-                        {
-                            return true;
-                        }
-
-                        ApplyVideoProfileCondition(context.Item, context.Condition, context.Value, context.Qualifier);
-
-                        break;
-                    }
+                    return IsVideoProfileCaseSkipped(context);
 
                 case ProfileConditionValue.VideoRangeType:
-                    {
-                        if (string.IsNullOrEmpty(context.Qualifier))
-                        {
-                            return true;
-                        }
-
-                        ApplyVideoRangeTypeCondition(context.Item, context.Condition, context.Value, context.Qualifier);
-
-                        break;
-                    }
+                    return IsVideoRangeTypeCaseSkipped(context);
 
                 case ProfileConditionValue.VideoCodecTag:
-                    {
-                        if (string.IsNullOrEmpty(context.Qualifier))
-                        {
-                            return true;
-                        }
-
-                        ApplyVideoCodecTagCondition(context.Item, context.Condition, context.Value, context.Qualifier);
-
-                        break;
-                    }
+                    return IsVideoCodecTagCaseSkipped(context);
 
                 case ProfileConditionValue.VideoRotation:
-                    {
-                        if (string.IsNullOrEmpty(context.Qualifier))
-                        {
-                            return true;
-                        }
-
-                        ApplyVideoRotationCondition(context.Item, context.Condition, context.Value, context.Qualifier);
-
-                        break;
-                    }
+                    return IsVideoRotationCaseSkipped(context);
 
                 case ProfileConditionValue.Height:
-                    {
-                        if (!context.EnableNonQualifiedConditions)
-                        {
-                            return true;
-                        }
-
-                        ApplyHeightCondition(context.Item, context.Condition, context.Value);
-
-                        break;
-                    }
+                    return IsHeightCaseSkipped(context);
 
                 case ProfileConditionValue.VideoBitrate:
-                    {
-                        if (!context.EnableNonQualifiedConditions)
-                        {
-                            return true;
-                        }
-
-                        ApplyVideoBitrateCondition(context.Item, context.Condition, context.Value);
-
-                        break;
-                    }
+                    return IsVideoBitrateCaseSkipped(context);
 
                 case ProfileConditionValue.VideoFramerate:
-                    {
-                        if (!context.EnableNonQualifiedConditions)
-                        {
-                            return true;
-                        }
-
-                        ApplyVideoFramerateCondition(context.Item, context.Condition, context.Value);
-
-                        break;
-                    }
+                    return IsVideoFramerateCaseSkipped(context);
 
                 case ProfileConditionValue.VideoLevel:
-                    {
-                        if (string.IsNullOrEmpty(context.Qualifier))
-                        {
-                            return true;
-                        }
-
-                        ApplyVideoLevelCondition(context.Item, context.Condition, context.Value, context.Qualifier);
-
-                        break;
-                    }
+                    return IsVideoLevelCaseSkipped(context);
 
                 case ProfileConditionValue.Width:
-                    {
-                        if (!context.EnableNonQualifiedConditions)
-                        {
-                            return true;
-                        }
-
-                        ApplyWidthCondition(context.Item, context.Condition, context.Value);
-
-                        break;
-                    }
+                    return IsWidthCaseSkipped(context);
 
                 default:
                     break;
             }
+
+            return false;
+        }
+
+        private static bool IsAudioBitrateCaseSkipped(TranscodingCaseContext context)
+        {
+            if (!context.EnableNonQualifiedConditions)
+            {
+                return true;
+            }
+
+            ApplyAudioBitrateCondition(context.Item, context.Condition, context.Value);
+
+            return false;
+        }
+
+        private static bool IsAudioSampleRateCaseSkipped(TranscodingCaseContext context)
+        {
+            if (!context.EnableNonQualifiedConditions)
+            {
+                return true;
+            }
+
+            ApplyAudioSampleRateCondition(context.Item, context.Condition, context.Value);
+
+            return false;
+        }
+
+        private static bool IsAudioChannelsCaseSkipped(TranscodingCaseContext context)
+        {
+            if (IsDisabledByQualifier(context.Qualifier, context.EnableQualifiedConditions, context.EnableNonQualifiedConditions))
+            {
+                return true;
+            }
+
+            ApplyAudioChannelsCondition(context.Item, context.Condition, context.Value, context.Qualifier);
+
+            return false;
+        }
+
+        private static bool IsAvcCaseSkipped(TranscodingCaseContext context)
+        {
+            if (!context.EnableNonQualifiedConditions)
+            {
+                return true;
+            }
+
+            ApplyAvcCondition(context.Item, context.Condition, context.Value);
+
+            return false;
+        }
+
+        private static bool IsAnamorphicCaseSkipped(TranscodingCaseContext context)
+        {
+            if (!context.EnableNonQualifiedConditions)
+            {
+                return true;
+            }
+
+            ApplyAnamorphicCondition(context.Item, context.Condition, context.Value);
+
+            return false;
+        }
+
+        private static bool IsInterlacedCaseSkipped(TranscodingCaseContext context)
+        {
+            if (IsDisabledByQualifier(context.Qualifier, context.EnableQualifiedConditions, context.EnableNonQualifiedConditions))
+            {
+                return true;
+            }
+
+            ApplyInterlacedCondition(context.Item, context.Condition, context.Value, context.Qualifier);
+
+            return false;
+        }
+
+        private static bool IsRefFramesCaseSkipped(TranscodingCaseContext context)
+        {
+            if (IsDisabledByQualifier(context.Qualifier, context.EnableQualifiedConditions, context.EnableNonQualifiedConditions))
+            {
+                return true;
+            }
+
+            ApplyRefFramesCondition(context.Item, context.Condition, context.Value, context.Qualifier);
+
+            return false;
+        }
+
+        private static bool IsVideoBitDepthCaseSkipped(TranscodingCaseContext context)
+        {
+            if (IsDisabledByQualifier(context.Qualifier, context.EnableQualifiedConditions, context.EnableNonQualifiedConditions))
+            {
+                return true;
+            }
+
+            ApplyVideoBitDepthCondition(context.Item, context.Condition, context.Value, context.Qualifier);
+
+            return false;
+        }
+
+        private static bool IsVideoProfileCaseSkipped(TranscodingCaseContext context)
+        {
+            if (string.IsNullOrEmpty(context.Qualifier))
+            {
+                return true;
+            }
+
+            ApplyVideoProfileCondition(context.Item, context.Condition, context.Value, context.Qualifier);
+
+            return false;
+        }
+
+        private static bool IsVideoRangeTypeCaseSkipped(TranscodingCaseContext context)
+        {
+            if (string.IsNullOrEmpty(context.Qualifier))
+            {
+                return true;
+            }
+
+            ApplyVideoRangeTypeCondition(context.Item, context.Condition, context.Value, context.Qualifier);
+
+            return false;
+        }
+
+        private static bool IsVideoCodecTagCaseSkipped(TranscodingCaseContext context)
+        {
+            if (string.IsNullOrEmpty(context.Qualifier))
+            {
+                return true;
+            }
+
+            ApplyVideoCodecTagCondition(context.Item, context.Condition, context.Value, context.Qualifier);
+
+            return false;
+        }
+
+        private static bool IsVideoRotationCaseSkipped(TranscodingCaseContext context)
+        {
+            if (string.IsNullOrEmpty(context.Qualifier))
+            {
+                return true;
+            }
+
+            ApplyVideoRotationCondition(context.Item, context.Condition, context.Value, context.Qualifier);
+
+            return false;
+        }
+
+        private static bool IsHeightCaseSkipped(TranscodingCaseContext context)
+        {
+            if (!context.EnableNonQualifiedConditions)
+            {
+                return true;
+            }
+
+            ApplyHeightCondition(context.Item, context.Condition, context.Value);
+
+            return false;
+        }
+
+        private static bool IsVideoBitrateCaseSkipped(TranscodingCaseContext context)
+        {
+            if (!context.EnableNonQualifiedConditions)
+            {
+                return true;
+            }
+
+            ApplyVideoBitrateCondition(context.Item, context.Condition, context.Value);
+
+            return false;
+        }
+
+        private static bool IsVideoFramerateCaseSkipped(TranscodingCaseContext context)
+        {
+            if (!context.EnableNonQualifiedConditions)
+            {
+                return true;
+            }
+
+            ApplyVideoFramerateCondition(context.Item, context.Condition, context.Value);
+
+            return false;
+        }
+
+        private static bool IsVideoLevelCaseSkipped(TranscodingCaseContext context)
+        {
+            if (string.IsNullOrEmpty(context.Qualifier))
+            {
+                return true;
+            }
+
+            ApplyVideoLevelCondition(context.Item, context.Condition, context.Value, context.Qualifier);
+
+            return false;
+        }
+
+        private static bool IsWidthCaseSkipped(TranscodingCaseContext context)
+        {
+            if (!context.EnableNonQualifiedConditions)
+            {
+                return true;
+            }
+
+            ApplyWidthCondition(context.Item, context.Condition, context.Value);
 
             return false;
         }
