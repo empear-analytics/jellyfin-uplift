@@ -213,3 +213,4 @@ Update as tasks land.
 | DynamicHlsHelper | 9.09 | 9.68 | Opus (o4). Six Recipe E extractions as one group (each FLAT, together clear Overall Code Complexity). Left: ctor (frozen). |
 | MediaSourceManager (+ MediaStreams.cs 10.00) | 8.03 | 9.38 | Opus (o4). Rule 14 Primitive Obsession group (2 structs), Recipe S (Low Cohesion). Left: public args, ctor (frozen). |
 | DynamicHlsController, .Video, .Audio | 8.39, 7.98, 8.04 | unchanged | Opus (o4). Blocked: public actions with ~50 parameters; moving the `??` defaults out reveals Large Method (the parameter list). WaitForSegmentResult: no rule (return, continue and an assigned local in a block that is not last). |
+| EncodingHelper (+ CodecSelection, InputModifier, MediaSourceStreams, SubtitleArguments, all 10.00) | 7.78 | 9.68 | Opus (o5). Recipe S into four files, packed by the measured Overall Code Complexity threshold. Left: public constructor over-injection (frozen). |

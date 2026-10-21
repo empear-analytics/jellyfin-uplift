@@ -724,7 +724,14 @@ on those file-level smells.
 
 **A split has a floor.** Some groupings bring *Low Cohesion* instead of clearing the smell
 (R2-03). Try at most two groupings; keep the first one under which the original file scores
-`UP`. If none does, revert and report the file as blocked.
+`UP`. If none does, revert and report the file as blocked. **Exception, up to four new files:** a
+file may be split into up to four new files in one commit when the methods move unchanged and the
+original and every new file then carry no smell other than those that only a public API change could
+remove (a frozen constructor or public signature); measure as many groupings as needed to find such
+a packing. *Overall Code Complexity* was measured on 2026-10-21: it is flagged when a file has at
+least seven functions and their mean cyclomatic complexity is above 4.0 (exactly 4.0 passes; six or
+fewer functions are never flagged); `partial` regex declarations do not count. Pack the heaviest
+methods into files of six or fewer functions, and balance the others below a mean of 4.0.
 
 **A split that is `FLAT` may be kept when it enables a step.** A file can sit just below a
 file-level smell (*Overall Code Complexity*, *Code Duplication* that the extra methods would
@@ -886,3 +893,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-21 | Recipe P: a pattern variable in the condition becomes an `out` parameter of a `[NotNullWhen(true)]` predicate (`t = x as T`), or of a Try-predicate for a guarded prefix (`t = G ? e as T : null`). | `UserViewManager.OrderViews` and `LibraryManager.SetTopParentIdsOrAncestors` (Complex Conditional, listed as not covered). For a reference type `x is T t` is `(t = x as T) is not null`. Compiled under warnings as errors and compared with the original on 20,000 random inputs, with a side-effecting `R(t)` logged: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Rules 14 and 17, wording from the first agents to use them: sharing by two **or more** methods; the measured Primitive Obsession threshold (strictly more than 30 % and more than ten; `Guid` counts; struct members are not arguments); a struct parameter named after its struct; interpolated-string values stay plain; a group may change call sites in other files of the class; rule 17 leaves out an unreachable trailing `return c;`, and merges adjacent switch-expression arms with identical results. | Reports of the o4 agents: `StreamingHelpers.Params` (four and ten methods sharing a struct), `EncodingHelper.VideoEncoderParams` (bitrate values in interpolated strings, a call site in the split-off file), `LibraryManager.Views` (`Guid`), `StreamBuilder.TranscodingCases` (CS0162). The switch-expression form: `HlsCodecStringHelpers.Vp9.GetVp9ExtendedProfileString` 9.38 to 9.68; adjacent constant arms with one result match exactly the same inputs. Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Wording from the o4 server agent: `out T t` without `?` under `#nullable disable`; the Stopped flag passes `false` in; rule 16 on the inner `if` of an `else` branch; constructors appear not to count toward Primitive Obsession. | `UserViewManager` (nullable disabled), `LibraryManager.GetCollectionFolders` and `RegisterItem` (8.81 to 9.38 in three steps), `MediaSourceManager` (38 of 130 arguments is 29 %, yet flagged; 38 of 117 without the constructor is 32 %). Wording only. |
+| 2026-10-21 | Recipe S body: the up-to-four-files exception written into the recipe (it was only in the change log), with "no smell other than a frozen-API one" instead of "10.00", and the measured *Overall Code Complexity* threshold. | `EncodingHelper.cs` 7.78 to 9.68 with four new files at 10.00; only the public constructor's over-injection is left. Every single-group split was FLAT; the threshold (at least seven functions, mean cc above 4.0) was measured on synthetic files through the MCP server and decided the packing. Made under the campaign owner's mandate, not individually reviewed. |
