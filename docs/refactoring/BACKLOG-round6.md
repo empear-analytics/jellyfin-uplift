@@ -90,7 +90,7 @@ Update as tasks land.
 | R6-07 | 8.04 | - | not started |
 | R6-08 | 8.16 | - | not started |
 | R6-09 | 8.28 | - | not started |
-| R6-10 | 8.33 | - | not started |
+| R6-10 | 8.33 | 8.53 | Sonnet. Two commits (UP), rule 12 additions of 2026-10-21: the Vaapi hardware-decoder block (8.47) and the Dx11 software-decoder block (8.53) moved to helpers with a second struct (10 and 6 members) and the existing subtitle struct, the `else if` guard staying at the call site because the whole statement does not fit. Dx11 hardware block DOWN (helper cc 10); Vaapi software block FLAT. Left: Dx11 cc 27 (the hardware block with the procamp nesting), Vaapi cc 18, Primitive Obsession. |
 | R6-11 | 8.54 | - | not started |
 | R6-12 | 8.54 | - | not started |
 | R6-13 | 8.77 | 9.23 | Sonnet. One commit (UP): rule 11 for a void switch applied three times to ApplyParam (sections 6,6,6,16 in four methods; about 35 split points measured). Five or more groups make a new Primitive Obsession (WORSE). Left: ApplyParamRest3 cc 17, frozen GetStreamingState signature. |
