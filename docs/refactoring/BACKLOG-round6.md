@@ -93,7 +93,7 @@ Update as tasks land.
 | R6-10 | 8.33 | - | not started |
 | R6-11 | 8.54 | - | not started |
 | R6-12 | 8.54 | - | not started |
-| R6-13 | 8.77 | - | not started |
+| R6-13 | 8.77 | 9.23 | Sonnet. One commit (UP): rule 11 for a void switch applied three times to ApplyParam (sections 6,6,6,16 in four methods; about 35 split points measured). Five or more groups make a new Primitive Obsession (WORSE). Left: ApplyParamRest3 cc 17, frozen GetStreamingState signature. |
 | R6-14 | 8.79 | - | not started |
 | R6-15 | 8.81 | - | not started |
 | R6-16 | 8.81 | - | not started |
