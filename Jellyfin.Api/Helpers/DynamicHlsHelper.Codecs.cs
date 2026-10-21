@@ -49,21 +49,7 @@ public partial class DynamicHlsHelper
         }
         else
         {
-            if (string.Equals(state.ActualOutputVideoCodec, "h264", StringComparison.OrdinalIgnoreCase))
-            {
-                levelString = GetH264TranscodingLevel(state);
-            }
-
-            if (string.Equals(state.ActualOutputVideoCodec, "h265", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase))
-            {
-                levelString = GetHevcTranscodingLevel(state);
-            }
-
-            if (string.Equals(state.ActualOutputVideoCodec, "av1", StringComparison.OrdinalIgnoreCase))
-            {
-                levelString = GetAv1TranscodingLevel(state);
-            }
+            levelString = GetTranscodingLevelString(state, levelString);
         }
 
         if (int.TryParse(levelString, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedLevel))
@@ -72,6 +58,27 @@ public partial class DynamicHlsHelper
         }
 
         return null;
+    }
+
+    private static string GetTranscodingLevelString(StreamState state, string levelString)
+    {
+        if (string.Equals(state.ActualOutputVideoCodec, "h264", StringComparison.OrdinalIgnoreCase))
+        {
+            levelString = GetH264TranscodingLevel(state);
+        }
+
+        if (string.Equals(state.ActualOutputVideoCodec, "h265", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase))
+        {
+            levelString = GetHevcTranscodingLevel(state);
+        }
+
+        if (string.Equals(state.ActualOutputVideoCodec, "av1", StringComparison.OrdinalIgnoreCase))
+        {
+            levelString = GetAv1TranscodingLevel(state);
+        }
+
+        return levelString;
     }
 
     private static string GetH264TranscodingLevel(StreamState state)
@@ -172,6 +179,11 @@ public partial class DynamicHlsHelper
             return HlsCodecStringHelpers.GetFLACString();
         }
 
+        return GetRemainingPlaylistAudioCodecs(state);
+    }
+
+    private static string GetRemainingPlaylistAudioCodecs(StreamState state)
+    {
         if (string.Equals(state.ActualOutputAudioCodec, "alac", StringComparison.OrdinalIgnoreCase))
         {
             return HlsCodecStringHelpers.GetALACString();
