@@ -5,6 +5,12 @@ namespace Emby.Server.Implementations.Library
 {
     public static partial class PathExtensions
     {
+        private static ReadOnlySpan<char> SelectSearchedAttribute(ReadOnlySpan<char> attribute, ReadOnlySpan<char> shortAttr)
+        {
+            // If we are using an alias it should be shorter (and a prefix), so let's search for that.
+            return shortAttr.Length > 0 ? shortAttr : attribute;
+        }
+
         private static int AttributeValueSkipId(ReadOnlySpan<char> shortAttr, ReadOnlySpan<char> subStr, int attributeEnd)
         {
             if (IsAliasFollowedById(shortAttr, subStr, attributeEnd))

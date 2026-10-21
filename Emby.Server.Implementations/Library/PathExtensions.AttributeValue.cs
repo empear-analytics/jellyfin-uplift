@@ -39,17 +39,9 @@ namespace Emby.Server.Implementations.Library
                 var subStr = str[strIndex..];
                 int attributeEnd = 0;
 
-                if (shortAttr.Length > 0)
-                {
-                    // If we are using an alias it should be shorter (and a prefix), so let's search for that.
-                    attributeIndex = subStr.IndexOf(shortAttr, StringComparison.OrdinalIgnoreCase);
-                    attributeEnd = attributeIndex + shortAttr.Length;
-                }
-                else
-                {
-                    attributeIndex = subStr.IndexOf(attribute, StringComparison.OrdinalIgnoreCase);
-                    attributeEnd = attributeIndex + attribute.Length;
-                }
+                var searched = SelectSearchedAttribute(attribute, shortAttr);
+                attributeIndex = subStr.IndexOf(searched, StringComparison.OrdinalIgnoreCase);
+                attributeEnd = attributeIndex + searched.Length;
 
                 // The next iteration should start at the end of the attribute we just found.
                 // If attributeIndex < 0, the loop will end and strIndex won't be used again.
