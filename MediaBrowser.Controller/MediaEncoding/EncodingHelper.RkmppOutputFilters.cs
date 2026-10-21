@@ -31,6 +31,33 @@ namespace MediaBrowser.Controller.MediaEncoding
 {
     public partial class EncodingHelper
     {
+        private static void AddRkmppOpenclMapping(List<string> mainFilters, bool doOclTonemap, bool isRkmppDecoder)
+        {
+            if (NeedsHwToOpenclMapping(doOclTonemap, isRkmppDecoder))
+            {
+                // map from rkmpp/drm to opencl via drm-opencl interop.
+                mainFilters.Add("hwmap=derive_device=opencl");
+            }
+        }
+
+        private static void AddRkmppDrmReverseMapping(List<string> mainFilters, bool isDrmInDrmOut, bool doOclTonemap)
+        {
+            if (isDrmInDrmOut)
+            {
+                AddDrmReverseMapping(mainFilters, doOclTonemap);
+            }
+        }
+
+        private static bool MarkRkmppSwUploadOutput(bool memoryOutput, bool isSwDecoder, bool isRkmppEncoder)
+        {
+            if (isSwDecoder && isRkmppEncoder)
+            {
+                memoryOutput = true;
+            }
+
+            return memoryOutput;
+        }
+
         private void AddRkmppDrmSubtitleFilters(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters, RkmppSubtitleFilterContext context)
         {
             var subMaxH = 1080;
