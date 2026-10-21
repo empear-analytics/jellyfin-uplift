@@ -94,6 +94,17 @@ namespace MediaBrowser.Model.Dlna
                 case ProfileConditionValue.VideoCodecTag:
                     return IsVideoCodecTagCaseSkipped(context);
 
+                default:
+                    return IsVideoOutputCaseSkipped(context);
+            }
+
+            return false;
+        }
+
+        private static bool IsVideoOutputCaseSkipped(TranscodingCaseContext context)
+        {
+            switch (context.Condition.Property)
+            {
                 case ProfileConditionValue.VideoRotation:
                     return IsVideoRotationCaseSkipped(context);
 
