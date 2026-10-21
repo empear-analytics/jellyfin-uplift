@@ -116,23 +116,24 @@ namespace MediaBrowser.Controller.MediaEncoding
                 options);
         }
 
-        private string GetVaapiDeviceArgs(string renderNodePath, string driver, string kernelDriver, string vendorId, string srcDeviceAlias, string alias)
+        private string GetVaapiDeviceArgs(VaapiDeviceNodeParts nodeParts, string kernelDriver, string vendorId, VaapiDeviceAliasParts aliasParts)
         {
+            var alias = aliasParts.Alias;
             alias ??= VaapiAlias;
             var haveVendorId = !string.IsNullOrEmpty(vendorId)
                 && _mediaEncoder.EncoderVersion >= _minFFmpegVaapiDeviceVendorId;
 
             // Priority: 'renderNodePath' > 'vendorId' > 'kernelDriver'
-            var driverOpts = File.Exists(renderNodePath)
-                ? renderNodePath
+            var driverOpts = File.Exists(nodeParts.RenderNodePath)
+                ? nodeParts.RenderNodePath
                 : (haveVendorId ? $",vendor_id={vendorId}" : (string.IsNullOrEmpty(kernelDriver) ? string.Empty : $",kernel_driver={kernelDriver}"));
 
             // 'driver' behaves similarly to env LIBVA_DRIVER_NAME
-            driverOpts += string.IsNullOrEmpty(driver) ? string.Empty : ",driver=" + driver;
+            driverOpts += string.IsNullOrEmpty(nodeParts.Driver) ? string.Empty : ",driver=" + nodeParts.Driver;
 
-            var options = string.IsNullOrEmpty(srcDeviceAlias)
+            var options = string.IsNullOrEmpty(aliasParts.SrcDeviceAlias)
                 ? (string.IsNullOrEmpty(driverOpts) ? string.Empty : ":" + driverOpts)
-                : "@" + srcDeviceAlias;
+                : "@" + aliasParts.SrcDeviceAlias;
 
             return string.Format(
                 CultureInfo.InvariantCulture,
@@ -159,7 +160,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (OperatingSystem.IsLinux())
             {
                 // derive qsv from vaapi device
-                return GetVaapiDeviceArgs(renderNodePath, "iHD", "i915", "0x8086", null, VaapiAlias) + arg + "@" + VaapiAlias;
+                return GetVaapiDeviceArgs(new VaapiDeviceNodeParts(renderNodePath, "iHD"), "i915", "0x8086", new VaapiDeviceAliasParts(null, VaapiAlias)) + arg + "@" + VaapiAlias;
             }
 
             if (OperatingSystem.IsWindows())
@@ -285,7 +286,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     return string.Empty;
                 }
 
-                AppendQsvHwDeviceArgs(context.Args, options, context.IsLinux, isHwDecoder, context.IsHwTonemapAvailable);
+                AppendQsvHwDeviceArgs(context.Args, options, new QsvHwDeviceParts(context.IsLinux, isHwDecoder, context.IsHwTonemapAvailable));
             }
             else
             {
@@ -466,14 +467,14 @@ namespace MediaBrowser.Controller.MediaEncoding
         {
             if (_mediaEncoder.IsVaapiDeviceInteliHD)
             {
-                args.Append(GetVaapiDeviceArgs(options.VaapiDevice, "iHD", null, null, null, VaapiAlias));
+                args.Append(GetVaapiDeviceArgs(new VaapiDeviceNodeParts(options.VaapiDevice, "iHD"), null, null, new VaapiDeviceAliasParts(null, VaapiAlias)));
             }
             else if (_mediaEncoder.IsVaapiDeviceInteli965)
             {
                 // Only override i965 since it has lower priority than iHD in libva lookup.
                 Environment.SetEnvironmentVariable("LIBVA_DRIVER_NAME", "i965");
                 Environment.SetEnvironmentVariable("LIBVA_DRIVER_NAME_JELLYFIN", "i965");
-                args.Append(GetVaapiDeviceArgs(options.VaapiDevice, "i965", null, null, null, VaapiAlias));
+                args.Append(GetVaapiDeviceArgs(new VaapiDeviceNodeParts(options.VaapiDevice, "i965"), null, null, new VaapiDeviceAliasParts(null, VaapiAlias)));
             }
 
             var filterDevArgs = string.Empty;
@@ -517,7 +518,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             if (IsAmdVulkanDrmInteropUsable())
             {
                 args.Append(GetDrmDeviceArgs(options.VaapiDevice, DrmAlias));
-                args.Append(GetVaapiDeviceArgs(null, null, null, null, DrmAlias, VaapiAlias));
+                args.Append(GetVaapiDeviceArgs(new VaapiDeviceNodeParts(null, null), null, null, new VaapiDeviceAliasParts(DrmAlias, VaapiAlias)));
                 args.Append(GetVulkanDeviceArgs(0, null, DrmAlias, VulkanAlias));
 
                 // libplacebo wants an explicitly set vulkan filter device.
@@ -525,7 +526,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else
             {
-                args.Append(GetVaapiDeviceArgs(options.VaapiDevice, null, null, null, null, VaapiAlias));
+                args.Append(GetVaapiDeviceArgs(new VaapiDeviceNodeParts(options.VaapiDevice, null), null, null, new VaapiDeviceAliasParts(null, VaapiAlias)));
                 filterDevArgs = GetFilterHwDeviceArgs(VaapiAlias);
 
                 if (doOclTonemap)
@@ -546,18 +547,18 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && Environment.OSVersion.Version >= _minKernelVersionAmdVkFmtModifier;
         }
 
-        private void AppendQsvHwDeviceArgs(StringBuilder args, EncodingOptions options, bool isLinux, bool isHwDecoder, bool isHwTonemapAvailable)
+        private void AppendQsvHwDeviceArgs(StringBuilder args, EncodingOptions options, QsvHwDeviceParts parts)
         {
             args.Append(GetQsvDeviceArgs(options.QsvDevice, QsvAlias));
             var filterDevArgs = GetFilterHwDeviceArgs(QsvAlias);
             // child device used by qsv.
             if (_mediaEncoder.SupportsHwaccel("vaapi") || _mediaEncoder.SupportsHwaccel("d3d11va"))
             {
-                if (isHwTonemapAvailable && IsOpenclFullSupported())
+                if (parts.IsHwTonemapAvailable && IsOpenclFullSupported())
                 {
-                    var srcAlias = isLinux ? VaapiAlias : D3d11vaAlias;
+                    var srcAlias = parts.IsLinux ? VaapiAlias : D3d11vaAlias;
                     args.Append(GetOpenclDeviceArgs(0, null, srcAlias, OpenclAlias));
-                    if (!isHwDecoder)
+                    if (!parts.IsHwDecoder)
                     {
                         filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
                     }
@@ -612,5 +613,11 @@ namespace MediaBrowser.Controller.MediaEncoding
         private readonly record struct IsHwDeviceAmfUnusedParts(string VidDecoder, string VidEncoder);
 
         private readonly record struct IsHwDeviceVideotoolboxUnusedParts(string VidDecoder, string VidEncoder);
+
+        private readonly record struct VaapiDeviceNodeParts(string RenderNodePath, string Driver);
+
+        private readonly record struct VaapiDeviceAliasParts(string SrcDeviceAlias, string Alias);
+
+        private readonly record struct QsvHwDeviceParts(bool IsLinux, bool IsHwDecoder, bool IsHwTonemapAvailable);
     }
 }
