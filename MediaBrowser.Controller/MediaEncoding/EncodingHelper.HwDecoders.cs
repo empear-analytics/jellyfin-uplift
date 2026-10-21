@@ -328,24 +328,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 if (IsHevcHwDecodingCodec(options, videoCodec))
                 {
-                    if (IsVideoStreamHevcRext(state))
-                    {
-                        if (IsHevcRext10BitDecodingDisabled(options, bitDepth))
-                        {
-                            return null;
-                        }
-
-                        if (IsHevcRext12BitDecodingDisabled(options, bitDepth))
-                        {
-                            return null;
-                        }
-
-                        if (IsNonIHDVaapi(hardwareAccelerationType))
-                        {
-                            return null;
-                        }
-                    }
-                    else if (IsHevcTenBitDecodingDisabled(options, bitDepth))
+                    if (IsHevcDecodingBlocked(state, options, bitDepth, hardwareAccelerationType))
                     {
                         return null;
                     }
@@ -371,6 +354,33 @@ namespace MediaBrowser.Controller.MediaEncoding
                 profileMismatch,
                 isAv1);
             return GetHwaccelTypeFromIntel(context, options, isQsvSupported);
+        }
+
+        private bool IsHevcDecodingBlocked(EncodingJobInfo state, EncodingOptions options, int bitDepth, HardwareAccelerationType hardwareAccelerationType)
+        {
+            if (IsVideoStreamHevcRext(state))
+            {
+                if (IsHevcRext10BitDecodingDisabled(options, bitDepth))
+                {
+                    return true;
+                }
+
+                if (IsHevcRext12BitDecodingDisabled(options, bitDepth))
+                {
+                    return true;
+                }
+
+                if (IsNonIHDVaapi(hardwareAccelerationType))
+                {
+                    return true;
+                }
+            }
+            else if (IsHevcTenBitDecodingDisabled(options, bitDepth))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private string GetHwaccelTypeFromIntel(HwDecoderHwaccelContext context, EncodingOptions options, bool isQsvSupported)
