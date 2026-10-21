@@ -225,40 +225,29 @@ public partial class DynamicHlsHelper
         {
             var encodingOptions = _serverConfigurationManager.GetEncodingOptions();
 
-            // Provide AV1 and HEVC SDR entrances for backward compatibility.
-            foreach (var sdrVideoCodec in new[] { "av1", "hevc" })
+            AppendSdrCompatibilityPlaylists(builder, state, parts, encodingOptions);
+
+            AppendH264CompatibilityPlaylist(builder, state, parts, state.VideoStream);
+
+            AppendLevel150CompatibilityPlaylist(builder, state, basicPlaylist);
+        }
+    }
+
+    private void AppendSdrCompatibilityPlaylists(StringBuilder builder, StreamState state, VariantPlaylistsParts parts, EncodingOptions encodingOptions)
+    {
+        // Provide AV1 and HEVC SDR entrances for backward compatibility.
+        foreach (var sdrVideoCodec in new[] { "av1", "hevc" })
+        {
+            var isEncodingAllowed = IsSdrEncodingAllowed(encodingOptions, sdrVideoCodec, state);
+
+            if (IsHdrCopyWithEncodingAllowed(isEncodingAllowed, state))
             {
-                var isEncodingAllowed = IsSdrEncodingAllowed(encodingOptions, sdrVideoCodec, state);
-
-                if (IsHdrCopyWithEncodingAllowed(isEncodingAllowed, state))
-                {
-                    // Force AV1 and HEVC Main Profile and disable video stream copy.
-                    state.OutputVideoCodec = sdrVideoCodec;
-
-                    var sdrPlaylistQuery = parts.PlaylistQuery;
-                    sdrPlaylistQuery["VideoCodec"] = sdrVideoCodec;
-                    sdrPlaylistQuery[sdrVideoCodec + "-profile"] = "main";
-                    sdrPlaylistQuery["AllowVideoStreamCopy"] = "false";
-
-                    var sdrVideoUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(parts.BaseUrl, sdrPlaylistQuery);
-
-                    // HACK: Use the same bitrate so that the client can choose by other attributes, such as color range.
-                    AppendPlaylist(builder, state, new PlaylistVariantParts(sdrVideoUrl, parts.TotalBitrate, parts.SubtitleGroup));
-
-                    // Restore the video codec
-                    state.OutputVideoCodec = "copy";
-                }
-            }
-
-            // Provide H.264 SDR entrance for backward compatibility.
-            if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-                && state.VideoStream.VideoRange == VideoRange.HDR)
-            {
-                // Force H.264 and disable video stream copy.
-                state.OutputVideoCodec = "h264";
+                // Force AV1 and HEVC Main Profile and disable video stream copy.
+                state.OutputVideoCodec = sdrVideoCodec;
 
                 var sdrPlaylistQuery = parts.PlaylistQuery;
-                sdrPlaylistQuery["VideoCodec"] = "h264";
+                sdrPlaylistQuery["VideoCodec"] = sdrVideoCodec;
+                sdrPlaylistQuery[sdrVideoCodec + "-profile"] = "main";
                 sdrPlaylistQuery["AllowVideoStreamCopy"] = "false";
 
                 var sdrVideoUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(parts.BaseUrl, sdrPlaylistQuery);
@@ -269,8 +258,29 @@ public partial class DynamicHlsHelper
                 // Restore the video codec
                 state.OutputVideoCodec = "copy";
             }
+        }
+    }
 
-            AppendLevel150CompatibilityPlaylist(builder, state, basicPlaylist);
+    private void AppendH264CompatibilityPlaylist(StringBuilder builder, StreamState state, VariantPlaylistsParts parts, MediaStream videoStream)
+    {
+        // Provide H.264 SDR entrance for backward compatibility.
+        if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
+            && videoStream.VideoRange == VideoRange.HDR)
+        {
+            // Force H.264 and disable video stream copy.
+            state.OutputVideoCodec = "h264";
+
+            var sdrPlaylistQuery = parts.PlaylistQuery;
+            sdrPlaylistQuery["VideoCodec"] = "h264";
+            sdrPlaylistQuery["AllowVideoStreamCopy"] = "false";
+
+            var sdrVideoUrl = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(parts.BaseUrl, sdrPlaylistQuery);
+
+            // HACK: Use the same bitrate so that the client can choose by other attributes, such as color range.
+            AppendPlaylist(builder, state, new PlaylistVariantParts(sdrVideoUrl, parts.TotalBitrate, parts.SubtitleGroup));
+
+            // Restore the video codec
+            state.OutputVideoCodec = "copy";
         }
     }
 
@@ -465,11 +475,7 @@ public partial class DynamicHlsHelper
 
         var dvCodec = HlsCodecStringHelpers.GetDoviString(dvProfile.Value, dvLevel.Value, state.ActualOutputVideoCodec);
 
-        string audioCodecs = string.Empty;
-        if (!string.IsNullOrEmpty(state.ActualOutputAudioCodec))
-        {
-            audioCodecs = GetPlaylistAudioCodecs(state);
-        }
+        string audioCodecs = GetDoviPlaylistAudioCodecs(state);
 
         playlistBuilder.Append(",CODECS=\"")
             .Append(dvCodec);
@@ -493,6 +499,17 @@ public partial class DynamicHlsHelper
         playlistBuilder.AppendLine();
         playlistBuilder.AppendLine(parts.Url);
         builder.Append(playlistBuilder);
+    }
+
+    private string GetDoviPlaylistAudioCodecs(StreamState state)
+    {
+        string audioCodecs = string.Empty;
+        if (!string.IsNullOrEmpty(state.ActualOutputAudioCodec))
+        {
+            audioCodecs = GetPlaylistAudioCodecs(state);
+        }
+
+        return audioCodecs;
     }
 
     /// <summary>
@@ -555,12 +572,7 @@ public partial class DynamicHlsHelper
     private void AppendPlaylistCodecsField(StringBuilder builder, StreamState state)
     {
         // Video
-        string videoCodecs = string.Empty;
-        int? videoCodecLevel = GetOutputVideoCodecLevel(state);
-        if (!string.IsNullOrEmpty(state.ActualOutputVideoCodec) && videoCodecLevel.HasValue)
-        {
-            videoCodecs = GetPlaylistVideoCodecs(state, state.ActualOutputVideoCodec, videoCodecLevel.Value);
-        }
+        string videoCodecs = GetPlaylistVideoCodecsOrEmpty(state);
 
         // Audio
         string audioCodecs = string.Empty;
@@ -586,6 +598,18 @@ public partial class DynamicHlsHelper
                 .Append(codecs)
                 .Append('"');
         }
+    }
+
+    private string GetPlaylistVideoCodecsOrEmpty(StreamState state)
+    {
+        string videoCodecs = string.Empty;
+        int? videoCodecLevel = GetOutputVideoCodecLevel(state);
+        if (!string.IsNullOrEmpty(state.ActualOutputVideoCodec) && videoCodecLevel.HasValue)
+        {
+            videoCodecs = GetPlaylistVideoCodecs(state, state.ActualOutputVideoCodec, videoCodecLevel.Value);
+        }
+
+        return videoCodecs;
     }
 
     /// <summary>
@@ -691,6 +715,17 @@ public partial class DynamicHlsHelper
     /// <param name="state">StreamState of the current stream.</param>
     private void AppendPlaylistFramerateField(StringBuilder builder, StreamState state)
     {
+        double? framerate = GetPlaylistFramerate(state);
+
+        if (framerate.HasValue)
+        {
+            builder.Append(",FRAME-RATE=")
+                .Append(framerate.Value.ToString(CultureInfo.InvariantCulture));
+        }
+    }
+
+    private static double? GetPlaylistFramerate(StreamState state)
+    {
         double? framerate = null;
         if (state.TargetFramerate.HasValue)
         {
@@ -701,11 +736,7 @@ public partial class DynamicHlsHelper
             framerate = Math.Round(state.VideoStream.RealFrameRate.GetValueOrDefault(), 3);
         }
 
-        if (framerate.HasValue)
-        {
-            builder.Append(",FRAME-RATE=")
-                .Append(framerate.Value.ToString(CultureInfo.InvariantCulture));
-        }
+        return framerate;
     }
 
     private bool EnableAdaptiveBitrateStreaming(StreamState state, bool isLiveStream, bool enableAdaptiveBitrateStreaming, IPAddress ipAddress)
@@ -850,7 +881,17 @@ public partial class DynamicHlsHelper
         {
             variation = 1000000;
         }
-        else if (bitrate >= 2000000)
+        else
+        {
+            variation = GetLowBitrateVariation(bitrate, variation);
+        }
+
+        return variation;
+    }
+
+    private static int GetLowBitrateVariation(int bitrate, int variation)
+    {
+        if (bitrate >= 2000000)
         {
             variation = 500000;
         }
