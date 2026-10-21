@@ -97,10 +97,7 @@ namespace MediaBrowser.Model.Dlna
                 .Reverse();
             ApplyVideoCodecProfileConditions(playlistItem, appliedVideoConditions, container, useSubContainer);
 
-            // Honor requested max channels
-            playlistItem.GlobalMaxAudioChannels = channelsExceedsLimit ? playlistItem.TranscodingMaxAudioChannels : options.MaxAudioChannels;
-
-            ApplyAudioBitrateLimit(options, playlistItem, audioStream);
+            ApplyAudioLimits(options, playlistItem, channelsExceedsLimit, audioStream);
 
             var audioConditionContext = new AudioConditionContext(options, item, container, audioStream);
             ApplyAudioConditions(playlistItem, audioConditionContext);
@@ -139,6 +136,14 @@ namespace MediaBrowser.Model.Dlna
                 audioStream?.Index,
                 playlistItem.SubtitleStreamIndex,
                 playlistItem.TranscodeReasons);
+        }
+
+        private void ApplyAudioLimits(MediaOptions options, StreamInfo playlistItem, bool channelsExceedsLimit, MediaStream? audioStream)
+        {
+            // Honor requested max channels
+            playlistItem.GlobalMaxAudioChannels = channelsExceedsLimit ? playlistItem.TranscodingMaxAudioChannels : options.MaxAudioChannels;
+
+            ApplyAudioBitrateLimit(options, playlistItem, audioStream);
         }
 
         private void ApplyAudioConditions(StreamInfo playlistItem, AudioConditionContext context)
