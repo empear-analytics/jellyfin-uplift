@@ -42,9 +42,7 @@ namespace Emby.Server.Implementations.Library
                 return false;
             }
 
-            if (path.Length > subPath.Length
-                && !oldSubPathEndsWithSeparator
-                && path[subPath.Length] != newDirectorySeparatorChar)
+            if (EndsInsideSegment(path, subPath, oldSubPathEndsWithSeparator, newDirectorySeparatorChar))
             {
                 return false;
             }
