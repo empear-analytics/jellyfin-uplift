@@ -158,3 +158,22 @@ Tests: PASS / FAIL
 Commits: <sha list>
 Unsure about: <free text, or NONE>
 ```
+
+## Report (round 6)
+
+```
+Task: R6-03 (MediaBrowser.Controller/MediaEncoding/EncodingHelper.VaapiFilters.cs)
+Baseline score: 7.86
+Final score:    8.04
+Steps completed: 2 of 4 (Intel and Amd decoder chains, Recipe E rule 12 with both structs)
+Steps reverted:  0
+Smells left without a recipe: Primitive Obsession
+Build: PASS (0 errors)
+Tests: PASS (full solution)
+Commits: 10a64361e9 e5c81ff828 (Amd, then Intel)
+Unsure about: the Amd helper writes the chain as if / else if (as before the round-5b void tail) instead of else { if }.
+```
+
+Candidates measured alone on the current code: Intel chain 7.95, Amd chain 7.95 (Amd helper flagged Bumpy Road,
+2 bumps); Amd on top of Intel 8.04. Remaining: Intel Bumpy Road (2) and cc 15, Amd helper Bumpy Road (2), Amd cc 12,
+GetVaapiLimitedVidFiltersPrefered cc 14, GetVaapiVidFilterChain cc 10.
