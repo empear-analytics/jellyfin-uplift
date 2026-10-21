@@ -126,9 +126,10 @@ blocks of nested logic). Each "bump" is a missing method.
     depends on a section that moved.
 12. **Shared inputs (a context struct).** A block that needs more than four values from its method
     may take them as one `private readonly record struct`, nested in the class at the end of the
-    file that holds the method. A method may have two such structs when its blocks need different
-    sets of values (for example the subtitle blocks and the decoder blocks); each struct serves
-    one family of blocks and is constructed immediately before the first block that uses it.
+    file that holds the method. A method may have one such struct per family of blocks that need
+    different sets of values (for example the subtitle blocks, the software-decoder blocks and the
+    hardware-decoder blocks), at most three; each struct serves one family of blocks and is
+    constructed immediately before the first block that uses it.
     Only when:
     - the members are values the block only reads: locals that are not assigned between the
       struct's construction and the end of the block, and references (a list, the `state` object)
@@ -145,7 +146,7 @@ blocks of nested logic). Each "bump" is a missing method.
     site keeps the nesting and the bumps. A value used inside an interpolated string stays a plain
     parameter when the guard reports the string as changed.
     Three additions of 2026-10-21, all plumbing that changes no behaviour:
-    - A helper may take both structs of its method when its block needs values from both; it still
+    - A helper may take two structs of its method when its block needs values from both; it still
       has at most four parameters, and each struct is still constructed once, in the original
       method.
     - When the whole statement needs more values than fit (twelve members and three plain
@@ -519,6 +520,21 @@ build. When the copies differ in a log template, share only the part without the
 example the GUID formatting and the path join) and keep each log call, with its own literal, in
 its copy.
 
+**Branches that differ in one value.** When the two branches of one `if` / `else` are identical
+character for character except for one value (the needle searched for, a prefix, a limit), the
+value is chosen first and one copy of the body stays:
+
+```csharp
+var searched = shortAttr.Length > 0 ? shortAttr : attribute;
+attributeIndex = subStr.IndexOf(searched, StringComparison.OrdinalIgnoreCase);
+attributeEnd = attributeIndex + searched.Length;
+```
+
+Only when the condition and both values are free of side effects (each is evaluated once either
+way), the branches are the only two (`if` and `else`, no `else if`), and the new local has a name
+not used in the method. Both values stay in the code, so the guard runs with `--dedup` and every
+literal must still occur. The step must score `UP`.
+
 **Copies that differ only in a type** (the same body, once for `int` and once for `double`)
 become one generic `private` helper. Its constraints provide exactly the operations the copies
 use and nothing else (for example `IEquatable<T>` for `.Equals`, `IComparisonOperators<T, T,
@@ -693,3 +709,5 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-19 | Recipe E rule 11 also covers a `switch` statement whose sections end in `break` (no `return`): a suffix of the sections, with `default:`, moves to a helper switch, each section keeping its `break`. | Measured in round 5: `ApplyParam` (R4-18, 34 sections) and `ApplyTranscodingConditions` (R4-02) are void switches of this shape. Compiled with warnings as errors and compared with the original on 20,000 random inputs (0 failures). Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-19 | Recipe E rule 13 also covers a void tail: branches that only add to or change objects passed in (no assigned local read afterwards) move to a void helper, called from `else { Helper(...); }`. | Round 5: the Amd vaapi branch of `EncodingHelper.VaapiFilters` (R4-05, 7.86 UP as a void tail, not committed under the old rule). Compiled with warnings as errors and compared with the original on 20,000 random inputs (0 failures). Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-21 | Recipe E rule 12: a helper may take both structs of its method; the guard may stay at the call site when the whole statement needs more than fifteen values; a struct construction is written on one line. | Round 5: the Amd and Intel decoder chains of `EncodingHelper.VaapiFilters` (R4-05: 7.95 and 7.90 UP, but the helper read both structs), the sw-decoder and hw-scale blocks of `EncodingHelper.RkmppFilters` (R4-19: 9.12 and 9.13 UP, whole statements need 16 values), the Intel software-decoder block (R4-09: 16 values), and the layout finding of R4-36. Parameter plumbing only: no statement changes. Not adopted: `??` defaults in Recipe P (no run gained), a larger member cap. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 12: one struct per family of blocks, at most three per method (it was two). | Made AFTER the fact: two commits already landed broke the old wording, which the coordinator missed when landing them: `GetNvidiaVidFiltersPrefered` (R6-41) and `GetRkmppVidFiltersPrefered` (R6-29) each build three structs, one per family (subtitles, software decoder, hardware decoder). A third held candidate (R6-42, `GetAmdDx11VidFiltersPrefered`, 9.52 to 9.56) has the same shape. Each struct still serves one family and is constructed once; the change is parameter plumbing. Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe D: the two branches of an `if` / `else` that differ only in one value become one body after choosing the value with `?:`. | `PathExtensions.AttributeValueSearch`: the `shortAttr` / `attribute` branches (Bumpy Road; a `ref`/`out` helper would need five parameters, which CodeScene flags). Compiled under warnings as errors (string and `ReadOnlySpan<char>` forms) and compared with the original on 20,000 random inputs: 0 failures. Made under the campaign owner's mandate, not individually reviewed. |
