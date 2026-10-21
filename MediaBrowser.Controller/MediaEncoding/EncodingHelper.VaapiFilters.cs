@@ -644,7 +644,15 @@ namespace MediaBrowser.Controller.MediaEncoding
                     AddVaapiAmdSwScaleFilters(context, decoder.VidEncoder, decoder.ThreeDFormat, mainFilters);
                 }
             }
-            else if (decoder.IsVaapiDecoder)
+            else
+            {
+                VaapiDecoderAmdHwFilters(context, decoder, mainFilters);
+            }
+        }
+
+        private void VaapiDecoderAmdHwFilters(VaapiAmdFullContext context, VaapiDecoderAmdContext decoder, List<string> mainFilters)
+        {
+            if (decoder.IsVaapiDecoder)
             {
                 // INPUT vaapi surface(vram)
                 if (NeedsVulkanInterop(decoder.DoVkTranspose, context.DoVkTonemap, decoder.HasSubs))
