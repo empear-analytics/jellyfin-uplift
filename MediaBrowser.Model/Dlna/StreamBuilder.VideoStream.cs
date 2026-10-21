@@ -18,32 +18,24 @@ namespace MediaBrowser.Model.Dlna
     /// </summary>
     public partial class StreamBuilder
     {
-        private void BuildStreamVideoItem(
-            StreamInfo playlistItem,
-            MediaOptions options,
-            MediaSourceInfo item,
-            MediaStream? videoStream,
-            MediaStream? audioStream,
-            IEnumerable<MediaStream> candidateAudioStreams,
-            string? container,
-            string? videoCodec,
-            string? audioCodec)
+        private void BuildStreamVideoItem(StreamInfo playlistItem, MediaOptions options, BuildStreamVideoItemPartsFirst firstParts, BuildStreamVideoItemPartsSecond secondParts)
         {
-            var videoCodecs = GetPreferredVideoCodecs(playlistItem, videoStream, videoCodec);
+            var audioStream = firstParts.AudioStream;
+            var videoCodecs = GetPreferredVideoCodecs(playlistItem, firstParts.VideoStream, secondParts.VideoCodec);
 
             playlistItem.VideoCodecs = videoCodecs;
-            MarkUnsupportedVideoCodec(playlistItem, videoStream, videoCodecs);
+            MarkUnsupportedVideoCodec(playlistItem, firstParts.VideoStream, videoCodecs);
 
             // Copy video codec options as a starting point, this applies to transcode and direct-stream
-            var qualifier = VideoStreamItemCopyVideoOptions(playlistItem, videoStream);
+            var qualifier = VideoStreamItemCopyVideoOptions(playlistItem, firstParts.VideoStream);
 
-            var audioCodecs = GetPreferredAudioCodecs(playlistItem, audioStream, audioCodec);
+            var audioCodecs = GetPreferredAudioCodecs(playlistItem, audioStream, secondParts.AudioCodec);
 
-            var audioStreamWithSupportedCodec = candidateAudioStreams.Where(stream => ContainerHelper.ContainsContainer(audioCodecs, false, stream.Codec)).FirstOrDefault();
+            var audioStreamWithSupportedCodec = firstParts.CandidateAudioStreams.Where(stream => ContainerHelper.ContainsContainer(audioCodecs, false, stream.Codec)).FirstOrDefault();
 
             var channelsExceedsLimit = IsAudioChannelLimitExceeded(audioStreamWithSupportedCodec, playlistItem);
 
-            var directAudioFailures = GetDirectAudioFailures(options, item, container, audioStreamWithSupportedCodec);
+            var directAudioFailures = GetDirectAudioFailures(options, firstParts.Item, secondParts.Container, audioStreamWithSupportedCodec);
 
             playlistItem.TranscodeReasons |= directAudioFailures;
             MarkUnsupportedAudioCodec(playlistItem, audioStream, audioStreamWithSupportedCodec);
@@ -65,48 +57,48 @@ namespace MediaBrowser.Model.Dlna
                 CopyDirectAudioOptions(playlistItem, audioStream, qualifier);
             }
 
-            int? width = videoStream?.Width;
-            int? height = videoStream?.Height;
-            int? bitDepth = videoStream?.BitDepth;
-            int? videoBitrate = videoStream?.BitRate;
-            double? videoLevel = videoStream?.Level;
-            string? videoProfile = videoStream?.Profile;
-            VideoRangeType? videoRangeType = videoStream?.VideoRangeType;
-            float videoFramerate = videoStream is null ? 0 : videoStream.ReferenceFrameRate ?? 0;
-            bool? isAnamorphic = videoStream?.IsAnamorphic;
-            bool? isInterlaced = videoStream?.IsInterlaced;
-            string? videoCodecTag = videoStream?.CodecTag;
-            bool? isAvc = videoStream?.IsAVC;
-            int? videoRotation = videoStream?.Rotation;
+            int? width = firstParts.VideoStream?.Width;
+            int? height = firstParts.VideoStream?.Height;
+            int? bitDepth = firstParts.VideoStream?.BitDepth;
+            int? videoBitrate = firstParts.VideoStream?.BitRate;
+            double? videoLevel = firstParts.VideoStream?.Level;
+            string? videoProfile = firstParts.VideoStream?.Profile;
+            VideoRangeType? videoRangeType = firstParts.VideoStream?.VideoRangeType;
+            float videoFramerate = firstParts.VideoStream is null ? 0 : firstParts.VideoStream.ReferenceFrameRate ?? 0;
+            bool? isAnamorphic = firstParts.VideoStream?.IsAnamorphic;
+            bool? isInterlaced = firstParts.VideoStream?.IsInterlaced;
+            string? videoCodecTag = firstParts.VideoStream?.CodecTag;
+            bool? isAvc = firstParts.VideoStream?.IsAVC;
+            int? videoRotation = firstParts.VideoStream?.Rotation;
 
-            TransportStreamTimestamp? timestamp = videoStream is null ? TransportStreamTimestamp.None : item.Timestamp;
-            int? packetLength = videoStream?.PacketLength;
-            int? refFrames = videoStream?.RefFrames;
+            TransportStreamTimestamp? timestamp = firstParts.VideoStream is null ? TransportStreamTimestamp.None : firstParts.Item.Timestamp;
+            int? packetLength = firstParts.VideoStream?.PacketLength;
+            int? refFrames = firstParts.VideoStream?.RefFrames;
 
-            int numStreams = item.MediaStreams.Count;
-            int? numAudioStreams = item.GetStreamCount(MediaStreamType.Audio);
-            int? numVideoStreams = item.GetStreamCount(MediaStreamType.Video);
+            int numStreams = firstParts.Item.MediaStreams.Count;
+            int? numAudioStreams = firstParts.Item.GetStreamCount(MediaStreamType.Audio);
+            int? numVideoStreams = firstParts.Item.GetStreamCount(MediaStreamType.Video);
 
             var useSubContainer = playlistItem.SubProtocol == MediaStreamProtocol.hls;
 
             var appliedVideoConditions = options.Profile.CodecProfiles
                 .Where(i => i.Type == CodecType.Video &&
-                    i.ContainsAnyCodec(playlistItem.VideoCodecs, container, useSubContainer) &&
+                    i.ContainsAnyCodec(playlistItem.VideoCodecs, secondParts.Container, useSubContainer) &&
                     i.ApplyConditions.All(applyCondition => ConditionProcessor.IsVideoConditionSatisfied(applyCondition, width, height, bitDepth, videoBitrate, videoProfile, videoRangeType, videoLevel, videoFramerate, packetLength, timestamp, isAnamorphic, isInterlaced, refFrames, numStreams, numVideoStreams, numAudioStreams, videoCodecTag, isAvc, videoRotation)))
                 // Reverse codec profiles for backward compatibility - first codec profile has higher priority
                 .Reverse();
-            ApplyVideoCodecProfileConditions(playlistItem, appliedVideoConditions, container, useSubContainer);
+            ApplyVideoCodecProfileConditions(playlistItem, appliedVideoConditions, secondParts.Container, useSubContainer);
 
             ApplyAudioLimits(options, playlistItem, channelsExceedsLimit, audioStream);
 
-            var audioConditionContext = new AudioConditionContext(options, item, container, audioStream);
+            var audioConditionContext = new AudioConditionContext(options, firstParts.Item, secondParts.Container, audioStream);
             ApplyAudioConditions(playlistItem, audioConditionContext);
 
             var maxBitrateSetting = options.GetMaxBitrate(false);
             // Honor max rate
             ApplyMaxVideoBitrate(playlistItem, maxBitrateSetting);
 
-            LogTranscodeResult(options, item, playlistItem, audioStream);
+            LogTranscodeResult(options, firstParts.Item, playlistItem, audioStream);
         }
 
         private static string? VideoStreamItemCopyVideoOptions(StreamInfo playlistItem, MediaStream? videoStream)
@@ -164,6 +156,10 @@ namespace MediaBrowser.Model.Dlna
 
             ApplyAudioCodecProfileConditions(playlistItem, appliedAudioConditions, context.Container);
         }
+
+        private readonly record struct BuildStreamVideoItemPartsFirst(MediaSourceInfo Item, MediaStream? VideoStream, MediaStream? AudioStream, IEnumerable<MediaStream> CandidateAudioStreams);
+
+        private readonly record struct BuildStreamVideoItemPartsSecond(string? Container, string? VideoCodec, string? AudioCodec);
 
         private readonly record struct AudioConditionContext(MediaOptions Options, MediaSourceInfo Item, string? Container, MediaStream? AudioStream);
     }

@@ -411,7 +411,7 @@ namespace MediaBrowser.Model.Dlna
                         ApplyDirectStreamAudio(playlistItem, audioStream, directPlayProfile);
 
                         SetStreamInfoOptionsFromDirectPlayProfile(options, item, playlistItem, directPlayProfile);
-                        BuildStreamVideoItem(playlistItem, options, item, videoStream, audioStream, candidateAudioStreams, directPlayProfile?.Container, directPlayProfile?.VideoCodec, directPlayProfile?.AudioCodec);
+                        BuildStreamVideoItem(playlistItem, options, new BuildStreamVideoItemPartsFirst(item, videoStream, audioStream, candidateAudioStreams), new BuildStreamVideoItemPartsSecond(directPlayProfile?.Container, directPlayProfile?.VideoCodec, directPlayProfile?.AudioCodec));
                     }
 
                     SetDirectPlaySubtitle(item, options, playlistItem, new SetDirectPlaySubtitleParts(subtitleStream, directPlay.Value, directPlayProfile));
@@ -666,7 +666,7 @@ namespace MediaBrowser.Model.Dlna
                 {
                     SetStreamInfoOptionsFromTranscodingProfile(item, playlistItem, transcodingProfile);
 
-                    BuildStreamVideoItem(playlistItem, options, item, parts.VideoStream, parts.AudioStream, parts.CandidateAudioStreams, transcodingProfile.Container, transcodingProfile.VideoCodec, transcodingProfile.AudioCodec);
+                    BuildStreamVideoItem(playlistItem, options, new BuildStreamVideoItemPartsFirst(item, parts.VideoStream, parts.AudioStream, parts.CandidateAudioStreams), new BuildStreamVideoItemPartsSecond(transcodingProfile.Container, transcodingProfile.VideoCodec, transcodingProfile.AudioCodec));
 
                     playlistItem.PlayMethod = PlayMethod.Transcode;
 
