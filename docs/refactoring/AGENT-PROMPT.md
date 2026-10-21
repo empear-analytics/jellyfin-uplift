@@ -34,6 +34,11 @@ your task, your worktree and anything specific to the file. Everything below app
   in one commit. The additions of the evening of 2026-10-18 are in force too: rule 10 with a
   `switch` inside the block, rule 11 for a `switch` statement, up to two context structs per method
   in rule 12, and rule 13 (the tail of an `if` / `else if` chain).
+  Added on 2026-10-19: rule 11 for a `switch` statement whose sections end in `break` (a void switch), and
+  rule 13 with a void tail. The measuring scripts (`codehealth_check.py`) now go through the CodeScene MCP
+  server by themselves and fall back to the CLI; you change nothing, but if the server throttles
+  ("Access token is invalid or expired" although the token is fine) the script waits and retries, which
+  can take a minute or two. Do not delete or restart the server.
 - Before a step that adds methods, follow "Choosing the next step": measure the candidate
   applications on their own first and commit the best `UP` one.
 - After every step, before committing it, run all four checks from section 7 of the task file.
