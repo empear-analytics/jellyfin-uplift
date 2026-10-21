@@ -128,30 +128,27 @@ namespace MediaBrowser.Model.Dlna
         /// <summary>
         /// Check the compatibility of the audio codec.
         /// </summary>
-        /// <param name="options">Media options.</param>
-        /// <param name="mediaSource">Media source.</param>
-        /// <param name="container">Container.</param>
-        /// <param name="audioStream">Audio stream.</param>
+        /// <param name="parts">Options, media source, container and audio stream.</param>
         /// <param name="transcodingAudioCodec">Override audio codec.</param>
         /// <param name="isVideo">The media source is video.</param>
         /// <param name="isSecondaryAudio">The audio stream is secondary.</param>
         /// <returns>Transcode reasons if the audio stream is not fully compatible.</returns>
-        private TranscodeReason GetCompatibilityAudioCodec(MediaOptions options, MediaSourceInfo mediaSource, string container, MediaStream audioStream, string? transcodingAudioCodec, bool isVideo, bool isSecondaryAudio)
+        private TranscodeReason GetCompatibilityAudioCodec(GetCompatibilityAudioCodecParts parts, string? transcodingAudioCodec, bool isVideo, bool isSecondaryAudio)
         {
-            var profile = options.Profile;
+            var profile = parts.Options.Profile;
 
-            var audioCodec = transcodingAudioCodec ?? audioStream.Codec;
-            var audioProfile = audioStream.Profile;
-            var audioChannels = audioStream.Channels;
-            var audioBitrate = audioStream.BitRate;
-            var audioSampleRate = audioStream.SampleRate;
-            var audioBitDepth = audioStream.BitDepth;
+            var audioCodec = transcodingAudioCodec ?? parts.AudioStream.Codec;
+            var audioProfile = parts.AudioStream.Profile;
+            var audioChannels = parts.AudioStream.Channels;
+            var audioBitrate = parts.AudioStream.BitRate;
+            var audioSampleRate = parts.AudioStream.SampleRate;
+            var audioBitDepth = parts.AudioStream.BitDepth;
 
             var audioFailureConditions = isVideo
-                ? GetProfileConditionsForVideoAudio(profile.CodecProfiles, container, audioCodec, new GetProfileConditionsForVideoAudioParts(audioChannels, audioBitrate, audioSampleRate, audioBitDepth, audioProfile, isSecondaryAudio))
-                : GetProfileConditionsForAudio(profile.CodecProfiles, container, new GetProfileConditionsForAudioParts(audioCodec, audioChannels, audioBitrate, audioSampleRate, audioBitDepth), true);
+                ? GetProfileConditionsForVideoAudio(profile.CodecProfiles, parts.Container, audioCodec, new GetProfileConditionsForVideoAudioParts(audioChannels, audioBitrate, audioSampleRate, audioBitDepth, audioProfile, isSecondaryAudio))
+                : GetProfileConditionsForAudio(profile.CodecProfiles, parts.Container, new GetProfileConditionsForAudioParts(audioCodec, audioChannels, audioBitrate, audioSampleRate, audioBitDepth), true);
 
-            var failures = AggregateFailureConditions(mediaSource, profile, "AudioCodecProfile", audioFailureConditions);
+            var failures = AggregateFailureConditions(parts.MediaSource, profile, "AudioCodecProfile", audioFailureConditions);
 
             return failures;
         }
@@ -168,7 +165,7 @@ namespace MediaBrowser.Model.Dlna
         /// <returns>Transcode reasons if the audio stream is not fully compatible for direct playback.</returns>
         private TranscodeReason GetCompatibilityAudioCodecDirect(MediaOptions options, MediaSourceInfo mediaSource, string container, MediaStream audioStream, bool isVideo, bool isSecondaryAudio)
         {
-            var failures = GetCompatibilityAudioCodec(options, mediaSource, container, audioStream, null, isVideo, isSecondaryAudio);
+            var failures = GetCompatibilityAudioCodec(new GetCompatibilityAudioCodecParts(options, mediaSource, container, audioStream), null, isVideo, isSecondaryAudio);
 
             if (audioStream.IsExternal)
             {
@@ -177,5 +174,7 @@ namespace MediaBrowser.Model.Dlna
 
             return failures;
         }
+
+        private readonly record struct GetCompatibilityAudioCodecParts(MediaOptions Options, MediaSourceInfo MediaSource, string Container, MediaStream AudioStream);
     }
 }

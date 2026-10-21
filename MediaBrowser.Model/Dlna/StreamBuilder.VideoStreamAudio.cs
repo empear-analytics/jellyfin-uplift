@@ -51,7 +51,7 @@ namespace MediaBrowser.Model.Dlna
 
         private TranscodeReason GetDirectAudioFailures(MediaOptions options, MediaSourceInfo item, string? container, MediaStream? audioStreamWithSupportedCodec)
         {
-            return audioStreamWithSupportedCodec is null ? default : GetCompatibilityAudioCodec(options, item, container ?? string.Empty, audioStreamWithSupportedCodec, null, true, false);
+            return audioStreamWithSupportedCodec is null ? default : GetCompatibilityAudioCodec(new GetCompatibilityAudioCodecParts(options, item, container ?? string.Empty, audioStreamWithSupportedCodec), null, true, false);
         }
     }
 }

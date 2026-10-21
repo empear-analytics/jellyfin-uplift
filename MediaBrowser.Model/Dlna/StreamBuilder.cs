@@ -779,7 +779,7 @@ namespace MediaBrowser.Model.Dlna
 
             foreach (var transcodingAudioCodec in transcodingAudioCodecs)
             {
-                var failures = GetCompatibilityAudioCodec(parts.Options, parts.MediaSource, parts.Container, parts.AudioStream, transcodingAudioCodec, true, false);
+                var failures = GetCompatibilityAudioCodec(new GetCompatibilityAudioCodecParts(parts.Options, parts.MediaSource, parts.Container, parts.AudioStream), transcodingAudioCodec, true, false);
 
                 var rankAudio = 3;
 

@@ -85,7 +85,7 @@ namespace MediaBrowser.Model.Dlna
 
             if (directPlayMethod is PlayMethod.DirectPlay)
             {
-                var audioFailureReasons = GetCompatibilityAudioCodec(options, item, item.Container, audioStream, null, false, false);
+                var audioFailureReasons = GetCompatibilityAudioCodec(new GetCompatibilityAudioCodecParts(options, item, item.Container, audioStream), null, false, false);
                 transcodeReasons |= audioFailureReasons;
 
                 if (audioFailureReasons == 0)
