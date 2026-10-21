@@ -174,7 +174,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             VaapiDecoderIntelFilters(context, new VaapiDecoderIntelContext(isSwDecoder, isVaapiDecoder, doOclTonemap, doTonemap, isMjpegEncoder, transposeDir, doVaVppTranspose, vidEncoder, threeDFormat, doDeintH2645), options, mainFilters);
 
             // vaapi vpp tonemap
-            if (NeedsHwVaapiVppTonemap(doVaVppTonemap, isVaapiDecoder))
+            if (NeedsHwVaapiVppTonemap(new IntelVaapiVppTonemapState(doVaVppTonemap, isVaapiDecoder)))
             {
                 var tonemapFilter = GetHwTonemapFilter(options, "vaapi", "nv12", isMjpegEncoder);
                 mainFilters.Add(tonemapFilter);
