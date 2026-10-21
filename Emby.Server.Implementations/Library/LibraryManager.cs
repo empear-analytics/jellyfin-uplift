@@ -334,15 +334,25 @@ namespace Emby.Server.Implementations.Library
                     return;
                 }
             }
-            else if (!item.IsFolder)
+            else if (IsUnsupportedNonFolder(item))
             {
-                if (item is not Video && item is not LiveTvChannel)
-                {
-                    return;
-                }
+                return;
             }
 
             _cache.AddOrUpdate(item.Id, item);
+        }
+
+        private static bool IsUnsupportedNonFolder(BaseItem item)
+        {
+            if (!item.IsFolder)
+            {
+                if (item is not Video && item is not LiveTvChannel)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
