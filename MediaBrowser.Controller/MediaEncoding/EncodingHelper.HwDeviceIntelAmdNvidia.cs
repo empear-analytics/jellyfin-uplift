@@ -159,7 +159,17 @@ namespace MediaBrowser.Controller.MediaEncoding
                 context.Args.Append(GetCudaDeviceArgs(0, CudaAlias))
                      .Append(GetFilterHwDeviceArgs(CudaAlias));
             }
-            else if (context.OptHwaccelType == HardwareAccelerationType.amf)
+            else
+            {
+                return HwDeviceDispatchAmf(context);
+            }
+
+            return GetHwDeviceArgsWithDecoder(context.Args, context.VidDecoder);
+        }
+
+        private string HwDeviceDispatchAmf(HwDeviceDispatchContext context)
+        {
+            if (context.OptHwaccelType == HardwareAccelerationType.amf)
             {
                 if (IsAmfHwaccelUnsupported(context.IsWindows))
                 {
