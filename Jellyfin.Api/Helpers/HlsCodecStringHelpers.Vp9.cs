@@ -58,12 +58,8 @@ public static partial class HlsCodecStringHelpers
     {
         return pixelFormat switch
         {
-            "yuv420p10le" => "02",
-            "yuv420p12le" => "02",
-            "yuv422p10le" => "03",
-            "yuv422p12le" => "03",
-            "yuv444p10le" => "03",
-            "yuv444p12le" => "03",
+            "yuv420p10le" or "yuv420p12le" => "02",
+            "yuv422p10le" or "yuv422p12le" or "yuv444p10le" or "yuv444p12le" => "03",
             _ => "00"
         };
     }
