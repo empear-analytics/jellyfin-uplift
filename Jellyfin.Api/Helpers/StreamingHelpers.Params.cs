@@ -35,154 +35,154 @@ public static partial class StreamingHelpers
                 continue;
             }
 
-            ApplyParam(request, videoRequest, i, val);
+            ApplyParam(new StreamingParam(request, videoRequest, i, val));
         }
     }
 
-    private static void ApplyParam(StreamingRequestDto request, VideoRequestDto? videoRequest, int i, string val)
+    private static void ApplyParam(StreamingParam parameter)
     {
-        switch (i)
+        switch (parameter.I)
         {
             case 0:
                 // DeviceProfileId
                 break;
             case 1:
-                request.DeviceId = val;
+                parameter.Request.DeviceId = parameter.Val;
                 break;
             case 2:
-                request.MediaSourceId = val;
+                parameter.Request.MediaSourceId = parameter.Val;
                 break;
             case 3:
-                request.Static = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
+                parameter.Request.Static = string.Equals("true", parameter.Val, StringComparison.OrdinalIgnoreCase);
                 break;
             case 4:
-                ApplyVideoCodec(videoRequest, val);
+                ApplyVideoCodec(new VideoRequestParam(parameter.VideoRequest, parameter.Val));
                 break;
             case 5:
-                ApplyAudioCodec(request, val);
+                ApplyAudioCodec(parameter.Request, parameter.Val);
                 break;
             default:
-                StreamingParamApplyRest1(request, videoRequest, i, val);
+                StreamingParamApplyRest1(parameter);
                 break;
         }
     }
 
-    private static void StreamingParamApplyRest1(StreamingRequestDto request, VideoRequestDto? videoRequest, int i, string val)
+    private static void StreamingParamApplyRest1(StreamingParam parameter)
     {
-        switch (i)
+        switch (parameter.I)
         {
             case 6:
-                ApplyAudioStreamIndex(videoRequest, val);
+                ApplyAudioStreamIndex(new VideoRequestParam(parameter.VideoRequest, parameter.Val));
                 break;
             case 7:
-                ApplySubtitleStreamIndex(videoRequest, val);
+                ApplySubtitleStreamIndex(new VideoRequestParam(parameter.VideoRequest, parameter.Val));
                 break;
             case 8:
-                ApplyVideoBitRate(videoRequest, val);
+                ApplyVideoBitRate(new VideoRequestParam(parameter.VideoRequest, parameter.Val));
                 break;
             case 9:
-                request.AudioBitRate = int.Parse(val, CultureInfo.InvariantCulture);
+                parameter.Request.AudioBitRate = int.Parse(parameter.Val, CultureInfo.InvariantCulture);
                 break;
             case 10:
-                request.MaxAudioChannels = int.Parse(val, CultureInfo.InvariantCulture);
+                parameter.Request.MaxAudioChannels = int.Parse(parameter.Val, CultureInfo.InvariantCulture);
                 break;
             case 11:
-                ApplyMaxFramerate(videoRequest, val);
+                ApplyMaxFramerate(new VideoRequestParam(parameter.VideoRequest, parameter.Val));
                 break;
             default:
-                StreamingParamApplyRest2(request, videoRequest, i, val);
+                StreamingParamApplyRest2(parameter);
                 break;
         }
     }
 
-    private static void StreamingParamApplyRest2(StreamingRequestDto request, VideoRequestDto? videoRequest, int i, string val)
+    private static void StreamingParamApplyRest2(StreamingParam parameter)
     {
-        switch (i)
+        switch (parameter.I)
         {
             case 12:
-                ApplyMaxWidth(videoRequest, val);
+                ApplyMaxWidth(new VideoRequestParam(parameter.VideoRequest, parameter.Val));
                 break;
             case 13:
-                ApplyMaxHeight(videoRequest, val);
+                ApplyMaxHeight(new VideoRequestParam(parameter.VideoRequest, parameter.Val));
                 break;
             case 14:
-                request.StartTimeTicks = long.Parse(val, CultureInfo.InvariantCulture);
+                parameter.Request.StartTimeTicks = long.Parse(parameter.Val, CultureInfo.InvariantCulture);
                 break;
             case 15:
-                ApplyLevel(videoRequest, val);
+                ApplyLevel(new VideoRequestParam(parameter.VideoRequest, parameter.Val));
                 break;
             case 16:
-                ApplyMaxRefFrames(videoRequest, val);
+                ApplyMaxRefFrames(new VideoRequestParam(parameter.VideoRequest, parameter.Val));
                 break;
             case 17:
-                ApplyMaxVideoBitDepth(videoRequest, val);
+                ApplyMaxVideoBitDepth(new VideoRequestParam(parameter.VideoRequest, parameter.Val));
                 break;
             default:
-                StreamingParamApplyRest3(request, videoRequest, i, val);
+                StreamingParamApplyRest3(parameter);
                 break;
         }
     }
 
-    private static void StreamingParamApplyRest3(StreamingRequestDto request, VideoRequestDto? videoRequest, int i, string val)
+    private static void StreamingParamApplyRest3(StreamingParam parameter)
     {
-        switch (i)
+        switch (parameter.I)
         {
             case 18:
-                ApplyProfile(videoRequest, val);
+                ApplyProfile(parameter.VideoRequest, parameter.Val);
                 break;
             case 19:
                 // cabac no longer used
                 break;
             case 20:
-                request.PlaySessionId = val;
+                parameter.Request.PlaySessionId = parameter.Val;
                 break;
             case 21:
                 // api_key
                 break;
             case 22:
-                request.LiveStreamId = val;
+                parameter.Request.LiveStreamId = parameter.Val;
                 break;
             case 23:
                 // Duplicating ItemId because of MediaMonkey
                 break;
             case 24:
-                ApplyCopyTimestamps(videoRequest, val);
+                ApplyCopyTimestamps(parameter.VideoRequest, parameter.Val);
                 break;
             case 25:
-                ApplySubtitleMethod(videoRequest, val);
+                ApplySubtitleMethod(parameter.VideoRequest, parameter.Val);
                 break;
             case 26:
-                request.TranscodingMaxAudioChannels = int.Parse(val, CultureInfo.InvariantCulture);
+                parameter.Request.TranscodingMaxAudioChannels = int.Parse(parameter.Val, CultureInfo.InvariantCulture);
                 break;
             case 27:
-                ApplyEnableSubtitlesInManifest(videoRequest, val);
+                ApplyEnableSubtitlesInManifest(parameter.VideoRequest, parameter.Val);
                 break;
             case 28:
-                request.Tag = val;
+                parameter.Request.Tag = parameter.Val;
                 break;
             case 29:
-                ApplyRequireAvc(videoRequest, val);
+                ApplyRequireAvc(parameter.VideoRequest, parameter.Val);
                 break;
             case 30:
-                ApplySubtitleCodec(request, val);
+                ApplySubtitleCodec(parameter.Request, parameter.Val);
                 break;
             case 31:
-                ApplyRequireNonAnamorphic(videoRequest, val);
+                ApplyRequireNonAnamorphic(parameter.VideoRequest, parameter.Val);
                 break;
             case 32:
-                ApplyDeInterlace(videoRequest, val);
+                ApplyDeInterlace(parameter.VideoRequest, parameter.Val);
                 break;
             case 33:
-                request.TranscodeReasons = val;
+                parameter.Request.TranscodeReasons = parameter.Val;
                 break;
         }
     }
 
-    private static void ApplyVideoCodec(VideoRequestDto? videoRequest, string val)
+    private static void ApplyVideoCodec(VideoRequestParam parameter)
     {
-        if (videoRequest is not null && IsValidCodecName(val))
+        if (parameter.VideoRequest is not null && IsValidCodecName(parameter.Val))
         {
-            videoRequest.VideoCodec = val;
+            parameter.VideoRequest.VideoCodec = parameter.Val;
         }
     }
 
@@ -194,75 +194,75 @@ public static partial class StreamingHelpers
         }
     }
 
-    private static void ApplyAudioStreamIndex(VideoRequestDto? videoRequest, string val)
+    private static void ApplyAudioStreamIndex(VideoRequestParam parameter)
     {
-        if (videoRequest is not null)
+        if (parameter.VideoRequest is not null)
         {
-            videoRequest.AudioStreamIndex = int.Parse(val, CultureInfo.InvariantCulture);
+            parameter.VideoRequest.AudioStreamIndex = int.Parse(parameter.Val, CultureInfo.InvariantCulture);
         }
     }
 
-    private static void ApplySubtitleStreamIndex(VideoRequestDto? videoRequest, string val)
+    private static void ApplySubtitleStreamIndex(VideoRequestParam parameter)
     {
-        if (videoRequest is not null)
+        if (parameter.VideoRequest is not null)
         {
-            videoRequest.SubtitleStreamIndex = int.Parse(val, CultureInfo.InvariantCulture);
+            parameter.VideoRequest.SubtitleStreamIndex = int.Parse(parameter.Val, CultureInfo.InvariantCulture);
         }
     }
 
-    private static void ApplyVideoBitRate(VideoRequestDto? videoRequest, string val)
+    private static void ApplyVideoBitRate(VideoRequestParam parameter)
     {
-        if (videoRequest is not null)
+        if (parameter.VideoRequest is not null)
         {
-            videoRequest.VideoBitRate = int.Parse(val, CultureInfo.InvariantCulture);
+            parameter.VideoRequest.VideoBitRate = int.Parse(parameter.Val, CultureInfo.InvariantCulture);
         }
     }
 
-    private static void ApplyMaxFramerate(VideoRequestDto? videoRequest, string val)
+    private static void ApplyMaxFramerate(VideoRequestParam parameter)
     {
-        if (videoRequest is not null)
+        if (parameter.VideoRequest is not null)
         {
-            videoRequest.MaxFramerate = float.Parse(val, CultureInfo.InvariantCulture);
+            parameter.VideoRequest.MaxFramerate = float.Parse(parameter.Val, CultureInfo.InvariantCulture);
         }
     }
 
-    private static void ApplyMaxWidth(VideoRequestDto? videoRequest, string val)
+    private static void ApplyMaxWidth(VideoRequestParam parameter)
     {
-        if (videoRequest is not null)
+        if (parameter.VideoRequest is not null)
         {
-            videoRequest.MaxWidth = int.Parse(val, CultureInfo.InvariantCulture);
+            parameter.VideoRequest.MaxWidth = int.Parse(parameter.Val, CultureInfo.InvariantCulture);
         }
     }
 
-    private static void ApplyMaxHeight(VideoRequestDto? videoRequest, string val)
+    private static void ApplyMaxHeight(VideoRequestParam parameter)
     {
-        if (videoRequest is not null)
+        if (parameter.VideoRequest is not null)
         {
-            videoRequest.MaxHeight = int.Parse(val, CultureInfo.InvariantCulture);
+            parameter.VideoRequest.MaxHeight = int.Parse(parameter.Val, CultureInfo.InvariantCulture);
         }
     }
 
-    private static void ApplyLevel(VideoRequestDto? videoRequest, string val)
+    private static void ApplyLevel(VideoRequestParam parameter)
     {
-        if (videoRequest is not null && EncodingHelper.LevelValidationRegex().IsMatch(val))
+        if (parameter.VideoRequest is not null && EncodingHelper.LevelValidationRegex().IsMatch(parameter.Val))
         {
-            videoRequest.Level = val;
+            parameter.VideoRequest.Level = parameter.Val;
         }
     }
 
-    private static void ApplyMaxRefFrames(VideoRequestDto? videoRequest, string val)
+    private static void ApplyMaxRefFrames(VideoRequestParam parameter)
     {
-        if (videoRequest is not null)
+        if (parameter.VideoRequest is not null)
         {
-            videoRequest.MaxRefFrames = int.Parse(val, CultureInfo.InvariantCulture);
+            parameter.VideoRequest.MaxRefFrames = int.Parse(parameter.Val, CultureInfo.InvariantCulture);
         }
     }
 
-    private static void ApplyMaxVideoBitDepth(VideoRequestDto? videoRequest, string val)
+    private static void ApplyMaxVideoBitDepth(VideoRequestParam parameter)
     {
-        if (videoRequest is not null)
+        if (parameter.VideoRequest is not null)
         {
-            videoRequest.MaxVideoBitDepth = int.Parse(val, CultureInfo.InvariantCulture);
+            parameter.VideoRequest.MaxVideoBitDepth = int.Parse(parameter.Val, CultureInfo.InvariantCulture);
         }
     }
 
@@ -337,4 +337,8 @@ public static partial class StreamingHelpers
     {
         return EncodingHelper.ContainerValidationRegex().IsMatch(val);
     }
+
+    private readonly record struct StreamingParam(StreamingRequestDto Request, VideoRequestDto? VideoRequest, int I, string Val);
+
+    private readonly record struct VideoRequestParam(VideoRequestDto? VideoRequest, string Val);
 }
