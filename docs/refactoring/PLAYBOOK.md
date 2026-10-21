@@ -144,6 +144,15 @@ blocks of nested logic). Each "bump" is a missing method.
     context and `state` as a plain parameter), not only its inside: leaving the guard at the call
     site keeps the nesting and the bumps. A value used inside an interpolated string stays a plain
     parameter when the guard reports the string as changed.
+    Three additions of 2026-10-21, all plumbing that changes no behaviour:
+    - A helper may take both structs of its method when its block needs values from both; it still
+      has at most four parameters, and each struct is still constructed once, in the original
+      method.
+    - When the whole statement needs more values than fit (twelve members and three plain
+      parameters beside the context, fifteen in all), the guard may stay at the call site and only
+      the inside moves. Measure it: this form is allowed only when the whole statement does not fit.
+    - Write the construction of a struct on one line: the score follows the method's line count, and
+      a construction split over fourteen lines scored 9.46 where the same one on a line scored 9.52.
 13. **The tail of an `if` / `else if` chain.** The last branches of a chain
     (`if (a) { ... } else if (b) { ... } else if (c) { ... } else if (d) { ... }`) move, from some
     `else if` onwards, to a new method; the original gets `else { x = Helper(...); }` (when the
@@ -683,3 +692,4 @@ The founding version restated the five founding recipes of the 3SX campaign (3sx
 | 2026-10-18 | Recipe D: a logging message template is never a value moved into a helper parameter (CA2254). | R4-48 `PathManager`: the two-value merge adopted earlier the same day fails the build with CA2254, so no step was possible. Correction of the earlier row. Made under the campaign owner's mandate. |
 | 2026-10-19 | Recipe E rule 11 also covers a `switch` statement whose sections end in `break` (no `return`): a suffix of the sections, with `default:`, moves to a helper switch, each section keeping its `break`. | Measured in round 5: `ApplyParam` (R4-18, 34 sections) and `ApplyTranscodingConditions` (R4-02) are void switches of this shape. Compiled with warnings as errors and compared with the original on 20,000 random inputs (0 failures). Made under the campaign owner's mandate, not individually reviewed. |
 | 2026-10-19 | Recipe E rule 13 also covers a void tail: branches that only add to or change objects passed in (no assigned local read afterwards) move to a void helper, called from `else { Helper(...); }`. | Round 5: the Amd vaapi branch of `EncodingHelper.VaapiFilters` (R4-05, 7.86 UP as a void tail, not committed under the old rule). Compiled with warnings as errors and compared with the original on 20,000 random inputs (0 failures). Made under the campaign owner's mandate, not individually reviewed. |
+| 2026-10-21 | Recipe E rule 12: a helper may take both structs of its method; the guard may stay at the call site when the whole statement needs more than fifteen values; a struct construction is written on one line. | Round 5: the Amd and Intel decoder chains of `EncodingHelper.VaapiFilters` (R4-05: 7.95 and 7.90 UP, but the helper read both structs), the sw-decoder and hw-scale blocks of `EncodingHelper.RkmppFilters` (R4-19: 9.12 and 9.13 UP, whole statements need 16 values), the Intel software-decoder block (R4-09: 16 values), and the layout finding of R4-36. Parameter plumbing only: no statement changes. Not adopted: `??` defaults in Recipe P (no run gained), a larger member cap. Made under the campaign owner's mandate, not individually reviewed. |

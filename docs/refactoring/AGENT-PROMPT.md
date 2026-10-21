@@ -39,6 +39,8 @@ your task, your worktree and anything specific to the file. Everything below app
   server by themselves and fall back to the CLI; you change nothing, but if the server throttles
   ("Access token is invalid or expired" although the token is fine) the script waits and retries, which
   can take a minute or two. Do not delete or restart the server.
+  Added on 2026-10-21 (rule 12): a helper may take both structs of its method; the guard may stay at the
+  call site when the whole statement needs more than fifteen values; write a struct construction on one line.
 - Before a step that adds methods, follow "Choosing the next step": measure the candidate
   applications on their own first and commit the best `UP` one.
 - After every step, before committing it, run all four checks from section 7 of the task file.

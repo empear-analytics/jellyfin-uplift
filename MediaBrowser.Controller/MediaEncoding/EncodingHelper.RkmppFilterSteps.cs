@@ -114,6 +114,54 @@ namespace MediaBrowser.Controller.MediaEncoding
             return hwScaleFilter;
         }
 
+        private static void RkmppDecoderAddHwScaleFilters(List<string> mainFilters, string hwScaleFilter, string outFormat, RkmppDecoderHwScaleContext context)
+        {
+            var isScaleRatioSupported = IsScaleRatioSupported(context.InW, context.InH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH, 8.0f);
+
+            // RGA3 hardware only support (1/8 ~ 8) scaling in each blit operation,
+            // but in Trickplay there's a case: (3840/320 == 12), enable 2pass for it
+            if (context.DoScaling && !isScaleRatioSupported)
+            {
+                AddRkmppScaleFirstPass(mainFilters, context.DoOclTonemap, context.IsMjpegEncoder, outFormat);
+            }
+
+            // The RKMPP MJPEG encoder on some newer chip models no longer supports RGB input.
+            // Use 2pass here to enable RGA output of full-range YUV in the 2nd pass.
+            if (NeedsRkrgaMjpegFirstPass(context.IsMjpegEncoder, context.DoOclTonemap, context.DoScaling, isScaleRatioSupported))
+            {
+                var hwScaleFilterFirstPass = "vpp_rkrga=format=bgra:afbc=1";
+                mainFilters.Add(hwScaleFilterFirstPass);
+            }
+
+            hwScaleFilter = AppendRkmppHwScaleOptions(hwScaleFilter, context.DoRkVppTranspose, context.TransposeDir, context.IsFullAfbcPipeline);
+
+            // hw transpose & scale
+            mainFilters.Add(hwScaleFilter);
+        }
+
+        private void RkmppDecoderAddSwFilters(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, RkmppDecoderSwContext context)
+        {
+            // INPUT sw surface(memory)
+            // sw deint
+            AddSwDeinterlaceFilter(state, options, mainFilters, context.DoDeintH2645);
+
+            var outFormat = GetRkmppSwOutFormat(context.DoOclTonemap, context.HasGraphicalSubs);
+            var swScaleFilter = GetSwScaleFilter(state, options, context.VidEncoder, context.SwpInW, context.SwpInH, context.ThreeDFormat, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+            swScaleFilter = AppendRkmppSwScaleOptions(swScaleFilter, context.IsMjpegEncoder, context.DoOclTonemap);
+
+            // sw scale
+            mainFilters.Add(swScaleFilter);
+            mainFilters.Add($"format={outFormat}");
+
+            // keep video at memory except ocl tonemap,
+            // since the overhead caused by hwupload >>> using sw filter.
+            // sw => hw
+            if (context.DoOclTonemap)
+            {
+                mainFilters.Add("hwupload=derive_device=opencl");
+            }
+        }
+
         private readonly record struct RkmppSubtitleFilterContext(
             bool IsEncoderSupportAfbc,
             bool HasGraphicalSubs,
@@ -123,6 +171,34 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? SwpInH,
             int? SubW,
             int? SubH,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH);
+
+        private readonly record struct RkmppDecoderHwScaleContext(
+            int? InW,
+            int? InH,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH,
+            bool DoOclTonemap,
+            bool IsMjpegEncoder,
+            bool DoScaling,
+            bool DoRkVppTranspose,
+            bool IsFullAfbcPipeline,
+            string TransposeDir);
+
+        private readonly record struct RkmppDecoderSwContext(
+            string VidEncoder,
+            bool DoDeintH2645,
+            bool DoOclTonemap,
+            bool HasGraphicalSubs,
+            bool IsMjpegEncoder,
+            int? SwpInW,
+            int? SwpInH,
+            Video3DFormat? ThreeDFormat,
             int? ReqW,
             int? ReqH,
             int? ReqMaxW,

@@ -87,5 +87,68 @@ namespace MediaBrowser.Controller.MediaEncoding
             var outFormat = doCuTonemap ? (isRext ? "p010" : string.Empty) : "yuv420p";
             return outFormat;
         }
+
+        private void NvidiaDecoderAddSwFilters(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, NvidiaDecoderSwContext context)
+        {
+            if (context.IsSwDecoder)
+            {
+                // INPUT sw surface(memory)
+                // sw deint
+                AddSwDeinterlaceFilter(state, options, mainFilters, context.DoDeintH2645);
+
+                var outFormat = context.DoCuTonemap ? "p010le" : "yuv420p";
+                var swScaleFilter = GetSwScaleFilter(state, options, context.VidEncoder, context.SwpInW, context.SwpInH, context.ThreeDFormat, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                // sw scale
+                mainFilters.Add(swScaleFilter);
+                mainFilters.Add($"format={outFormat}");
+
+                // sw => hw
+                AddNvidiaHwupload(mainFilters, context.DoCuTonemap);
+            }
+        }
+
+        private void NvidiaDecoderAddCudaFilters(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, NvidiaDecoderCudaContext context)
+        {
+            if (context.IsNvDecoder)
+            {
+                // INPUT cuda surface(vram)
+                // hw deint
+                AddNvidiaHwDeinterlaceFilter(state, options, mainFilters, context.DoDeintH2645);
+
+                // hw transpose
+                AddNvidiaHwTransposeFilter(mainFilters, context.DoCuTranspose, context.TransposeDir);
+
+                var outFormat = GetNvidiaHwOutFormat(state, context.DoCuTonemap);
+                var hwScaleFilter = GetHwScaleFilter("scale", "cuda", outFormat, false, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+                // hw scale
+                mainFilters.Add(hwScaleFilter);
+            }
+        }
+
+        private readonly record struct NvidiaDecoderSwContext(
+            bool IsSwDecoder,
+            bool DoDeintH2645,
+            bool DoCuTonemap,
+            string VidEncoder,
+            int? SwpInW,
+            int? SwpInH,
+            Video3DFormat? ThreeDFormat,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH);
+
+        private readonly record struct NvidiaDecoderCudaContext(
+            bool IsNvDecoder,
+            bool DoDeintH2645,
+            bool DoCuTranspose,
+            bool DoCuTonemap,
+            string TransposeDir,
+            int? SwpInW,
+            int? SwpInH,
+            int? ReqW,
+            int? ReqH,
+            int? ReqMaxW,
+            int? ReqMaxH);
     }
 }

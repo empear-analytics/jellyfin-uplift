@@ -83,14 +83,14 @@ Update as tasks land.
 | --- | --- | --- | --- |
 | R6-01 | 6.45 | 9.68 (+ StreamBuilder.TranscodingCases.cs 8.69) | Sonnet. Group: Recipe S split (6.55), then rule 10 with the whole switch inside the block moved to `TranscodingCaseIsSkipped` with a rule 12 struct (9.68; the new file fell from 9.84 to 8.50, Complex Method cc 44), then a Recipe D reuse of `IsDisabledByQualifier` (new file 8.69). CAVEAT: the complexity was relocated, not removed: the original rose by 3.13 while the new file lost 1.15 (DOWN against its own first score); a per-file reading would call that a violation. Rule 11 chains inside the original were WORSE (new smells). Left: frozen signatures; cc 44 in the new file (sections end in `return true` as well as `break`, so rule 11 cannot split it). |
 | R6-02 | 7.78 | - | not started |
-| R6-03 | 7.86 | - | not started |
+| R6-03 | 7.86 | 8.04 | Sonnet. Two commits (UP), first use of the rule 12 additions of 2026-10-21: the Intel decoder chain moved to `VaapiDecoderIntelFilters` with a second struct (10 members) and a helper reading both structs (7.95); the Amd chain likewise, replacing the round-5b void-tail helper and its 12-member struct (8.04). Left: Bumpy Road in Intel (2 bumps, cc 15) and in the new Amd helper, Limited cc 14, chain cc 10, Primitive Obsession. |
 | R6-04 | 7.98 | - | not started |
 | R6-05 | 8.03 | - | not started |
 | R6-06 | 8.03 | - | not started |
 | R6-07 | 8.04 | - | not started |
 | R6-08 | 8.16 | - | not started |
 | R6-09 | 8.28 | - | not started |
-| R6-10 | 8.33 | - | not started |
+| R6-10 | 8.33 | 8.53 | Sonnet. Two commits (UP), rule 12 additions of 2026-10-21: the Vaapi hardware-decoder block (8.47) and the Dx11 software-decoder block (8.53) moved to helpers with a second struct (10 and 6 members) and the existing subtitle struct, the `else if` guard staying at the call site because the whole statement does not fit. Dx11 hardware block DOWN (helper cc 10); Vaapi software block FLAT. Left: Dx11 cc 27 (the hardware block with the procamp nesting), Vaapi cc 18, Primitive Obsession. |
 | R6-11 | 8.54 | - | not started |
 | R6-12 | 8.54 | - | not started |
 | R6-13 | 8.77 | 9.23 | Sonnet. One commit (UP): rule 11 for a void switch applied three times to ApplyParam (sections 6,6,6,16 in four methods; about 35 split points measured). Five or more groups make a new Primitive Obsession (WORSE). Left: ApplyParamRest3 cc 17, frozen GetStreamingState signature. |
@@ -109,7 +109,7 @@ Update as tasks land.
 | R6-26 | 9.09 | - | not started |
 | R6-27 | 9.09 | - | not started |
 | R6-28 | 9.09 | - | not started |
-| R6-29 | 9.11 | - | not started |
+| R6-29 | 9.11 | 9.22 | Sonnet. Two commits (UP), rule 12 additions of 2026-10-21: the hw-scale block (9.19) and the sw-decoder block (9.22) moved, with a 12-member struct each, to helpers in RkmppFilterSteps.cs (which stays 10.00); the guards stay at the call site because the whole statements need 16 values. Checked: nothing reads `hwScaleFilter` after the block. Left: Bumpy Road 2 bumps and cc 23 (the else-if isRkmppDecoder block). |
 | R6-30 | 9.24 | - | not started |
 | R6-31 | 9.27 | - | not started |
 | R6-32 | 9.38 | - | not started |
@@ -121,8 +121,8 @@ Update as tasks land.
 | R6-38 | 9.38 | - | not started |
 | R6-39 | 9.38 | - | not started |
 | R6-40 | 9.38 | - | not started |
-| R6-41 | 9.47 | - | not started |
-| R6-42 | 9.52 | - | not started |
+| R6-41 | 9.47 | 9.60 | Sonnet. Three commits (UP): the software-decoder block and the nvidia-decoder block moved whole (guard inside) to helpers with an 11-member struct each, placed in EncodingHelper.NvidiaFilterHelpers.cs (stays 9.68; the same step in the main file was DOWN in round 5), 9.47 to 9.54; then the existing subtitle struct's construction written on one line, 9.54 to 9.60. CAVEAT: the last commit is layout only (score follows line count). Left: Complex Method cc 13 (memory-output section reads a local `memoryOutput` later), Primitive Obsession in the helpers file. |
+| R6-42 | 9.52 | 9.52 | Sonnet. NOT landed. One candidate scored 9.52 to 9.56 UP (commit 8d332de93b, unreachable once the worktree is removed): the d3d11va block of GetAmdDx11VidFiltersPrefered moved whole to `AddAmdDecoderD3d11vaFilters` in AmdFilterSteps.cs with a new 12-member struct. It gives the method THREE structs; rule 12 allows two. Reuse of an existing struct was impossible (three values missing, 6 parameters). The brief given to the agent wrongly allowed a third. Needs a ruling on a third struct per method. |
 | R6-43 | 9.66 | - | not started |
 | R6-44 | 9.66 | - | not started |
 | R6-45 | 9.68 | - | not started |

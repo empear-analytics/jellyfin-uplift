@@ -113,36 +113,11 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             mainFilters.Add(GetOverwriteColorPropertiesParam(state, doCuTonemap));
 
-            if (isSwDecoder)
-            {
-                // INPUT sw surface(memory)
-                // sw deint
-                AddSwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
+            var swDecoderContext = new NvidiaDecoderSwContext(isSwDecoder, doDeintH2645, doCuTonemap, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
+            NvidiaDecoderAddSwFilters(state, options, mainFilters, swDecoderContext);
 
-                var outFormat = doCuTonemap ? "p010le" : "yuv420p";
-                var swScaleFilter = GetSwScaleFilter(state, options, vidEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-                // sw scale
-                mainFilters.Add(swScaleFilter);
-                mainFilters.Add($"format={outFormat}");
-
-                // sw => hw
-                AddNvidiaHwupload(mainFilters, doCuTonemap);
-            }
-
-            if (isNvDecoder)
-            {
-                // INPUT cuda surface(vram)
-                // hw deint
-                AddNvidiaHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                // hw transpose
-                AddNvidiaHwTransposeFilter(mainFilters, doCuTranspose, transposeDir);
-
-                var outFormat = GetNvidiaHwOutFormat(state, doCuTonemap);
-                var hwScaleFilter = GetHwScaleFilter("scale", "cuda", outFormat, false, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                // hw scale
-                mainFilters.Add(hwScaleFilter);
-            }
+            var nvDecoderContext = new NvidiaDecoderCudaContext(isNvDecoder, doDeintH2645, doCuTranspose, doCuTonemap, transposeDir, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
+            NvidiaDecoderAddCudaFilters(state, options, mainFilters, nvDecoderContext);
 
             // hw tonemap
             AddNvidiaHwTonemapFilter(options, mainFilters, doCuTonemap, isMjpegEncoder);
@@ -172,19 +147,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // OUTPUT cuda(yuv420p) surface(vram)
 
             /* Make sub and overlay filters for subtitle stream */
-            var context = new NvidiaSubtitleFilterContext(
-                hasSubs,
-                hasGraphicalSubs,
-                hasTextSubs,
-                hasAssSubs,
-                swpInW,
-                swpInH,
-                subW,
-                subH,
-                reqW,
-                reqH,
-                reqMaxW,
-                reqMaxH);
+            var context = new NvidiaSubtitleFilterContext(hasSubs, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
             if (isCuInCuOut)
