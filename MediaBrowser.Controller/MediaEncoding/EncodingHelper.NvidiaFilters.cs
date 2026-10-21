@@ -124,7 +124,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var memoryOutput = false;
             var isUploadForCuTonemap = isSwDecoder && doCuTonemap;
-            if (NeedsCudaMemoryOutput(isNvDecoder, isSwEncoder, isUploadForCuTonemap, hasSubs))
+            if (NeedsCudaMemoryOutput(new NeedsCudaMemoryOutputParts(isNvDecoder, isSwEncoder, isUploadForCuTonemap, hasSubs)))
             {
                 memoryOutput = true;
 

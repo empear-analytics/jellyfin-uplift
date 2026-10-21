@@ -37,9 +37,9 @@ namespace MediaBrowser.Controller.MediaEncoding
                 ? ":alpha_format=premultiplied" : string.Empty;
         }
 
-        private static bool NeedsCudaMemoryOutput(bool isNvDecoder, bool isSwEncoder, bool isUploadForCuTonemap, bool hasSubs)
+        private static bool NeedsCudaMemoryOutput(NeedsCudaMemoryOutputParts parts)
         {
-            return (isNvDecoder && isSwEncoder) || (isUploadForCuTonemap && hasSubs);
+            return (parts.IsNvDecoder && parts.IsSwEncoder) || (parts.IsUploadForCuTonemap && parts.HasSubs);
         }
 
         private static bool NeedsNvencHwUpload(bool isSwDecoder, bool isNvencEncoder, bool isUploadForCuTonemap)
@@ -150,5 +150,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? ReqH,
             int? ReqMaxW,
             int? ReqMaxH);
+
+        private readonly record struct NeedsCudaMemoryOutputParts(bool IsNvDecoder, bool IsSwEncoder, bool IsUploadForCuTonemap, bool HasSubs);
     }
 }
