@@ -552,6 +552,16 @@ public static class StreamingHelpers
             case 5:
                 ApplyAudioCodec(request, val);
                 break;
+            default:
+                StreamingParamApplyRest1(request, videoRequest, i, val);
+                break;
+        }
+    }
+
+    private static void StreamingParamApplyRest1(StreamingRequestDto request, VideoRequestDto? videoRequest, int i, string val)
+    {
+        switch (i)
+        {
             case 6:
                 ApplyAudioStreamIndex(videoRequest, val);
                 break;
@@ -570,6 +580,16 @@ public static class StreamingHelpers
             case 11:
                 ApplyMaxFramerate(videoRequest, val);
                 break;
+            default:
+                StreamingParamApplyRest2(request, videoRequest, i, val);
+                break;
+        }
+    }
+
+    private static void StreamingParamApplyRest2(StreamingRequestDto request, VideoRequestDto? videoRequest, int i, string val)
+    {
+        switch (i)
+        {
             case 12:
                 ApplyMaxWidth(videoRequest, val);
                 break;
@@ -588,6 +608,16 @@ public static class StreamingHelpers
             case 17:
                 ApplyMaxVideoBitDepth(videoRequest, val);
                 break;
+            default:
+                StreamingParamApplyRest3(request, videoRequest, i, val);
+                break;
+        }
+    }
+
+    private static void StreamingParamApplyRest3(StreamingRequestDto request, VideoRequestDto? videoRequest, int i, string val)
+    {
+        switch (i)
+        {
             case 18:
                 ApplyProfile(videoRequest, val);
                 break;
