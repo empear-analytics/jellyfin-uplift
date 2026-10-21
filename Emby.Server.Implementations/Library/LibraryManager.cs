@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -1009,7 +1010,7 @@ namespace Emby.Server.Implementations.Library
                     SetAncestorIds(query, parents);
                 }
             }
-            else if (parents.Count == 1 && parents.First() is Folder folder
+            else if (TryGetSingleParentFolder(parents, out var folder)
                 && IsLinkedChildrenContainer(folder))
             {
                 // Playlists and BoxSets store their contents in LinkedChildren and never
@@ -1025,6 +1026,12 @@ namespace Emby.Server.Implementations.Library
             }
 
             query.Parent = null;
+        }
+
+        private static bool TryGetSingleParentFolder(IReadOnlyCollection<BaseItem> parents, [NotNullWhen(true)] out Folder? folder)
+        {
+            folder = parents.Count == 1 ? parents.First() as Folder : null;
+            return folder is not null;
         }
 
         private static bool IsLinkedChildrenContainer(Folder folder)
