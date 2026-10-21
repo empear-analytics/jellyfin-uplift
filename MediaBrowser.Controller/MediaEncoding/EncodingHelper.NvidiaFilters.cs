@@ -90,7 +90,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isMjpegEncoder = vidEncoder.Contains("mjpeg", StringComparison.OrdinalIgnoreCase);
             var isCuInCuOut = isNvDecoder && isNvencEncoder;
 
-            var doubleRateDeint = options.DeinterlaceDoubleRate && (state.VideoStream?.ReferenceFrameRate ?? 60) <= 30;
+            var doubleRateDeint = IsHwDoubleRateDeinterlace(state, options);
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doCuTonemap = IsHwTonemapAvailable(state, options);
 
@@ -139,10 +139,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 memoryOutput = true;
             }
 
-            if (memoryOutput)
-            {
-                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
-            }
+            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
             // OUTPUT cuda(yuv420p) surface(vram)
 
