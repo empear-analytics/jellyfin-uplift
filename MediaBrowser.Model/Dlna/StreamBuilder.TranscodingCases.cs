@@ -156,19 +156,9 @@ namespace MediaBrowser.Model.Dlna
 
                 case ProfileConditionValue.VideoBitDepth:
                     {
-                        if (string.IsNullOrEmpty(context.Qualifier))
+                        if (IsDisabledByQualifier(context.Qualifier, context.EnableQualifiedConditions, context.EnableNonQualifiedConditions))
                         {
-                            if (!context.EnableNonQualifiedConditions)
-                            {
-                                return true;
-                            }
-                        }
-                        else
-                        {
-                            if (!context.EnableQualifiedConditions)
-                            {
-                                return true;
-                            }
+                            return true;
                         }
 
                         ApplyVideoBitDepthCondition(context.Item, context.Condition, context.Value, context.Qualifier);
