@@ -109,7 +109,7 @@ Update as tasks land.
 | R6-26 | 9.09 | - | not started |
 | R6-27 | 9.09 | - | not started |
 | R6-28 | 9.09 | - | not started |
-| R6-29 | 9.11 | - | not started |
+| R6-29 | 9.11 | 9.22 | Sonnet. Two commits (UP), rule 12 additions of 2026-10-21: the hw-scale block (9.19) and the sw-decoder block (9.22) moved, with a 12-member struct each, to helpers in RkmppFilterSteps.cs (which stays 10.00); the guards stay at the call site because the whole statements need 16 values. Checked: nothing reads `hwScaleFilter` after the block. Left: Bumpy Road 2 bumps and cc 23 (the else-if isRkmppDecoder block). |
 | R6-30 | 9.24 | - | not started |
 | R6-31 | 9.27 | - | not started |
 | R6-32 | 9.38 | - | not started |
