@@ -49,5 +49,35 @@ namespace Emby.Server.Implementations.Library
 
             return null;
         }
+
+        private static AttributeOpening ScanAttributeOpening(ReadOnlySpan<char> shortAttr, ReadOnlySpan<char> subStr, int attributeIndex, AttributeOpening current)
+        {
+            var attributeEnd = current.AttributeEnd;
+            if (attributeIndex <= 0)
+            {
+                return new AttributeOpening(attributeEnd, default, true);
+            }
+
+            var attributeOpener = subStr[attributeIndex - 1];
+            var attributeCloser = GetAttributeCloser(attributeOpener);
+
+            if (attributeCloser == '\0')
+            {
+                return new AttributeOpening(attributeEnd, default, true);
+            }
+
+            attributeEnd = AttributeValueSkipId(shortAttr, subStr, attributeEnd);
+
+            // attributeEnd points at '='.
+            // We need at least 1 more character and the closing bracket after that.
+            if (!HasAssignmentAfterAttribute(subStr, attributeEnd))
+            {
+                return new AttributeOpening(attributeEnd, default, true);
+            }
+
+            return new AttributeOpening(attributeEnd, attributeCloser, false);
+        }
+
+        private readonly record struct AttributeOpening(int AttributeEnd, char AttributeCloser, bool Skipped);
     }
 }

@@ -47,24 +47,10 @@ namespace Emby.Server.Implementations.Library
                 // If attributeIndex < 0, the loop will end and strIndex won't be used again.
                 strIndex += attributeEnd;
 
-                if (attributeIndex <= 0)
-                {
-                    continue;
-                }
-
-                var attributeOpener = subStr[attributeIndex - 1];
-                var attributeCloser = GetAttributeCloser(attributeOpener);
-
-                if (attributeCloser == '\0')
-                {
-                    continue;
-                }
-
-                attributeEnd = AttributeValueSkipId(shortAttr, subStr, attributeEnd);
-
-                // attributeEnd points at '='.
-                // We need at least 1 more character and the closing bracket after that.
-                if (!HasAssignmentAfterAttribute(subStr, attributeEnd))
+                var opening = ScanAttributeOpening(shortAttr, subStr, attributeIndex, new AttributeOpening(attributeEnd, default, false));
+                attributeEnd = opening.AttributeEnd;
+                var attributeCloser = opening.AttributeCloser;
+                if (opening.Skipped)
                 {
                     continue;
                 }
