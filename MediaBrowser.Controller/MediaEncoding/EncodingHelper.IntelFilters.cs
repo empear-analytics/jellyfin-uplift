@@ -729,26 +729,31 @@ namespace MediaBrowser.Controller.MediaEncoding
             // ocl tonemap
             AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
-            var memoryContext = new IntelQsvMemoryOutputContext(isSwDecoder, doOclTonemap, isSwEncoder, isVaapiDecoder, isHwDecoder, isQsvEncoder);
-            var memoryOutput = GetIntelQsvVaapiMemoryOutput(memoryContext, mainFilters);
+            var memoryContext = new IntelQsvMemoryOutputContext(isSwDecoder, doOclTonemap, isSwEncoder, isVaapiDecoder, isHwDecoder, isQsvEncoder, isQsvInQsvOut, state, mainFilters);
+            return GetIntelQsvVaapiOutputFilters(context, memoryContext);
+        }
 
-            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
+        private (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetIntelQsvVaapiOutputFilters(IntelQsvVaapiFilterContext context, IntelQsvMemoryOutputContext memoryContext)
+        {
+            var memoryOutput = GetIntelQsvVaapiMemoryOutput(memoryContext, memoryContext.MainFilters);
 
-            AddQsvInQsvOutMapping(mainFilters, isQsvInQsvOut, doOclTonemap, isVaapiDecoder);
+            AddMemoryOutputTextSubtitlesFilter(memoryContext.State, memoryContext.MainFilters, memoryOutput, context.HasTextSubs);
+
+            AddQsvInQsvOutMapping(memoryContext.MainFilters, memoryContext.IsQsvInQsvOut, memoryContext.DoOclTonemap, memoryContext.IsVaapiDecoder);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
-            if (isQsvInQsvOut)
+            if (memoryContext.IsQsvInQsvOut)
             {
-                AddIntelQsvVaapiQsvOutSubtitleFilters(state, subFilters, overlayFilters, context);
+                AddIntelQsvVaapiQsvOutSubtitleFilters(memoryContext.State, subFilters, overlayFilters, context);
             }
             else
             {
                 AddIntelQsvVaapiMemoryOutputSubtitleFilters(subFilters, overlayFilters, context, memoryOutput);
             }
 
-            return (mainFilters, subFilters, overlayFilters);
+            return (memoryContext.MainFilters, subFilters, overlayFilters);
         }
 
         private static bool GetIntelQsvVaapiMemoryOutput(IntelQsvMemoryOutputContext memoryContext, List<string> mainFilters)
@@ -1071,7 +1076,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool SwapWAndH,
             bool DoDeintH2645);
 
-        private readonly record struct IntelQsvMemoryOutputContext(bool IsSwDecoder, bool DoOclTonemap, bool IsSwEncoder, bool IsVaapiDecoder, bool IsHwDecoder, bool IsQsvEncoder);
+        private readonly record struct IntelQsvMemoryOutputContext(bool IsSwDecoder, bool DoOclTonemap, bool IsSwEncoder, bool IsVaapiDecoder, bool IsHwDecoder, bool IsQsvEncoder, bool IsQsvInQsvOut, EncodingJobInfo State, List<string> MainFilters);
 
         private readonly record struct VppProcampResult(bool TwoPassVppTonemap, bool DoVppProcamp, string ProcampParams);
 
