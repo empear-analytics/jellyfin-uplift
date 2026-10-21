@@ -614,7 +614,15 @@ namespace MediaBrowser.Controller.MediaEncoding
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
-            if (hasSubs)
+            var subtitleContext = new VaapiAmdSubtitleOutputContext(hasSubs, isSwEncoder, isVaapiEncoder, doDeintH2645);
+            AddVaapiAmdSubtitleAndOverlayFilters(context, subtitleContext, subFilters, overlayFilters);
+
+            return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void AddVaapiAmdSubtitleAndOverlayFilters(VaapiAmdFullContext context, VaapiAmdSubtitleOutputContext subtitleContext, List<string> subFilters, List<string> overlayFilters)
+        {
+            if (subtitleContext.HasSubs)
             {
                 AddVaapiAmdSubtitleSourceFilters(context, subFilters);
 
@@ -622,18 +630,16 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 overlayFilters.Add("overlay_vulkan=eof_action=pass:repeatlast=0");
 
-                if (isSwEncoder)
+                if (subtitleContext.IsSwEncoder)
                 {
                     // OUTPUT nv12 surface(memory)
                     AddVulkanSwOverlayOutput(overlayFilters);
                 }
-                else if (isVaapiEncoder)
+                else if (subtitleContext.IsVaapiEncoder)
                 {
-                    AddVaapiVulkanOverlayOutput(context, overlayFilters, doDeintH2645);
+                    AddVaapiVulkanOverlayOutput(context, overlayFilters, subtitleContext.DoDeintH2645);
                 }
             }
-
-            return (mainFilters, subFilters, overlayFilters);
         }
 
         private void VaapiDecoderAmdFilters(VaapiAmdFullContext context, VaapiDecoderAmdContext decoder, List<string> mainFilters)
@@ -1134,6 +1140,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             int? InH);
 
         private readonly record struct VaapiLimitedHwDecoderContext(EncodingOptions Options, bool DoDeintH2645, bool DoOclTonemap, bool IsMjpegEncoder, bool IsVaapiDecoder, int? InW, int? InH, int? ReqW, int? ReqH, int? ReqMaxW, int? ReqMaxH, List<string> MainFilters);
+
+        private readonly record struct VaapiAmdSubtitleOutputContext(bool HasSubs, bool IsSwEncoder, bool IsVaapiEncoder, bool DoDeintH2645);
 
         private readonly record struct VaapiLimitedSubtitleContext(bool MemoryOutput, int? SwpInW, int? SwpInH, int? ReqW, int? ReqH, int? ReqMaxW, int? ReqMaxH);
     }
