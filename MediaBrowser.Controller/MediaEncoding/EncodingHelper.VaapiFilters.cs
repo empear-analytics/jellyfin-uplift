@@ -59,21 +59,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // legacy vaapi pipeline(copy-back)
             if (UseLegacyHwPipeline(isSwDecoder, isSwEncoder, isVaapiOclSupported))
             {
-                var swFilterChain = GetSwVidFilterChain(state, options, vidEncoder);
-
-                if (!isSwEncoder)
-                {
-                    var newfilters = new List<string>();
-                    var noOverlay = swFilterChain.OverlayFilters.Count == 0;
-                    newfilters.AddRange(noOverlay ? swFilterChain.MainFilters : swFilterChain.OverlayFilters);
-                    newfilters.Add("hwupload=derive_device=vaapi");
-
-                    var mainFilters = noOverlay ? newfilters : swFilterChain.MainFilters;
-                    var overlayFilters = noOverlay ? swFilterChain.OverlayFilters : newfilters;
-                    return (mainFilters, swFilterChain.SubFilters, overlayFilters);
-                }
-
-                return swFilterChain;
+                return GetVaapiLegacyVidFilterChain(state, options, vidEncoder, isSwEncoder);
             }
 
             // preferred vaapi + opencl filters pipeline
@@ -92,6 +78,25 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // Intel i965 and Amd legacy driver path, only featuring scale and deinterlace support.
             return GetVaapiLimitedVidFiltersPrefered(state, options, vidDecoder, vidEncoder);
+        }
+
+        private (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetVaapiLegacyVidFilterChain(EncodingJobInfo state, EncodingOptions options, string vidEncoder, bool isSwEncoder)
+        {
+            var swFilterChain = GetSwVidFilterChain(state, options, vidEncoder);
+
+            if (!isSwEncoder)
+            {
+                var newfilters = new List<string>();
+                var noOverlay = swFilterChain.OverlayFilters.Count == 0;
+                newfilters.AddRange(noOverlay ? swFilterChain.MainFilters : swFilterChain.OverlayFilters);
+                newfilters.Add("hwupload=derive_device=vaapi");
+
+                var mainFilters = noOverlay ? newfilters : swFilterChain.MainFilters;
+                var overlayFilters = noOverlay ? swFilterChain.OverlayFilters : newfilters;
+                return (mainFilters, swFilterChain.SubFilters, overlayFilters);
+            }
+
+            return swFilterChain;
         }
 
         private bool IsVaapiFullAndOpenclSupported(bool isVaapiFullSupported)
