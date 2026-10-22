@@ -662,7 +662,7 @@ namespace Emby.Server.Implementations.Library
                     string cacheKey = request.OpenToken;
 
                     await new LiveStreamHelper(_mediaEncoder, _logger, _appPaths)
-                        .AddMediaInfoWithProbe(mediaSource, false, cacheKey, true, cancellationToken)
+                        .AddMediaInfoWithProbe(mediaSource, new LiveStreamHelper.LiveStreamProbeOptions(false, cacheKey, true), cancellationToken)
                         .ConfigureAwait(false);
                 }
             }

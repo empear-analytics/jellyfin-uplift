@@ -307,8 +307,7 @@ public partial class DynamicHlsHelper
         var framerate = state.VideoStream.ReferenceFrameRate ?? 30;
         var bitDepth = state.VideoStream.BitDepth ?? 8;
         return HlsCodecStringHelpers.GetVp9String(
-            width,
-            height,
+            new HlsCodecStringHelpers.VideoSize(width, height),
             state.VideoStream.PixelFormat,
             framerate,
             bitDepth);

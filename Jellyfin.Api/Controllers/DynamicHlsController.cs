@@ -286,15 +286,8 @@ public partial class DynamicHlsController : BaseJellyfinApiController
         // since it gets disposed when ffmpeg exits
         var cancellationToken = cancellationTokenSource.Token;
         var state = await StreamingHelpers.GetStreamingState(
-                streamingRequest,
-                HttpContext,
-                _mediaSourceManager,
-                _userManager,
-                _libraryManager,
-                _serverConfigurationManager,
-                _mediaEncoder,
-                _encodingHelper,
-                _transcodeManager,
+                new StreamingHelpers.StreamingRequestContext(streamingRequest, HttpContext),
+                new StreamingHelpers.StreamingServices(_mediaSourceManager, _userManager, _libraryManager, _serverConfigurationManager, _mediaEncoder, _encodingHelper, _transcodeManager),
                 TranscodingJobType,
                 cancellationToken)
             .ConfigureAwait(false);
@@ -364,15 +357,8 @@ public partial class DynamicHlsController : BaseJellyfinApiController
     private async Task<ActionResult> GetVariantPlaylistInternal(StreamingRequestDto streamingRequest, CancellationTokenSource cancellationTokenSource)
     {
         using var state = await StreamingHelpers.GetStreamingState(
-                streamingRequest,
-                HttpContext,
-                _mediaSourceManager,
-                _userManager,
-                _libraryManager,
-                _serverConfigurationManager,
-                _mediaEncoder,
-                _encodingHelper,
-                _transcodeManager,
+                new StreamingHelpers.StreamingRequestContext(streamingRequest, HttpContext),
+                new StreamingHelpers.StreamingServices(_mediaSourceManager, _userManager, _libraryManager, _serverConfigurationManager, _mediaEncoder, _encodingHelper, _transcodeManager),
                 TranscodingJobType,
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);
@@ -413,15 +399,8 @@ public partial class DynamicHlsController : BaseJellyfinApiController
         var cancellationToken = cancellationTokenSource.Token;
 
         var state = await StreamingHelpers.GetStreamingState(
-                streamingRequest,
-                HttpContext,
-                _mediaSourceManager,
-                _userManager,
-                _libraryManager,
-                _serverConfigurationManager,
-                _mediaEncoder,
-                _encodingHelper,
-                _transcodeManager,
+                new StreamingHelpers.StreamingRequestContext(streamingRequest, HttpContext),
+                new StreamingHelpers.StreamingServices(_mediaSourceManager, _userManager, _libraryManager, _serverConfigurationManager, _mediaEncoder, _encodingHelper, _transcodeManager),
                 TranscodingJobType,
                 cancellationToken)
             .ConfigureAwait(false);

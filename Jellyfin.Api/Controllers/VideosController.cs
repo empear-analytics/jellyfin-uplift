@@ -426,15 +426,8 @@ public class VideosController : BaseJellyfinApiController
         };
 
         var state = await StreamingHelpers.GetStreamingState(
-                streamingRequest,
-                HttpContext,
-                _mediaSourceManager,
-                _userManager,
-                _libraryManager,
-                _serverConfigurationManager,
-                _mediaEncoder,
-                _encodingHelper,
-                _transcodeManager,
+                new StreamingHelpers.StreamingRequestContext(streamingRequest, HttpContext),
+                new StreamingHelpers.StreamingServices(_mediaSourceManager, _userManager, _libraryManager, _serverConfigurationManager, _mediaEncoder, _encodingHelper, _transcodeManager),
                 _transcodingJobType,
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);
@@ -487,10 +480,7 @@ public class VideosController : BaseJellyfinApiController
             state,
             isHeadRequest,
             HttpContext,
-            _transcodeManager,
-            ffmpegCommandLineArguments,
-            _transcodingJobType,
-            cancellationTokenSource).ConfigureAwait(false);
+            new FileStreamResponseHelpers.TranscodingJobStart(_transcodeManager, ffmpegCommandLineArguments, _transcodingJobType, cancellationTokenSource)).ConfigureAwait(false);
     }
 
     /// <summary>

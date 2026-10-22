@@ -108,19 +108,13 @@ public static class FileStreamResponseHelpers
     /// <param name="state">The current <see cref="StreamState"/>.</param>
     /// <param name="isHeadRequest">Whether the current request is a HTTP HEAD request so only the headers get returned.</param>
     /// <param name="httpContext">The current http context.</param>
-    /// <param name="transcodeManager">The <see cref="ITranscodeManager"/> singleton.</param>
-    /// <param name="ffmpegCommandLineArguments">The command line arguments to start ffmpeg.</param>
-    /// <param name="transcodingJobType">The <see cref="TranscodingJobType"/>.</param>
-    /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/>.</param>
+    /// <param name="transcoding">The transcode manager, the ffmpeg arguments, the job type and the cancellation token source to start the transcoding job with.</param>
     /// <returns>A <see cref="Task{ActionResult}"/> containing the transcoded file.</returns>
     public static async Task<ActionResult> GetTranscodedFile(
         StreamState state,
         bool isHeadRequest,
         HttpContext httpContext,
-        ITranscodeManager transcodeManager,
-        string ffmpegCommandLineArguments,
-        TranscodingJobType transcodingJobType,
-        CancellationTokenSource cancellationTokenSource)
+        TranscodingJobStart transcoding)
     {
         // Use the command line args with a dummy playlist path
         var outputPath = state.OutputFilePath;
@@ -136,26 +130,26 @@ public static class FileStreamResponseHelpers
             return new OkResult();
         }
 
-        using (await transcodeManager.LockAsync(outputPath, cancellationTokenSource.Token).ConfigureAwait(false))
+        using (await transcoding.TranscodeManager.LockAsync(outputPath, transcoding.CancellationTokenSource.Token).ConfigureAwait(false))
         {
             TranscodingJob? job;
             if (!File.Exists(outputPath))
             {
-                job = await transcodeManager.StartFfMpeg(
+                job = await transcoding.TranscodeManager.StartFfMpeg(
                     state,
                     outputPath,
-                    ffmpegCommandLineArguments,
+                    transcoding.FfmpegCommandLineArguments,
                     httpContext.User.GetUserId(),
-                    transcodingJobType,
-                    cancellationTokenSource).ConfigureAwait(false);
+                    transcoding.TranscodingJobType,
+                    transcoding.CancellationTokenSource).ConfigureAwait(false);
             }
             else
             {
-                job = transcodeManager.OnTranscodeBeginRequest(outputPath, TranscodingJobType.Progressive);
+                job = transcoding.TranscodeManager.OnTranscodeBeginRequest(outputPath, TranscodingJobType.Progressive);
                 state.Dispose();
             }
 
-            var stream = new ProgressiveFileStream(outputPath, job, transcodeManager);
+            var stream = new ProgressiveFileStream(outputPath, job, transcoding.TranscodeManager);
             return new FileStreamResult(stream, contentType);
         }
     }
@@ -171,4 +165,15 @@ public static class FileStreamResponseHelpers
             }
         }
     }
+
+#pragma warning disable CA1034 // Parameter object of GetTranscodedFile; nested to keep it with its only user
+    /// <summary>
+    /// What a transcoding job is started with.
+    /// </summary>
+    /// <param name="TranscodeManager">The <see cref="ITranscodeManager"/> singleton.</param>
+    /// <param name="FfmpegCommandLineArguments">The command line arguments to start ffmpeg.</param>
+    /// <param name="TranscodingJobType">The <see cref="TranscodingJobType"/>.</param>
+    /// <param name="CancellationTokenSource">The <see cref="CancellationTokenSource"/>.</param>
+    public readonly record struct TranscodingJobStart(ITranscodeManager TranscodeManager, string FfmpegCommandLineArguments, TranscodingJobType TranscodingJobType, CancellationTokenSource CancellationTokenSource);
+#pragma warning restore CA1034
 }
