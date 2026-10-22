@@ -11,20 +11,19 @@ public static partial class HlsCodecStringHelpers
     /// <summary>
     /// Gets a VP9 codec string.
     /// </summary>
-    /// <param name="width">Video width.</param>
-    /// <param name="height">Video height.</param>
+    /// <param name="size">Video width and height.</param>
     /// <param name="pixelFormat">Video pixel format.</param>
     /// <param name="framerate">Video framerate.</param>
     /// <param name="bitDepth">Video bitDepth.</param>
     /// <returns>The VP9 codec string.</returns>
-    public static string GetVp9String(int width, int height, string pixelFormat, float framerate, int bitDepth)
+    public static string GetVp9String(VideoSize size, string pixelFormat, float framerate, int bitDepth)
     {
         // refer: https://www.webmproject.org/vp9/mp4/
         StringBuilder result = new StringBuilder("vp09", 13);
 
         var profileString = GetVp9ProfileString(pixelFormat);
 
-        var lumaPictureSize = width * height;
+        var lumaPictureSize = size.Width * size.Height;
         var lumaSampleRate = lumaPictureSize * framerate;
         var levelString = GetVp9LevelString(lumaPictureSize, lumaSampleRate);
 
@@ -96,4 +95,13 @@ public static partial class HlsCodecStringHelpers
             && bitDepth != 10
             && bitDepth != 12;
     }
+
+#pragma warning disable CA1034 // Parameter object of GetVp9String; nested to keep it with its only user
+    /// <summary>
+    /// The width and height of a video.
+    /// </summary>
+    /// <param name="Width">Video width.</param>
+    /// <param name="Height">Video height.</param>
+    public readonly record struct VideoSize(int Width, int Height);
+#pragma warning restore CA1034
 }
