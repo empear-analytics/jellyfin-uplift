@@ -426,15 +426,8 @@ public class VideosController : BaseJellyfinApiController
         };
 
         var state = await StreamingHelpers.GetStreamingState(
-                streamingRequest,
-                HttpContext,
-                _mediaSourceManager,
-                _userManager,
-                _libraryManager,
-                _serverConfigurationManager,
-                _mediaEncoder,
-                _encodingHelper,
-                _transcodeManager,
+                new StreamingHelpers.StreamingRequestContext(streamingRequest, HttpContext),
+                new StreamingHelpers.StreamingServices(_mediaSourceManager, _userManager, _libraryManager, _serverConfigurationManager, _mediaEncoder, _encodingHelper, _transcodeManager),
                 _transcodingJobType,
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);

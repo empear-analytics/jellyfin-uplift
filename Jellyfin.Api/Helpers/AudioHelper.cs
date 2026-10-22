@@ -86,15 +86,8 @@ public class AudioHelper
         var cancellationTokenSource = new CancellationTokenSource();
 
         using var state = await StreamingHelpers.GetStreamingState(
-                streamingRequest,
-                _httpContextAccessor.HttpContext,
-                _mediaSourceManager,
-                _userManager,
-                _libraryManager,
-                _serverConfigurationManager,
-                _mediaEncoder,
-                _encodingHelper,
-                _transcodeManager,
+                new StreamingHelpers.StreamingRequestContext(streamingRequest, _httpContextAccessor.HttpContext),
+                new StreamingHelpers.StreamingServices(_mediaSourceManager, _userManager, _libraryManager, _serverConfigurationManager, _mediaEncoder, _encodingHelper, _transcodeManager),
                 transcodingJobType,
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);
