@@ -35,19 +35,19 @@ namespace Emby.Server.Implementations.Library
             _appPaths = appPaths;
         }
 
-        public async Task AddMediaInfoWithProbe(MediaSourceInfo mediaSource, bool isAudio, string? cacheKey, bool addProbeDelay, CancellationToken cancellationToken)
+        public async Task AddMediaInfoWithProbe(MediaSourceInfo mediaSource, LiveStreamProbeOptions probeOptions, CancellationToken cancellationToken)
         {
             var originalRuntime = mediaSource.RunTimeTicks;
 
             var now = DateTime.UtcNow;
 
-            var cacheFilePath = string.IsNullOrEmpty(cacheKey) ? null : Path.Combine(_appPaths.CachePath, "mediainfo", cacheKey.GetMD5().ToString("N", CultureInfo.InvariantCulture) + ".json");
+            var cacheFilePath = string.IsNullOrEmpty(probeOptions.CacheKey) ? null : Path.Combine(_appPaths.CachePath, "mediainfo", probeOptions.CacheKey.GetMD5().ToString("N", CultureInfo.InvariantCulture) + ".json");
 
             MediaInfo? mediaInfo = await ReadCachedMediaInfo(cacheFilePath, cancellationToken).ConfigureAwait(false);
 
             if (mediaInfo is null)
             {
-                await DelayBeforeProbe(addProbeDelay, mediaSource, cancellationToken).ConfigureAwait(false);
+                await DelayBeforeProbe(probeOptions.AddProbeDelay, mediaSource, cancellationToken).ConfigureAwait(false);
 
                 mediaSource.AnalyzeDurationMs = 3000;
 
@@ -55,7 +55,7 @@ namespace Emby.Server.Implementations.Library
                     new MediaInfoRequest
                     {
                         MediaSource = mediaSource,
-                        MediaType = isAudio ? DlnaProfileType.Audio : DlnaProfileType.Video,
+                        MediaType = probeOptions.IsAudio ? DlnaProfileType.Audio : DlnaProfileType.Video,
                         ExtractChapters = false
                     },
                     cancellationToken).ConfigureAwait(false);
@@ -63,7 +63,7 @@ namespace Emby.Server.Implementations.Library
                 await SaveMediaInfoToCache(cacheFilePath, mediaInfo, cancellationToken).ConfigureAwait(false);
             }
 
-            var mediaStreams = SelectCachedStreams(mediaInfo.MediaStreams, cacheKey);
+            var mediaStreams = SelectCachedStreams(mediaInfo.MediaStreams, probeOptions.CacheKey);
 
             _logger.LogInformation("Live tv media info probe took {0} seconds", (DateTime.UtcNow - now).TotalSeconds.ToString(CultureInfo.InvariantCulture));
 
@@ -107,7 +107,7 @@ namespace Emby.Server.Implementations.Library
 
         public Task AddMediaInfoWithProbe(MediaSourceInfo mediaSource, bool isAudio, bool addProbeDelay, CancellationToken cancellationToken)
         {
-            return AddMediaInfoWithProbe(mediaSource, isAudio, null, addProbeDelay, cancellationToken);
+            return AddMediaInfoWithProbe(mediaSource, new LiveStreamProbeOptions(isAudio, null, addProbeDelay), cancellationToken);
         }
 
         private async Task<MediaInfo?> ReadCachedMediaInfo(string? cacheFilePath, CancellationToken cancellationToken)
@@ -215,5 +215,9 @@ namespace Emby.Server.Implementations.Library
                 videoStream.IsAVC = null;
             }
         }
+
+#pragma warning disable CA1034 // Parameter object of AddMediaInfoWithProbe; nested to keep it with its only user
+        public readonly record struct LiveStreamProbeOptions(bool IsAudio, string? CacheKey, bool AddProbeDelay);
+#pragma warning restore CA1034
     }
 }
