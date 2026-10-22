@@ -14,7 +14,7 @@ namespace MediaBrowser.Controller.MediaEncoding;
 /// <summary>
 /// Transcoding segment cleaner.
 /// </summary>
-public class TranscodingSegmentCleaner : IDisposable
+public partial class TranscodingSegmentCleaner : IDisposable
 {
     private readonly TranscodingJob _job;
     private readonly ILogger<TranscodingSegmentCleaner> _logger;
@@ -100,7 +100,7 @@ public class TranscodingSegmentCleaner : IDisposable
             var downloadPositionTicks = _job.DownloadPositionTicks ?? 0;
             var downloadPositionSeconds = Convert.ToInt64(TimeSpan.FromTicks(downloadPositionTicks).TotalSeconds);
 
-            if (downloadPositionSeconds > 0 && segmentKeepSeconds > 0 && downloadPositionSeconds > segmentKeepSeconds)
+            if (IsPastSegmentKeepWindow(downloadPositionSeconds, segmentKeepSeconds))
             {
                 var idxMaxToDelete = _job.GetHighestServedSegmentIndexEndingAtOrBefore(downloadPositionTicks - TimeSpan.FromSeconds(segmentKeepSeconds).Ticks);
 
@@ -112,57 +112,9 @@ public class TranscodingSegmentCleaner : IDisposable
         }
     }
 
-    private async Task DeleteSegmentFiles(TranscodingJob job, long idxMin, long idxMax, int delayMs)
+    private static bool IsPastSegmentKeepWindow(long downloadPositionSeconds, int segmentKeepSeconds)
     {
-        var path = job.Path ?? throw new ArgumentException("Path can't be null.");
-
-        _logger.LogDebug("Deleting segment file(s) index {Min} to {Max} from {Path}", idxMin, idxMax, path);
-
-        await Task.Delay(delayMs).ConfigureAwait(false);
-
-        try
-        {
-            if (job.Type == TranscodingJobType.Hls)
-            {
-                DeleteHlsSegmentFiles(path, idxMin, idxMax);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "Error deleting segment file(s) {Path}", path);
-        }
-    }
-
-    private void DeleteHlsSegmentFiles(string outputFilePath, long idxMin, long idxMax)
-    {
-        var directory = Path.GetDirectoryName(outputFilePath)
-                        ?? throw new ArgumentException("Path can't be a root directory.", nameof(outputFilePath));
-
-        var name = Path.GetFileNameWithoutExtension(outputFilePath);
-
-        var filesToDelete = _fileSystem.GetFilePaths(directory)
-            .Where(f => long.TryParse(Path.GetFileNameWithoutExtension(f).Replace(name, string.Empty, StringComparison.Ordinal), out var idx)
-                        && (idx >= idxMin && idx <= idxMax));
-
-        List<Exception>? exs = null;
-        foreach (var file in filesToDelete)
-        {
-            try
-            {
-                _logger.LogDebug("Deleting HLS segment file {0}", file);
-                _fileSystem.DeleteFile(file);
-            }
-            catch (IOException ex)
-            {
-                (exs ??= new List<Exception>()).Add(ex);
-                _logger.LogDebug(ex, "Error deleting HLS segment file {Path}", file);
-            }
-        }
-
-        if (exs is not null)
-        {
-            throw new AggregateException("Error deleting HLS segment files", exs);
-        }
+        return downloadPositionSeconds > 0 && segmentKeepSeconds > 0 && downloadPositionSeconds > segmentKeepSeconds;
     }
 
     private void DisposeTimer()

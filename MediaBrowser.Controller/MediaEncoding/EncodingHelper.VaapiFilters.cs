@@ -59,21 +59,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             // legacy vaapi pipeline(copy-back)
             if (UseLegacyHwPipeline(isSwDecoder, isSwEncoder, isVaapiOclSupported))
             {
-                var swFilterChain = GetSwVidFilterChain(state, options, vidEncoder);
-
-                if (!isSwEncoder)
-                {
-                    var newfilters = new List<string>();
-                    var noOverlay = swFilterChain.OverlayFilters.Count == 0;
-                    newfilters.AddRange(noOverlay ? swFilterChain.MainFilters : swFilterChain.OverlayFilters);
-                    newfilters.Add("hwupload=derive_device=vaapi");
-
-                    var mainFilters = noOverlay ? newfilters : swFilterChain.MainFilters;
-                    var overlayFilters = noOverlay ? swFilterChain.OverlayFilters : newfilters;
-                    return (mainFilters, swFilterChain.SubFilters, overlayFilters);
-                }
-
-                return swFilterChain;
+                return GetVaapiLegacyVidFilterChain(state, options, new VaapiLegacyEncoder(vidEncoder, isSwEncoder));
             }
 
             // preferred vaapi + opencl filters pipeline
@@ -92,6 +78,25 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             // Intel i965 and Amd legacy driver path, only featuring scale and deinterlace support.
             return GetVaapiLimitedVidFiltersPrefered(state, options, vidDecoder, vidEncoder);
+        }
+
+        private (List<string> MainFilters, List<string> SubFilters, List<string> OverlayFilters) GetVaapiLegacyVidFilterChain(EncodingJobInfo state, EncodingOptions options, VaapiLegacyEncoder parts)
+        {
+            var swFilterChain = GetSwVidFilterChain(state, options, parts.VidEncoder);
+
+            if (!parts.IsSwEncoder)
+            {
+                var newfilters = new List<string>();
+                var noOverlay = swFilterChain.OverlayFilters.Count == 0;
+                newfilters.AddRange(noOverlay ? swFilterChain.MainFilters : swFilterChain.OverlayFilters);
+                newfilters.Add("hwupload=derive_device=vaapi");
+
+                var mainFilters = noOverlay ? newfilters : swFilterChain.MainFilters;
+                var overlayFilters = noOverlay ? swFilterChain.OverlayFilters : newfilters;
+                return (mainFilters, swFilterChain.SubFilters, overlayFilters);
+            }
+
+            return swFilterChain;
         }
 
         private bool IsVaapiFullAndOpenclSupported(bool isVaapiFullSupported)
@@ -142,7 +147,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var doVaVppTonemap = CanDoVaapiVppTonemap(state, options, isVaapiDecoder);
             var doOclTonemap = NeedsOclTonemap(state, options, doVaVppTonemap);
-            var doTonemap = doVaVppTonemap || doOclTonemap;
+            var doTonemap = IsVaapiAnyTonemap(new VaapiTonemapModes(doVaVppTonemap, doOclTonemap));
             var doDeintH2645 = IsDeinterlaceAvailable(state);
 
             var hasSubs = HasSubtitlesToEncode(state);
@@ -152,8 +157,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
-            var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+            var rotation = GetVideoStreamRotation(state);
+            var transposeDir = GetRkmppTransposeDirection(state, rotation);
             var doVaVppTranspose = !string.IsNullOrEmpty(transposeDir);
             var swapWAndH = NeedsVaapiSwapWAndH(rotation, isSwDecoder, isVaapiDecoder, doVaVppTranspose);
             var swpInW = swapWAndH ? inH : inW;
@@ -169,22 +174,22 @@ namespace MediaBrowser.Controller.MediaEncoding
             VaapiDecoderIntelFilters(context, new VaapiDecoderIntelContext(isSwDecoder, isVaapiDecoder, doOclTonemap, doTonemap, isMjpegEncoder, transposeDir, doVaVppTranspose, vidEncoder, threeDFormat, doDeintH2645), options, mainFilters);
 
             // vaapi vpp tonemap
-            if (NeedsHwVaapiVppTonemap(doVaVppTonemap, isVaapiDecoder))
+            if (NeedsHwVaapiVppTonemap(new IntelVaapiVppTonemapState(doVaVppTonemap, isVaapiDecoder)))
             {
                 var tonemapFilter = GetHwTonemapFilter(options, "vaapi", "nv12", isMjpegEncoder);
                 mainFilters.Add(tonemapFilter);
             }
 
-            AddVaapiToOpenclMapping(mainFilters, doOclTonemap, isVaapiDecoder);
+            AddVaapiToOpenclMapping(mainFilters, new VaapiOclTonemapSource(doOclTonemap, isVaapiDecoder));
 
             // ocl tonemap
             AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
-            AddVaapiReverseMapping(mainFilters, doOclTonemap, isVaInVaOut);
+            AddVaapiReverseMapping(mainFilters, new VaapiReverseMapState(doOclTonemap, isVaInVaOut));
 
             var memoryOutput = false;
-            var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
-            var isHwmapNotUsable = IsHwmapNotUsableForVaapi(isUploadForOclTonemap, isVaapiEncoder);
+            var isUploadForOclTonemap = IsAmdUploadForOclTonemap(isSwDecoder, doOclTonemap);
+            var isHwmapNotUsable = IsHwmapNotUsableForVaapi(new VaapiHwmapUsability(isUploadForOclTonemap, isVaapiEncoder));
             if (NeedsMemoryOutput(isVaapiDecoder, isSwEncoder, isUploadForOclTonemap))
             {
                 memoryOutput = true;
@@ -195,29 +200,20 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT nv12 surface(memory)
-            if (IsSwDecodeToVaapiEncode(isSwDecoder, isVaapiEncoder))
-            {
-                memoryOutput = true;
-            }
+            memoryOutput = MarkVaapiSwUploadOutput(memoryOutput, new VaapiUploadPath(isSwDecoder, isVaapiEncoder));
 
-            AddVaapiMemoryOutputTail(context, mainFilters, memoryOutput, isVaapiEncoder);
+            AddVaapiMemoryOutputTail(context, mainFilters, new VaapiMemoryUpload(memoryOutput, isVaapiEncoder));
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
             if (isVaInVaOut)
             {
-                if (hasSubs)
-                {
-                    AddVaapiVaInVaOutSubtitleFilters(context, subFilters, overlayFilters);
-                }
+                AddVaapiVaInVaOutSubtitleFiltersIfAny(context, subFilters, overlayFilters, hasSubs);
             }
             else if (memoryOutput)
             {
-                if (hasGraphicalSubs)
-                {
-                    AddVaapiMemoryGraphicalSubtitleFilters(context, isVaapiEncoder, subFilters, overlayFilters);
-                }
+                AddVaapiMemoryGraphicalSubtitleFiltersIfAny(context, isVaapiEncoder, subFilters, overlayFilters);
             }
 
             return (mainFilters, subFilters, overlayFilters);
@@ -258,7 +254,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 var outFormat = decoder.DoTonemap ? (isRext ? "p010" : string.Empty) : "nv12";
                 var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", outFormat, false, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
 
-                hwScaleFilter = ApplyVaapiMjpegScaleOptions(hwScaleFilter, decoder.IsMjpegEncoder, decoder.DoOclTonemap);
+                hwScaleFilter = ApplyVaapiMjpegScaleOptions(hwScaleFilter, new VaapiMjpegOclTonemap(decoder.IsMjpegEncoder, decoder.DoOclTonemap));
 
                 // allocate extra pool sizes for vaapi vpp
                 hwScaleFilter = ApplyVaapiExtraHwFrames(hwScaleFilter);
@@ -266,6 +262,37 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // hw scale
                 mainFilters.Add(hwScaleFilter);
             }
+        }
+
+        private static bool IsVaapiAnyTonemap(VaapiTonemapModes parts)
+        {
+            return parts.DoVaVppTonemap || parts.DoOclTonemap;
+        }
+
+        private void AddVaapiVaInVaOutSubtitleFiltersIfAny(VaapiIntelFullContext context, List<string> subFilters, List<string> overlayFilters, bool hasSubs)
+        {
+            if (hasSubs)
+            {
+                AddVaapiVaInVaOutSubtitleFilters(context, subFilters, overlayFilters);
+            }
+        }
+
+        private static void AddVaapiMemoryGraphicalSubtitleFiltersIfAny(VaapiIntelFullContext context, bool isVaapiEncoder, List<string> subFilters, List<string> overlayFilters)
+        {
+            if (context.HasGraphicalSubs)
+            {
+                AddVaapiMemoryGraphicalSubtitleFilters(context, isVaapiEncoder, subFilters, overlayFilters);
+            }
+        }
+
+        private static bool MarkVaapiSwUploadOutput(bool memoryOutput, VaapiUploadPath parts)
+        {
+            if (IsSwDecodeToVaapiEncode(parts))
+            {
+                memoryOutput = true;
+            }
+
+            return memoryOutput;
         }
 
         private static void AddVaapiMemoryGraphicalSubtitleFilters(VaapiIntelFullContext context, bool isVaapiEncoder, List<string> subFilters, List<string> overlayFilters)
@@ -308,28 +335,28 @@ namespace MediaBrowser.Controller.MediaEncoding
             AddOverlayVaapiFilter(overlayFilters, overlaySize);
         }
 
-        private void AddVaapiMemoryOutputTail(VaapiIntelFullContext context, List<string> mainFilters, bool memoryOutput, bool isVaapiEncoder)
+        private void AddVaapiMemoryOutputTail(VaapiIntelFullContext context, List<string> mainFilters, VaapiMemoryUpload parts)
         {
-            AddMemoryOutputTextSubtitlesFilter(context.State, mainFilters, memoryOutput, context.HasTextSubs);
+            AddMemoryOutputTextSubtitlesFilter(context.State, mainFilters, parts.MemoryOutput, context.HasTextSubs);
 
-            if (NeedsVaapiUploadFromMemory(memoryOutput, isVaapiEncoder))
+            if (NeedsVaapiUploadFromMemory(parts))
             {
                 AddVaapiHwupload(mainFilters, context.HasGraphicalSubs);
             }
         }
 
-        private static void AddVaapiToOpenclMapping(List<string> mainFilters, bool doOclTonemap, bool isVaapiDecoder)
+        private static void AddVaapiToOpenclMapping(List<string> mainFilters, VaapiOclTonemapSource parts)
         {
-            if (NeedsHwToOpenclMapping(doOclTonemap, isVaapiDecoder))
+            if (NeedsHwToOpenclMapping(parts.DoOclTonemap, parts.IsVaapiDecoder))
             {
                 // map from vaapi to opencl via vaapi-opencl interop(Intel only).
                 mainFilters.Add("hwmap=derive_device=opencl:mode=read");
             }
         }
 
-        private static void AddVaapiReverseMapping(List<string> mainFilters, bool doOclTonemap, bool isVaInVaOut)
+        private static void AddVaapiReverseMapping(List<string> mainFilters, VaapiReverseMapState parts)
         {
-            if (NeedsVaapiReverseMapping(doOclTonemap, isVaInVaOut))
+            if (NeedsVaapiReverseMapping(parts))
             {
                 // OUTPUT vaapi(nv12) surface(vram)
                 // reverse-mapping via vaapi-opencl interop.
@@ -344,42 +371,42 @@ namespace MediaBrowser.Controller.MediaEncoding
             filters.Add("format=vaapi");
         }
 
-        private static void AddVulkanHwDownload(List<string> mainFilters, bool isSwEncoder, bool doVkTonemap, bool isVaapiDecoder)
+        private static void AddVulkanHwDownload(List<string> mainFilters, VaapiVulkanDownloadState parts)
         {
-            if (NeedsVulkanHwDownload(isSwEncoder, doVkTonemap, isVaapiDecoder))
+            if (NeedsVulkanHwDownload(parts))
             {
                 mainFilters.Add("hwdownload");
                 mainFilters.Add("format=nv12");
             }
         }
 
-        private static void AddVulkanTransposeIfNeeded(List<string> mainFilters, bool doVkTranspose, string transposeDir)
+        private static void AddVulkanTransposeIfNeeded(List<string> mainFilters, VaapiVulkanTranspose parts)
         {
-            if (doVkTranspose)
+            if (parts.DoVkTranspose)
             {
-                AddVulkanTransposeFilter(mainFilters, transposeDir);
+                AddVulkanTransposeFilter(mainFilters, parts.TransposeDir);
             }
         }
 
-        private static void AddVaapiHwUploadUnlessTonemap(List<string> mainFilters, bool isSwDecoder, bool isVaapiEncoder, bool doVkTonemap)
+        private static void AddVaapiHwUploadUnlessTonemap(List<string> mainFilters, VaapiUploadPath parts, bool doVkTonemap)
         {
-            if (NeedsVaapiHwUpload(isSwDecoder, isVaapiEncoder, doVkTonemap))
+            if (NeedsVaapiHwUpload(parts, doVkTonemap))
             {
                 mainFilters.Add("hwupload_vaapi");
             }
         }
 
-        private static void AddLimitedOpenclMappingIfNeeded(List<string> mainFilters, bool doOclTonemap, bool isVaapiDecoder, bool isi965Driver)
+        private static void AddLimitedOpenclMappingIfNeeded(List<string> mainFilters, VaapiOclTonemapSource parts, bool isi965Driver)
         {
-            if (NeedsHwToOpenclMapping(doOclTonemap, isVaapiDecoder))
+            if (NeedsHwToOpenclMapping(parts.DoOclTonemap, parts.IsVaapiDecoder))
             {
                 AddLimitedVaapiToOpenclMapping(mainFilters, isi965Driver);
             }
         }
 
-        private static void AddLimitedReverseMappingIfNeeded(List<string> mainFilters, bool doOclTonemap, bool isVaInVaOut, bool isi965Driver)
+        private static void AddLimitedReverseMappingIfNeeded(List<string> mainFilters, VaapiReverseMapState parts, bool isi965Driver)
         {
-            if (NeedsVaapiReverseMapping(doOclTonemap, isVaInVaOut))
+            if (NeedsVaapiReverseMapping(parts))
             {
                 AddI965ReverseMapping(mainFilters, isi965Driver);
             }
@@ -394,11 +421,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             mainFilters.Add(hwCscFilter);
         }
 
-        private static void AddVkTonemapScaleVaapiFilter(List<string> overlayFilters, bool doVkTonemap, EncodingOptions options)
+        private static void AddVkTonemapScaleVaapiFilter(List<string> overlayFilters, VaapiVkTonemapRange parts)
         {
             var hwCscFilter = "scale_vaapi=format=nv12";
 
-            hwCscFilter = ApplyVkTonemapTvOutRange(hwCscFilter, doVkTonemap, options);
+            hwCscFilter = ApplyVkTonemapTvOutRange(hwCscFilter, parts);
 
             overlayFilters.Add(hwCscFilter);
         }
@@ -452,24 +479,24 @@ namespace MediaBrowser.Controller.MediaEncoding
             return Math.Abs(rotation) == 90 && (isSwDecoder || (isVaapiDecoder && doVaVppTranspose));
         }
 
-        private static bool NeedsVaapiReverseMapping(bool doOclTonemap, bool isVaInVaOut)
+        private static bool NeedsVaapiReverseMapping(VaapiReverseMapState parts)
         {
-            return doOclTonemap && isVaInVaOut;
+            return parts.DoOclTonemap && parts.IsVaInVaOut;
         }
 
-        private static bool IsHwmapNotUsableForVaapi(bool isUploadForOclTonemap, bool isVaapiEncoder)
+        private static bool IsHwmapNotUsableForVaapi(VaapiHwmapUsability parts)
         {
-            return isUploadForOclTonemap && isVaapiEncoder;
+            return parts.IsUploadForOclTonemap && parts.IsVaapiEncoder;
         }
 
-        private static bool IsSwDecodeToVaapiEncode(bool isSwDecoder, bool isVaapiEncoder)
+        private static bool IsSwDecodeToVaapiEncode(VaapiUploadPath parts)
         {
-            return isSwDecoder && isVaapiEncoder;
+            return parts.IsSwDecoder && parts.IsVaapiEncoder;
         }
 
-        private static bool NeedsVaapiUploadFromMemory(bool memoryOutput, bool isVaapiEncoder)
+        private static bool NeedsVaapiUploadFromMemory(VaapiMemoryUpload parts)
         {
-            return memoryOutput && isVaapiEncoder;
+            return parts.MemoryOutput && parts.IsVaapiEncoder;
         }
 
         private void AddVaapiHwDeinterlaceFilter(EncodingJobInfo state, EncodingOptions options, List<string> mainFilters, bool doDeintH2645)
@@ -489,11 +516,11 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
         }
 
-        private static string ApplyVaapiMjpegScaleOptions(string hwScaleFilter, bool isMjpegEncoder, bool doOclTonemap)
+        private static string ApplyVaapiMjpegScaleOptions(string hwScaleFilter, VaapiMjpegOclTonemap parts)
         {
-            if (NeedsVppMjpegOptions(hwScaleFilter, isMjpegEncoder))
+            if (NeedsVppMjpegOptions(hwScaleFilter, parts.IsMjpegEncoder))
             {
-                hwScaleFilter += doOclTonemap ? string.Empty : ":out_range=pc";
+                hwScaleFilter += parts.DoOclTonemap ? string.Empty : ":out_range=pc";
                 hwScaleFilter += ":mode=hq";
             }
 
@@ -546,8 +573,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
             var hasAssSubs = HasAssSubtitles(state, hasSubs);
 
-            var rotation = state.VideoStream?.Rotation ?? 0;
-            var transposeDir = rotation == 0 ? string.Empty : GetVideoTransposeDirection(state);
+            var rotation = GetVideoStreamRotation(state);
+            var transposeDir = GetRkmppTransposeDirection(state, rotation);
             var doVkTranspose = isVaapiDecoder && !string.IsNullOrEmpty(transposeDir);
             var swapWAndH = NeedsVaapiSwapWAndH(rotation, isSwDecoder, isVaapiDecoder, doVkTranspose);
             var swpInW = swapWAndH ? inH : inW;
@@ -563,31 +590,39 @@ namespace MediaBrowser.Controller.MediaEncoding
             VaapiDecoderAmdFilters(context, new VaapiDecoderAmdContext(isSwDecoder, isVaapiDecoder, hasSubs, doDeintH2645, doVkTranspose, vidEncoder, threeDFormat, isMjpegEncoder, inW, inH), mainFilters);
 
             // vk transpose
-            AddVulkanTransposeIfNeeded(mainFilters, doVkTranspose, transposeDir);
+            AddVulkanTransposeIfNeeded(mainFilters, new VaapiVulkanTranspose(doVkTranspose, transposeDir));
 
             // vk libplacebo
-            if (NeedsVulkanTonemapOrSubs(doVkTonemap, hasSubs))
+            if (NeedsVulkanTonemapOrSubs(new VaapiVulkanTonemapSubs(doVkTonemap, hasSubs)))
             {
                 AddVaapiLibplaceboFilters(context, isMjpegEncoder, mainFilters);
             }
 
-            if (IsVulkanTonemapWithoutSubs(doVkTonemap, hasSubs))
+            if (IsVulkanTonemapWithoutSubs(new VaapiVulkanTonemapSubs(doVkTonemap, hasSubs)))
             {
-                AddVaapiVulkanTonemapOutput(context, isMjpegEncoder, doDeintH2645, mainFilters);
+                AddVaapiVulkanTonemapOutput(context, new VaapiVulkanOutputFlags(isMjpegEncoder, doDeintH2645), mainFilters);
             }
 
             if (!hasSubs)
             {
                 // OUTPUT nv12 surface(memory)
-                AddVulkanHwDownload(mainFilters, isSwEncoder, doVkTonemap, isVaapiDecoder);
+                AddVulkanHwDownload(mainFilters, new VaapiVulkanDownloadState(isSwEncoder, doVkTonemap, isVaapiDecoder));
 
-                AddVaapiHwUploadUnlessTonemap(mainFilters, isSwDecoder, isVaapiEncoder, doVkTonemap);
+                AddVaapiHwUploadUnlessTonemap(mainFilters, new VaapiUploadPath(isSwDecoder, isVaapiEncoder), doVkTonemap);
             }
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
-            if (hasSubs)
+            var subtitleContext = new VaapiAmdSubtitleOutputContext(hasSubs, isSwEncoder, isVaapiEncoder, doDeintH2645);
+            AddVaapiAmdSubtitleAndOverlayFilters(context, subtitleContext, subFilters, overlayFilters);
+
+            return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void AddVaapiAmdSubtitleAndOverlayFilters(VaapiAmdFullContext context, VaapiAmdSubtitleOutputContext subtitleContext, List<string> subFilters, List<string> overlayFilters)
+        {
+            if (subtitleContext.HasSubs)
             {
                 AddVaapiAmdSubtitleSourceFilters(context, subFilters);
 
@@ -595,18 +630,16 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 overlayFilters.Add("overlay_vulkan=eof_action=pass:repeatlast=0");
 
-                if (isSwEncoder)
+                if (subtitleContext.IsSwEncoder)
                 {
                     // OUTPUT nv12 surface(memory)
                     AddVulkanSwOverlayOutput(overlayFilters);
                 }
-                else if (isVaapiEncoder)
+                else if (subtitleContext.IsVaapiEncoder)
                 {
-                    AddVaapiVulkanOverlayOutput(context, overlayFilters, doDeintH2645);
+                    AddVaapiVulkanOverlayOutput(context, overlayFilters, subtitleContext.DoDeintH2645);
                 }
             }
-
-            return (mainFilters, subFilters, overlayFilters);
         }
 
         private void VaapiDecoderAmdFilters(VaapiAmdFullContext context, VaapiDecoderAmdContext decoder, List<string> mainFilters)
@@ -617,7 +650,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // sw deint
                 AddSwDeinterlaceFilter(context.State, context.Options, mainFilters, decoder.DoDeintH2645);
 
-                if (NeedsVulkanTonemapOrSubs(context.DoVkTonemap, decoder.HasSubs))
+                if (NeedsVulkanTonemapOrSubs(new VaapiVulkanTonemapSubs(context.DoVkTonemap, decoder.HasSubs)))
                 {
                     // sw => hw
                     AddVulkanHwupload(mainFilters);
@@ -627,12 +660,20 @@ namespace MediaBrowser.Controller.MediaEncoding
                     AddVaapiAmdSwScaleFilters(context, decoder.VidEncoder, decoder.ThreeDFormat, mainFilters);
                 }
             }
-            else if (decoder.IsVaapiDecoder)
+            else
+            {
+                VaapiDecoderAmdHwFilters(context, decoder, mainFilters);
+            }
+        }
+
+        private void VaapiDecoderAmdHwFilters(VaapiAmdFullContext context, VaapiDecoderAmdContext decoder, List<string> mainFilters)
+        {
+            if (decoder.IsVaapiDecoder)
             {
                 // INPUT vaapi surface(vram)
-                if (NeedsVulkanInterop(decoder.DoVkTranspose, context.DoVkTonemap, decoder.HasSubs))
+                if (NeedsVulkanInterop(new VaapiVulkanInteropNeeds(decoder.DoVkTranspose, context.DoVkTonemap, decoder.HasSubs)))
                 {
-                    AddAmdVaapiToVulkanMapFilters(mainFilters, decoder.DoVkTranspose, context.DoVkTonemap, decoder.HasSubs);
+                    AddAmdVaapiToVulkanMapFilters(mainFilters, new VaapiVulkanInteropNeeds(decoder.DoVkTranspose, context.DoVkTonemap, decoder.HasSubs));
                 }
                 else
                 {
@@ -642,7 +683,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                     // hw scale
                     var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", "nv12", false, decoder.InW, decoder.InH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
 
-                    hwScaleFilter = ApplyAmdVaapiMjpegFullRange(hwScaleFilter, decoder.IsMjpegEncoder, context.DoVkTonemap);
+                    hwScaleFilter = ApplyAmdVaapiMjpegFullRange(hwScaleFilter, new VaapiMjpegVkTonemap(decoder.IsMjpegEncoder, context.DoVkTonemap));
 
                     mainFilters.Add(hwScaleFilter);
                 }
@@ -679,7 +720,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             AddVulkanToVaapiMapping(overlayFilters);
 
             // clear the surf->meta_offset and output nv12
-            AddVkTonemapScaleVaapiFilter(overlayFilters, context.DoVkTonemap, context.Options);
+            AddVkTonemapScaleVaapiFilter(overlayFilters, new VaapiVkTonemapRange(context.DoVkTonemap, context.Options));
 
             // hw deint
             AddVaapiHwDeinterlaceFilter(context.State, context.Options, overlayFilters, doDeintH2645);
@@ -687,7 +728,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         private void AddVaapiLibplaceboFilters(VaapiAmdFullContext context, bool isMjpegEncoder, List<string> mainFilters)
         {
-            var libplaceboFilter = GetLibplaceboFilter(context.Options, "bgra", context.DoVkTonemap, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH, isMjpegEncoder);
+            var libplaceboFilter = GetLibplaceboFilter(context.Options, new GetLibplaceboFilterParts("bgra", context.DoVkTonemap, context.SwpInW, context.SwpInH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH), isMjpegEncoder);
             mainFilters.Add(libplaceboFilter);
             mainFilters.Add("format=vulkan");
         }
@@ -700,32 +741,32 @@ namespace MediaBrowser.Controller.MediaEncoding
             mainFilters.Add("format=nv12");
         }
 
-        private void AddVaapiVulkanTonemapOutput(VaapiAmdFullContext context, bool isMjpegEncoder, bool doDeintH2645, List<string> mainFilters)
+        private void AddVaapiVulkanTonemapOutput(VaapiAmdFullContext context, VaapiVulkanOutputFlags parts, List<string> mainFilters)
         {
             // OUTPUT vaapi(nv12) surface(vram)
             // map from vulkan/drm to vaapi via interop (Polaris/gfx8+).
             AddVulkanToVaapiMapping(mainFilters);
 
             // clear the surf->meta_offset and output nv12
-            AddNonMjpegScaleVaapiFilter(mainFilters, isMjpegEncoder, context.Options);
+            AddNonMjpegScaleVaapiFilter(mainFilters, parts.IsMjpegEncoder, context.Options);
 
             // hw deint
-            AddVaapiHwDeinterlaceFilter(context.State, context.Options, mainFilters, doDeintH2645);
+            AddVaapiHwDeinterlaceFilter(context.State, context.Options, mainFilters, parts.DoDeintH2645);
         }
 
-        private static bool NeedsVulkanTonemapOrSubs(bool doVkTonemap, bool hasSubs)
+        private static bool NeedsVulkanTonemapOrSubs(VaapiVulkanTonemapSubs parts)
         {
-            return doVkTonemap || hasSubs;
+            return parts.DoVkTonemap || parts.HasSubs;
         }
 
-        private static bool IsVulkanTonemapWithoutSubs(bool doVkTonemap, bool hasSubs)
+        private static bool IsVulkanTonemapWithoutSubs(VaapiVulkanTonemapSubs parts)
         {
-            return doVkTonemap && !hasSubs;
+            return parts.DoVkTonemap && !parts.HasSubs;
         }
 
-        private static string ApplyAmdVaapiMjpegFullRange(string hwScaleFilter, bool isMjpegEncoder, bool doVkTonemap)
+        private static string ApplyAmdVaapiMjpegFullRange(string hwScaleFilter, VaapiMjpegVkTonemap parts)
         {
-            if (ShouldUseFullRangeMjpegScale(hwScaleFilter, isMjpegEncoder, doVkTonemap))
+            if (ShouldUseFullRangeMjpegScale(hwScaleFilter, parts))
             {
                 hwScaleFilter += ":out_range=pc:mode=hq";
             }
@@ -743,9 +784,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             return hwCscFilter;
         }
 
-        private static string ApplyVkTonemapTvOutRange(string hwCscFilter, bool doVkTonemap, EncodingOptions options)
+        private static string ApplyVkTonemapTvOutRange(string hwCscFilter, VaapiVkTonemapRange parts)
         {
-            if (ShouldOutputTvRange(doVkTonemap, options))
+            if (ShouldOutputTvRange(parts))
             {
                 hwCscFilter += ":out_range=tv";
             }
@@ -753,37 +794,37 @@ namespace MediaBrowser.Controller.MediaEncoding
             return hwCscFilter;
         }
 
-        private static bool NeedsVulkanInterop(bool doVkTranspose, bool doVkTonemap, bool hasSubs)
+        private static bool NeedsVulkanInterop(VaapiVulkanInteropNeeds parts)
         {
-            return doVkTranspose || doVkTonemap || hasSubs;
+            return parts.DoVkTranspose || parts.DoVkTonemap || parts.HasSubs;
         }
 
-        private static bool ShouldUseFullRangeMjpegScale(string hwScaleFilter, bool isMjpegEncoder, bool doVkTonemap)
+        private static bool ShouldUseFullRangeMjpegScale(string hwScaleFilter, VaapiMjpegVkTonemap parts)
         {
-            return !string.IsNullOrEmpty(hwScaleFilter) && isMjpegEncoder && !doVkTonemap;
+            return !string.IsNullOrEmpty(hwScaleFilter) && parts.IsMjpegEncoder && !parts.DoVkTonemap;
         }
 
-        private static bool NeedsVulkanHwDownload(bool isSwEncoder, bool doVkTonemap, bool isVaapiDecoder)
+        private static bool NeedsVulkanHwDownload(VaapiVulkanDownloadState parts)
         {
-            return isSwEncoder && (doVkTonemap || isVaapiDecoder);
+            return parts.IsSwEncoder && (parts.DoVkTonemap || parts.IsVaapiDecoder);
         }
 
-        private static bool NeedsVaapiHwUpload(bool isSwDecoder, bool isVaapiEncoder, bool doVkTonemap)
+        private static bool NeedsVaapiHwUpload(VaapiUploadPath parts, bool doVkTonemap)
         {
-            return isSwDecoder && isVaapiEncoder && !doVkTonemap;
+            return parts.IsSwDecoder && parts.IsVaapiEncoder && !doVkTonemap;
         }
 
-        private static bool ShouldOutputTvRange(bool doVkTonemap, EncodingOptions options)
+        private static bool ShouldOutputTvRange(VaapiVkTonemapRange parts)
         {
-            return !doVkTonemap || (doVkTonemap && options.TonemappingRange != TonemappingRange.pc);
+            return !parts.DoVkTonemap || (parts.DoVkTonemap && parts.Options.TonemappingRange != TonemappingRange.pc);
         }
 
-        private void AddAmdVaapiToVulkanMapFilters(List<string> mainFilters, bool doVkTranspose, bool doVkTonemap, bool hasSubs)
+        private void AddAmdVaapiToVulkanMapFilters(List<string> mainFilters, VaapiVulkanInteropNeeds parts)
         {
             // map from vaapi to vulkan/drm via interop (Polaris/gfx8+).
             if (_mediaEncoder.EncoderVersion >= _minFFmpegAlteredVaVkInterop)
             {
-                if (doVkTranspose || !_mediaEncoder.IsVaapiDeviceSupportVulkanDrmModifier)
+                if (parts.DoVkTranspose || !_mediaEncoder.IsVaapiDeviceSupportVulkanDrmModifier)
                 {
                     // disable the indirect va-drm-vk mapping since it's no longer reliable.
                     mainFilters.Add("hwmap=derive_device=drm");
@@ -797,7 +838,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                         mainFilters.Add("scale_vulkan");
                     }
                 }
-                else if (doVkTonemap || hasSubs)
+                else if (parts.DoVkTonemap || parts.HasSubs)
                 {
                     // non ad-hoc libplacebo also accepts drm_prime direct input.
                     mainFilters.Add("hwmap=derive_device=drm");
@@ -853,8 +894,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             var hasTextSubs = HasTextSubtitles(state, hasSubs);
             var hasGraphicalSubs = HasGraphicalSubtitles(state, hasSubs);
 
-            var rotation = state.VideoStream?.Rotation ?? 0;
-            var swapWAndH = NeedsSwSwapWAndH(rotation, isSwDecoder);
+            var rotation = GetVideoStreamRotation(state);
+            var swapWAndH = NeedsSwSwapWAndH(new VaapiSwRotation(rotation, isSwDecoder));
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
 
@@ -863,6 +904,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             mainFilters.Add(GetOverwriteColorPropertiesParam(state, doOclTonemap));
 
+            var hwDecoderContext = new VaapiLimitedHwDecoderContext(options, doDeintH2645, doOclTonemap, isMjpegEncoder, isVaapiDecoder, inW, inH, reqW, reqH, reqMaxW, reqMaxH, mainFilters);
             var outFormat = string.Empty;
             if (isSwDecoder)
             {
@@ -883,68 +925,79 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // sw => hw
                 AddOpenclHwupload(mainFilters, doOclTonemap);
             }
-            else if (isVaapiDecoder)
+            else
             {
-                // INPUT vaapi surface(vram)
-                // hw deint
-                AddVaapiHwDeinterlaceFilter(state, options, mainFilters, doDeintH2645);
-
-                outFormat = doOclTonemap ? string.Empty : "nv12";
-                var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", outFormat, false, inW, inH, reqW, reqH, reqMaxW, reqMaxH);
-
-                hwScaleFilter = ApplyVaapiMjpegScaleOptions(hwScaleFilter, isMjpegEncoder, doOclTonemap);
-
-                // allocate extra pool sizes for vaapi vpp
-                hwScaleFilter = ApplyVaapiExtraHwFrames(hwScaleFilter);
-
-                // hw scale
-                mainFilters.Add(hwScaleFilter);
+                AddVaapiLimitedHwDecoderFilters(state, hwDecoderContext);
             }
 
-            AddLimitedOpenclMappingIfNeeded(mainFilters, doOclTonemap, isVaapiDecoder, isi965Driver);
+            AddLimitedOpenclMappingIfNeeded(mainFilters, new VaapiOclTonemapSource(doOclTonemap, isVaapiDecoder), isi965Driver);
 
             // ocl tonemap
             AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
-            AddLimitedReverseMappingIfNeeded(mainFilters, doOclTonemap, isVaInVaOut, isi965Driver);
+            AddLimitedReverseMappingIfNeeded(mainFilters, new VaapiReverseMapState(doOclTonemap, isVaInVaOut), isi965Driver);
 
             var memoryOutput = false;
-            var isUploadForOclTonemap = NeedsLimitedUploadForOclTonemap(doOclTonemap, isSwDecoder, isVaapiDecoder, isi965Driver);
+            var isUploadForOclTonemap = NeedsLimitedUploadForOclTonemap(new VaapiLimitedUploadInputs(doOclTonemap, isSwDecoder, isVaapiDecoder, isi965Driver));
             var isHwmapNotUsable = hasGraphicalSubs || isUploadForOclTonemap;
-            var isHwmapForSubs = NeedsHwmapForSubs(hasSubs, isVaapiDecoder);
-            var isHwUnmapForTextSubs = NeedsHwUnmapForTextSubs(hasTextSubs, isVaInVaOut, isUploadForOclTonemap);
+            var isHwmapForSubs = NeedsHwmapForSubs(new VaapiSubsHwmapInputs(hasSubs, isVaapiDecoder));
+            var isHwUnmapForTextSubs = NeedsHwUnmapForTextSubs(new VaapiTextSubsUnmapInputs(hasTextSubs, isVaInVaOut, isUploadForOclTonemap));
             var context = new VaapiLimitedContext(state, hasGraphicalSubs, hasTextSubs, isVaapiEncoder, isVaapiDecoder, isSwEncoder, isUploadForOclTonemap, isHwmapForSubs, isHwmapNotUsable, isHwUnmapForTextSubs);
             memoryOutput = AddVaapiLimitedMemoryOutput(context, mainFilters, memoryOutput);
 
             // OUTPUT nv12 surface(memory)
-            if (IsSwDecodeToVaapiEncode(isSwDecoder, isVaapiEncoder))
-            {
-                memoryOutput = true;
-            }
+            memoryOutput = MarkVaapiSwUploadOutput(memoryOutput, new VaapiUploadPath(isSwDecoder, isVaapiEncoder));
 
             AddVaapiLimitedSubtitleOutput(context, mainFilters, memoryOutput);
 
             /* Make sub and overlay filters for subtitle stream */
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
-            if (memoryOutput)
+            var subtitleContext = new VaapiLimitedSubtitleContext(memoryOutput, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
+            AddVaapiLimitedSubtitleFilters(context, subtitleContext, subFilters, overlayFilters);
+
+            return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private void AddVaapiLimitedHwDecoderFilters(EncodingJobInfo state, VaapiLimitedHwDecoderContext context)
+        {
+            if (context.IsVaapiDecoder)
             {
-                if (hasGraphicalSubs)
+                // INPUT vaapi surface(vram)
+                // hw deint
+                AddVaapiHwDeinterlaceFilter(state, context.Options, context.MainFilters, context.DoDeintH2645);
+
+                var outFormat = context.DoOclTonemap ? string.Empty : "nv12";
+                var hwScaleFilter = GetHwScaleFilter("scale", "vaapi", outFormat, false, context.InW, context.InH, context.ReqW, context.ReqH, context.ReqMaxW, context.ReqMaxH);
+
+                hwScaleFilter = ApplyVaapiMjpegScaleOptions(hwScaleFilter, new VaapiMjpegOclTonemap(context.IsMjpegEncoder, context.DoOclTonemap));
+
+                // allocate extra pool sizes for vaapi vpp
+                hwScaleFilter = ApplyVaapiExtraHwFrames(hwScaleFilter);
+
+                // hw scale
+                context.MainFilters.Add(hwScaleFilter);
+            }
+        }
+
+        private static void AddVaapiLimitedSubtitleFilters(VaapiLimitedContext context, VaapiLimitedSubtitleContext subtitleContext, List<string> subFilters, List<string> overlayFilters)
+        {
+            if (subtitleContext.MemoryOutput)
+            {
+                if (context.HasGraphicalSubs)
                 {
-                    var subW = state.SubtitleStream?.Width;
-                    var subH = state.SubtitleStream?.Height;
-                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
+                    var subW = context.State.SubtitleStream?.Width;
+                    var subH = context.State.SubtitleStream?.Height;
+                    var subPreProcFilters = GetGraphicalSubPreProcessFilters(subtitleContext.SwpInW, subtitleContext.SwpInH, subW, subH, subtitleContext.ReqW, subtitleContext.ReqH, subtitleContext.ReqMaxW, subtitleContext.ReqMaxH);
                     subFilters.Add(subPreProcFilters);
                     overlayFilters.Add("overlay=eof_action=pass:repeatlast=0");
 
-                    if (isVaapiEncoder)
+                    if (context.IsVaapiEncoder)
                     {
                         overlayFilters.Add("hwupload_vaapi");
                     }
                 }
             }
-
-            return (mainFilters, subFilters, overlayFilters);
         }
 
         private static bool AddVaapiLimitedMemoryOutput(VaapiLimitedContext context, List<string> mainFilters, bool memoryOutput)
@@ -970,30 +1023,30 @@ namespace MediaBrowser.Controller.MediaEncoding
                 mainFilters.Add("hwmap");
                 mainFilters.Add("format=vaapi");
             }
-            else if (NeedsVaapiUploadFromMemory(memoryOutput, context.IsVaapiEncoder))
+            else if (NeedsVaapiUploadFromMemory(new VaapiMemoryUpload(memoryOutput, context.IsVaapiEncoder)))
             {
                 AddVaapiHwupload(mainFilters, context.HasGraphicalSubs);
             }
         }
 
-        private static bool NeedsLimitedUploadForOclTonemap(bool doOclTonemap, bool isSwDecoder, bool isVaapiDecoder, bool isi965Driver)
+        private static bool NeedsLimitedUploadForOclTonemap(VaapiLimitedUploadInputs parts)
         {
-            return doOclTonemap && (isSwDecoder || (isVaapiDecoder && !isi965Driver));
+            return parts.DoOclTonemap && (parts.IsSwDecoder || (parts.IsVaapiDecoder && !parts.Isi965Driver));
         }
 
-        private static bool NeedsHwUnmapForTextSubs(bool hasTextSubs, bool isVaInVaOut, bool isUploadForOclTonemap)
+        private static bool NeedsHwUnmapForTextSubs(VaapiTextSubsUnmapInputs parts)
         {
-            return hasTextSubs && isVaInVaOut && !isUploadForOclTonemap;
+            return parts.HasTextSubs && parts.IsVaInVaOut && !parts.IsUploadForOclTonemap;
         }
 
-        private static bool NeedsHwmapForSubs(bool hasSubs, bool isVaapiDecoder)
+        private static bool NeedsHwmapForSubs(VaapiSubsHwmapInputs parts)
         {
-            return hasSubs && isVaapiDecoder;
+            return parts.HasSubs && parts.IsVaapiDecoder;
         }
 
-        private static bool NeedsSwSwapWAndH(int rotation, bool isSwDecoder)
+        private static bool NeedsSwSwapWAndH(VaapiSwRotation parts)
         {
-            return Math.Abs(rotation) == 90 && isSwDecoder;
+            return Math.Abs(parts.Rotation) == 90 && parts.IsSwDecoder;
         }
 
         private static void AddLimitedVaapiToOpenclMapping(List<string> mainFilters, bool isi965Driver)
@@ -1085,5 +1138,49 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool IsMjpegEncoder,
             int? InW,
             int? InH);
+
+        private readonly record struct VaapiLimitedHwDecoderContext(EncodingOptions Options, bool DoDeintH2645, bool DoOclTonemap, bool IsMjpegEncoder, bool IsVaapiDecoder, int? InW, int? InH, int? ReqW, int? ReqH, int? ReqMaxW, int? ReqMaxH, List<string> MainFilters);
+
+        private readonly record struct VaapiAmdSubtitleOutputContext(bool HasSubs, bool IsSwEncoder, bool IsVaapiEncoder, bool DoDeintH2645);
+
+        private readonly record struct VaapiLimitedSubtitleContext(bool MemoryOutput, int? SwpInW, int? SwpInH, int? ReqW, int? ReqH, int? ReqMaxW, int? ReqMaxH);
+
+        private readonly record struct VaapiOclTonemapSource(bool DoOclTonemap, bool IsVaapiDecoder);
+
+        private readonly record struct VaapiReverseMapState(bool DoOclTonemap, bool IsVaInVaOut);
+
+        private readonly record struct VaapiUploadPath(bool IsSwDecoder, bool IsVaapiEncoder);
+
+        private readonly record struct VaapiVulkanDownloadState(bool IsSwEncoder, bool DoVkTonemap, bool IsVaapiDecoder);
+
+        private readonly record struct VaapiVulkanInteropNeeds(bool DoVkTranspose, bool DoVkTonemap, bool HasSubs);
+
+        private readonly record struct VaapiVulkanTonemapSubs(bool DoVkTonemap, bool HasSubs);
+
+        private readonly record struct VaapiMjpegVkTonemap(bool IsMjpegEncoder, bool DoVkTonemap);
+
+        private readonly record struct VaapiMjpegOclTonemap(bool IsMjpegEncoder, bool DoOclTonemap);
+
+        private readonly record struct VaapiLimitedUploadInputs(bool DoOclTonemap, bool IsSwDecoder, bool IsVaapiDecoder, bool Isi965Driver);
+
+        private readonly record struct VaapiTextSubsUnmapInputs(bool HasTextSubs, bool IsVaInVaOut, bool IsUploadForOclTonemap);
+
+        private readonly record struct VaapiSubsHwmapInputs(bool HasSubs, bool IsVaapiDecoder);
+
+        private readonly record struct VaapiHwmapUsability(bool IsUploadForOclTonemap, bool IsVaapiEncoder);
+
+        private readonly record struct VaapiMemoryUpload(bool MemoryOutput, bool IsVaapiEncoder);
+
+        private readonly record struct VaapiTonemapModes(bool DoVaVppTonemap, bool DoOclTonemap);
+
+        private readonly record struct VaapiSwRotation(int Rotation, bool IsSwDecoder);
+
+        private readonly record struct VaapiLegacyEncoder(string VidEncoder, bool IsSwEncoder);
+
+        private readonly record struct VaapiVulkanTranspose(bool DoVkTranspose, string TransposeDir);
+
+        private readonly record struct VaapiVulkanOutputFlags(bool IsMjpegEncoder, bool DoDeintH2645);
+
+        private readonly record struct VaapiVkTonemapRange(bool DoVkTonemap, EncodingOptions Options);
     }
 }

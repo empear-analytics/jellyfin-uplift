@@ -38,9 +38,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cs_mcp_client import McpClient, McpUnavailable, parse_review  # noqa: E402
 
 BACKEND = "auto"  # auto: the MCP server, then the CLI; mcp: the server only; cli: the CLI only
-_mcp: McpClient | None = None
-_mcp_down = False
+_mcp: McpClient | None = None  # one server process, one file at a time (see mcp_data)
 _mcp_lock = threading.Lock()
+_mcp_down = False
 BANDS = ("red", "yellow", "green", "optimal")
 CATEGORIES = ("production", "test", "generated", "fuzz")
 
@@ -103,13 +103,16 @@ def mcp_data(rel: str) -> dict | None:
     if BACKEND == "cli" or _mcp_down:
         return None
     with _mcp_lock:
+        if _mcp_down:
+            return None
         try:
             if _mcp is None:
                 _mcp = McpClient.from_repo(REPO)
             text = _mcp.call("code_health_review", {"file_path": str(REPO / rel)})
         except McpUnavailable as exc:
             _mcp_down = True
-            print("note: the CodeScene MCP server is unavailable (%s)" % exc, file=sys.stderr)
+            print("note: the CodeScene MCP server is unavailable (%s); the rest uses the CLI" % exc,
+                  file=sys.stderr)
             return None
     return parse_review(text)
 
@@ -146,7 +149,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("-o", "--output",
                     default=str(REPO / "docs" / "refactoring" / "codehealth-baseline.json"))
-    ap.add_argument("--jobs", type=int, default=8, help="CLI processes in parallel (the MCP server is used one file at a time)")
+    ap.add_argument("--jobs", type=int, default=8, help="CLI processes in parallel (the MCP server is used one file at a time: parallel server "
+                         "processes trip its rate limit)")
     ap.add_argument("--backend", choices=("auto", "mcp", "cli"), default="auto",
                     help="auto (default): the MCP server, then the CLI; mcp: the server only; cli: the CLI only")
     ap.add_argument("--limit", type=int, default=0, help="review only the first N files")

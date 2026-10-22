@@ -31,87 +31,6 @@ namespace MediaBrowser.Controller.MediaEncoding
 {
     public partial class EncodingHelper
     {
-        private bool IsVaapiSupported(EncodingJobInfo state)
-        {
-            // vaapi will throw an error with this input
-            // [vaapi @ 0x7faed8000960] No VAAPI support for codec mpeg4 profile -99.
-            if (string.Equals(state.VideoStream?.Codec, "mpeg4", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            return _mediaEncoder.SupportsHwaccel("vaapi");
-        }
-
-        private bool IsVaapiFullSupported()
-        {
-            return IsVaapiDrmScaleDeinterlaceSupported()
-                   && _mediaEncoder.SupportsFilter("tonemap_vaapi")
-                   && _mediaEncoder.SupportsFilter("procamp_vaapi")
-                   && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayVaapiFrameSync)
-                   && _mediaEncoder.SupportsFilter("transpose_vaapi")
-                   && _mediaEncoder.SupportsFilter("hwupload_vaapi");
-        }
-
-        private bool IsVaapiDrmScaleDeinterlaceSupported()
-        {
-            return _mediaEncoder.SupportsHwaccel("drm")
-                   && _mediaEncoder.SupportsHwaccel("vaapi")
-                   && _mediaEncoder.SupportsFilter("scale_vaapi")
-                   && _mediaEncoder.SupportsFilter("deinterlace_vaapi");
-        }
-
-        private bool IsRkmppFullSupported()
-        {
-            return _mediaEncoder.SupportsHwaccel("rkmpp")
-                   && _mediaEncoder.SupportsFilter("scale_rkrga")
-                   && _mediaEncoder.SupportsFilter("vpp_rkrga")
-                   && _mediaEncoder.SupportsFilter("overlay_rkrga");
-        }
-
-        private bool IsOpenclFullSupported()
-        {
-            return _mediaEncoder.SupportsHwaccel("opencl")
-                   && _mediaEncoder.SupportsFilter("scale_opencl")
-                   && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.TonemapOpenclBt2390)
-                   && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayOpenclFrameSync);
-
-            // Let transpose_opencl optional for the time being.
-        }
-
-        private bool IsCudaFullSupported()
-        {
-            return _mediaEncoder.SupportsHwaccel("cuda")
-                   && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.ScaleCudaFormat)
-                   && _mediaEncoder.SupportsFilter("yadif_cuda")
-                   && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.TonemapCudaName)
-                   && _mediaEncoder.SupportsFilter("overlay_cuda")
-                   && _mediaEncoder.SupportsFilter("hwupload_cuda");
-
-            // Let transpose_cuda optional for the time being.
-        }
-
-        private bool IsVulkanFullSupported()
-        {
-            return _mediaEncoder.SupportsHwaccel("vulkan")
-                   && _mediaEncoder.SupportsFilter("libplacebo")
-                   && _mediaEncoder.SupportsFilter("scale_vulkan")
-                   && _mediaEncoder.SupportsFilterWithOption(FilterOptionType.OverlayVulkanFrameSync)
-                   && _mediaEncoder.SupportsFilter("transpose_vulkan")
-                   && _mediaEncoder.SupportsFilter("flip_vulkan");
-        }
-
-        private bool IsVideoToolboxFullSupported()
-        {
-            return _mediaEncoder.SupportsHwaccel("videotoolbox")
-                && _mediaEncoder.SupportsFilter("yadif_videotoolbox")
-                && _mediaEncoder.SupportsFilter("overlay_videotoolbox")
-                && _mediaEncoder.SupportsFilter("tonemap_videotoolbox")
-                && _mediaEncoder.SupportsFilter("scale_vt");
-
-            // Let transpose_vt optional for the time being.
-        }
-
         private bool IsSwTonemapAvailable(EncodingJobInfo state, EncodingOptions options)
         {
             if (IsSwTonemapInputUnsupported(state))
@@ -255,30 +174,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             var doDeintH264 = state.DeInterlace("h264", true) || state.DeInterlace("avc", true);
             var doDeintHevc = state.DeInterlace("h265", true) || state.DeInterlace("hevc", true);
             return doDeintH264 || doDeintHevc;
-        }
-
-        private bool IsVideoStreamHevcRext(EncodingJobInfo state)
-        {
-            var videoStream = state.VideoStream;
-            if (videoStream is null)
-            {
-                return false;
-            }
-
-            return string.Equals(videoStream.Codec, "hevc", StringComparison.OrdinalIgnoreCase)
-                   && IsHevcRextProfileOrPixelFormat(videoStream);
-        }
-
-        private static bool IsHevcRextProfileOrPixelFormat(MediaStream videoStream)
-        {
-            return string.Equals(videoStream.Profile, "Rext", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(videoStream.PixelFormat, "yuv420p12le", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(videoStream.PixelFormat, "yuv422p", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(videoStream.PixelFormat, "yuv422p10le", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(videoStream.PixelFormat, "yuv422p12le", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(videoStream.PixelFormat, "yuv444p", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(videoStream.PixelFormat, "yuv444p10le", StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(videoStream.PixelFormat, "yuv444p12le", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

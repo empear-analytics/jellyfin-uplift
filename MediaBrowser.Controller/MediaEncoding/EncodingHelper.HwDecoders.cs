@@ -199,45 +199,45 @@ namespace MediaBrowser.Controller.MediaEncoding
         /// <returns>Hardware decoder name.</returns>
         public string GetHwDecoderName(EncodingOptions options, string decoderPrefix, string decoderSuffix, string videoCodec, int bitDepth)
         {
-            if (IsMissingDecoderPrefixOrSuffix(decoderPrefix, decoderSuffix))
+            if (IsMissingDecoderPrefixOrSuffix(new HwDecoderAffixes(decoderPrefix, decoderSuffix)))
             {
                 return null;
             }
 
             var decoderName = decoderPrefix + '_' + decoderSuffix;
 
-            var isCodecAvailable = IsHwDecoderCodecAvailable(options, decoderName, videoCodec);
+            var isCodecAvailable = IsHwDecoderCodecAvailable(options, new HwDecoderNameAndCodec(decoderName, videoCodec));
 
             // VideoToolbox decoders have built-in SW fallback
-            if (IsNonVtTenBitCodecAvailable(options, bitDepth, isCodecAvailable))
+            if (IsNonVtTenBitCodecAvailable(new HwDecoderBitDepthOptions(options, bitDepth), isCodecAvailable))
             {
-                if (IsHevc10BitDecodingDisabled(options, videoCodec))
+                if (IsHevc10BitDecodingDisabled(new HwDecoderCodecOptions(options, videoCodec)))
                 {
                     return null;
                 }
 
-                if (IsVp910BitDecodingDisabled(options, videoCodec))
+                if (IsVp910BitDecodingDisabled(new HwDecoderCodecOptions(options, videoCodec)))
                 {
                     return null;
                 }
             }
 
-            return GetDecoderOptionUnlessSuperseded(options, decoderSuffix, decoderName, isCodecAvailable);
+            return GetDecoderOptionUnlessSuperseded(new HwDecoderSuffixOptions(options, decoderSuffix), decoderName, isCodecAvailable);
         }
 
-        private static string GetDecoderOptionUnlessSuperseded(EncodingOptions options, string decoderSuffix, string decoderName, bool isCodecAvailable)
+        private static string GetDecoderOptionUnlessSuperseded(HwDecoderSuffixOptions suffixOptions, string decoderName, bool isCodecAvailable)
         {
-            if (IsCuvidSupersededByNvdec(options, decoderSuffix))
+            if (IsCuvidSupersededByNvdec(suffixOptions))
             {
                 return null;
             }
 
-            if (IsQsvSupersededByNativeDecoder(options, decoderSuffix))
+            if (IsQsvSupersededByNativeDecoder(suffixOptions))
             {
                 return null;
             }
 
-            if (string.Equals(decoderSuffix, "rkmpp", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(suffixOptions.DecoderSuffix, "rkmpp", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }
@@ -245,45 +245,45 @@ namespace MediaBrowser.Controller.MediaEncoding
             return isCodecAvailable ? (" -c:v " + decoderName) : null;
         }
 
-        private static bool IsMissingDecoderPrefixOrSuffix(string decoderPrefix, string decoderSuffix)
+        private static bool IsMissingDecoderPrefixOrSuffix(HwDecoderAffixes affixes)
         {
-            return string.IsNullOrEmpty(decoderPrefix) || string.IsNullOrEmpty(decoderSuffix);
+            return string.IsNullOrEmpty(affixes.DecoderPrefix) || string.IsNullOrEmpty(affixes.DecoderSuffix);
         }
 
-        private bool IsHwDecoderCodecAvailable(EncodingOptions options, string decoderName, string videoCodec)
+        private bool IsHwDecoderCodecAvailable(EncodingOptions options, HwDecoderNameAndCodec nameAndCodec)
         {
-            return _mediaEncoder.SupportsDecoder(decoderName) && options.HardwareDecodingCodecs.Contains(videoCodec, StringComparison.OrdinalIgnoreCase);
+            return _mediaEncoder.SupportsDecoder(nameAndCodec.DecoderName) && options.HardwareDecodingCodecs.Contains(nameAndCodec.VideoCodec, StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsCuvidSupersededByNvdec(EncodingOptions options, string decoderSuffix)
+        private static bool IsCuvidSupersededByNvdec(HwDecoderSuffixOptions suffixOptions)
         {
-            return string.Equals(decoderSuffix, "cuvid", StringComparison.OrdinalIgnoreCase) && options.EnableEnhancedNvdecDecoder;
+            return string.Equals(suffixOptions.DecoderSuffix, "cuvid", StringComparison.OrdinalIgnoreCase) && suffixOptions.Options.EnableEnhancedNvdecDecoder;
         }
 
-        private static bool IsQsvSupersededByNativeDecoder(EncodingOptions options, string decoderSuffix)
+        private static bool IsQsvSupersededByNativeDecoder(HwDecoderSuffixOptions suffixOptions)
         {
-            return string.Equals(decoderSuffix, "qsv", StringComparison.OrdinalIgnoreCase) && options.PreferSystemNativeHwDecoder;
+            return string.Equals(suffixOptions.DecoderSuffix, "qsv", StringComparison.OrdinalIgnoreCase) && suffixOptions.Options.PreferSystemNativeHwDecoder;
         }
 
-        private static bool IsNonVtTenBitCodecAvailable(EncodingOptions options, int bitDepth, bool isCodecAvailable)
+        private static bool IsNonVtTenBitCodecAvailable(HwDecoderBitDepthOptions bitDepthOptions, bool isCodecAvailable)
         {
-            return bitDepth == 10
+            return bitDepthOptions.BitDepth == 10
                 && isCodecAvailable
-                && (options.HardwareAccelerationType != HardwareAccelerationType.videotoolbox);
+                && (bitDepthOptions.Options.HardwareAccelerationType != HardwareAccelerationType.videotoolbox);
         }
 
-        private static bool IsHevc10BitDecodingDisabled(EncodingOptions options, string videoCodec)
+        private static bool IsHevc10BitDecodingDisabled(HwDecoderCodecOptions codecOptions)
         {
-            return string.Equals(videoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
-                && options.HardwareDecodingCodecs.Contains("hevc", StringComparison.OrdinalIgnoreCase)
-                && !options.EnableDecodingColorDepth10Hevc;
+            return string.Equals(codecOptions.VideoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
+                && codecOptions.Options.HardwareDecodingCodecs.Contains("hevc", StringComparison.OrdinalIgnoreCase)
+                && !codecOptions.Options.EnableDecodingColorDepth10Hevc;
         }
 
-        private static bool IsVp910BitDecodingDisabled(EncodingOptions options, string videoCodec)
+        private static bool IsVp910BitDecodingDisabled(HwDecoderCodecOptions codecOptions)
         {
-            return string.Equals(videoCodec, "vp9", StringComparison.OrdinalIgnoreCase)
-                && options.HardwareDecodingCodecs.Contains("vp9", StringComparison.OrdinalIgnoreCase)
-                && !options.EnableDecodingColorDepth10Vp9;
+            return string.Equals(codecOptions.VideoCodec, "vp9", StringComparison.OrdinalIgnoreCase)
+                && codecOptions.Options.HardwareDecodingCodecs.Contains("vp9", StringComparison.OrdinalIgnoreCase)
+                && !codecOptions.Options.EnableDecodingColorDepth10Vp9;
         }
 
         /// <summary>
@@ -302,8 +302,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isMacOS = OperatingSystem.IsMacOS();
             var isD3d11Supported = IsD3d11HwaccelSupported(isWindows);
             var isVaapiSupported = IsLinuxVaapiSupported(state, isLinux);
-            var isCudaSupported = IsCudaHwaccelSupported(isLinux, isWindows);
-            var isQsvSupported = IsQsvHwaccelSupported(isLinux, isWindows);
+            var isCudaSupported = IsCudaHwaccelSupported(new HwDecoderHostPlatform(isLinux, isWindows));
+            var isQsvSupported = IsQsvHwaccelSupported(new HwDecoderHostPlatform(isLinux, isWindows));
             var isVideotoolboxSupported = IsVideotoolboxHwaccelSupported(isMacOS);
             var isRkmppSupported = IsLinuxRkmppSupported(isLinux);
             var isCodecAvailable = options.HardwareDecodingCodecs.Contains(videoCodec, StringComparison.OrdinalIgnoreCase);
@@ -326,32 +326,15 @@ namespace MediaBrowser.Controller.MediaEncoding
             // VideoToolbox decoders have built-in SW fallback
             if (IsNonVideotoolboxCodecAvailable(options, isCodecAvailable))
             {
-                if (IsHevcHwDecodingCodec(options, videoCodec))
+                if (IsHevcHwDecodingCodec(new HwDecoderCodecOptions(options, videoCodec)))
                 {
-                    if (IsVideoStreamHevcRext(state))
-                    {
-                        if (IsHevcRext10BitDecodingDisabled(options, bitDepth))
-                        {
-                            return null;
-                        }
-
-                        if (IsHevcRext12BitDecodingDisabled(options, bitDepth))
-                        {
-                            return null;
-                        }
-
-                        if (IsNonIHDVaapi(hardwareAccelerationType))
-                        {
-                            return null;
-                        }
-                    }
-                    else if (IsHevcTenBitDecodingDisabled(options, bitDepth))
+                    if (IsHevcDecodingBlocked(state, new HwDecoderBitDepthOptions(options, bitDepth), hardwareAccelerationType))
                     {
                         return null;
                     }
                 }
 
-                if (IsVp9TenBitHwDecodingDisabled(options, videoCodec, bitDepth))
+                if (IsVp9TenBitHwDecodingDisabled(new HwDecoderCodecOptions(options, videoCodec), bitDepth))
                 {
                     return null;
                 }
@@ -373,6 +356,33 @@ namespace MediaBrowser.Controller.MediaEncoding
             return GetHwaccelTypeFromIntel(context, options, isQsvSupported);
         }
 
+        private bool IsHevcDecodingBlocked(EncodingJobInfo state, HwDecoderBitDepthOptions bitDepthOptions, HardwareAccelerationType hardwareAccelerationType)
+        {
+            if (IsVideoStreamHevcRext(state))
+            {
+                if (IsHevcRext10BitDecodingDisabled(bitDepthOptions))
+                {
+                    return true;
+                }
+
+                if (IsHevcRext12BitDecodingDisabled(bitDepthOptions))
+                {
+                    return true;
+                }
+
+                if (IsNonIHDVaapi(hardwareAccelerationType))
+                {
+                    return true;
+                }
+            }
+            else if (IsHevcTenBitDecodingDisabled(bitDepthOptions))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         private string GetHwaccelTypeFromIntel(HwDecoderHwaccelContext context, EncodingOptions options, bool isQsvSupported)
         {
             // Intel qsv/d3d11va/vaapi
@@ -383,22 +393,22 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (!options.PreferSystemNativeHwDecoder)
             {
-                if (IsHwaccelAvailable(isQsvSupported, context.IsCodecAvailable))
+                if (IsHwaccelAvailable(new HwDecoderAvailability(isQsvSupported, context.IsCodecAvailable)))
                 {
-                    return GetQsvHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
+                    return GetQsvHwaccelOption(new HwDecoderOutputSurface(context.OutputHwSurface, context.StripRotationDataArgs));
                 }
 
                 return GetHwaccelTypeFromNvidia(context, options);
             }
 
-            if (IsHwaccelAvailable(context.IsVaapiSupported, context.IsCodecAvailable))
+            if (IsHwaccelAvailable(new HwDecoderAvailability(context.IsVaapiSupported, context.IsCodecAvailable)))
             {
-                return GetVaapiHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
+                return GetVaapiHwaccelOption(new HwDecoderOutputSurface(context.OutputHwSurface, context.StripRotationDataArgs), new HwDecoderProfileFlags(context.ProfileMismatch, context.IsAv1));
             }
 
-            if (IsHwaccelAvailable(context.IsD3d11Supported, context.IsCodecAvailable))
+            if (IsHwaccelAvailable(new HwDecoderAvailability(context.IsD3d11Supported, context.IsCodecAvailable)))
             {
-                return GetD3d11vaHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
+                return GetD3d11vaHwaccelOption(new HwDecoderOutputSurface(context.OutputHwSurface, context.StripRotationDataArgs), new HwDecoderProfileFlags(context.ProfileMismatch, context.IsAv1));
             }
 
             return GetHwaccelTypeFromNvidia(context, options);
@@ -409,16 +419,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             // Nvidia cuda
             if (context.HardwareAccelerationType == HardwareAccelerationType.nvenc)
             {
-                if (IsHwaccelAvailable(context.IsCudaSupported, context.IsCodecAvailable))
+                if (IsHwaccelAvailable(new HwDecoderAvailability(context.IsCudaSupported, context.IsCodecAvailable)))
                 {
                     if (options.EnableEnhancedNvdecDecoder)
                     {
                         // set -threads 1 to nvdec decoder explicitly since it doesn't implement threading support.
-                        return GetCudaNvdecHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.NvdecNoInternalCopy, context.IsAv1);
+                        return GetCudaNvdecHwaccelOption(new HwDecoderOutputSurface(context.OutputHwSurface, context.StripRotationDataArgs), new HwDecoderNvdecFlags(context.NvdecNoInternalCopy, context.IsAv1));
                     }
 
                     // cuvid decoder doesn't have threading issue.
-                    return GetCudaHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
+                    return GetCudaHwaccelOption(new HwDecoderOutputSurface(context.OutputHwSurface, context.StripRotationDataArgs));
                 }
             }
 
@@ -430,69 +440,69 @@ namespace MediaBrowser.Controller.MediaEncoding
             // Amd d3d11va
             if (context.HardwareAccelerationType == HardwareAccelerationType.amf)
             {
-                if (IsHwaccelAvailable(context.IsD3d11Supported, context.IsCodecAvailable))
+                if (IsHwaccelAvailable(new HwDecoderAvailability(context.IsD3d11Supported, context.IsCodecAvailable)))
                 {
-                    return GetD3d11vaHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
+                    return GetD3d11vaHwaccelOption(new HwDecoderOutputSurface(context.OutputHwSurface, context.StripRotationDataArgs), new HwDecoderProfileFlags(context.ProfileMismatch, context.IsAv1));
                 }
             }
 
             // Vaapi
             if (IsVaapiHwaccelUsable(context.HardwareAccelerationType, context.IsVaapiSupported, context.IsCodecAvailable))
             {
-                return GetVaapiHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs, context.ProfileMismatch, context.IsAv1);
+                return GetVaapiHwaccelOption(new HwDecoderOutputSurface(context.OutputHwSurface, context.StripRotationDataArgs), new HwDecoderProfileFlags(context.ProfileMismatch, context.IsAv1));
             }
 
             // Apple videotoolbox
             if (IsVideotoolboxHwaccelUsable(context.HardwareAccelerationType, context.IsVideotoolboxSupported, context.IsCodecAvailable))
             {
-                return GetVideotoolboxHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
+                return GetVideotoolboxHwaccelOption(new HwDecoderOutputSurface(context.OutputHwSurface, context.StripRotationDataArgs));
             }
 
             // Rockchip rkmpp
             if (IsRkmppHwaccelUsable(context.HardwareAccelerationType, context.IsRkmppSupported, context.IsCodecAvailable))
             {
-                return GetRkmppHwaccelOption(context.OutputHwSurface, context.StripRotationDataArgs);
+                return GetRkmppHwaccelOption(new HwDecoderOutputSurface(context.OutputHwSurface, context.StripRotationDataArgs));
             }
 
             return null;
         }
 
-        private static string GetVaapiHwaccelOption(bool outputHwSurface, string stripRotationDataArgs, bool profileMismatch, bool isAv1)
+        private static string GetVaapiHwaccelOption(HwDecoderOutputSurface outputSurface, HwDecoderProfileFlags profileFlags)
         {
-            return " -hwaccel vaapi" + (outputHwSurface ? " -hwaccel_output_format vaapi -noautorotate" + stripRotationDataArgs : string.Empty)
-                + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + (isAv1 ? " -c:v av1" : string.Empty);
+            return " -hwaccel vaapi" + (outputSurface.OutputHwSurface ? " -hwaccel_output_format vaapi -noautorotate" + outputSurface.StripRotationDataArgs : string.Empty)
+                + (profileFlags.ProfileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + (profileFlags.IsAv1 ? " -c:v av1" : string.Empty);
         }
 
-        private static string GetD3d11vaHwaccelOption(bool outputHwSurface, string stripRotationDataArgs, bool profileMismatch, bool isAv1)
+        private static string GetD3d11vaHwaccelOption(HwDecoderOutputSurface outputSurface, HwDecoderProfileFlags profileFlags)
         {
-            return " -hwaccel d3d11va" + (outputHwSurface ? " -hwaccel_output_format d3d11 -noautorotate" + stripRotationDataArgs : string.Empty)
-                + (profileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + " -threads 2" + (isAv1 ? " -c:v av1" : string.Empty);
+            return " -hwaccel d3d11va" + (outputSurface.OutputHwSurface ? " -hwaccel_output_format d3d11 -noautorotate" + outputSurface.StripRotationDataArgs : string.Empty)
+                + (profileFlags.ProfileMismatch ? " -hwaccel_flags +allow_profile_mismatch" : string.Empty) + " -threads 2" + (profileFlags.IsAv1 ? " -c:v av1" : string.Empty);
         }
 
-        private static string GetQsvHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        private static string GetQsvHwaccelOption(HwDecoderOutputSurface outputSurface)
         {
-            return " -hwaccel qsv" + (outputHwSurface ? " -hwaccel_output_format qsv -noautorotate" + stripRotationDataArgs : string.Empty);
+            return " -hwaccel qsv" + (outputSurface.OutputHwSurface ? " -hwaccel_output_format qsv -noautorotate" + outputSurface.StripRotationDataArgs : string.Empty);
         }
 
-        private static string GetCudaNvdecHwaccelOption(bool outputHwSurface, string stripRotationDataArgs, bool nvdecNoInternalCopy, bool isAv1)
+        private static string GetCudaNvdecHwaccelOption(HwDecoderOutputSurface outputSurface, HwDecoderNvdecFlags nvdecFlags)
         {
-            return " -hwaccel cuda" + (outputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + stripRotationDataArgs : string.Empty)
-                + (nvdecNoInternalCopy ? " -hwaccel_flags +unsafe_output" : string.Empty) + " -threads 1" + (isAv1 ? " -c:v av1" : string.Empty);
+            return " -hwaccel cuda" + (outputSurface.OutputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + outputSurface.StripRotationDataArgs : string.Empty)
+                + (nvdecFlags.NvdecNoInternalCopy ? " -hwaccel_flags +unsafe_output" : string.Empty) + " -threads 1" + (nvdecFlags.IsAv1 ? " -c:v av1" : string.Empty);
         }
 
-        private static string GetCudaHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        private static string GetCudaHwaccelOption(HwDecoderOutputSurface outputSurface)
         {
-            return " -hwaccel cuda" + (outputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + stripRotationDataArgs : string.Empty);
+            return " -hwaccel cuda" + (outputSurface.OutputHwSurface ? " -hwaccel_output_format cuda -noautorotate" + outputSurface.StripRotationDataArgs : string.Empty);
         }
 
-        private static string GetVideotoolboxHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        private static string GetVideotoolboxHwaccelOption(HwDecoderOutputSurface outputSurface)
         {
-            return " -hwaccel videotoolbox" + (outputHwSurface ? " -hwaccel_output_format videotoolbox_vld" : string.Empty) + " -noautorotate" + stripRotationDataArgs;
+            return " -hwaccel videotoolbox" + (outputSurface.OutputHwSurface ? " -hwaccel_output_format videotoolbox_vld" : string.Empty) + " -noautorotate" + outputSurface.StripRotationDataArgs;
         }
 
-        private static string GetRkmppHwaccelOption(bool outputHwSurface, string stripRotationDataArgs)
+        private static string GetRkmppHwaccelOption(HwDecoderOutputSurface outputSurface)
         {
-            return " -hwaccel rkmpp" + (outputHwSurface ? " -hwaccel_output_format drm_prime -noautorotate" + stripRotationDataArgs : string.Empty);
+            return " -hwaccel rkmpp" + (outputSurface.OutputHwSurface ? " -hwaccel_output_format drm_prime -noautorotate" + outputSurface.StripRotationDataArgs : string.Empty);
         }
 
         private string GetStripRotationDataArgs(EncodingJobInfo state, Version ffmpegVersion)
@@ -501,9 +511,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             return stripRotationData ? " -display_rotation 0" : string.Empty;
         }
 
-        private static bool IsHwaccelAvailable(bool isHwaccelSupported, bool isCodecAvailable)
+        private static bool IsHwaccelAvailable(HwDecoderAvailability availability)
         {
-            return isHwaccelSupported && isCodecAvailable;
+            return availability.IsHwaccelSupported && availability.IsCodecAvailable;
         }
 
         private bool IsD3d11HwaccelSupported(bool isWindows)
@@ -516,14 +526,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             return isLinux && IsVaapiSupported(state);
         }
 
-        private bool IsCudaHwaccelSupported(bool isLinux, bool isWindows)
+        private bool IsCudaHwaccelSupported(HwDecoderHostPlatform platform)
         {
-            return (isLinux || isWindows) && IsCudaFullSupported();
+            return (platform.IsLinux || platform.IsWindows) && IsCudaFullSupported();
         }
 
-        private bool IsQsvHwaccelSupported(bool isLinux, bool isWindows)
+        private bool IsQsvHwaccelSupported(HwDecoderHostPlatform platform)
         {
-            return (isLinux || isWindows) && _mediaEncoder.SupportsHwaccel("qsv");
+            return (platform.IsLinux || platform.IsWindows) && _mediaEncoder.SupportsHwaccel("qsv");
         }
 
         private bool IsVideotoolboxHwaccelSupported(bool isMacOS)
@@ -560,20 +570,20 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && (options.HardwareAccelerationType != HardwareAccelerationType.videotoolbox);
         }
 
-        private static bool IsHevcHwDecodingCodec(EncodingOptions options, string videoCodec)
+        private static bool IsHevcHwDecodingCodec(HwDecoderCodecOptions codecOptions)
         {
-            return string.Equals(videoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
-                && options.HardwareDecodingCodecs.Contains("hevc", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(codecOptions.VideoCodec, "hevc", StringComparison.OrdinalIgnoreCase)
+                && codecOptions.Options.HardwareDecodingCodecs.Contains("hevc", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsHevcRext10BitDecodingDisabled(EncodingOptions options, int bitDepth)
+        private static bool IsHevcRext10BitDecodingDisabled(HwDecoderBitDepthOptions bitDepthOptions)
         {
-            return bitDepth <= 10 && !options.EnableDecodingColorDepth10HevcRext;
+            return bitDepthOptions.BitDepth <= 10 && !bitDepthOptions.Options.EnableDecodingColorDepth10HevcRext;
         }
 
-        private static bool IsHevcRext12BitDecodingDisabled(EncodingOptions options, int bitDepth)
+        private static bool IsHevcRext12BitDecodingDisabled(HwDecoderBitDepthOptions bitDepthOptions)
         {
-            return bitDepth == 12 && !options.EnableDecodingColorDepth12HevcRext;
+            return bitDepthOptions.BitDepth == 12 && !bitDepthOptions.Options.EnableDecodingColorDepth12HevcRext;
         }
 
         private bool IsNonIHDVaapi(HardwareAccelerationType hardwareAccelerationType)
@@ -582,17 +592,17 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && !_mediaEncoder.IsVaapiDeviceInteliHD;
         }
 
-        private static bool IsHevcTenBitDecodingDisabled(EncodingOptions options, int bitDepth)
+        private static bool IsHevcTenBitDecodingDisabled(HwDecoderBitDepthOptions bitDepthOptions)
         {
-            return bitDepth == 10 && !options.EnableDecodingColorDepth10Hevc;
+            return bitDepthOptions.BitDepth == 10 && !bitDepthOptions.Options.EnableDecodingColorDepth10Hevc;
         }
 
-        private static bool IsVp9TenBitHwDecodingDisabled(EncodingOptions options, string videoCodec, int bitDepth)
+        private static bool IsVp9TenBitHwDecodingDisabled(HwDecoderCodecOptions codecOptions, int bitDepth)
         {
-            return string.Equals(videoCodec, "vp9", StringComparison.OrdinalIgnoreCase)
-                && options.HardwareDecodingCodecs.Contains("vp9", StringComparison.OrdinalIgnoreCase)
+            return string.Equals(codecOptions.VideoCodec, "vp9", StringComparison.OrdinalIgnoreCase)
+                && codecOptions.Options.HardwareDecodingCodecs.Contains("vp9", StringComparison.OrdinalIgnoreCase)
                 && bitDepth == 10
-                && !options.EnableDecodingColorDepth10Vp9;
+                && !codecOptions.Options.EnableDecodingColorDepth10Vp9;
         }
 
         private static bool IsVaapiHwaccelUsable(HardwareAccelerationType hardwareAccelerationType, bool isVaapiSupported, bool isCodecAvailable)
@@ -636,5 +646,25 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool NvdecNoInternalCopy,
             bool ProfileMismatch,
             bool IsAv1);
+
+        private readonly record struct HwDecoderOutputSurface(bool OutputHwSurface, string StripRotationDataArgs);
+
+        private readonly record struct HwDecoderProfileFlags(bool ProfileMismatch, bool IsAv1);
+
+        private readonly record struct HwDecoderNvdecFlags(bool NvdecNoInternalCopy, bool IsAv1);
+
+        private readonly record struct HwDecoderHostPlatform(bool IsLinux, bool IsWindows);
+
+        private readonly record struct HwDecoderBitDepthOptions(EncodingOptions Options, int BitDepth);
+
+        private readonly record struct HwDecoderCodecOptions(EncodingOptions Options, string VideoCodec);
+
+        private readonly record struct HwDecoderSuffixOptions(EncodingOptions Options, string DecoderSuffix);
+
+        private readonly record struct HwDecoderAvailability(bool IsHwaccelSupported, bool IsCodecAvailable);
+
+        private readonly record struct HwDecoderAffixes(string DecoderPrefix, string DecoderSuffix);
+
+        private readonly record struct HwDecoderNameAndCodec(string DecoderName, string VideoCodec);
     }
 }

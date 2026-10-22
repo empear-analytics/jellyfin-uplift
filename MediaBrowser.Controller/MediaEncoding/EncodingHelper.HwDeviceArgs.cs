@@ -31,150 +31,30 @@ namespace MediaBrowser.Controller.MediaEncoding
 {
     public partial class EncodingHelper
     {
-        private string GetRkmppDeviceArgs(string alias)
+        private string GetVaapiDeviceArgs(VaapiDeviceNodeParts nodeParts, string kernelDriver, string vendorId, VaapiDeviceAliasParts aliasParts)
         {
-            alias ??= RkmppAlias;
-
-            // device selection in rk is not supported.
-            return " -init_hw_device rkmpp=" + alias;
-        }
-
-        private string GetVideoToolboxDeviceArgs(string alias)
-        {
-            alias ??= VideotoolboxAlias;
-
-            // device selection in vt is not supported.
-            return " -init_hw_device videotoolbox=" + alias;
-        }
-
-        private string GetCudaDeviceArgs(int deviceIndex, string alias)
-        {
-            alias ??= CudaAlias;
-            deviceIndex = deviceIndex >= 0
-                ? deviceIndex
-                : 0;
-
-            return string.Format(
-                CultureInfo.InvariantCulture,
-                " -init_hw_device cuda={0}:{1}",
-                alias,
-                deviceIndex);
-        }
-
-        private string GetVulkanDeviceArgs(int deviceIndex, string deviceName, string srcDeviceAlias, string alias)
-        {
-            alias ??= VulkanAlias;
-            deviceIndex = deviceIndex >= 0
-                ? deviceIndex
-                : 0;
-            var vendorOpts = string.IsNullOrEmpty(deviceName)
-                ? ":" + deviceIndex
-                : ":" + "\"" + deviceName + "\"";
-            var options = string.IsNullOrEmpty(srcDeviceAlias)
-                ? vendorOpts
-                : "@" + srcDeviceAlias;
-
-            return string.Format(
-                CultureInfo.InvariantCulture,
-                " -init_hw_device vulkan={0}{1}",
-                alias,
-                options);
-        }
-
-        private string GetOpenclDeviceArgs(int deviceIndex, string deviceVendorName, string srcDeviceAlias, string alias)
-        {
-            alias ??= OpenclAlias;
-            deviceIndex = deviceIndex >= 0
-                ? deviceIndex
-                : 0;
-            var vendorOpts = string.IsNullOrEmpty(deviceVendorName)
-                ? ":0.0"
-                : ":." + deviceIndex + ",device_vendor=\"" + deviceVendorName + "\"";
-            var options = string.IsNullOrEmpty(srcDeviceAlias)
-                ? vendorOpts
-                : "@" + srcDeviceAlias;
-
-            return string.Format(
-                CultureInfo.InvariantCulture,
-                " -init_hw_device opencl={0}{1}",
-                alias,
-                options);
-        }
-
-        private string GetD3d11vaDeviceArgs(int deviceIndex, string deviceVendorId, string alias)
-        {
-            alias ??= D3d11vaAlias;
-            deviceIndex = deviceIndex >= 0 ? deviceIndex : 0;
-            var options = string.IsNullOrEmpty(deviceVendorId)
-                ? deviceIndex.ToString(CultureInfo.InvariantCulture)
-                : ",vendor=" + deviceVendorId;
-
-            return string.Format(
-                CultureInfo.InvariantCulture,
-                " -init_hw_device d3d11va={0}:{1}",
-                alias,
-                options);
-        }
-
-        private string GetVaapiDeviceArgs(string renderNodePath, string driver, string kernelDriver, string vendorId, string srcDeviceAlias, string alias)
-        {
+            var alias = aliasParts.Alias;
             alias ??= VaapiAlias;
             var haveVendorId = !string.IsNullOrEmpty(vendorId)
                 && _mediaEncoder.EncoderVersion >= _minFFmpegVaapiDeviceVendorId;
 
             // Priority: 'renderNodePath' > 'vendorId' > 'kernelDriver'
-            var driverOpts = File.Exists(renderNodePath)
-                ? renderNodePath
+            var driverOpts = File.Exists(nodeParts.RenderNodePath)
+                ? nodeParts.RenderNodePath
                 : (haveVendorId ? $",vendor_id={vendorId}" : (string.IsNullOrEmpty(kernelDriver) ? string.Empty : $",kernel_driver={kernelDriver}"));
 
             // 'driver' behaves similarly to env LIBVA_DRIVER_NAME
-            driverOpts += string.IsNullOrEmpty(driver) ? string.Empty : ",driver=" + driver;
+            driverOpts += string.IsNullOrEmpty(nodeParts.Driver) ? string.Empty : ",driver=" + nodeParts.Driver;
 
-            var options = string.IsNullOrEmpty(srcDeviceAlias)
+            var options = string.IsNullOrEmpty(aliasParts.SrcDeviceAlias)
                 ? (string.IsNullOrEmpty(driverOpts) ? string.Empty : ":" + driverOpts)
-                : "@" + srcDeviceAlias;
+                : "@" + aliasParts.SrcDeviceAlias;
 
             return string.Format(
                 CultureInfo.InvariantCulture,
                 " -init_hw_device vaapi={0}{1}",
                 alias,
                 options);
-        }
-
-        private string GetDrmDeviceArgs(string renderNodePath, string alias)
-        {
-            alias ??= DrmAlias;
-            renderNodePath = renderNodePath ?? "/dev/dri/renderD128";
-
-            return string.Format(
-                CultureInfo.InvariantCulture,
-                " -init_hw_device drm={0}:{1}",
-                alias,
-                renderNodePath);
-        }
-
-        private string GetQsvDeviceArgs(string renderNodePath, string alias)
-        {
-            var arg = " -init_hw_device qsv=" + (alias ?? QsvAlias);
-            if (OperatingSystem.IsLinux())
-            {
-                // derive qsv from vaapi device
-                return GetVaapiDeviceArgs(renderNodePath, "iHD", "i915", "0x8086", null, VaapiAlias) + arg + "@" + VaapiAlias;
-            }
-
-            if (OperatingSystem.IsWindows())
-            {
-                // on Windows, the deviceIndex is an int
-                if (int.TryParse(renderNodePath, NumberStyles.Integer, CultureInfo.InvariantCulture, out int deviceIndex))
-                {
-                    return GetD3d11vaDeviceArgs(deviceIndex, string.Empty, D3d11vaAlias) + arg + "@" + D3d11vaAlias;
-                }
-
-                // derive qsv from d3d11va device
-                return GetD3d11vaDeviceArgs(0, "0x8086", D3d11vaAlias) + arg + "@" + D3d11vaAlias;
-            }
-
-            return null;
         }
 
         private string GetFilterHwDeviceArgs(string alias)
@@ -261,114 +141,12 @@ namespace MediaBrowser.Controller.MediaEncoding
 
                 AppendVaapiHwDeviceArgs(args, options, isVaapiDecoder, isHwTonemapAvailable);
             }
-            else if (optHwaccelType == HardwareAccelerationType.qsv)
-            {
-                if (IsQsvHwaccelUnsupported(isLinux, isWindows))
-                {
-                    return string.Empty;
-                }
-
-                var isQsvEncoder = vidEncoder.Contains("qsv", StringComparison.OrdinalIgnoreCase);
-                var isHwDecoder = IsQsvHwDecoder(vidDecoder);
-                if (IsHwDeviceUnused(isHwDecoder, isQsvEncoder))
-                {
-                    return string.Empty;
-                }
-
-                AppendQsvHwDeviceArgs(args, options, isLinux, isHwDecoder, isHwTonemapAvailable);
-            }
             else
             {
-                return HwDeviceDispatchRemaining(new HwDeviceDispatchContext(optHwaccelType, args, vidDecoder, vidEncoder, isLinux, isWindows, isMacOS, isHwTonemapAvailable));
+                return HwDeviceDispatchQsv(options, new HwDeviceDispatchContext(optHwaccelType, args, vidDecoder, vidEncoder, isLinux, isWindows, isMacOS, isHwTonemapAvailable));
             }
 
             return GetHwDeviceArgsWithDecoder(args, vidDecoder);
-        }
-
-        private string HwDeviceDispatchRemaining(HwDeviceDispatchContext context)
-        {
-            if (context.OptHwaccelType == HardwareAccelerationType.nvenc)
-            {
-                if (IsNvencHwaccelUnsupported(context.IsLinux, context.IsWindows))
-                {
-                    return string.Empty;
-                }
-
-                if (IsHwDeviceNvencUnused(context.VidDecoder, context.VidEncoder))
-                {
-                    return string.Empty;
-                }
-
-                context.Args.Append(GetCudaDeviceArgs(0, CudaAlias))
-                     .Append(GetFilterHwDeviceArgs(CudaAlias));
-            }
-            else if (context.OptHwaccelType == HardwareAccelerationType.amf)
-            {
-                if (IsAmfHwaccelUnsupported(context.IsWindows))
-                {
-                    return string.Empty;
-                }
-
-                if (IsHwDeviceAmfUnused(context.VidDecoder, context.VidEncoder))
-                {
-                    return string.Empty;
-                }
-
-                AppendAmfHwDeviceArgs(context.Args);
-            }
-            else
-            {
-                return HwDeviceDispatchTail(context);
-            }
-
-            return GetHwDeviceArgsWithDecoder(context.Args, context.VidDecoder);
-        }
-
-        private string HwDeviceDispatchTail(HwDeviceDispatchContext context)
-        {
-            if (context.OptHwaccelType == HardwareAccelerationType.videotoolbox)
-            {
-                if (IsVideotoolboxHwaccelUnsupported(context.IsMacOS))
-                {
-                    return string.Empty;
-                }
-
-                if (IsHwDeviceVideotoolboxUnused(context.VidDecoder, context.VidEncoder))
-                {
-                    return string.Empty;
-                }
-
-                // videotoolbox hw filter does not require device selection
-                context.Args.Append(GetVideoToolboxDeviceArgs(VideotoolboxAlias));
-            }
-            else
-            {
-                return HwDeviceDispatchRkmpp(context);
-            }
-
-            return GetHwDeviceArgsWithDecoder(context.Args, context.VidDecoder);
-        }
-
-        private string HwDeviceDispatchRkmpp(HwDeviceDispatchContext context)
-        {
-            if (context.OptHwaccelType == HardwareAccelerationType.rkmpp)
-            {
-                if (IsRkmppHwaccelUnsupported(context.IsLinux))
-                {
-                    return string.Empty;
-                }
-
-                var isRkmppDecoder = context.VidDecoder.Contains("rkmpp", StringComparison.OrdinalIgnoreCase);
-                var isRkmppEncoder = context.VidEncoder.Contains("rkmpp", StringComparison.OrdinalIgnoreCase);
-                if (IsHwDeviceUnused(isRkmppDecoder, isRkmppEncoder))
-                {
-                    return string.Empty;
-                }
-
-                AppendRkmppHwDeviceArgs(context.Args, isRkmppDecoder, context.IsHwTonemapAvailable);
-            }
-
-            return GetHwDeviceArgsWithDecoder(context.Args, context.VidDecoder);
         }
 
         private static string GetHwDeviceArgsWithDecoder(StringBuilder args, string vidDecoder)
@@ -386,84 +164,23 @@ namespace MediaBrowser.Controller.MediaEncoding
             return !isHwDecoder && !isHwEncoder;
         }
 
-        private static bool IsHwDeviceNvencUnused(string vidDecoder, string vidEncoder)
-        {
-            var isNvencEncoder = vidEncoder.Contains("nvenc", StringComparison.OrdinalIgnoreCase);
-            var isHwDecoder = IsNvencHwDecoder(vidDecoder);
-            return IsHwDeviceUnused(isHwDecoder, isNvencEncoder);
-        }
-
-        private static bool IsHwDeviceAmfUnused(string vidDecoder, string vidEncoder)
-        {
-            var isD3d11vaDecoder = vidDecoder.Contains("d3d11va", StringComparison.OrdinalIgnoreCase);
-            var isAmfEncoder = vidEncoder.Contains("amf", StringComparison.OrdinalIgnoreCase);
-            return IsHwDeviceUnused(isD3d11vaDecoder, isAmfEncoder);
-        }
-
-        private static bool IsHwDeviceVideotoolboxUnused(string vidDecoder, string vidEncoder)
-        {
-            var isVideotoolboxDecoder = vidDecoder.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase);
-            var isVideotoolboxEncoder = vidEncoder.Contains("videotoolbox", StringComparison.OrdinalIgnoreCase);
-            return IsHwDeviceUnused(isVideotoolboxDecoder, isVideotoolboxEncoder);
-        }
-
-        private static bool IsQsvHwDecoder(string vidDecoder)
-        {
-            var isD3d11vaDecoder = vidDecoder.Contains("d3d11va", StringComparison.OrdinalIgnoreCase);
-            var isVaapiDecoder = vidDecoder.Contains("vaapi", StringComparison.OrdinalIgnoreCase);
-            var isQsvDecoder = vidDecoder.Contains("qsv", StringComparison.OrdinalIgnoreCase);
-            return isQsvDecoder || isVaapiDecoder || isD3d11vaDecoder;
-        }
-
-        private static bool IsNvencHwDecoder(string vidDecoder)
-        {
-            var isCuvidDecoder = vidDecoder.Contains("cuvid", StringComparison.OrdinalIgnoreCase);
-            var isNvdecDecoder = vidDecoder.Contains("cuda", StringComparison.OrdinalIgnoreCase);
-            return isNvdecDecoder || isCuvidDecoder;
-        }
-
         private bool IsVaapiHwaccelUnsupported(bool isLinux)
         {
             return !isLinux || !_mediaEncoder.SupportsHwaccel("vaapi");
-        }
-
-        private bool IsAmfHwaccelUnsupported(bool isWindows)
-        {
-            return !isWindows || !_mediaEncoder.SupportsHwaccel("d3d11va");
-        }
-
-        private bool IsVideotoolboxHwaccelUnsupported(bool isMacOS)
-        {
-            return !isMacOS || !_mediaEncoder.SupportsHwaccel("videotoolbox");
-        }
-
-        private bool IsRkmppHwaccelUnsupported(bool isLinux)
-        {
-            return !isLinux || !_mediaEncoder.SupportsHwaccel("rkmpp");
-        }
-
-        private bool IsQsvHwaccelUnsupported(bool isLinux, bool isWindows)
-        {
-            return (!isLinux && !isWindows) || !_mediaEncoder.SupportsHwaccel("qsv");
-        }
-
-        private bool IsNvencHwaccelUnsupported(bool isLinux, bool isWindows)
-        {
-            return (!isLinux && !isWindows) || !IsCudaFullSupported();
         }
 
         private void AppendVaapiHwDeviceArgs(StringBuilder args, EncodingOptions options, bool isVaapiDecoder, bool isHwTonemapAvailable)
         {
             if (_mediaEncoder.IsVaapiDeviceInteliHD)
             {
-                args.Append(GetVaapiDeviceArgs(options.VaapiDevice, "iHD", null, null, null, VaapiAlias));
+                args.Append(GetVaapiDeviceArgs(new VaapiDeviceNodeParts(options.VaapiDevice, "iHD"), null, null, new VaapiDeviceAliasParts(null, VaapiAlias)));
             }
             else if (_mediaEncoder.IsVaapiDeviceInteli965)
             {
                 // Only override i965 since it has lower priority than iHD in libva lookup.
                 Environment.SetEnvironmentVariable("LIBVA_DRIVER_NAME", "i965");
                 Environment.SetEnvironmentVariable("LIBVA_DRIVER_NAME_JELLYFIN", "i965");
-                args.Append(GetVaapiDeviceArgs(options.VaapiDevice, "i965", null, null, null, VaapiAlias));
+                args.Append(GetVaapiDeviceArgs(new VaapiDeviceNodeParts(options.VaapiDevice, "i965"), null, null, new VaapiDeviceAliasParts(null, VaapiAlias)));
             }
 
             var filterDevArgs = string.Empty;
@@ -486,107 +203,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             args.Append(filterDevArgs);
         }
 
-        private string AppendVaapiIntelOpenclDeviceArgs(StringBuilder args, bool doOclTonemap, bool isVaapiDecoder, string filterDevArgs)
-        {
-            if (doOclTonemap && !isVaapiDecoder)
-            {
-                args.Append(GetOpenclDeviceArgs(0, null, VaapiAlias, OpenclAlias));
-                filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-            }
-
-            return filterDevArgs;
-        }
-
-        private string AppendVaapiAmdHwDeviceArgs(StringBuilder args, EncodingOptions options, bool doOclTonemap)
-        {
-            string filterDevArgs;
-
-            // Disable AMD EFC feature since it's still unstable in upstream Mesa.
-            Environment.SetEnvironmentVariable("AMD_DEBUG", "noefc");
-
-            if (IsAmdVulkanDrmInteropUsable())
-            {
-                args.Append(GetDrmDeviceArgs(options.VaapiDevice, DrmAlias));
-                args.Append(GetVaapiDeviceArgs(null, null, null, null, DrmAlias, VaapiAlias));
-                args.Append(GetVulkanDeviceArgs(0, null, DrmAlias, VulkanAlias));
-
-                // libplacebo wants an explicitly set vulkan filter device.
-                filterDevArgs = GetFilterHwDeviceArgs(VulkanAlias);
-            }
-            else
-            {
-                args.Append(GetVaapiDeviceArgs(options.VaapiDevice, null, null, null, null, VaapiAlias));
-                filterDevArgs = GetFilterHwDeviceArgs(VaapiAlias);
-
-                if (doOclTonemap)
-                {
-                    // ROCm/ROCr OpenCL runtime
-                    args.Append(GetOpenclDeviceArgs(0, "Advanced Micro Devices", null, OpenclAlias));
-                    filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-                }
-            }
-
-            return filterDevArgs;
-        }
-
-        private bool IsAmdVulkanDrmInteropUsable()
-        {
-            return IsVulkanFullSupported()
-                && _mediaEncoder.IsVaapiDeviceSupportVulkanDrmInterop
-                && Environment.OSVersion.Version >= _minKernelVersionAmdVkFmtModifier;
-        }
-
-        private void AppendQsvHwDeviceArgs(StringBuilder args, EncodingOptions options, bool isLinux, bool isHwDecoder, bool isHwTonemapAvailable)
-        {
-            args.Append(GetQsvDeviceArgs(options.QsvDevice, QsvAlias));
-            var filterDevArgs = GetFilterHwDeviceArgs(QsvAlias);
-            // child device used by qsv.
-            if (_mediaEncoder.SupportsHwaccel("vaapi") || _mediaEncoder.SupportsHwaccel("d3d11va"))
-            {
-                if (isHwTonemapAvailable && IsOpenclFullSupported())
-                {
-                    var srcAlias = isLinux ? VaapiAlias : D3d11vaAlias;
-                    args.Append(GetOpenclDeviceArgs(0, null, srcAlias, OpenclAlias));
-                    if (!isHwDecoder)
-                    {
-                        filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-                    }
-                }
-            }
-
-            args.Append(filterDevArgs);
-        }
-
-        private void AppendAmfHwDeviceArgs(StringBuilder args)
-        {
-            // no dxva video processor hw filter.
-            args.Append(GetD3d11vaDeviceArgs(0, "0x1002", D3d11vaAlias));
-            var filterDevArgs = string.Empty;
-            if (IsOpenclFullSupported())
-            {
-                args.Append(GetOpenclDeviceArgs(0, null, D3d11vaAlias, OpenclAlias));
-                filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-            }
-
-            args.Append(filterDevArgs);
-        }
-
-        private void AppendRkmppHwDeviceArgs(StringBuilder args, bool isRkmppDecoder, bool isHwTonemapAvailable)
-        {
-            args.Append(GetRkmppDeviceArgs(RkmppAlias));
-
-            var filterDevArgs = string.Empty;
-            var doOclTonemap = isHwTonemapAvailable && IsOpenclFullSupported();
-
-            if (doOclTonemap && !isRkmppDecoder)
-            {
-                args.Append(GetOpenclDeviceArgs(0, null, RkmppAlias, OpenclAlias));
-                filterDevArgs = GetFilterHwDeviceArgs(OpenclAlias);
-            }
-
-            args.Append(filterDevArgs);
-        }
-
         private readonly record struct HwDeviceDispatchContext(
             HardwareAccelerationType OptHwaccelType,
             StringBuilder Args,
@@ -596,5 +212,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool IsWindows,
             bool IsMacOS,
             bool IsHwTonemapAvailable);
+
+        private readonly record struct VaapiDeviceNodeParts(string RenderNodePath, string Driver);
+
+        private readonly record struct VaapiDeviceAliasParts(string SrcDeviceAlias, string Alias);
     }
 }

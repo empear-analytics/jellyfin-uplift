@@ -91,16 +91,10 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
                 else if (IsTimeFieldWithRuntime(state, part))
                 {
-                    var time = part.Split('=', 2)[^1];
-
-                    if (TimeSpan.TryParse(time, CultureInfo.InvariantCulture, out var val))
-                    {
-                        var currentMs = startMs + val.TotalMilliseconds;
-
-                        percent = 100.0 * currentMs / totalMs;
-
-                        transcodingPosition = TimeSpan.FromMilliseconds(currentMs);
-                    }
+                    var context = new TimeProgressInput(part, startMs, totalMs);
+                    var result = ParseTimeProgress(context, new TimeProgress(percent, transcodingPosition));
+                    percent = result.Percent;
+                    transcodingPosition = result.TranscodingPosition;
                 }
                 else if (part.StartsWith("size=", StringComparison.OrdinalIgnoreCase))
                 {
@@ -116,6 +110,25 @@ namespace MediaBrowser.Controller.MediaEncoding
             {
                 state.ReportTranscodingProgress(transcodingPosition, framerate, percent, bytesTranscoded, bitRate);
             }
+        }
+
+        private static TimeProgress ParseTimeProgress(TimeProgressInput context, TimeProgress current)
+        {
+            var percent = current.Percent;
+            var transcodingPosition = current.TranscodingPosition;
+
+            var time = context.Part.Split('=', 2)[^1];
+
+            if (TimeSpan.TryParse(time, CultureInfo.InvariantCulture, out var val))
+            {
+                var currentMs = context.StartMs + val.TotalMilliseconds;
+
+                percent = 100.0 * currentMs / context.TotalMs;
+
+                transcodingPosition = TimeSpan.FromMilliseconds(currentMs);
+            }
+
+            return new TimeProgress(percent, transcodingPosition);
         }
 
         private static bool ParseLogLineHasProgress(float? framerate, double? percent)
@@ -158,5 +171,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             return state.RunTimeTicks.HasValue &&
                     part.StartsWith("time=", StringComparison.OrdinalIgnoreCase);
         }
+
+        private readonly record struct TimeProgressInput(string Part, double StartMs, double TotalMs);
+
+        private readonly record struct TimeProgress(double? Percent, TimeSpan? TranscodingPosition);
     }
 }

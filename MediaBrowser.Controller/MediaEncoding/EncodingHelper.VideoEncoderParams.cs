@@ -33,181 +33,63 @@ namespace MediaBrowser.Controller.MediaEncoding
 {
     public partial class EncodingHelper
     {
-        public static string GetSegmentFileExtension(string segmentContainer)
+        private static bool IsH264BelowLevel51(EncoderParamCodecLevel codecLevel)
         {
-            if (!string.IsNullOrWhiteSpace(segmentContainer))
-            {
-                return "." + segmentContainer;
-            }
-
-            return ".ts";
-        }
-
-        private string GetVideoBitrateParam(EncodingJobInfo state, string videoCodec)
-        {
-            if (state.OutputVideoBitrate is null)
-            {
-                return string.Empty;
-            }
-
-            int bitrate = state.OutputVideoBitrate.Value;
-
-            // Bit rate under 1000k is not allowed in h264_qsv.
-            if (string.Equals(videoCodec, "h264_qsv", StringComparison.OrdinalIgnoreCase))
-            {
-                bitrate = Math.Max(bitrate, 1000);
-            }
-
-            // Currently use the same buffer size for all non-QSV encoders.
-            // Use long arithmetic to prevent int32 overflow for very high bitrate values.
-            int bufsize = (int)Math.Min((long)bitrate * 2, int.MaxValue);
-
-            return GetVideoEncoderRateControlParam(state, videoCodec, bitrate, bufsize);
-        }
-
-        private string GetVideoEncoderRateControlParam(EncodingJobInfo state, string videoCodec, int bitrate, int bufsize)
-        {
-            if (string.Equals(videoCodec, "libsvtav1", StringComparison.OrdinalIgnoreCase))
-            {
-                return FormattableString.Invariant($" -b:v {bitrate} -bufsize {bufsize}");
-            }
-
-            if (IsLibX26xEncoder(videoCodec))
-            {
-                return FormattableString.Invariant($" -maxrate {bitrate} -bufsize {bufsize}");
-            }
-
-            if (IsQsvVideoEncoder(videoCodec))
-            {
-                return GetQsvVideoBitrateParam(state, bitrate);
-            }
-
-            if (IsAmfH26xEncoder(videoCodec))
-            {
-                // Override the too high default qmin 18 in transcoding preset in legacy h26x_amf
-                return FormattableString.Invariant($" -rc cbr -qmin 0 -qmax 32 -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
-            }
-
-            if (IsVaapiVideoEncoder(videoCodec))
-            {
-                return GetVaapiVideoBitrateParam(bitrate, bufsize);
-            }
-
-            if (IsVideoToolboxH26xCodec(videoCodec))
-            {
-                // The `maxrate` and `bufsize` options can potentially lead to performance regression
-                // and even encoder hangs, especially when the value is very high.
-                return FormattableString.Invariant($" -b:v {bitrate} -qmin -1 -qmax -1");
-            }
-
-            return FormattableString.Invariant($" -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
-        }
-
-        private static bool IsLibX26xEncoder(string videoCodec)
-        {
-            return string.Equals(videoCodec, "libx264", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoCodec, "libx265", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsVideoToolboxH26xCodec(string videoCodec)
-        {
-            return string.Equals(videoCodec, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoCodec, "hevc_videotoolbox", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static string GetQsvVideoBitrateParam(EncodingJobInfo state, int bitrate)
-        {
-            // TODO: probe QSV encoders' capabilities and enable more tuning options
-            // See also https://github.com/intel/media-delivery/blob/master/doc/quality.rst
-
-            // Some less powerful H.264 HW decoders require strict CPB size
-            // So bufsize optimizations should not be applied to them
-            int factor = 2;
-            var codec = state.ActualOutputVideoCodec;
-            var level = state.GetRequestedLevel(codec);
-            if (IsH264BelowLevel51(codec, level))
-            {
-                factor = 1;
-            }
-
-            // Set (maxrate == bitrate + 1) to trigger VBR for better bitrate allocation
-            // Set (rc_init_occupancy == 2 * bitrate) and (bufsize == 4 * bitrate) to deal with drastic scene changes
-            // Use long arithmetic and clamp to int.MaxValue to prevent int32 overflow
-            // (e.g. bitrate * 4 wraps to a negative value for bitrates above ~537 million)
-            int qsvMaxrate = (int)Math.Min((long)bitrate + 1, int.MaxValue);
-            int qsvInitOcc = (int)Math.Min((long)bitrate * 1 * factor, int.MaxValue);
-            int qsvBufsize = (int)Math.Min((long)bitrate * 2 * factor, int.MaxValue);
-
-            return string.Create(CultureInfo.InvariantCulture, $" -b:v {bitrate} -maxrate {qsvMaxrate} -rc_init_occupancy {qsvInitOcc} -bufsize {qsvBufsize}");
-        }
-
-        private string GetVaapiVideoBitrateParam(int bitrate, int bufsize)
-        {
-            // VBR in i965 driver may result in pixelated output.
-            if (_mediaEncoder.IsVaapiDeviceInteli965)
-            {
-                return FormattableString.Invariant($" -rc_mode CBR -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
-            }
-
-            return FormattableString.Invariant($" -rc_mode VBR -b:v {bitrate} -maxrate {bitrate} -bufsize {bufsize}");
-        }
-
-        private static bool IsH264BelowLevel51(string codec, string level)
-        {
-            return string.Equals(codec, "h264", StringComparison.OrdinalIgnoreCase)
-                && double.TryParse(level, CultureInfo.InvariantCulture, out double requestedLevel)
+            return string.Equals(codecLevel.Codec, "h264", StringComparison.OrdinalIgnoreCase)
+                && double.TryParse(codecLevel.Level, CultureInfo.InvariantCulture, out double requestedLevel)
                 && requestedLevel < 51;
         }
 
-        private string GetEncoderParam(EncoderPreset? preset, EncoderPreset defaultPreset, EncodingOptions encodingOptions, string videoEncoder, bool isLibX265)
+        private string GetEncoderParam(GetEncoderParamParts parts, EncodingOptions encodingOptions, EncoderParamX265Encoder x265Encoder)
         {
             var param = string.Empty;
-            var encoderPreset = preset ?? defaultPreset;
-            if (IsLibX264OrLibX265(videoEncoder, isLibX265))
+            var encoderPreset = parts.Preset ?? parts.DefaultPreset;
+            if (IsLibX264OrLibX265(x265Encoder))
             {
-                param = AppendX26xPresetAndCrf(param, encoderPreset, encodingOptions, isLibX265);
+                param = AppendX26xPresetAndCrf(new EncoderParamPreset(param, encoderPreset), new EncoderParamCrfOptions(encodingOptions, x265Encoder.IsLibX265));
             }
-            else if (string.Equals(videoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(x265Encoder.VideoEncoder, "libsvtav1", StringComparison.OrdinalIgnoreCase))
             {
-                param = AppendSvtAv1Preset(param, encoderPreset);
+                param = AppendSvtAv1Preset(new EncoderParamPreset(param, encoderPreset));
             }
-            else if (IsVaapiVideoEncoder(videoEncoder))
+            else if (IsVaapiVideoEncoder(x265Encoder.VideoEncoder))
             {
-                param = AppendVaapiCompressionLevel(param, encoderPreset);
+                param = AppendVaapiCompressionLevel(new EncoderParamPreset(param, encoderPreset));
             }
             else
             {
-                param = AppendVideoEncoderHwPresetParam(param, encoderPreset, videoEncoder);
+                param = AppendVideoEncoderHwPresetParam(new EncoderParamPresetEncoder(param, encoderPreset, x265Encoder.VideoEncoder));
             }
 
             return param;
         }
 
-        private string AppendVideoEncoderHwPresetParam(string param, EncoderPreset encoderPreset, string videoEncoder)
+        private string AppendVideoEncoderHwPresetParam(EncoderParamPresetEncoder presetEncoder)
         {
-            if (IsQsvVideoEncoder(videoEncoder))
+            var param = presetEncoder.Param;
+            if (IsQsvVideoEncoder(presetEncoder.VideoEncoder))
             {
-                param = AppendQsvPreset(param, encoderPreset, videoEncoder);
+                param = AppendQsvPreset(new EncoderParamPresetEncoder(param, presetEncoder.EncoderPreset, presetEncoder.VideoEncoder));
             }
-            else if (IsNvencVideoEncoder(videoEncoder))
+            else if (IsNvencVideoEncoder(presetEncoder.VideoEncoder))
             {
-                param = AppendNvencPreset(param, encoderPreset, videoEncoder);
+                param = AppendNvencPreset(new EncoderParamPresetEncoder(param, presetEncoder.EncoderPreset, presetEncoder.VideoEncoder));
             }
-            else if (IsAmfVideoEncoder(videoEncoder))
+            else if (IsAmfVideoEncoder(presetEncoder.VideoEncoder))
             {
-                param = AppendAmfQuality(param, encoderPreset, videoEncoder);
+                param = AppendAmfQuality(new EncoderParamPresetEncoder(param, presetEncoder.EncoderPreset, presetEncoder.VideoEncoder));
             }
-            else if (IsVideoToolboxH26xEncoder(videoEncoder))
+            else if (IsVideoToolboxH26xEncoder(presetEncoder.VideoEncoder))
             {
-                param = AppendVideoToolboxPrioSpeed(param, encoderPreset);
+                param = AppendVideoToolboxPrioSpeed(new EncoderParamPreset(param, presetEncoder.EncoderPreset));
             }
 
             return param;
         }
 
-        private static bool IsLibX264OrLibX265(string videoEncoder, bool isLibX265)
+        private static bool IsLibX264OrLibX265(EncoderParamX265Encoder x265Encoder)
         {
-            return string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase) || isLibX265;
+            return string.Equals(x265Encoder.VideoEncoder, "libx264", StringComparison.OrdinalIgnoreCase) || x265Encoder.IsLibX265;
         }
 
         private static bool IsVideoToolboxH26xEncoder(string videoEncoder)
@@ -216,20 +98,21 @@ namespace MediaBrowser.Controller.MediaEncoding
                         || string.Equals(videoEncoder, "hevc_videotoolbox", StringComparison.OrdinalIgnoreCase); // hevc (hevc_videotoolbox)
         }
 
-        private static string AppendX26xPresetAndCrf(string param, EncoderPreset encoderPreset, EncodingOptions encodingOptions, bool isLibX265)
+        private static string AppendX26xPresetAndCrf(EncoderParamPreset preset, EncoderParamCrfOptions crfOptions)
         {
-            var presetString = encoderPreset switch
+            var param = preset.Param;
+            var presetString = preset.EncoderPreset switch
             {
                 EncoderPreset.auto => EncoderPreset.veryfast.ToString().ToLowerInvariant(),
-                _ => encoderPreset.ToString().ToLowerInvariant()
+                _ => preset.EncoderPreset.ToString().ToLowerInvariant()
             };
 
             param += " -preset " + presetString;
 
-            int encodeCrf = encodingOptions.H264Crf;
-            if (isLibX265)
+            int encodeCrf = crfOptions.EncodingOptions.H264Crf;
+            if (crfOptions.IsLibX265)
             {
-                encodeCrf = encodingOptions.H265Crf;
+                encodeCrf = crfOptions.EncodingOptions.H265Crf;
             }
 
             if (encodeCrf >= 0 && encodeCrf <= 51)
@@ -239,7 +122,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             else
             {
                 string defaultCrf = "23";
-                if (isLibX265)
+                if (crfOptions.IsLibX265)
                 {
                     defaultCrf = "28";
                 }
@@ -250,19 +133,20 @@ namespace MediaBrowser.Controller.MediaEncoding
             return param;
         }
 
-        private static string AppendSvtAv1Preset(string param, EncoderPreset encoderPreset)
+        private static string AppendSvtAv1Preset(EncoderParamPreset preset)
         {
+            var param = preset.Param;
             // Default to use the recommended preset 10.
             // Omit presets < 5, which are too slow for on the fly encoding.
             // https://gitlab.com/AOMediaCodec/SVT-AV1/-/blob/master/Docs/Ffmpeg.md
-            param += encoderPreset switch
+            param += preset.EncoderPreset switch
             {
                 EncoderPreset.veryslow => " -preset 5",
                 EncoderPreset.slower => " -preset 6",
                 EncoderPreset.slow => " -preset 7",
                 EncoderPreset.medium => " -preset 8",
                 EncoderPreset.fast => " -preset 9",
-                _ => VideoEncoderSvtAv1FasterPreset(encoderPreset)
+                _ => VideoEncoderSvtAv1FasterPreset(preset.EncoderPreset)
             };
 
             return param;
@@ -280,18 +164,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             };
         }
 
-        private string AppendVaapiCompressionLevel(string param, EncoderPreset encoderPreset)
+        private string AppendVaapiCompressionLevel(EncoderParamPreset preset)
         {
+            var param = preset.Param;
             // -compression_level is not reliable on AMD.
             if (_mediaEncoder.IsVaapiDeviceInteliHD)
             {
-                param += encoderPreset switch
+                param += preset.EncoderPreset switch
                 {
                     EncoderPreset.veryslow => " -compression_level 1",
                     EncoderPreset.slower => " -compression_level 2",
                     EncoderPreset.slow => " -compression_level 3",
                     EncoderPreset.medium => " -compression_level 4",
-                    _ => VideoEncoderVaapiFasterCompressionLevel(encoderPreset)
+                    _ => VideoEncoderVaapiFasterCompressionLevel(preset.EncoderPreset)
                 };
             }
 
@@ -311,15 +196,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             };
         }
 
-        private static string AppendQsvPreset(string param, EncoderPreset encoderPreset, string videoEncoder)
+        private static string AppendQsvPreset(EncoderParamPresetEncoder presetEncoder)
         {
+            var param = presetEncoder.Param;
             EncoderPreset[] valid_presets = [EncoderPreset.veryslow, EncoderPreset.slower, EncoderPreset.slow, EncoderPreset.medium, EncoderPreset.fast, EncoderPreset.faster, EncoderPreset.veryfast];
 
-            param += " -preset " + (valid_presets.Contains(encoderPreset) ? encoderPreset : EncoderPreset.veryfast).ToString().ToLowerInvariant();
+            param += " -preset " + (valid_presets.Contains(presetEncoder.EncoderPreset) ? presetEncoder.EncoderPreset : EncoderPreset.veryfast).ToString().ToLowerInvariant();
 
             // Enable MacroBlock level bitrate control for better subjective visual quality
-            if (string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(videoEncoder, "hevc_qsv", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(presetEncoder.VideoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(presetEncoder.VideoEncoder, "hevc_qsv", StringComparison.OrdinalIgnoreCase))
             {
                 param += " -mbbrc 1";
             }
@@ -327,17 +213,18 @@ namespace MediaBrowser.Controller.MediaEncoding
             return param;
         }
 
-        private static string AppendNvencPreset(string param, EncoderPreset encoderPreset, string videoEncoder)
+        private static string AppendNvencPreset(EncoderParamPresetEncoder presetEncoder)
         {
-            param += encoderPreset switch
+            var param = presetEncoder.Param;
+            param += presetEncoder.EncoderPreset switch
             {
                 EncoderPreset.veryslow => " -preset p7",
                 EncoderPreset.slower => " -preset p6",
                 EncoderPreset.slow => " -preset p5",
-                _ => VideoEncoderNvencFasterPreset(encoderPreset)
+                _ => VideoEncoderNvencFasterPreset(presetEncoder.EncoderPreset)
             };
 
-            return AppendNvencAdaptiveQuantization(param, videoEncoder);
+            return AppendNvencAdaptiveQuantization(new EncoderParamEncoderArgs(param, presetEncoder.VideoEncoder));
         }
 
         private static string VideoEncoderNvencFasterPreset(EncoderPreset encoderPreset)
@@ -351,11 +238,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             };
         }
 
-        private static string AppendNvencAdaptiveQuantization(string param, string videoEncoder)
+        private static string AppendNvencAdaptiveQuantization(EncoderParamEncoderArgs encoderArgs)
         {
+            var param = encoderArgs.Param;
             // Enable Spatial Adaptive Quantization for better subjective visual quality
             // H.264 is skipped for now because Maxwell 1 does not support it
-            if (!string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(encoderArgs.VideoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase))
             {
                 param += " -spatial-aq 1 -aq-strength 15";
             }
@@ -363,9 +251,10 @@ namespace MediaBrowser.Controller.MediaEncoding
             return param;
         }
 
-        private string AppendAmfQuality(string param, EncoderPreset encoderPreset, string videoEncoder)
+        private string AppendAmfQuality(EncoderParamPresetEncoder presetEncoder)
         {
-            param += encoderPreset switch
+            var param = presetEncoder.Param;
+            param += presetEncoder.EncoderPreset switch
             {
                 EncoderPreset.veryslow => " -quality quality",
                 EncoderPreset.slower => " -quality quality",
@@ -374,27 +263,28 @@ namespace MediaBrowser.Controller.MediaEncoding
                 _ => " -quality speed"
             };
 
-            return AppendAmfQualityOptions(param, videoEncoder);
+            return AppendAmfQualityOptions(new EncoderParamEncoderArgs(param, presetEncoder.VideoEncoder));
         }
 
-        private string AppendAmfQualityOptions(string param, string videoEncoder)
+        private string AppendAmfQualityOptions(EncoderParamEncoderArgs encoderArgs)
         {
+            var param = encoderArgs.Param;
             // Enable Variance Based/Context Adaptive Quantization for better subjective visual quality
-            if (IsAmfH26xEncoder(videoEncoder))
+            if (IsAmfH26xEncoder(encoderArgs.VideoEncoder))
             {
                 param += " -vbaq 1";
             }
-            else if (SupportsAmfAv1Caq(videoEncoder))
+            else if (SupportsAmfAv1Caq(encoderArgs.VideoEncoder))
             {
                 param += " -aq_mode caq";
             }
 
-            if (IsAmfHevcOrAv1Encoder(videoEncoder))
+            if (IsAmfHevcOrAv1Encoder(encoderArgs.VideoEncoder))
             {
                 param += " -header_insertion_mode gop";
             }
 
-            if (string.Equals(videoEncoder, "hevc_amf", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(encoderArgs.VideoEncoder, "hevc_amf", StringComparison.OrdinalIgnoreCase))
             {
                 param += " -gops_per_idr 1";
             }
@@ -420,9 +310,10 @@ namespace MediaBrowser.Controller.MediaEncoding
                 || string.Equals(videoEncoder, "av1_amf", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static string AppendVideoToolboxPrioSpeed(string param, EncoderPreset encoderPreset)
+        private static string AppendVideoToolboxPrioSpeed(EncoderParamPreset preset)
         {
-            param += encoderPreset switch
+            var param = preset.Param;
+            param += preset.EncoderPreset switch
             {
                 EncoderPreset.veryslow => " -prio_speed 0",
                 EncoderPreset.slower => " -prio_speed 0",
@@ -480,13 +371,13 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else
             {
-                return NormalizeVideoEncoderHevcOrH264Level(state, level, requestLevel);
+                return NormalizeVideoEncoderHevcOrH264Level(state, new EncoderParamLevelRequest(level, requestLevel));
             }
 
             return level;
         }
 
-        private static string NormalizeVideoEncoderHevcOrH264Level(EncodingJobInfo state, string level, double requestLevel)
+        private static string NormalizeVideoEncoderHevcOrH264Level(EncodingJobInfo state, EncoderParamLevelRequest levelRequest)
         {
             if (IsHevcOrH265OutputCodec(state.ActualOutputVideoCodec))
             {
@@ -494,33 +385,33 @@ namespace MediaBrowser.Controller.MediaEncoding
                 // Level 5.0 is suitable for up to 4k 30fps hevc encoding, otherwise let the encoder to handle it.
                 // https://en.wikipedia.org/wiki/High_Efficiency_Video_Coding_tiers_and_levels
                 // MaxLumaSampleRate = 3840*2160*30 = 248832000 < 267386880.
-                if (IsHevcLevelAboveCap(requestLevel))
+                if (IsHevcLevelAboveCap(levelRequest.RequestLevel))
                 {
                     return "150";
                 }
             }
             else
             {
-                return NormalizeVideoEncoderH264Level(state, level, requestLevel);
+                return NormalizeVideoEncoderH264Level(state, levelRequest);
             }
 
-            return level;
+            return levelRequest.Level;
         }
 
-        private static string NormalizeVideoEncoderH264Level(EncodingJobInfo state, string level, double requestLevel)
+        private static string NormalizeVideoEncoderH264Level(EncodingJobInfo state, EncoderParamLevelRequest levelRequest)
         {
             if (string.Equals(state.ActualOutputVideoCodec, "h264", StringComparison.OrdinalIgnoreCase))
             {
                 // Transcode to level 5.1 and lower for maximum compatibility.
                 // h264 4k 30fps requires at least level 5.1 otherwise it will break on safari fmp4.
                 // https://en.wikipedia.org/wiki/Advanced_Video_Coding#Levels
-                if (IsH264LevelAboveCap(requestLevel))
+                if (IsH264LevelAboveCap(levelRequest.RequestLevel))
                 {
                     return "51";
                 }
             }
 
-            return level;
+            return levelRequest.Level;
         }
 
         private static bool IsAv1LevelAboveCap(double requestLevel)
@@ -568,103 +459,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             return null;
         }
 
-        public string GetHlsVideoKeyFrameArguments(
-            EncodingJobInfo state,
-            string codec,
-            int segmentLength,
-            bool isEventPlaylist,
-            int? startNumber)
-        {
-            var args = string.Empty;
-            var gopArg = string.Empty;
-
-            var keyFrameArg = string.Format(
-                CultureInfo.InvariantCulture,
-                " -force_key_frames:0 \"expr:gte(t,n_forced*{0})\"",
-                segmentLength);
-
-            var framerate = state.VideoStream?.RealFrameRate;
-            if (framerate.HasValue)
-            {
-                // This is to make sure keyframe interval is limited to our segment,
-                // as forcing keyframes is not enough.
-                // Example: we encoded half of desired length, then codec detected
-                // scene cut and inserted a keyframe; next forced keyframe would
-                // be created outside of segment, which breaks seeking.
-                gopArg = string.Format(
-                    CultureInfo.InvariantCulture,
-                    " -g:v:0 {0} -keyint_min:v:0 {0}",
-                    Math.Ceiling(segmentLength * framerate.Value));
-            }
-
-            // Unable to force key frames using these encoders, set key frames by GOP.
-            if (IsGopOnlyKeyFrameEncoder(codec))
-            {
-                args += gopArg;
-            }
-            else if (IsForcedKeyFrameEncoder(codec))
-            {
-                args += keyFrameArg;
-
-                // prevent the libx264 from post processing to break the set keyframe.
-                if (string.Equals(codec, "libx264", StringComparison.OrdinalIgnoreCase))
-                {
-                    args += " -sc_threshold:v:0 0";
-                }
-            }
-            else
-            {
-                args += keyFrameArg + gopArg;
-            }
-
-            // The in-band Parameter Sets generated by the AMD HEVC VA-API encoder is inconsistent
-            // with the extradata generated by ffmpeg, causing decoding failures when using hvc1.
-            if (IsAmdHevcVaapiEncoder(codec))
-            {
-                // Extracting the extradata from the in-band PS to bypass the issue.
-                // This can be removed once the issue is resolved in libva or Mesa.
-                // Transcoding is unavoidable here, so using BSF will not conflict with BSF in remuxing.
-                args += " -flags:v -global_header -bsf:v extract_extradata=remove=0";
-            }
-
-            return args;
-        }
-
-        private static bool IsGopOnlyKeyFrameEncoder(string codec)
-        {
-            return IsGopOnlyH264OrHevcKeyFrameEncoder(codec)
-                || string.Equals(codec, "av1_qsv", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "av1_nvenc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "av1_amf", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "libsvtav1", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsGopOnlyH264OrHevcKeyFrameEncoder(string codec)
-        {
-            return string.Equals(codec, "h264_qsv", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "h264_amf", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "h264_rkmpp", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "hevc_qsv", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "hevc_nvenc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "hevc_rkmpp", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsForcedKeyFrameEncoder(string codec)
-        {
-            return string.Equals(codec, "libx264", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "libx265", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "hevc_vaapi", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "av1_vaapi", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private bool IsAmdHevcVaapiEncoder(string codec)
-        {
-            return string.Equals(codec, "hevc_vaapi", StringComparison.OrdinalIgnoreCase)
-                && _mediaEncoder.IsVaapiDeviceAmd;
-        }
-
         /// <summary>
         /// Gets the video bitrate to specify on the command line.
         /// </summary>
@@ -692,13 +486,13 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             if (hardwareAccelerationType == HardwareAccelerationType.vaapi)
             {
-                intelLowPowerHwEncoding = GetVaapiIntelLowPowerHwEncoding(videoEncoder, encodingOptions, intelLowPowerHwEncoding);
+                intelLowPowerHwEncoding = GetVaapiIntelLowPowerHwEncoding(new EncoderParamVaapiLowPower(videoEncoder, encodingOptions, intelLowPowerHwEncoding));
             }
             else if (hardwareAccelerationType == HardwareAccelerationType.qsv)
             {
                 if (OperatingSystem.IsLinux())
                 {
-                    enableWaFori915Hang = GetWaFori915Hang(state, encodingOptions, enableWaFori915Hang);
+                    enableWaFori915Hang = GetWaFori915Hang(state, new EncoderParamI915Workaround(encodingOptions, enableWaFori915Hang));
                 }
 
                 if (string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase))
@@ -715,12 +509,12 @@ namespace MediaBrowser.Controller.MediaEncoding
                 }
             }
 
-            param = AppendIntelLowPowerParams(param, intelLowPowerHwEncoding, enableWaFori915Hang);
+            param = AppendIntelLowPowerParams(new EncoderParamLowPowerFlags(param, intelLowPowerHwEncoding, enableWaFori915Hang));
 
             var isLibX265 = string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase);
             var encodingPreset = encodingOptions.EncoderPreset;
 
-            param += GetEncoderParam(encodingPreset, defaultPreset, encodingOptions, videoEncoder, isLibX265);
+            param += GetEncoderParam(new GetEncoderParamParts(encodingPreset, defaultPreset), encodingOptions, new EncoderParamX265Encoder(videoEncoder, isLibX265));
             param += GetVideoBitrateParam(state, videoEncoder);
 
             var framerate = GetFramerateParam(state);
@@ -729,19 +523,20 @@ namespace MediaBrowser.Controller.MediaEncoding
                 param += string.Format(CultureInfo.InvariantCulture, " -r {0}", framerate.Value.ToString(CultureInfo.InvariantCulture));
             }
 
-            param = AppendVideoProfileAndLevelParams(param, state, videoEncoder);
+            param = AppendVideoProfileAndLevelParams(new EncoderParamProfileLevelArgs(param, state, videoEncoder));
 
-            return AppendVideoEncoderSpecificParams(param, videoEncoder, encodingOptions);
+            return AppendVideoEncoderSpecificParams(new EncoderParamEncoderArgs(param, videoEncoder), encodingOptions);
         }
 
-        private static string AppendIntelLowPowerParams(string param, bool intelLowPowerHwEncoding, bool enableWaFori915Hang)
+        private static string AppendIntelLowPowerParams(EncoderParamLowPowerFlags lowPowerFlags)
         {
-            if (intelLowPowerHwEncoding)
+            var param = lowPowerFlags.Param;
+            if (lowPowerFlags.IntelLowPowerHwEncoding)
             {
                 param += " -low_power 1";
             }
 
-            if (enableWaFori915Hang)
+            if (lowPowerFlags.EnableWaFori915Hang)
             {
                 param += " -async_depth 1";
             }
@@ -749,55 +544,57 @@ namespace MediaBrowser.Controller.MediaEncoding
             return param;
         }
 
-        private string AppendVideoProfileAndLevelParams(string param, EncodingJobInfo state, string videoEncoder)
+        private string AppendVideoProfileAndLevelParams(EncoderParamProfileLevelArgs profileLevelArgs)
         {
-            var targetVideoCodec = state.ActualOutputVideoCodec;
+            var param = profileLevelArgs.Param;
+            var targetVideoCodec = profileLevelArgs.State.ActualOutputVideoCodec;
             if (IsHevcCodecName(targetVideoCodec))
             {
                 targetVideoCodec = "hevc";
             }
 
-            var profile = state.GetRequestedProfiles(targetVideoCodec).FirstOrDefault() ?? string.Empty;
+            var profile = profileLevelArgs.State.GetRequestedProfiles(targetVideoCodec).FirstOrDefault() ?? string.Empty;
             profile = WhiteSpaceRegex().Replace(profile, string.Empty).ToLowerInvariant();
 
             var videoProfiles = GetVideoProfiles(targetVideoCodec);
 
-            profile = NormalizeVideoProfile(videoEncoder, profile, videoProfiles);
+            profile = NormalizeVideoProfile(new EncoderParamProfileCandidates(profileLevelArgs.VideoEncoder, profile, videoProfiles));
 
             if (!string.IsNullOrEmpty(profile))
             {
-                param = AppendProfileParam(param, videoEncoder, profile);
+                param = AppendProfileParam(new EncoderParamProfileArgs(param, profileLevelArgs.VideoEncoder, profile));
             }
 
-            var level = NormalizeTranscodingLevel(state, state.GetRequestedLevel(targetVideoCodec));
+            var level = NormalizeTranscodingLevel(profileLevelArgs.State, profileLevelArgs.State.GetRequestedLevel(targetVideoCodec));
 
             if (!string.IsNullOrEmpty(level))
             {
-                param = AppendLevelParam(param, videoEncoder, level);
+                param = AppendLevelParam(new EncoderParamLevelArgs(param, profileLevelArgs.VideoEncoder, level));
             }
 
             return param;
         }
 
-        private string AppendVideoEncoderSpecificParams(string param, string videoEncoder, EncodingOptions encodingOptions)
+        private string AppendVideoEncoderSpecificParams(EncoderParamEncoderArgs encoderArgs, EncodingOptions encodingOptions)
         {
-            if (string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase))
+            var param = encoderArgs.Param;
+            if (string.Equals(encoderArgs.VideoEncoder, "libx264", StringComparison.OrdinalIgnoreCase))
             {
                 param += " -x264opts:0 subme=0:me_range=16:rc_lookahead=10:me=hex:open_gop=0";
             }
 
-            if (string.Equals(videoEncoder, "libx265", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(encoderArgs.VideoEncoder, "libx265", StringComparison.OrdinalIgnoreCase))
             {
-                param = AppendX265Params(param, encodingOptions);
+                param = AppendX265Params(new EncoderParamX265Options(param, encodingOptions));
             }
 
-            if (SupportsSvtAv1Params(videoEncoder))
+            if (SupportsSvtAv1Params(encoderArgs.VideoEncoder))
             {
                 param += " -svtav1-params:0 rc=1:tune=0:film-grain=0:enable-overlays=1:enable-tf=0";
             }
 
             /* Access unit too large: 8192 < 20880 error */
-            if (SupportsVaapiA53CcSei(videoEncoder))
+            if (SupportsVaapiA53CcSei(encoderArgs.VideoEncoder))
             {
                 param += " -sei -a53_cc";
             }
@@ -824,9 +621,10 @@ namespace MediaBrowser.Controller.MediaEncoding
             return videoProfiles;
         }
 
-        private static string NormalizeVideoProfile(string videoEncoder, string profile, string[] videoProfiles)
+        private static string NormalizeVideoProfile(EncoderParamProfileCandidates profileCandidates)
         {
-            if (!videoProfiles.Contains(profile, StringComparison.OrdinalIgnoreCase))
+            var profile = profileCandidates.Profile;
+            if (!profileCandidates.VideoProfiles.Contains(profile, StringComparison.OrdinalIgnoreCase))
             {
                 profile = string.Empty;
             }
@@ -844,57 +642,58 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // Only libx264 support encoding H264 High 10 Profile, otherwise force High Profile.
-            if (IsHigh10ProfileWithoutLibx264(videoEncoder, profile))
+            if (IsHigh10ProfileWithoutLibx264(new EncoderParamProfile(profileCandidates.VideoEncoder, profile)))
             {
                 profile = "high";
             }
 
             // We only need Main profile of AV1 encoders.
-            if (IsAv1EncoderWithUnsupportedProfile(videoEncoder, profile))
+            if (IsAv1EncoderWithUnsupportedProfile(new EncoderParamProfile(profileCandidates.VideoEncoder, profile)))
             {
                 profile = "main";
             }
 
-            return NormalizeH264EncoderProfile(videoEncoder, profile);
+            return NormalizeH264EncoderProfile(new EncoderParamProfile(profileCandidates.VideoEncoder, profile));
         }
 
-        private static string NormalizeH264EncoderProfile(string videoEncoder, string profile)
+        private static string NormalizeH264EncoderProfile(EncoderParamProfile encoderProfile)
         {
+            var profile = encoderProfile.Profile;
             // h264_vaapi does not support Baseline profile, force Constrained Baseline in this case,
             // which is compatible (and ugly).
-            if (IsVaapiH264BaselineProfile(videoEncoder, profile))
+            if (IsVaapiH264BaselineProfile(new EncoderParamProfile(encoderProfile.VideoEncoder, profile)))
             {
                 profile = "constrained_baseline";
             }
 
             // libx264, h264_{qsv,nvenc,rkmpp} does not support Constrained Baseline profile, force Baseline in this case.
-            if (IsBaselineOnlyH264Encoder(videoEncoder, profile))
+            if (IsBaselineOnlyH264Encoder(new EncoderParamProfile(encoderProfile.VideoEncoder, profile)))
             {
                 profile = "baseline";
             }
 
             // libx264, h264_{qsv,nvenc,vaapi,rkmpp} does not support Constrained High profile, force High in this case.
-            if (IsHighOnlyH264Encoder(videoEncoder, profile))
+            if (IsHighOnlyH264Encoder(new EncoderParamProfile(encoderProfile.VideoEncoder, profile)))
             {
                 profile = "high";
             }
 
-            if (IsAmfH264BaselineProfile(videoEncoder, profile))
+            if (IsAmfH264BaselineProfile(new EncoderParamProfile(encoderProfile.VideoEncoder, profile)))
             {
                 profile = "constrained_baseline";
             }
 
-            if (IsAmfH264ConstrainedHighProfile(videoEncoder, profile))
+            if (IsAmfH264ConstrainedHighProfile(new EncoderParamProfile(encoderProfile.VideoEncoder, profile)))
             {
                 profile = "constrained_high";
             }
 
-            if (IsVideoToolboxH264ConstrainedBaselineProfile(videoEncoder, profile))
+            if (IsVideoToolboxH264ConstrainedBaselineProfile(new EncoderParamProfile(encoderProfile.VideoEncoder, profile)))
             {
                 profile = "constrained_baseline";
             }
 
-            if (IsVideoToolboxH264ConstrainedHighProfile(videoEncoder, profile))
+            if (IsVideoToolboxH264ConstrainedHighProfile(new EncoderParamProfile(encoderProfile.VideoEncoder, profile)))
             {
                 profile = "constrained_high";
             }
@@ -914,40 +713,40 @@ namespace MediaBrowser.Controller.MediaEncoding
                 || profile.Contains("mainstill", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsHigh10ProfileWithoutLibx264(string videoEncoder, string profile)
+        private static bool IsHigh10ProfileWithoutLibx264(EncoderParamProfile encoderProfile)
         {
-            return !string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("high10", StringComparison.OrdinalIgnoreCase);
+            return !string.Equals(encoderProfile.VideoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
+                && encoderProfile.Profile.Contains("high10", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsVaapiH264BaselineProfile(string videoEncoder, string profile)
+        private static bool IsVaapiH264BaselineProfile(EncoderParamProfile encoderProfile)
         {
-            return string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("baseline", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(encoderProfile.VideoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
+                && encoderProfile.Profile.Contains("baseline", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsAmfH264BaselineProfile(string videoEncoder, string profile)
+        private static bool IsAmfH264BaselineProfile(EncoderParamProfile encoderProfile)
         {
-            return string.Equals(videoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("baseline", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(encoderProfile.VideoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase)
+                && encoderProfile.Profile.Contains("baseline", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsAmfH264ConstrainedHighProfile(string videoEncoder, string profile)
+        private static bool IsAmfH264ConstrainedHighProfile(EncoderParamProfile encoderProfile)
         {
-            return string.Equals(videoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("constrainedhigh", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(encoderProfile.VideoEncoder, "h264_amf", StringComparison.OrdinalIgnoreCase)
+                && encoderProfile.Profile.Contains("constrainedhigh", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsVideoToolboxH264ConstrainedBaselineProfile(string videoEncoder, string profile)
+        private static bool IsVideoToolboxH264ConstrainedBaselineProfile(EncoderParamProfile encoderProfile)
         {
-            return string.Equals(videoEncoder, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("constrainedbaseline", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(encoderProfile.VideoEncoder, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
+                && encoderProfile.Profile.Contains("constrainedbaseline", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsVideoToolboxH264ConstrainedHighProfile(string videoEncoder, string profile)
+        private static bool IsVideoToolboxH264ConstrainedHighProfile(EncoderParamProfile encoderProfile)
         {
-            return string.Equals(videoEncoder, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
-                && profile.Contains("constrainedhigh", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(encoderProfile.VideoEncoder, "h264_videotoolbox", StringComparison.OrdinalIgnoreCase)
+                && encoderProfile.Profile.Contains("constrainedhigh", StringComparison.OrdinalIgnoreCase);
         }
 
         private bool SupportsSvtAv1Params(string videoEncoder)
@@ -956,33 +755,35 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && _mediaEncoder.EncoderVersion >= _minFFmpegSvtAv1Params;
         }
 
-        private bool GetVaapiIntelLowPowerHwEncoding(string videoEncoder, EncodingOptions encodingOptions, bool intelLowPowerHwEncoding)
+        private bool GetVaapiIntelLowPowerHwEncoding(EncoderParamVaapiLowPower vaapiLowPower)
         {
+            var intelLowPowerHwEncoding = vaapiLowPower.IntelLowPowerHwEncoding;
             var isIntelVaapiDriver = _mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965;
 
-            if (string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(vaapiLowPower.VideoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase))
             {
-                intelLowPowerHwEncoding = encodingOptions.EnableIntelLowPowerH264HwEncoder && isIntelVaapiDriver;
+                intelLowPowerHwEncoding = vaapiLowPower.EncodingOptions.EnableIntelLowPowerH264HwEncoder && isIntelVaapiDriver;
             }
-            else if (string.Equals(videoEncoder, "hevc_vaapi", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(vaapiLowPower.VideoEncoder, "hevc_vaapi", StringComparison.OrdinalIgnoreCase))
             {
-                intelLowPowerHwEncoding = encodingOptions.EnableIntelLowPowerHevcHwEncoder && isIntelVaapiDriver;
+                intelLowPowerHwEncoding = vaapiLowPower.EncodingOptions.EnableIntelLowPowerHevcHwEncoder && isIntelVaapiDriver;
             }
 
             return intelLowPowerHwEncoding;
         }
 
-        private bool GetWaFori915Hang(EncodingJobInfo state, EncodingOptions encodingOptions, bool enableWaFori915Hang)
+        private bool GetWaFori915Hang(EncodingJobInfo state, EncoderParamI915Workaround i915Workaround)
         {
+            var enableWaFori915Hang = i915Workaround.EnableWaFori915Hang;
             var ver = Environment.OSVersion.Version;
             var isFixedKernel60 = IsFixedKernel60i915(ver);
             var isUnaffectedKernel = IsKernelUnaffectedByI915Hang(ver);
 
             if (!(isUnaffectedKernel || isFixedKernel60))
             {
-                var vidDecoder = GetHardwareVideoDecoder(state, encodingOptions) ?? string.Empty;
+                var vidDecoder = GetHardwareVideoDecoder(state, i915Workaround.EncodingOptions) ?? string.Empty;
                 var isIntelDecoder = IsIntelHwDecoder(vidDecoder);
-                var doOclTonemap = NeedsQsvOclTonemap(state, encodingOptions);
+                var doOclTonemap = NeedsQsvOclTonemap(state, i915Workaround.EncodingOptions);
 
                 enableWaFori915Hang = isIntelDecoder && doOclTonemap;
             }
@@ -1015,63 +816,66 @@ namespace MediaBrowser.Controller.MediaEncoding
                 && IsHwTonemapAvailable(state, encodingOptions);
         }
 
-        private static string AppendProfileParam(string param, string videoEncoder, string profile)
+        private static string AppendProfileParam(EncoderParamProfileArgs profileArgs)
         {
+            var param = profileArgs.Param;
             // Currently there's no profile option in av1_nvenc encoder
-            if (!(string.Equals(videoEncoder, "av1_nvenc", StringComparison.OrdinalIgnoreCase)
-                  || string.Equals(videoEncoder, "h264_v4l2m2m", StringComparison.OrdinalIgnoreCase)))
+            if (!(string.Equals(profileArgs.VideoEncoder, "av1_nvenc", StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(profileArgs.VideoEncoder, "h264_v4l2m2m", StringComparison.OrdinalIgnoreCase)))
             {
-                param += " -profile:v:0 " + profile;
+                param += " -profile:v:0 " + profileArgs.Profile;
             }
 
             return param;
         }
 
-        private string AppendLevelParam(string param, string videoEncoder, string level)
+        private string AppendLevelParam(EncoderParamLevelArgs levelArgs)
         {
+            var param = levelArgs.Param;
             // libx264, QSV, AMF can adjust the given level to match the output.
-            if (IsH264QsvOrLibX264Encoder(videoEncoder))
+            if (IsH264QsvOrLibX264Encoder(levelArgs.VideoEncoder))
             {
-                param += " -level " + level;
+                param += " -level " + levelArgs.Level;
             }
-            else if (string.Equals(videoEncoder, "hevc_qsv", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(levelArgs.VideoEncoder, "hevc_qsv", StringComparison.OrdinalIgnoreCase))
             {
-                param = AppendHevcQsvLevel(param, level);
+                param = AppendHevcQsvLevel(new EncoderParamLevel(param, levelArgs.Level));
             }
-            else if (IsAv1QsvOrSvtAv1Encoder(videoEncoder))
+            else if (IsAv1QsvOrSvtAv1Encoder(levelArgs.VideoEncoder))
             {
-                param = AppendAv1Level(param, level);
+                param = AppendAv1Level(new EncoderParamLevel(param, levelArgs.Level));
             }
             else
             {
-                param = AppendVideoEncoderHwLevelParam(param, videoEncoder, level);
+                param = AppendVideoEncoderHwLevelParam(new EncoderParamLevelArgs(param, levelArgs.VideoEncoder, levelArgs.Level));
             }
 
             return param;
         }
 
-        private string AppendVideoEncoderHwLevelParam(string param, string videoEncoder, string level)
+        private string AppendVideoEncoderHwLevelParam(EncoderParamLevelArgs levelArgs)
         {
-            if (IsAmfVideoEncoder(videoEncoder))
+            var param = levelArgs.Param;
+            if (IsAmfVideoEncoder(levelArgs.VideoEncoder))
             {
-                param += " -level " + level;
+                param += " -level " + levelArgs.Level;
             }
-            else if (IsNvencVideoEncoder(videoEncoder))
+            else if (IsNvencVideoEncoder(levelArgs.VideoEncoder))
             {
                 // level option may cause NVENC to fail.
                 // NVENC cannot adjust the given level, just throw an error.
             }
-            else if (IsVaapiVideoEncoder(videoEncoder))
+            else if (IsVaapiVideoEncoder(levelArgs.VideoEncoder))
             {
-                param = AppendVaapiLevel(param, level);
+                param = AppendVaapiLevel(new EncoderParamLevel(param, levelArgs.Level));
             }
-            else if (IsRkmppH26xEncoder(videoEncoder))
+            else if (IsRkmppH26xEncoder(levelArgs.VideoEncoder))
             {
-                param += " -level " + level;
+                param += " -level " + levelArgs.Level;
             }
-            else if (IsNotLibX265Encoder(videoEncoder))
+            else if (IsNotLibX265Encoder(levelArgs.VideoEncoder))
             {
-                param += " -level " + level;
+                param += " -level " + levelArgs.Level;
             }
 
             return param;
@@ -1100,10 +904,11 @@ namespace MediaBrowser.Controller.MediaEncoding
                 || string.Equals(videoEncoder, "hevc_rkmpp", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static string AppendHevcQsvLevel(string param, string level)
+        private static string AppendHevcQsvLevel(EncoderParamLevel paramLevel)
         {
+            var param = paramLevel.Param;
             // hevc_qsv use -level 51 instead of -level 153.
-            if (double.TryParse(level, CultureInfo.InvariantCulture, out double hevcLevel))
+            if (double.TryParse(paramLevel.Level, CultureInfo.InvariantCulture, out double hevcLevel))
             {
                 param += " -level " + (hevcLevel / 3);
             }
@@ -1111,11 +916,12 @@ namespace MediaBrowser.Controller.MediaEncoding
             return param;
         }
 
-        private static string AppendAv1Level(string param, string level)
+        private static string AppendAv1Level(EncoderParamLevel paramLevel)
         {
+            var param = paramLevel.Param;
             // libsvtav1 and av1_qsv use -level 60 instead of -level 16
             // https://aomedia.org/av1/specification/annex-a/
-            if (int.TryParse(level, NumberStyles.Any, CultureInfo.InvariantCulture, out int av1Level))
+            if (int.TryParse(paramLevel.Level, NumberStyles.Any, CultureInfo.InvariantCulture, out int av1Level))
             {
                 var x = 2 + (av1Level >> 2);
                 var y = av1Level & 3;
@@ -1126,25 +932,27 @@ namespace MediaBrowser.Controller.MediaEncoding
             return param;
         }
 
-        private string AppendVaapiLevel(string param, string level)
+        private string AppendVaapiLevel(EncoderParamLevel paramLevel)
         {
+            var param = paramLevel.Param;
             // level option may cause corrupted frames on AMD VAAPI.
             if (_mediaEncoder.IsVaapiDeviceInteliHD || _mediaEncoder.IsVaapiDeviceInteli965)
             {
-                param += " -level " + level;
+                param += " -level " + paramLevel.Level;
             }
 
             return param;
         }
 
-        private static string AppendX265Params(string param, EncodingOptions encodingOptions)
+        private static string AppendX265Params(EncoderParamX265Options x265Options)
         {
+            var param = x265Options.Param;
             // libx265 only accept level option in -x265-params.
             // level option may cause libx265 to fail.
             // libx265 cannot adjust the given level, just throw an error.
             param += " -x265-params:0 no-scenecut=1:no-open-gop=1:no-info=1";
 
-            if (encodingOptions.EncoderPreset < EncoderPreset.ultrafast)
+            if (x265Options.EncodingOptions.EncoderPreset < EncoderPreset.ultrafast)
             {
                 // The following params are slower than the ultrafast preset, don't use when ultrafast is selected.
                 param += ":subme=3:merange=25:rc-lookahead=10:me=star:ctu=32:max-tu-size=32:min-cu-size=16:rskip=2:rskip-edge-threshold=2:no-sao=1:no-strong-intra-smoothing=1";
@@ -1153,30 +961,30 @@ namespace MediaBrowser.Controller.MediaEncoding
             return param;
         }
 
-        private static bool IsAv1EncoderWithUnsupportedProfile(string videoEncoder, string profile)
+        private static bool IsAv1EncoderWithUnsupportedProfile(EncoderParamProfile encoderProfile)
         {
-            return videoEncoder.Contains("av1", StringComparison.OrdinalIgnoreCase)
-                && (profile.Contains("high", StringComparison.OrdinalIgnoreCase)
-                    || profile.Contains("professional", StringComparison.OrdinalIgnoreCase));
+            return encoderProfile.VideoEncoder.Contains("av1", StringComparison.OrdinalIgnoreCase)
+                && (encoderProfile.Profile.Contains("high", StringComparison.OrdinalIgnoreCase)
+                    || encoderProfile.Profile.Contains("professional", StringComparison.OrdinalIgnoreCase));
         }
 
-        private static bool IsBaselineOnlyH264Encoder(string videoEncoder, string profile)
+        private static bool IsBaselineOnlyH264Encoder(EncoderParamProfile encoderProfile)
         {
-            return (string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase))
-                && profile.Contains("baseline", StringComparison.OrdinalIgnoreCase);
+            return (string.Equals(encoderProfile.VideoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(encoderProfile.VideoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(encoderProfile.VideoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(encoderProfile.VideoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase))
+                && encoderProfile.Profile.Contains("baseline", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsHighOnlyH264Encoder(string videoEncoder, string profile)
+        private static bool IsHighOnlyH264Encoder(EncoderParamProfile encoderProfile)
         {
-            return (string.Equals(videoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
-                 || string.Equals(videoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase))
-                && profile.Contains("high", StringComparison.OrdinalIgnoreCase);
+            return (string.Equals(encoderProfile.VideoEncoder, "libx264", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(encoderProfile.VideoEncoder, "h264_qsv", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(encoderProfile.VideoEncoder, "h264_nvenc", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(encoderProfile.VideoEncoder, "h264_vaapi", StringComparison.OrdinalIgnoreCase)
+                 || string.Equals(encoderProfile.VideoEncoder, "h264_rkmpp", StringComparison.OrdinalIgnoreCase))
+                && encoderProfile.Profile.Contains("high", StringComparison.OrdinalIgnoreCase);
         }
 
         private bool SupportsVaapiA53CcSei(string videoEncoder)
@@ -1185,5 +993,41 @@ namespace MediaBrowser.Controller.MediaEncoding
                  string.Equals(videoEncoder, "hevc_vaapi", StringComparison.OrdinalIgnoreCase)) &&
                  _mediaEncoder.EncoderVersion >= _minFFmpegVaapiH26xEncA53CcSei;
         }
+
+        private readonly record struct GetEncoderParamParts(EncoderPreset? Preset, EncoderPreset DefaultPreset);
+
+        private readonly record struct EncoderParamCodecLevel(string Codec, string Level);
+
+        private readonly record struct EncoderParamX265Encoder(string VideoEncoder, bool IsLibX265);
+
+        private readonly record struct EncoderParamPresetEncoder(string Param, EncoderPreset EncoderPreset, string VideoEncoder);
+
+        private readonly record struct EncoderParamPreset(string Param, EncoderPreset EncoderPreset);
+
+        private readonly record struct EncoderParamCrfOptions(EncodingOptions EncodingOptions, bool IsLibX265);
+
+        private readonly record struct EncoderParamEncoderArgs(string Param, string VideoEncoder);
+
+        private readonly record struct EncoderParamLevelRequest(string Level, double RequestLevel);
+
+        private readonly record struct EncoderParamLowPowerFlags(string Param, bool IntelLowPowerHwEncoding, bool EnableWaFori915Hang);
+
+        private readonly record struct EncoderParamProfileLevelArgs(string Param, EncodingJobInfo State, string VideoEncoder);
+
+        private readonly record struct EncoderParamProfileCandidates(string VideoEncoder, string Profile, string[] VideoProfiles);
+
+        private readonly record struct EncoderParamProfile(string VideoEncoder, string Profile);
+
+        private readonly record struct EncoderParamVaapiLowPower(string VideoEncoder, EncodingOptions EncodingOptions, bool IntelLowPowerHwEncoding);
+
+        private readonly record struct EncoderParamI915Workaround(EncodingOptions EncodingOptions, bool EnableWaFori915Hang);
+
+        private readonly record struct EncoderParamProfileArgs(string Param, string VideoEncoder, string Profile);
+
+        private readonly record struct EncoderParamLevelArgs(string Param, string VideoEncoder, string Level);
+
+        private readonly record struct EncoderParamLevel(string Param, string Level);
+
+        private readonly record struct EncoderParamX265Options(string Param, EncodingOptions EncodingOptions);
     }
 }

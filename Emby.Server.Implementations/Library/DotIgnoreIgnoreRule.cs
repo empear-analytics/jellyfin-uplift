@@ -242,20 +242,20 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
         }
 
         // Parse the file
-        var parsedEntry = ParseIgnoreFile(ignoreFile, lastModified, fileLength);
+        var parsedEntry = ParseIgnoreFile(ignoreFile, new IgnoreFileParts(lastModified, fileLength));
         _rulesCache.AddOrUpdate(key, parsedEntry);
         return parsedEntry;
     }
 
-    private static ParsedIgnoreCacheEntry ParseIgnoreFile(FileInfo ignoreFile, DateTime lastModified, long fileLength)
+    private static ParsedIgnoreCacheEntry ParseIgnoreFile(FileInfo ignoreFile, IgnoreFileParts parts)
     {
-        if (ignoreFile.LinkTarget is null && fileLength == 0)
+        if (ignoreFile.LinkTarget is null && parts.FileLength == 0)
         {
             return new ParsedIgnoreCacheEntry
             {
                 Rules = new Ignore.Ignore(),
-                FileLastModified = lastModified,
-                FileLength = fileLength,
+                FileLastModified = parts.LastModified,
+                FileLength = parts.FileLength,
                 IsEmpty = true
             };
         }
@@ -267,8 +267,8 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
             return new ParsedIgnoreCacheEntry
             {
                 Rules = new Ignore.Ignore(),
-                FileLastModified = lastModified,
-                FileLength = fileLength,
+                FileLastModified = parts.LastModified,
+                FileLength = parts.FileLength,
                 IsEmpty = true
             };
         }
@@ -279,8 +279,8 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
             return new ParsedIgnoreCacheEntry
             {
                 Rules = new Ignore.Ignore(),
-                FileLastModified = lastModified,
-                FileLength = fileLength,
+                FileLastModified = parts.LastModified,
+                FileLength = parts.FileLength,
                 IsEmpty = true
             };
         }
@@ -306,8 +306,8 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
         return new ParsedIgnoreCacheEntry
         {
             Rules = ignore,
-            FileLastModified = lastModified,
-            FileLength = fileLength,
+            FileLastModified = parts.LastModified,
+            FileLength = parts.FileLength,
             IsEmpty = validRulesAdded == 0
         };
     }
@@ -327,6 +327,8 @@ public class DotIgnoreIgnoreRule : IResolverIgnoreRule
     }
 
     private readonly record struct IgnoreFileCacheEntry(string? IgnoreFileDirectory);
+
+    private readonly record struct IgnoreFileParts(DateTime LastModified, long FileLength);
 
     private sealed class ParsedIgnoreCacheEntry
     {

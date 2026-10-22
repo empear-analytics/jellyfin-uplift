@@ -158,7 +158,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         private bool StreamCopyIsIncompatibleRangeAccepted(StreamCopyRangeContext context)
         {
-            if (IsIncompatibleRangeType(context.RequestedRangeTypes, context.VideoStream, context.RequestHasHDR10, context.RequestHasHLG, context.RequestHasSDR))
+            if (IsIncompatibleRangeType(context.RequestedRangeTypes, context.VideoStream, new IsIncompatibleRangeTypeParts(context.RequestHasHDR10, context.RequestHasHLG, context.RequestHasSDR)))
             {
                 // If the video stream is in HDR10+ or a static HDR format, don't allow copy if the client does not support HDR10 or HLG.
                 if (context.VideoStream.VideoRangeType is VideoRangeType.HDR10Plus or VideoRangeType.HDR10 or VideoRangeType.HLG)
@@ -346,10 +346,10 @@ namespace MediaBrowser.Controller.MediaEncoding
             return requestedRangeTypes.Length == 1 && requestHasSDR && videoStream.VideoRangeType != VideoRangeType.SDR;
         }
 
-        private static bool IsIncompatibleRangeType(string[] requestedRangeTypes, MediaStream videoStream, bool requestHasHDR10, bool requestHasHLG, bool requestHasSDR)
+        private static bool IsIncompatibleRangeType(string[] requestedRangeTypes, MediaStream videoStream, IsIncompatibleRangeTypeParts parts)
         {
             return !requestedRangeTypes.Contains(videoStream.VideoRangeType.ToString(), StringComparison.OrdinalIgnoreCase)
-                && !IsRangeTypeCompatibleByFallback(videoStream, requestHasHDR10, requestHasHLG, requestHasSDR);
+                && !IsRangeTypeCompatibleByFallback(videoStream, parts.RequestHasHDR10, parts.RequestHasHLG, parts.RequestHasSDR);
         }
 
         private static bool IsRangeTypeCompatibleByFallback(MediaStream videoStream, bool requestHasHDR10, bool requestHasHLG, bool requestHasSDR)
@@ -498,5 +498,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             bool RequestHasHDR10,
             bool RequestHasHLG,
             bool RequestHasSDR);
+
+        private readonly record struct IsIncompatibleRangeTypeParts(bool RequestHasHDR10, bool RequestHasHLG, bool RequestHasSDR);
     }
 }

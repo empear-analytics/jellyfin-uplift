@@ -42,9 +42,7 @@ namespace Emby.Server.Implementations.Library
                 return false;
             }
 
-            if (path.Length > subPath.Length
-                && !oldSubPathEndsWithSeparator
-                && path[subPath.Length] != newDirectorySeparatorChar)
+            if (EndsInsideSegment(path, subPath, oldSubPathEndsWithSeparator, newDirectorySeparatorChar))
             {
                 return false;
             }
@@ -55,14 +53,6 @@ namespace Emby.Server.Implementations.Library
             newPath = string.Concat(newSubPathTrimmed, path.AsSpan(idx));
 
             return true;
-        }
-
-        private static bool IsMissingOrLongerThanPath([NotNullWhen(false)] string? path, [NotNullWhen(false)] string? subPath, [NotNullWhen(false)] string? newSubPath)
-        {
-            return string.IsNullOrEmpty(path)
-                || string.IsNullOrEmpty(subPath)
-                || string.IsNullOrEmpty(newSubPath)
-                || subPath.Length > path.Length;
         }
 
         /// <summary>

@@ -90,7 +90,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var isMjpegEncoder = vidEncoder.Contains("mjpeg", StringComparison.OrdinalIgnoreCase);
             var isCuInCuOut = isNvDecoder && isNvencEncoder;
 
-            var doubleRateDeint = options.DeinterlaceDoubleRate && (state.VideoStream?.ReferenceFrameRate ?? 60) <= 30;
+            var doubleRateDeint = IsHwDoubleRateDeinterlace(state, options);
             var doDeintH2645 = IsDeinterlaceAvailable(state);
             var doCuTonemap = IsHwTonemapAvailable(state, options);
 
@@ -101,9 +101,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
-            var rotation = state.VideoStream?.Rotation ?? 0;
+            var rotation = GetVideoStreamRotation(state);
             var transposeDir = GetTransposeDirection(state, rotation);
-            var doCuTranspose = !string.IsNullOrEmpty(transposeDir) && _mediaEncoder.SupportsFilter("transpose_cuda");
+            var doCuTranspose = IsCudaTransposeAvailable(transposeDir);
             var swapWAndH = NeedsVaapiSwapWAndH(rotation, isSwDecoder, isNvDecoder, doCuTranspose);
             var swpInW = swapWAndH ? inH : inW;
             var swpInH = swapWAndH ? inW : inH;
@@ -124,7 +124,7 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var memoryOutput = false;
             var isUploadForCuTonemap = isSwDecoder && doCuTonemap;
-            if (NeedsCudaMemoryOutput(isNvDecoder, isSwEncoder, isUploadForCuTonemap, hasSubs))
+            if (NeedsCudaMemoryOutput(new NeedsCudaMemoryOutputParts(isNvDecoder, isSwEncoder, isUploadForCuTonemap, hasSubs)))
             {
                 memoryOutput = true;
 
@@ -139,10 +139,7 @@ namespace MediaBrowser.Controller.MediaEncoding
                 memoryOutput = true;
             }
 
-            if (memoryOutput)
-            {
-                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
-            }
+            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
             // OUTPUT cuda(yuv420p) surface(vram)
 
@@ -160,6 +157,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             return (mainFilters, subFilters, overlayFilters);
+        }
+
+        private bool IsCudaTransposeAvailable(string transposeDir)
+        {
+            return !string.IsNullOrEmpty(transposeDir) && _mediaEncoder.SupportsFilter("transpose_cuda");
+        }
+
+        private static int GetVideoStreamRotation(EncodingJobInfo state)
+        {
+            return state.VideoStream?.Rotation ?? 0;
         }
 
         private void AddNvidiaCuInCuOutSubtitleFilters(EncodingJobInfo state, List<string> subFilters, List<string> overlayFilters, NvidiaSubtitleFilterContext context)

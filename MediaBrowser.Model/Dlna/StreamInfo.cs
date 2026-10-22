@@ -1248,17 +1248,17 @@ public class StreamInfo
         long startPositionTicks = GetSubtitleStartPositionTicks();
 
         // First add the selected track
-        AddSelectedSubtitleProfiles(list, MediaSource, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
+        AddSelectedSubtitleProfiles(list, MediaSource, new AddSubtitleProfilesParts(transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks));
 
         if (!includeSelectedTrackOnly)
         {
-            AddUnselectedSubtitleProfiles(list, MediaSource, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
+            AddUnselectedSubtitleProfiles(list, MediaSource, new AddSubtitleProfilesParts(transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks));
         }
 
         return list;
     }
 
-    private void AddSelectedSubtitleProfiles(List<SubtitleStreamInfo> list, MediaSourceInfo mediaSource, ITranscoderSupport transcoderSupport, bool enableAllProfiles, string baseUrl, string? accessToken, long startPositionTicks)
+    private void AddSelectedSubtitleProfiles(List<SubtitleStreamInfo> list, MediaSourceInfo mediaSource, AddSubtitleProfilesParts parts)
     {
         if (SubtitleStreamIndex.HasValue)
         {
@@ -1266,19 +1266,19 @@ public class StreamInfo
             {
                 if (stream.Type == MediaStreamType.Subtitle && stream.Index == SubtitleStreamIndex.Value)
                 {
-                    AddSubtitleProfiles(list, stream, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
+                    AddSubtitleProfiles(list, stream, new AddSubtitleProfilesParts(parts.TranscoderSupport, parts.EnableAllProfiles, parts.BaseUrl, parts.AccessToken, parts.StartPositionTicks));
                 }
             }
         }
     }
 
-    private void AddUnselectedSubtitleProfiles(List<SubtitleStreamInfo> list, MediaSourceInfo mediaSource, ITranscoderSupport transcoderSupport, bool enableAllProfiles, string baseUrl, string? accessToken, long startPositionTicks)
+    private void AddUnselectedSubtitleProfiles(List<SubtitleStreamInfo> list, MediaSourceInfo mediaSource, AddSubtitleProfilesParts parts)
     {
         foreach (var stream in mediaSource.MediaStreams)
         {
             if (IsUnselectedSubtitleStream(stream))
             {
-                AddSubtitleProfiles(list, stream, transcoderSupport, enableAllProfiles, baseUrl, accessToken, startPositionTicks);
+                AddSubtitleProfiles(list, stream, new AddSubtitleProfilesParts(parts.TranscoderSupport, parts.EnableAllProfiles, parts.BaseUrl, parts.AccessToken, parts.StartPositionTicks));
             }
         }
     }
@@ -1296,15 +1296,15 @@ public class StreamInfo
         return stream.Type == MediaStreamType.Subtitle && (!SubtitleStreamIndex.HasValue || stream.Index != SubtitleStreamIndex.Value);
     }
 
-    private void AddSubtitleProfiles(List<SubtitleStreamInfo> list, MediaStream stream, ITranscoderSupport transcoderSupport, bool enableAllProfiles, string baseUrl, string? accessToken, long startPositionTicks)
+    private void AddSubtitleProfiles(List<SubtitleStreamInfo> list, MediaStream stream, AddSubtitleProfilesParts parts)
     {
-        if (enableAllProfiles)
+        if (parts.EnableAllProfiles)
         {
-            AddSubtitleStreamInfoPerProfile(list, stream, transcoderSupport, baseUrl, accessToken, startPositionTicks);
+            AddSubtitleStreamInfoPerProfile(list, stream, new AddSubtitleStreamInfoPerProfileParts(parts.TranscoderSupport, parts.BaseUrl, parts.AccessToken, parts.StartPositionTicks));
         }
         else
         {
-            var info = GetSubtitleStreamInfo(stream, baseUrl, accessToken, startPositionTicks, DeviceProfile.SubtitleProfiles, transcoderSupport);
+            var info = GetSubtitleStreamInfo(stream, new GetSubtitleStreamInfoParts(parts.BaseUrl, parts.AccessToken, parts.StartPositionTicks), DeviceProfile.SubtitleProfiles, parts.TranscoderSupport);
             if (info is not null)
             {
                 list.Add(info);
@@ -1312,11 +1312,11 @@ public class StreamInfo
         }
     }
 
-    private void AddSubtitleStreamInfoPerProfile(List<SubtitleStreamInfo> list, MediaStream stream, ITranscoderSupport transcoderSupport, string baseUrl, string? accessToken, long startPositionTicks)
+    private void AddSubtitleStreamInfoPerProfile(List<SubtitleStreamInfo> list, MediaStream stream, AddSubtitleStreamInfoPerProfileParts parts)
     {
         foreach (var profile in DeviceProfile.SubtitleProfiles)
         {
-            var info = GetSubtitleStreamInfo(stream, baseUrl, accessToken, startPositionTicks, new[] { profile }, transcoderSupport);
+            var info = GetSubtitleStreamInfo(stream, new GetSubtitleStreamInfoParts(parts.BaseUrl, parts.AccessToken, parts.StartPositionTicks), new[] { profile }, parts.TranscoderSupport);
             if (info is not null)
             {
                 list.Add(info);
@@ -1324,7 +1324,7 @@ public class StreamInfo
         }
     }
 
-    private SubtitleStreamInfo? GetSubtitleStreamInfo(MediaStream stream, string baseUrl, string? accessToken, long startPositionTicks, SubtitleProfile[] subtitleProfiles, ITranscoderSupport transcoderSupport)
+    private SubtitleStreamInfo? GetSubtitleStreamInfo(MediaStream stream, GetSubtitleStreamInfoParts parts, SubtitleProfile[] subtitleProfiles, ITranscoderSupport transcoderSupport)
     {
         if (MediaSource is null)
         {
@@ -1349,11 +1349,11 @@ public class StreamInfo
             info.Url = string.Format(
                 CultureInfo.InvariantCulture,
                 "{0}/Videos/{1}/{2}/Subtitles/{3}/{4}/Stream.{5}",
-                baseUrl,
+                parts.BaseUrl,
                 ItemId,
                 MediaSourceId,
                 stream.Index.ToString(CultureInfo.InvariantCulture),
-                startPositionTicks.ToString(CultureInfo.InvariantCulture),
+                parts.StartPositionTicks.ToString(CultureInfo.InvariantCulture),
                 subtitleProfile.Format);
             info.IsExternalUrl = false;
 
@@ -1366,10 +1366,10 @@ public class StreamInfo
             }
 
             // Append ApiKey only if we are using the API URL
-            if (!info.IsExternalUrl && !string.IsNullOrEmpty(accessToken))
+            if (!info.IsExternalUrl && !string.IsNullOrEmpty(parts.AccessToken))
             {
                 // Use "?ApiKey=" as seen in HEAD and other parts of the code
-                info.Url += "?ApiKey=" + accessToken;
+                info.Url += "?ApiKey=" + parts.AccessToken;
             }
         }
 
@@ -1494,4 +1494,10 @@ public class StreamInfo
 
         return count;
     }
+
+    private readonly record struct AddSubtitleProfilesParts(ITranscoderSupport TranscoderSupport, bool EnableAllProfiles, string BaseUrl, string? AccessToken, long StartPositionTicks);
+
+    private readonly record struct AddSubtitleStreamInfoPerProfileParts(ITranscoderSupport TranscoderSupport, string BaseUrl, string? AccessToken, long StartPositionTicks);
+
+    private readonly record struct GetSubtitleStreamInfoParts(string BaseUrl, string? AccessToken, long StartPositionTicks);
 }

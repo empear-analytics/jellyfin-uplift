@@ -41,29 +41,14 @@ public partial class DynamicHlsHelper
     private int? GetOutputVideoCodecLevel(StreamState state)
     {
         string levelString = string.Empty;
-        if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-            && state.VideoStream is not null
+        if (IsCopyCodecWithVideoStream(state)
             && HasLevel(state.VideoStream.Level))
         {
             levelString = state.VideoStream.Level.Value.ToString(CultureInfo.InvariantCulture);
         }
         else
         {
-            if (string.Equals(state.ActualOutputVideoCodec, "h264", StringComparison.OrdinalIgnoreCase))
-            {
-                levelString = GetH264TranscodingLevel(state);
-            }
-
-            if (string.Equals(state.ActualOutputVideoCodec, "h265", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase))
-            {
-                levelString = GetHevcTranscodingLevel(state);
-            }
-
-            if (string.Equals(state.ActualOutputVideoCodec, "av1", StringComparison.OrdinalIgnoreCase))
-            {
-                levelString = GetAv1TranscodingLevel(state);
-            }
+            levelString = GetTranscodingLevelString(state, levelString);
         }
 
         if (int.TryParse(levelString, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedLevel))
@@ -72,6 +57,27 @@ public partial class DynamicHlsHelper
         }
 
         return null;
+    }
+
+    private static string GetTranscodingLevelString(StreamState state, string levelString)
+    {
+        if (string.Equals(state.ActualOutputVideoCodec, "h264", StringComparison.OrdinalIgnoreCase))
+        {
+            levelString = GetH264TranscodingLevel(state);
+        }
+
+        if (string.Equals(state.ActualOutputVideoCodec, "h265", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase))
+        {
+            levelString = GetHevcTranscodingLevel(state);
+        }
+
+        if (string.Equals(state.ActualOutputVideoCodec, "av1", StringComparison.OrdinalIgnoreCase))
+        {
+            levelString = GetAv1TranscodingLevel(state);
+        }
+
+        return levelString;
     }
 
     private static string GetH264TranscodingLevel(StreamState state)
@@ -172,6 +178,11 @@ public partial class DynamicHlsHelper
             return HlsCodecStringHelpers.GetFLACString();
         }
 
+        return GetRemainingPlaylistAudioCodecs(state);
+    }
+
+    private static string GetRemainingPlaylistAudioCodecs(StreamState state)
+    {
         if (string.Equals(state.ActualOutputAudioCodec, "alac", StringComparison.OrdinalIgnoreCase))
         {
             return HlsCodecStringHelpers.GetALACString();
@@ -264,14 +275,19 @@ public partial class DynamicHlsHelper
     {
         // Currently we only transcode to 8 bits AV1
         int bitDepth = 8;
-        if (EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-            && state.VideoStream is not null
+        if (IsCopyCodecWithVideoStream(state)
             && HasBitDepth(state.VideoStream.BitDepth))
         {
             bitDepth = state.VideoStream.BitDepth.Value;
         }
 
         return bitDepth;
+    }
+
+    private static bool IsCopyCodecWithVideoStream(StreamState state)
+    {
+        return EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
+            && state.VideoStream is not null;
     }
 
     private static bool HasLevel([NotNullWhen(true)] double? level)

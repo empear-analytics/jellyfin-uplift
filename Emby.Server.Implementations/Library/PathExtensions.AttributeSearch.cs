@@ -1,0 +1,83 @@
+using System;
+using MediaBrowser.Common.Providers;
+
+namespace Emby.Server.Implementations.Library
+{
+    public static partial class PathExtensions
+    {
+        private static ReadOnlySpan<char> SelectSearchedAttribute(ReadOnlySpan<char> attribute, ReadOnlySpan<char> shortAttr)
+        {
+            // If we are using an alias it should be shorter (and a prefix), so let's search for that.
+            return shortAttr.Length > 0 ? shortAttr : attribute;
+        }
+
+        private static int AttributeValueSkipId(ReadOnlySpan<char> shortAttr, ReadOnlySpan<char> subStr, int attributeEnd)
+        {
+            if (IsAliasFollowedById(shortAttr, subStr, attributeEnd))
+            {
+                // We were searching for a shortened attribute, but it's followed by "id" - let's skip it.
+                attributeEnd += 2;
+            }
+
+            return attributeEnd;
+        }
+
+        private static char GetAttributeCloser(char attributeOpener)
+        {
+            return attributeOpener switch
+            {
+                '[' => ']',
+                '(' => ')',
+                '{' => '}',
+                _ => '\0'
+            };
+        }
+
+        private static bool HasAssignmentAfterAttribute(ReadOnlySpan<char> subStr, int attributeEnd)
+        {
+            return attributeEnd + 2 < subStr.Length && (subStr[attributeEnd] is '=' or '-');
+        }
+
+        private static string? FindImdbIdByPattern(ReadOnlySpan<char> str, ReadOnlySpan<char> attribute)
+        {
+            // for imdbid we also accept pattern matching
+            if (attribute.Equals("imdbid", StringComparison.OrdinalIgnoreCase))
+            {
+                var match = ProviderIdParsers.TryFindImdbId(str, out var imdbId);
+                return match ? imdbId.ToString() : null;
+            }
+
+            return null;
+        }
+
+        private static AttributeOpening ScanAttributeOpening(ReadOnlySpan<char> shortAttr, ReadOnlySpan<char> subStr, int attributeIndex, AttributeOpening current)
+        {
+            var attributeEnd = current.AttributeEnd;
+            if (attributeIndex <= 0)
+            {
+                return new AttributeOpening(attributeEnd, default, true);
+            }
+
+            var attributeOpener = subStr[attributeIndex - 1];
+            var attributeCloser = GetAttributeCloser(attributeOpener);
+
+            if (attributeCloser == '\0')
+            {
+                return new AttributeOpening(attributeEnd, default, true);
+            }
+
+            attributeEnd = AttributeValueSkipId(shortAttr, subStr, attributeEnd);
+
+            // attributeEnd points at '='.
+            // We need at least 1 more character and the closing bracket after that.
+            if (!HasAssignmentAfterAttribute(subStr, attributeEnd))
+            {
+                return new AttributeOpening(attributeEnd, default, true);
+            }
+
+            return new AttributeOpening(attributeEnd, attributeCloser, false);
+        }
+
+        private readonly record struct AttributeOpening(int AttributeEnd, char AttributeCloser, bool Skipped);
+    }
+}

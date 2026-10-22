@@ -26,7 +26,8 @@ your task, your worktree and anything specific to the file. Everything below app
 
 - Follow the task file and the playbook exactly. The playbook is a closed catalogue: a change that
   is not one of its recipes exactly as written (a lookup table, a type other than the context struct
-  of Recipe E rule 12, merging nested `if`s into one condition, a change to a signature) is not yours
+  of Recipe E rule 12, merging nested `if`s into one condition, a change to a signature other than rule 14's
+  parameter object for a private method) is not yours
   to make. Report it as a candidate. The recipes of 2026-10-18 are in force: rules 10 (a block that
   ends in `continue`), 11 (a suffix of a `switch` expression's arms) and 12 (a context struct) of
   Recipe E, `x = default;` for `out` parameters and local-function predicates in Recipe P, Recipe D
@@ -43,6 +44,18 @@ your task, your worktree and anything specific to the file. Everything below app
   call site when the whole statement needs more than fifteen values; write a struct construction on one line.
   Later on 2026-10-21: one struct per family of blocks, at most three per method; and Recipe D for the two
   branches of an `if` / `else` that differ only in one value (choose the value with `?:`, keep one body).
+  Also on 2026-10-21: rule 14 of Recipe E, a parameter object for a PRIVATE method with too many parameters
+  (read its conditions exactly; public, protected and internal signatures stay frozen).
+  Later the same day: rule 11 for a switch whose sections mix `return` and `break` (followed by `return v;`),
+  and rule 15, a result struct for a block that writes two or three locals read later.
+  Also added on 2026-10-21: rule 16, an exit helper for a block whose paths either `return` or fall
+  through (void `return;`, one constant, or any expression with a `(Returned, Value)` struct as the last
+  statement of a loop body); and in rule 14, a struct shared by two methods with identical runs.
+  Later on 2026-10-21 (the owner's goal: every smell gone that needs no public API change): rule 14
+  for Primitive Obsession / String Heavy Function Arguments (runs with a primitive in private methods of
+  any parameter count, applied as one group per commit); rule 12 with up to four structs; rule 15 with a
+  `Stopped` flag for `break`; rule 17 (stacked case labels to an `is A or B` predicate); and Recipe P
+  with a pattern variable as a `[NotNullWhen(true)] out` parameter.
 - Before a step that adds methods, follow "Choosing the next step": measure the candidate
   applications on their own first and commit the best `UP` one.
 - After every step, before committing it, run all four checks from section 7 of the task file.

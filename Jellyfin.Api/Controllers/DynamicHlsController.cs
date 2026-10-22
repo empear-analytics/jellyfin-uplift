@@ -1056,28 +1056,34 @@ public partial class DynamicHlsController : BaseJellyfinApiController
             }
         }
 
-        var nextSegmentPath = GetSegmentPath(state, playlistPath, segmentIndex + 1);
-        if (transcodingJob is null)
+        var context = new SegmentWaitContext(state, playlistPath, segmentPath, segmentIndex, transcodingJob);
+        return await WaitForSegmentResult(context, segmentExists, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<ActionResult> WaitForSegmentResult(SegmentWaitContext context, bool segmentExists, CancellationToken cancellationToken)
+    {
+        var nextSegmentPath = GetSegmentPath(context.State, context.PlaylistPath, context.SegmentIndex + 1);
+        if (context.TranscodingJob is null)
         {
-            _logger.LogWarning("cannot serve {0} as it doesn't exist and no transcode is running", segmentPath);
-            return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
+            _logger.LogWarning("cannot serve {0} as it doesn't exist and no transcode is running", context.SegmentPath);
+            return GetSegmentResult(context.State, context.SegmentPath, context.SegmentIndex, context.TranscodingJob);
         }
 
-        while (IsTranscodingInProgress(transcodingJob, cancellationToken))
+        while (IsTranscodingInProgress(context.TranscodingJob, cancellationToken))
         {
             // To be considered ready, the segment file has to exist AND
             // either the transcoding job should be done or next segment should also exist
             if (segmentExists)
             {
-                if (IsSegmentReady(transcodingJob, nextSegmentPath))
+                if (IsSegmentReady(context.TranscodingJob, nextSegmentPath))
                 {
-                    _logger.LogDebug("Serving up {SegmentPath} as it deemed ready", segmentPath);
-                    return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
+                    _logger.LogDebug("Serving up {SegmentPath} as it deemed ready", context.SegmentPath);
+                    return GetSegmentResult(context.State, context.SegmentPath, context.SegmentIndex, context.TranscodingJob);
                 }
             }
             else
             {
-                segmentExists = System.IO.File.Exists(segmentPath);
+                segmentExists = System.IO.File.Exists(context.SegmentPath);
                 if (segmentExists)
                 {
                     continue; // avoid unnecessary waiting if segment just became available
@@ -1087,11 +1093,11 @@ public partial class DynamicHlsController : BaseJellyfinApiController
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);
         }
 
-        LogSegmentStateAfterTranscodingStopped(segmentPath);
+        LogSegmentStateAfterTranscodingStopped(context.SegmentPath);
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        return GetSegmentResult(state, segmentPath, segmentIndex, transcodingJob);
+        return GetSegmentResult(context.State, context.SegmentPath, context.SegmentIndex, context.TranscodingJob);
     }
 
     private static bool HasTranscodingJobExited(TranscodingJob? transcodingJob)
@@ -1219,4 +1225,6 @@ public partial class DynamicHlsController : BaseJellyfinApiController
             _logger.LogError(ex, "Error deleting partial stream file(s) {Path}", path);
         }
     }
+
+    private readonly record struct SegmentWaitContext(StreamState State, string PlaylistPath, string SegmentPath, int SegmentIndex, TranscodingJob? TranscodingJob);
 }

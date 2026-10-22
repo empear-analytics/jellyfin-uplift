@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -333,15 +334,25 @@ namespace Emby.Server.Implementations.Library
                     return;
                 }
             }
-            else if (!item.IsFolder)
+            else if (IsUnsupportedNonFolder(item))
             {
-                if (item is not Video && item is not LiveTvChannel)
-                {
-                    return;
-                }
+                return;
             }
 
             _cache.AddOrUpdate(item.Id, item);
+        }
+
+        private static bool IsUnsupportedNonFolder(BaseItem item)
+        {
+            if (!item.IsFolder)
+            {
+                if (item is not Video && item is not LiveTvChannel)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -1009,7 +1020,7 @@ namespace Emby.Server.Implementations.Library
                     SetAncestorIds(query, parents);
                 }
             }
-            else if (parents.Count == 1 && parents.First() is Folder folder
+            else if (TryGetSingleParentFolder(parents, out var folder)
                 && IsLinkedChildrenContainer(folder))
             {
                 // Playlists and BoxSets store their contents in LinkedChildren and never
@@ -1025,6 +1036,12 @@ namespace Emby.Server.Implementations.Library
             }
 
             query.Parent = null;
+        }
+
+        private static bool TryGetSingleParentFolder(IReadOnlyCollection<BaseItem> parents, [NotNullWhen(true)] out Folder? folder)
+        {
+            folder = parents.Count == 1 ? parents.First() as Folder : null;
+            return folder is not null;
         }
 
         private static bool IsLinkedChildrenContainer(Folder folder)
@@ -1181,27 +1198,11 @@ namespace Emby.Server.Implementations.Library
         {
             while (item is not null)
             {
-                var parent = item.GetParent();
-
-                if (parent is AggregateFolder)
+                var result = StepTowardCollectionRoot(new CollectionRootStep(item, false));
+                item = result.Item;
+                if (result.Stopped)
                 {
                     break;
-                }
-
-                if (parent is null)
-                {
-                    var owner = item.GetOwner();
-
-                    if (owner is null)
-                    {
-                        break;
-                    }
-
-                    item = owner;
-                }
-                else
-                {
-                    item = parent;
                 }
             }
 
@@ -1211,6 +1212,35 @@ namespace Emby.Server.Implementations.Library
             }
 
             return GetCollectionFoldersInternal(item, allUserRootChildren);
+        }
+
+        private static CollectionRootStep StepTowardCollectionRoot(CollectionRootStep current)
+        {
+            var item = current.Item;
+            var parent = item.GetParent();
+
+            if (parent is AggregateFolder)
+            {
+                return new CollectionRootStep(item, true);
+            }
+
+            if (parent is null)
+            {
+                var owner = item.GetOwner();
+
+                if (owner is null)
+                {
+                    return new CollectionRootStep(item, true);
+                }
+
+                item = owner;
+            }
+            else
+            {
+                item = parent;
+            }
+
+            return new CollectionRootStep(item, false);
         }
 
         private static List<Folder> GetCollectionFoldersInternal(BaseItem item, IEnumerable<Folder> allUserRootChildren)
@@ -1352,5 +1382,7 @@ namespace Emby.Server.Implementations.Library
             SetTopParentOrAncestorIds(query);
             return _itemRepository.GetMediaStreamLanguages(query, mediaStreamType);
         }
+
+        private readonly record struct CollectionRootStep(BaseItem Item, bool Stopped);
     }
 }

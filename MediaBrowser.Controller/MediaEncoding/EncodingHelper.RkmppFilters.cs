@@ -100,7 +100,7 @@ namespace MediaBrowser.Controller.MediaEncoding
             var subW = state.SubtitleStream?.Width;
             var subH = state.SubtitleStream?.Height;
 
-            var rotation = state.VideoStream?.Rotation ?? 0;
+            var rotation = GetVideoStreamRotation(state);
             var transposeDir = GetRkmppTransposeDirection(state, rotation);
             var doRkVppTranspose = !string.IsNullOrEmpty(transposeDir);
             var swapWAndH = NeedsRkmppSwapWAndH(rotation, isSwDecoder, isRkmppDecoder, doRkVppTranspose);
@@ -113,42 +113,16 @@ namespace MediaBrowser.Controller.MediaEncoding
             mainFilters.Add(GetOverwriteColorPropertiesParam(state, doOclTonemap));
 
             var swDecoderContext = new RkmppDecoderSwContext(vidEncoder, doDeintH2645, doOclTonemap, hasGraphicalSubs, isMjpegEncoder, swpInW, swpInH, threeDFormat, reqW, reqH, reqMaxW, reqMaxH);
-            if (isSwDecoder)
-            {
-                RkmppDecoderAddSwFilters(state, options, mainFilters, swDecoderContext);
-            }
-            else if (isRkmppDecoder)
-            {
-                // INPUT rkmpp/drm surface(gem/dma-heap)
+            var decoderContext = new RkmppDecoderChainContext(isSwDecoder, isRkmppDecoder, isEncoderSupportAfbc, isDrmInDrmOut, doRkVppTranspose, swapWAndH, inW, inH, transposeDir, hasSubs, mainFilters);
+            AddRkmppDecoderFilters(state, options, swDecoderContext, decoderContext);
 
-                var isFullAfbcPipeline = isEncoderSupportAfbc && isDrmInDrmOut && !doOclTonemap;
-                var swapOutputWandH = doRkVppTranspose && swapWAndH;
-                var outFormat = doOclTonemap ? "p010" : "nv12";
-                var hwScaleFilter = GetHwScaleFilter("vpp", "rkrga", outFormat, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH);
-                var doScaling = !string.IsNullOrEmpty(GetHwScaleFilter("vpp", "rkrga", string.Empty, swapOutputWandH, swpInW, swpInH, reqW, reqH, reqMaxW, reqMaxH));
-
-                var hwScaleContext = new RkmppDecoderHwScaleContext(inW, inH, reqW, reqH, reqMaxW, reqMaxH, doOclTonemap, isMjpegEncoder, doScaling, doRkVppTranspose, isFullAfbcPipeline, transposeDir);
-                if (NeedsRkrgaScaleFilters(hasSubs, doRkVppTranspose, isFullAfbcPipeline, doScaling))
-                {
-                    RkmppDecoderAddHwScaleFilters(mainFilters, hwScaleFilter, outFormat, hwScaleContext);
-                }
-            }
-
-            if (NeedsHwToOpenclMapping(doOclTonemap, isRkmppDecoder))
-            {
-                // map from rkmpp/drm to opencl via drm-opencl interop.
-                mainFilters.Add("hwmap=derive_device=opencl");
-            }
+            AddRkmppOpenclMapping(mainFilters, doOclTonemap, isRkmppDecoder);
 
             // ocl tonemap
-            if (doOclTonemap)
-            {
-                var tonemapFilter = GetHwTonemapFilter(options, "opencl", "nv12", isMjpegEncoder);
-                mainFilters.Add(tonemapFilter);
-            }
+            AddOpenclTonemapFilter(options, mainFilters, doOclTonemap, isMjpegEncoder);
 
             var memoryOutput = false;
-            var isUploadForOclTonemap = isSwDecoder && doOclTonemap;
+            var isUploadForOclTonemap = IsAmdUploadForOclTonemap(isSwDecoder, doOclTonemap);
             if (NeedsMemoryOutput(isRkmppDecoder, isSwEncoder, isUploadForOclTonemap))
             {
                 memoryOutput = true;
@@ -159,35 +133,14 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
 
             // OUTPUT nv12 surface(memory)
-            if (isSwDecoder && isRkmppEncoder)
-            {
-                memoryOutput = true;
-            }
+            memoryOutput = MarkRkmppSwUploadOutput(memoryOutput, isSwDecoder, isRkmppEncoder);
 
-            if (memoryOutput)
-            {
-                AddTextSubtitlesFilter(state, mainFilters, hasTextSubs);
-            }
+            AddMemoryOutputTextSubtitlesFilter(state, mainFilters, memoryOutput, hasTextSubs);
 
-            if (isDrmInDrmOut)
-            {
-                AddDrmReverseMapping(mainFilters, doOclTonemap);
-            }
+            AddRkmppDrmReverseMapping(mainFilters, isDrmInDrmOut, doOclTonemap);
 
             /* Make sub and overlay filters for subtitle stream */
-            var context = new RkmppSubtitleFilterContext(
-                isEncoderSupportAfbc,
-                hasGraphicalSubs,
-                hasTextSubs,
-                hasAssSubs,
-                swpInW,
-                swpInH,
-                subW,
-                subH,
-                reqW,
-                reqH,
-                reqMaxW,
-                reqMaxH);
+            var context = new RkmppSubtitleFilterContext(isEncoderSupportAfbc, hasGraphicalSubs, hasTextSubs, hasAssSubs, swpInW, swpInH, subW, subH, reqW, reqH, reqMaxW, reqMaxH);
             var subFilters = new List<string>();
             var overlayFilters = new List<string>();
             if (isDrmInDrmOut)

@@ -40,7 +40,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Emby.Server.Implementations.Library
 {
-    public class MediaSourceManager : IMediaSourceManager, IDisposable
+    public partial class MediaSourceManager : IMediaSourceManager, IDisposable
     {
         // Do not use a pipe here because Roku http requests to the server will fail, without any explicit error message.
         private const char LiveStreamIdDelimiter = '_';
@@ -97,81 +97,6 @@ namespace Emby.Server.Implementations.Library
         public void AddParts(IEnumerable<IMediaSourceProvider> providers)
         {
             _providers = providers.ToArray();
-        }
-
-        public IReadOnlyList<MediaStream> GetMediaStreams(MediaStreamQuery query)
-        {
-            var list = _mediaStreamRepository.GetMediaStreams(query);
-
-            foreach (var stream in list)
-            {
-                stream.SupportsExternalStream = StreamSupportsExternalStream(stream);
-            }
-
-            return list;
-        }
-
-        private static bool StreamSupportsExternalStream(MediaStream stream)
-        {
-            if (stream.IsExternal)
-            {
-                return true;
-            }
-
-            if (stream.IsTextSubtitleStream)
-            {
-                return true;
-            }
-
-            if (stream.IsPgsSubtitleStream)
-            {
-                return true;
-            }
-
-            if (stream.IsVobSubSubtitleStream)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        public IReadOnlyList<MediaStream> GetMediaStreams(Guid itemId)
-        {
-            var list = GetMediaStreams(new MediaStreamQuery
-            {
-                ItemId = itemId
-            });
-
-            return GetMediaStreamsForItem(list);
-        }
-
-        private IReadOnlyList<MediaStream> GetMediaStreamsForItem(IReadOnlyList<MediaStream> streams)
-        {
-            foreach (var stream in streams)
-            {
-                if (stream.Type == MediaStreamType.Subtitle)
-                {
-                    stream.SupportsExternalStream = StreamSupportsExternalStream(stream);
-                }
-            }
-
-            return streams;
-        }
-
-        /// <inheritdoc />
-        public IReadOnlyList<MediaAttachment> GetMediaAttachments(MediaAttachmentQuery query)
-        {
-            return _mediaAttachmentRepository.GetMediaAttachments(query);
-        }
-
-        /// <inheritdoc />
-        public IReadOnlyList<MediaAttachment> GetMediaAttachments(Guid itemId)
-        {
-            return GetMediaAttachments(new MediaAttachmentQuery
-            {
-                ItemId = itemId
-            });
         }
 
         public async Task<IReadOnlyList<MediaSourceInfo>> GetPlaybackMediaSources(BaseItem item, User user, bool allowMediaProbe, bool enablePathSubstitution, CancellationToken cancellationToken)
@@ -510,23 +435,23 @@ namespace Emby.Server.Implementations.Library
             return [language];
         }
 
-        private void SetDefaultSubtitleStreamIndex(MediaSourceInfo source, UserItemData userData, User user, bool allowRememberingSelection)
+        private void SetDefaultSubtitleStreamIndex(MediaSourceInfo source, TrackSelectionMemory parts)
         {
-            if (IsSubtitleSelectionRemembered(userData, user, allowRememberingSelection))
+            if (IsSubtitleSelectionRemembered(parts))
             {
-                var index = userData.SubtitleStreamIndex.Value;
+                var index = parts.UserData.SubtitleStreamIndex.Value;
                 // Make sure the saved index is still valid
                 var savedStream = source.MediaStreams.FirstOrDefault(i => i.Type == MediaStreamType.Subtitle && i.Index == index);
                 // "Only forced" rules out full tracks entirely, so a remembered one must not resurrect them.
                 // The client reports whatever is playing, so an index remembered under another mode sticks forever otherwise.
-                if (IsRememberedSubtitleStillAllowed(index, savedStream, user))
+                if (IsRememberedSubtitleStillAllowed(index, savedStream, parts.User))
                 {
                     source.DefaultSubtitleStreamIndex = index;
                     return;
                 }
             }
 
-            var preferredSubs = NormalizeLanguage(user.SubtitleLanguagePreference);
+            var preferredSubs = NormalizeLanguage(parts.User.SubtitleLanguagePreference);
 
             var defaultAudioIndex = source.DefaultAudioStreamIndex;
             var audioLanguage = defaultAudioIndex is null
@@ -536,19 +461,19 @@ namespace Emby.Server.Implementations.Library
             source.DefaultSubtitleStreamIndex = MediaStreamSelector.GetDefaultSubtitleStreamIndex(
                 source.MediaStreams,
                 preferredSubs,
-                user.SubtitleMode,
+                parts.User.SubtitleMode,
                 audioLanguage);
 
-            MediaStreamSelector.SetSubtitleStreamScores(source.MediaStreams, preferredSubs, user.SubtitleMode, audioLanguage);
+            MediaStreamSelector.SetSubtitleStreamScores(source.MediaStreams, preferredSubs, parts.User.SubtitleMode, audioLanguage);
         }
 
-        private static bool IsSubtitleSelectionRemembered(UserItemData userData, User user, bool allowRememberingSelection)
+        private static bool IsSubtitleSelectionRemembered(TrackSelectionMemory parts)
         {
-            return userData is not null
-                && userData.SubtitleStreamIndex.HasValue
-                && user.RememberSubtitleSelections
-                && user.SubtitleMode != SubtitlePlaybackMode.None
-                && allowRememberingSelection;
+            return parts.UserData is not null
+                && parts.UserData.SubtitleStreamIndex.HasValue
+                && parts.User.RememberSubtitleSelections
+                && parts.User.SubtitleMode != SubtitlePlaybackMode.None
+                && parts.AllowRememberingSelection;
         }
 
         private static bool IsRememberedSubtitleStillAllowed(int index, MediaStream savedStream, User user)
@@ -558,24 +483,24 @@ namespace Emby.Server.Implementations.Library
                     && (user.SubtitleMode != SubtitlePlaybackMode.OnlyForced || savedStream.IsForced));
         }
 
-        private void SetDefaultAudioStreamIndex(MediaSourceInfo source, UserItemData userData, User user, bool allowRememberingSelection, string originalLanguage)
+        private void SetDefaultAudioStreamIndex(MediaSourceInfo source, TrackSelectionMemory parts, string originalLanguage)
         {
-            if (TrySetRememberedAudioStreamIndex(source, userData, user, allowRememberingSelection))
+            if (TrySetRememberedAudioStreamIndex(source, parts))
             {
                 return;
             }
 
-            if (TrySetOriginalLanguageAudioStreamIndex(source, user, originalLanguage))
+            if (TrySetOriginalLanguageAudioStreamIndex(source, parts.User, originalLanguage))
             {
                 return;
             }
 
-            var preferredAudio = string.Equals(user.AudioLanguagePreference, "OriginalLanguage", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(originalLanguage)
+            var preferredAudio = string.Equals(parts.User.AudioLanguagePreference, "OriginalLanguage", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(originalLanguage)
                 ? NormalizeLanguage(originalLanguage)
-                : NormalizeLanguage(user.AudioLanguagePreference);
+                : NormalizeLanguage(parts.User.AudioLanguagePreference);
 
-            source.DefaultAudioStreamIndex = MediaStreamSelector.GetDefaultAudioStreamIndex(source.MediaStreams, preferredAudio, user.PlayDefaultAudioTrack);
-            if (user.PlayDefaultAudioTrack)
+            source.DefaultAudioStreamIndex = MediaStreamSelector.GetDefaultAudioStreamIndex(source.MediaStreams, preferredAudio, parts.User.PlayDefaultAudioTrack);
+            if (parts.User.PlayDefaultAudioTrack)
             {
                 source.DefaultAudioIndexSource |= AudioIndexSource.Default;
             }
@@ -586,11 +511,11 @@ namespace Emby.Server.Implementations.Library
             }
         }
 
-        private static bool TrySetRememberedAudioStreamIndex(MediaSourceInfo source, UserItemData userData, User user, bool allowRememberingSelection)
+        private static bool TrySetRememberedAudioStreamIndex(MediaSourceInfo source, TrackSelectionMemory parts)
         {
-            if (IsAudioSelectionRemembered(userData, user, allowRememberingSelection))
+            if (IsAudioSelectionRemembered(parts))
             {
-                var index = userData.AudioStreamIndex.Value;
+                var index = parts.UserData.AudioStreamIndex.Value;
                 // Make sure the saved index is still valid
                 if (source.MediaStreams.Any(i => i.Type == MediaStreamType.Audio && i.Index == index))
                 {
@@ -603,9 +528,9 @@ namespace Emby.Server.Implementations.Library
             return false;
         }
 
-        private static bool IsAudioSelectionRemembered(UserItemData userData, User user, bool allowRememberingSelection)
+        private static bool IsAudioSelectionRemembered(TrackSelectionMemory parts)
         {
-            return userData is not null && userData.AudioStreamIndex.HasValue && user.RememberAudioSelections && allowRememberingSelection;
+            return parts.UserData is not null && parts.UserData.AudioStreamIndex.HasValue && parts.User.RememberAudioSelections && parts.AllowRememberingSelection;
         }
 
         private bool TrySetOriginalLanguageAudioStreamIndex(MediaSourceInfo source, User user, string originalLanguage)
@@ -657,8 +582,8 @@ namespace Emby.Server.Implementations.Library
 
                 var originalLanguage = item?.GetInheritedOriginalLanguage();
 
-                SetDefaultAudioStreamIndex(source, userData, user, allowRememberingSelection, originalLanguage);
-                SetDefaultSubtitleStreamIndex(source, userData, user, allowRememberingSelection);
+                SetDefaultAudioStreamIndex(source, new TrackSelectionMemory(userData, user, allowRememberingSelection), originalLanguage);
+                SetDefaultSubtitleStreamIndex(source, new TrackSelectionMemory(userData, user, allowRememberingSelection));
             }
             else if (mediaType == MediaType.Audio)
             {
@@ -880,7 +805,7 @@ namespace Emby.Server.Implementations.Library
 
             var mediaStreams = mediaInfo.MediaStreams;
 
-            if (IsCachedLiveStream(isLiveStream, cacheKey))
+            if (IsCachedLiveStream(new LiveStreamCacheKey(isLiveStream, cacheKey)))
             {
                 mediaStreams = GetFirstVideoAndAudioStreams(mediaStreams);
             }
@@ -915,9 +840,9 @@ namespace Emby.Server.Implementations.Library
             mediaSource.InferTotalBitrate(true);
         }
 
-        private static bool IsCachedLiveStream(bool isLiveStream, string cacheKey)
+        private static bool IsCachedLiveStream(LiveStreamCacheKey parts)
         {
-            return isLiveStream && !string.IsNullOrEmpty(cacheKey);
+            return parts.IsLiveStream && !string.IsNullOrEmpty(parts.CacheKey);
         }
 
         private static async Task DelayProbe(MediaSourceInfo mediaSource, bool addProbeDelay, CancellationToken cancellationToken)
@@ -1162,5 +1087,9 @@ namespace Emby.Server.Implementations.Library
                 _liveStreamLocker.Dispose();
             }
         }
+
+        private readonly record struct TrackSelectionMemory(UserItemData UserData, User User, bool AllowRememberingSelection);
+
+        private readonly record struct LiveStreamCacheKey(bool IsLiveStream, string CacheKey);
     }
 }

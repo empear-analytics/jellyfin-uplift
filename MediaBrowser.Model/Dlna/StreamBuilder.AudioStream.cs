@@ -85,7 +85,7 @@ namespace MediaBrowser.Model.Dlna
 
             if (directPlayMethod is PlayMethod.DirectPlay)
             {
-                var audioFailureReasons = GetCompatibilityAudioCodec(options, item, item.Container, audioStream, null, false, false);
+                var audioFailureReasons = GetCompatibilityAudioCodec(new GetCompatibilityAudioCodecParts(options, item, item.Container, audioStream), null, false, false);
                 transcodeReasons |= audioFailureReasons;
 
                 if (audioFailureReasons == 0)
@@ -97,26 +97,32 @@ namespace MediaBrowser.Model.Dlna
                 }
             }
 
-            if (directPlayMethod is PlayMethod.DirectStream)
+            var context = new AudioDirectStreamContext(options, item, audioStream, playlistItem, directPlayInfo, directPlayMethod);
+            return GetAudioDirectStreamOrTranscode(context, transcodeReasons);
+        }
+
+        private StreamInfo? GetAudioDirectStreamOrTranscode(AudioDirectStreamContext context, TranscodeReason transcodeReasons)
+        {
+            if (context.DirectPlayMethod is PlayMethod.DirectStream)
             {
-                var remuxContainer = GetAudioRemuxContainer(item, directPlayInfo);
-                bool codeIsSupported = IsRemuxAudioCodecSupported(item, remuxContainer, directPlayInfo.Profile);
+                var remuxContainer = GetAudioRemuxContainer(context.Item, context.DirectPlayInfo);
+                bool codeIsSupported = IsRemuxAudioCodecSupported(context.Item, remuxContainer, context.DirectPlayInfo.Profile);
 
                 if (codeIsSupported)
                 {
-                    playlistItem.PlayMethod = directPlayMethod.Value;
-                    playlistItem.Container = remuxContainer;
-                    playlistItem.TranscodeReasons = transcodeReasons;
-                    playlistItem.SubProtocol = item.TranscodingSubProtocol;
-                    item.TranscodingContainer = remuxContainer;
-                    return playlistItem;
+                    context.PlaylistItem.PlayMethod = context.DirectPlayMethod.Value;
+                    context.PlaylistItem.Container = remuxContainer;
+                    context.PlaylistItem.TranscodeReasons = transcodeReasons;
+                    context.PlaylistItem.SubProtocol = context.Item.TranscodingSubProtocol;
+                    context.Item.TranscodingContainer = remuxContainer;
+                    return context.PlaylistItem;
                 }
 
                 transcodeReasons |= TranscodeReason.AudioCodecNotSupported;
-                playlistItem.TranscodeReasons = transcodeReasons;
+                context.PlaylistItem.TranscodeReasons = transcodeReasons;
             }
 
-            return OptimalAudioTranscodeStream(new OptimalAudioTranscodeContext(options, item, audioStream, playlistItem, transcodeReasons));
+            return OptimalAudioTranscodeStream(new OptimalAudioTranscodeContext(context.Options, context.Item, context.AudioStream, context.PlaylistItem, transcodeReasons));
         }
 
         private StreamInfo? OptimalAudioTranscodeStream(OptimalAudioTranscodeContext context)
@@ -146,8 +152,8 @@ namespace MediaBrowser.Model.Dlna
             var inputAudioSampleRate = audioStream.SampleRate;
             var inputAudioBitDepth = audioStream.BitDepth;
 
-            var audioTranscodingConditions = GetProfileConditionsForAudio(options.Profile.CodecProfiles, transcodingProfile.Container, transcodingProfile.AudioCodec, inputAudioChannels, inputAudioBitrate, inputAudioSampleRate, inputAudioBitDepth, false).ToArray();
-            ApplyTranscodingConditions(playlistItem, audioTranscodingConditions, null, true, true);
+            var audioTranscodingConditions = GetProfileConditionsForAudio(options.Profile.CodecProfiles, transcodingProfile.Container, new GetProfileConditionsForAudioParts(transcodingProfile.AudioCodec, inputAudioChannels, inputAudioBitrate, inputAudioSampleRate, inputAudioBitDepth), false).ToArray();
+            ApplyTranscodingConditions(playlistItem, audioTranscodingConditions, new ApplyTranscodingConditionsParts(null, true, true));
 
             // Honor requested max channels
             playlistItem.GlobalMaxAudioChannels = options.MaxAudioChannels;
@@ -460,5 +466,7 @@ namespace MediaBrowser.Model.Dlna
         }
 
         private readonly record struct OptimalAudioTranscodeContext(MediaOptions Options, MediaSourceInfo Item, MediaStream AudioStream, StreamInfo PlaylistItem, TranscodeReason TranscodeReasons);
+
+        private readonly record struct AudioDirectStreamContext(MediaOptions Options, MediaSourceInfo Item, MediaStream AudioStream, StreamInfo PlaylistItem, (DirectPlayProfile? Profile, PlayMethod? PlayMethod, TranscodeReason TranscodeReasons) DirectPlayInfo, PlayMethod? DirectPlayMethod);
     }
 }

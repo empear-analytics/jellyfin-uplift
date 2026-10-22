@@ -31,33 +31,6 @@ namespace MediaBrowser.Controller.MediaEncoding
 {
     public partial class EncodingHelper
     {
-        private static int GetBitDepthCompensatedBitrate(int bitrate, MediaStream videoStream, int targetBitDepth)
-        {
-            if (IsBitrateCompensationUnneededForBitDepth(videoStream, targetBitDepth)
-                || videoStream.BitRate is not int sourceBitrate)
-            {
-                return bitrate;
-            }
-
-            // Bit depth reduction requires bit rate compensation because
-            // 10-bit encoded video is significantly more efficient.
-            var factor = sourceBitrate switch
-            {
-                <= 4_000_000 => 1.5,
-                <= 8_000_000 => 1.2,
-                <= 12_000_000 => 1.1,
-                _ => 1.05
-            };
-
-            return Convert.ToInt32(bitrate * factor);
-        }
-
-        private static bool IsBitrateCompensationUnneededForBitDepth(MediaStream videoStream, int targetBitDepth)
-        {
-            return targetBitDepth >= 10
-                || (videoStream.BitDepth is int bitDepth && bitDepth <= targetBitDepth);
-        }
-
         public int GetVideoBitrateParamValue(BaseEncodingJobOptions request, MediaStream videoStream, string outputVideoCodec)
         {
             var bitrate = request.VideoBitRate;
@@ -135,64 +108,6 @@ namespace MediaBrowser.Controller.MediaEncoding
             var bitrate = Math.Min(sourceBitrate, requestedBitrate);
 
             return bitrate;
-        }
-
-        private static double GetVideoBitrateScaleFactor(string codec)
-        {
-            // hevc & vp9 - 40% more efficient than h.264
-            if (IsHevcOrVp9Codec(codec))
-            {
-                return .6;
-            }
-
-            // av1 - 50% more efficient than h.264
-            if (string.Equals(codec, "av1", StringComparison.OrdinalIgnoreCase))
-            {
-                return .5;
-            }
-
-            return 1;
-        }
-
-        private static bool IsHevcOrVp9Codec(string codec)
-        {
-            return string.Equals(codec, "h265", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "hevc", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(codec, "vp9", StringComparison.OrdinalIgnoreCase);
-        }
-
-        public static int ScaleBitrate(int bitrate, string inputVideoCodec, string outputVideoCodec)
-        {
-            var inputScaleFactor = GetVideoBitrateScaleFactor(inputVideoCodec);
-            var outputScaleFactor = GetVideoBitrateScaleFactor(outputVideoCodec);
-
-            // Don't scale the real bitrate lower than the requested bitrate
-            var scaleFactor = Math.Max(outputScaleFactor / inputScaleFactor, 1);
-
-            if (bitrate <= 500000)
-            {
-                scaleFactor = Math.Max(scaleFactor, 4);
-            }
-            else if (bitrate <= 1000000)
-            {
-                scaleFactor = Math.Max(scaleFactor, 3);
-            }
-            else if (bitrate <= 2000000)
-            {
-                scaleFactor = Math.Max(scaleFactor, 2.5);
-            }
-            else if (bitrate <= 3000000)
-            {
-                scaleFactor = Math.Max(scaleFactor, 2);
-            }
-            else if (bitrate >= 30000000)
-            {
-                // Don't scale beyond 30Mbps, it is hardly visually noticeable for most codecs with our prefer speed encoding
-                // and will cause extremely high bitrate to be used for av1->h264 transcoding that will overload clients and encoders
-                scaleFactor = 1;
-            }
-
-            return Convert.ToInt32(scaleFactor * bitrate);
         }
     }
 }
