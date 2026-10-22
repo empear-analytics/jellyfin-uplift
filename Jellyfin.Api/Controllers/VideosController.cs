@@ -480,10 +480,7 @@ public class VideosController : BaseJellyfinApiController
             state,
             isHeadRequest,
             HttpContext,
-            _transcodeManager,
-            ffmpegCommandLineArguments,
-            _transcodingJobType,
-            cancellationTokenSource).ConfigureAwait(false);
+            new FileStreamResponseHelpers.TranscodingJobStart(_transcodeManager, ffmpegCommandLineArguments, _transcodingJobType, cancellationTokenSource)).ConfigureAwait(false);
     }
 
     /// <summary>

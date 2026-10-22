@@ -124,10 +124,7 @@ public class AudioHelper
             state,
             isHeadRequest,
             _httpContextAccessor.HttpContext,
-            _transcodeManager,
-            ffmpegCommandLineArguments,
-            transcodingJobType,
-            cancellationTokenSource).ConfigureAwait(false);
+            new FileStreamResponseHelpers.TranscodingJobStart(_transcodeManager, ffmpegCommandLineArguments, transcodingJobType, cancellationTokenSource)).ConfigureAwait(false);
     }
 
     private ActionResult GetLiveStreamResult(string liveStreamId)
