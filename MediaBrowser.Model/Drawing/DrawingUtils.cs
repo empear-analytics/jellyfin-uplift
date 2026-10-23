@@ -3,7 +3,7 @@ using System;
 namespace MediaBrowser.Model.Drawing
 {
     /// <summary>
-    /// Class DrawingUtils.
+    /// Helpers for computing image dimensions.
     /// </summary>
     public static class DrawingUtils
     {
